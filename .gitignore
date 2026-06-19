@@ -1,0 +1,17 @@
+node_modules
+.bun
+bun.lockb
+bun.lock
+.env
+.env.*
+!.env.example
+dist
+build
+coverage
+.tmp
+.DS_Store
+.idea
+.vscode
+apps/*/.react-router
+apps/*/build
+apps/*/.cache

@@ -1,0 +1,22 @@
+{
+  "name": "senderos",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "bun@1.3.14",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:senderos": "bun run --cwd apps/senderos dev",
+    "dev:studio": "bun run --cwd apps/studio dev",
+    "build": "bun run build:senderos && bun run build:studio",
+    "build:senderos": "bun run --cwd apps/senderos build",
+    "build:studio": "bun run --cwd apps/studio build",
+    "typecheck": "bun run typecheck:senderos && bun run typecheck:studio",
+    "typecheck:senderos": "bun run --cwd apps/senderos typecheck",
+    "typecheck:studio": "bun run --cwd apps/studio typecheck",
+    "test": "bun run test:senderos",
+    "test:senderos": "bun run --cwd apps/senderos test"
+  }
+}

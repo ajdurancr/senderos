@@ -1,0 +1,44 @@
+{
+  "project": "Senderos",
+  "description": "Engineering orchestration platform monorepo powered by Bun and TypeScript.",
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "require_approved_spec_to_implement": true,
+    "valid_status": ["pending", "spec_ready", "in_progress", "done", "blocked"],
+    "sdd_required_when": "feature has \"sdd\": true"
+  },
+  "features": [
+    {
+      "id": 1,
+      "name": "monorepo_bootstrap",
+      "title": "Bootstrap Bun TypeScript monorepo",
+      "description": "Create the initial Senderos monorepo structure with the first two apps and harness-style docs.",
+      "acceptance": [
+        "The root is configured as a Bun workspace monorepo.",
+
+        "apps/senderos exists as a TypeScript runtime app.",
+        "apps/studio exists as a React Router app using the latest available major version at scaffold time.",
+        "Harness-inspired docs and workflow files exist in English."
+      ],
+      "sdd": true,
+      "status": "done"
+    },
+    {
+      "id": 2,
+      "name": "objective-model",
+      "title": "Define the first SenderOS objective domain model",
+      "description": "Model objectives, execution states, and validation summary contracts inside SenderOS.",
+      "sdd": true,
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "name": "studio-objective-dashboard",
+      "title": "Build the first Studio objective dashboard",
+      "description": "Render the first objective overview in Studio using mock SenderOS data.",
+      "sdd": true,
+      "status": "pending"
+    }
+  ]
+}
