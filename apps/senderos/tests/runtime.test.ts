@@ -57,7 +57,9 @@ describe('feature lifecycle', () => {
     expect(started.feature?.loopPhase).toBe('contract');
     expect(started.task?.phase).toBe('contract');
     expect(listTasks(created.id, home).length).toBeGreaterThan(0);
-    expect(status(home).activeLoops).toBe(1);
+    const currentStatus = status(home);
+    expect(currentStatus.activeLoops).toBe(1);
+    expect(currentStatus.activeFeatureIds).toContain(created.id);
   });
 
   test('ticks through loop and releases workspace at done', () => {

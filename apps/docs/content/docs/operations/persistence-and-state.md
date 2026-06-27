@@ -53,7 +53,7 @@ Large artifacts stay on disk inside the Senderos home directory and are referenc
 
 ```text
 ~/.senderos/
-  config.yaml
+  config.json
   senderos.db
   artifacts/
   logs/
@@ -66,7 +66,7 @@ When Turso is used, `senderos.db` is replaced by remote database configuration, 
 
 ## Configuration file
 
-Senderos uses a single configuration file with the minimum required runtime configuration.
+Senderos uses a single `config.json` file with the minimum required runtime configuration.
 
 It defines:
 

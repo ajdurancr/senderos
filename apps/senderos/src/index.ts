@@ -509,17 +509,25 @@ export function getWorkspace(id: string, home?: string) { const db = openDb(home
 
 export function doctor(home = defaultHomePath()) {
   const issues: string[] = [];
+  const warnings: string[] = [];
   if (!existsSync(configPathForHome(home))) issues.push('missing config');
-  if (issues.length) return { ok: false, issues };
+  if (issues.length) return { ok: false, issues, warnings };
   const { config, paths } = resolveRuntime(home);
   for (const dir of [paths.workspaceRoot, paths.artifactRoot, paths.logRoot, paths.sessionRoot, paths.cacheRoot]) if (!existsSync(dir)) issues.push(`missing dir:${dir}`);
+  if (config.guardrails.restrictToHome) {
+    for (const candidate of [paths.workspaceRoot, paths.artifactRoot, paths.logRoot, paths.sessionRoot, paths.cacheRoot, paths.dbPath]) {
+      try { ensureWithinHome(home, candidate); } catch (error) { issues.push((error as Error).message); }
+    }
+  }
   if (config.database.kind === 'local') {
     try { const db = openDb(home); db.close(); } catch (error) { issues.push(`db:${(error as Error).message}`); }
   } else {
     if (!config.database.turso?.url) issues.push('missing turso url');
     if (!config.database.turso?.authTokenEnv) issues.push('missing turso authTokenEnv');
+    if (config.database.turso?.authTokenEnv && !process.env[config.database.turso.authTokenEnv]) warnings.push(`env:${config.database.turso.authTokenEnv} is not set in this shell`);
+    warnings.push('turso mode requires an async libsql-backed runtime path; current local CLI path validates configuration shape only');
   }
-  return { ok: issues.length === 0, issues, databaseKind: config.database.kind, defaultHarness: config.defaultHarness, workspaceRoot: paths.workspaceRoot };
+  return { ok: issues.length === 0, issues, warnings, databaseKind: config.database.kind, defaultHarness: config.defaultHarness, workspaceRoot: paths.workspaceRoot };
 }
 
 export function status(home?: string) {
@@ -532,6 +540,10 @@ export function status(home?: string) {
     sessionHealth: (db.query("select count(*) as c from sessions where status='stale'").get() as any).c === 0 ? 'ok' : 'stale',
     workspaceLocks: (db.query("select count(*) as c from workspaces where status in ('locked','active','verifying')").get() as any).c,
     pendingReconciliation: (db.query("select count(*) as c from sessions where status='stale'").get() as any).c,
+    activeFeatureIds: db.query("select id from features where status not in ('completed','canceled') order by created_at asc").all().map((row: any) => row.id),
+    runningRunIds: db.query("select id from runs where status in ('queued','running') order by created_at asc").all().map((row: any) => row.id),
+    activeSessionIds: db.query("select id from sessions where status='active' order by created_at asc").all().map((row: any) => row.id),
+    lockedWorkspaceIds: db.query("select id from workspaces where status in ('locked','active','verifying') order by created_at asc").all().map((row: any) => row.id),
   };
   db.close();
   return summary;
