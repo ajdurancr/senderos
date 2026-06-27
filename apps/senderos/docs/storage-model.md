@@ -1,6 +1,6 @@
 # Storage Model
 
-SenderOS is the factory and orchestration engine. It should not treat project-specific execution state as repository-owned product state.
+SenderOS stores durable orchestration state in SQLite.
 
 ## Boundary
 
@@ -9,36 +9,38 @@ The repository contains:
 - runtime and domain code
 - tests
 - SenderOS documentation
-- templates for file-backed project state
-- examples of workspace layouts
+- templates and examples
 
-The repository does **not** contain live project execution state as a canonical persistence model.
+The repository does **not** contain live SenderOS runtime state as the canonical persistence model.
 
-### Workspace runtime state
-Real project state should live under a workspace-managed directory such as:
+### SenderOS runtime state
+Real orchestration state lives in the Senderos home directory, with SQLite as the authority for structured state:
 
 ```text
-<workspace>/.senderos/
-  workspace.json
-  runtime/
-  projects/
-    <project-id>/
-      project.json
-      feature-list.json
-      project-spec.md
-      features/
-      progress/
-      memory/
+~/.senderos/
+  config.json
+  senderos.db
+  artifacts/
+  logs/
+  sessions/
+  workspaces/
+  cache/
 ```
 
-## File-backed mode
-For now, SenderOS uses files as the reference storage model. This keeps the system inspectable and portable while the long-term persistence layer is still being defined.
+## Database modes
 
-## Future direction
-Later, SenderOS can introduce a database-backed storage adapter where:
-- the database becomes the canonical structured store
-- markdown and JSON remain readable/exported artifacts when useful
+SenderOS supports:
+- local SQLite by default
+- Turso-compatible remote SQLite configuration as the supported remote mode
+
+The schema stays consistent across both modes.
+
+## Artifact model
+
+Structured state lives in SQLite.
+Large artifacts such as logs, transcripts, reports, and cached payloads live under the Senderos home directory and are referenced from the database.
 
 ## Design rule
-If a file describes SenderOS itself, it belongs in the repository.
-If it describes work SenderOS is managing, it belongs in workspace/project state.
+
+If data describes SenderOS state transitions, ownership, runs, or sessions, it belongs in SQLite.
+If data is a large runtime artifact, it belongs under the Senderos home directory.

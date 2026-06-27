@@ -1,27 +1,20 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createFeature, initializeRuntime, schedulePlan, status } from '../src/index';
 
-import { createObjective, summarizeValidation } from "../src/index";
-
-describe("createObjective", () => {
-  test("creates a draft objective with timestamps", () => {
-    const objective = createObjective({
-      id: "obj_1",
-      title: "Define the first objective",
-      summary: "Capture orchestration intent.",
-    });
-
-    expect(objective.status).toBe("draft");
-    expect(objective.createdAt).toBeString();
-    expect(objective.updatedAt).toBeString();
-  });
-});
-
-describe("summarizeValidation", () => {
-  test("returns high confidence for strong pass ratios", () => {
-    expect(summarizeValidation(9, 10).confidence).toBe("high");
-  });
-
-  test("returns low confidence when there are no checks", () => {
-    expect(summarizeValidation(0, 0).confidence).toBe("low");
+describe('senderos exports', () => {
+  test('can create a feature after init', () => {
+    const home = mkdtempSync(join(tmpdir(), 'senderos-export-'));
+    try {
+      initializeRuntime(home);
+      const feature = createFeature({ home, title: 'Bootstrap Senderos' });
+      expect(feature.id).toContain('feature-');
+      expect(status(home).openFeatures).toBe(1);
+      expect(schedulePlan(home).command).toContain('senderos');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 });
