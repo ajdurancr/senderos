@@ -1,59 +1,68 @@
 ---
 title: Skills and Harnesses
-description: "How agent skills should wrap Senderos without becoming the architecture."
+description: "How host-agent skills use Senderos, what harness support exists inside Senderos, and where those boundaries stay clean."
 ---
 
-## The right split
+Senderos expects to be operated by a host agent through the CLI.
 
-Senderos should be the product. Skills should be the adapter.
+## The host-agent contract
 
-That means:
+The host agent does not know Senderos' internal operating agents.
+It knows the CLI.
 
-- Senderos CLI = control plane,
-- skill = instructions for how an agent should use the CLI,
-- harness integration = environment-specific execution details.
+A host-agent skill exists to teach the host agent how to operate Senderos correctly:
 
-## Universal skill pattern
+- call the right command,
+- prefer machine-readable output,
+- respect guardrails,
+- render Senderos output back to the user clearly.
 
-A good universal Senderos skill should do a few things well:
+## What the skill should know
 
-1. explain when Senderos is relevant,
-2. instruct the agent to discover capabilities via the CLI,
-3. guide setup and environment variable configuration,
-4. define confirmation requirements,
-5. explain how to inspect status and resume work.
+A Senderos skill should know:
 
-## Harness-specific helper layer
+- how to discover commands,
+- how to request JSON output,
+- how to run manual loop actions,
+- how to ask the user for confirmation when Senderos requires it,
+- how to schedule host-level jobs when Senderos emits scheduling instructions.
 
-Different agent environments have different quirks:
+It should not know Senderos' internal operating logic.
 
-- PTY behavior,
-- session resumption,
-- background tasks,
-- approval systems,
-- shell access,
-- how logs are fetched.
+## Harness support inside Senderos
 
-Because of that, it is reasonable to have small wrappers such as:
+Senderos does include harness support, but only for communicating with host-agent environments.
 
-- Senderos for OpenClaw,
-- Senderos for Codex,
-- Senderos for Claude Code.
+Examples:
 
-Those wrappers should stay thin. They exist for ergonomics, not for core business logic.
+- OpenClaw,
+- Codex,
+- Claude Code.
 
-## Setup expectation
+That support exists so Senderos can:
 
-The portable thing to install is the **CLI in the environment**.
+- attach runs to host sessions,
+- query session status,
+- resume known sessions,
+- format execution instructions correctly for the harness.
 
-After that, the agent integration can teach the operator how to:
+## Why Senderos does not build broad service adapters in v1
 
-- run `senderos init`,
-- inspect `senderos doctor`,
-- configure source and agent adapters,
-- enable schedules,
-- launch feature workflows.
+Senderos does not own integrations for:
 
-## Why this matters
+- GitHub APIs,
+- Jira APIs,
+- Linear APIs,
+- notifications,
+- repository hosting,
+- scheduling infrastructure.
 
-If the skill becomes the main implementation of Senderos, behavior will drift across agent ecosystems. Then you are maintaining several approximate versions of the same product. That is how you earn yourself a stupid maintenance burden.
+When those things are needed, Senderos tells the host agent what to do.
+The host agent executes that instruction using its own capabilities.
+
+## Adapter maintenance policy
+
+Harness behavior changes over time.
+Because of that, Senderos' harness support must be maintained against the real current behavior of each supported host environment.
+
+That means harness support is a product boundary with explicit ownership, not a pile of hand-wavy assumptions.

@@ -7,7 +7,7 @@ export type NavItem = {
 export const SITE = {
   title: 'Senderos Docs',
   description:
-    'Senderos is a local-first orchestration system for agent-driven software delivery: specs, queued work, coding runs, and durable status in one place.',
+    'Senderos is the orchestration system for a loop-engineering software factory: SQLite state, internal operating agents, host-agent execution, and deployable outcomes.',
   repoUrl: 'https://github.com/ajdurancr/senderos'
 };
 
@@ -23,7 +23,9 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     section: 'Core',
     items: [
       { slug: 'core/how-senderos-works', title: 'How Senderos Works', section: 'Core' },
-      { slug: 'core/architecture', title: 'Architecture', section: 'Core' }
+      { slug: 'core/architecture', title: 'Architecture', section: 'Core' },
+      { slug: 'core/reconciliation-and-dispatch', title: 'Reconciliation and Dispatch', section: 'Core' },
+      { slug: 'core/senderos-os-agents', title: 'Senderos Operating Agents', section: 'Core' }
     ]
   },
   {
@@ -36,7 +38,14 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     section: 'CLI',
     items: [
       { slug: 'cli/overview', title: 'CLI Overview', section: 'CLI' },
-      { slug: 'cli/commands', title: 'Command Surface', section: 'CLI' }
+      { slug: 'cli/init', title: 'init', section: 'CLI' },
+      { slug: 'cli/doctor', title: 'doctor', section: 'CLI' },
+      { slug: 'cli/config', title: 'config', section: 'CLI' },
+      { slug: 'cli/feature', title: 'feature', section: 'CLI' },
+      { slug: 'cli/loop', title: 'loop', section: 'CLI' },
+      { slug: 'cli/run', title: 'run', section: 'CLI' },
+      { slug: 'cli/session', title: 'session', section: 'CLI' },
+      { slug: 'cli/status', title: 'status, reconcile, and schedule-plan', section: 'CLI' }
     ]
   },
   {
@@ -48,14 +57,15 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
   {
     section: 'Automation',
     items: [
-      { slug: 'automation/worker-and-scheduling', title: 'Worker and Scheduling', section: 'Automation' }
+      { slug: 'automation/worker-and-scheduling', title: 'Loop Execution and Scheduling', section: 'Automation' }
     ]
   },
   {
     section: 'Operations',
     items: [
       { slug: 'operations/persistence-and-state', title: 'Persistence and State', section: 'Operations' },
-      { slug: 'operations/safety-and-confirmations', title: 'Safety and Confirmations', section: 'Operations' }
+      { slug: 'operations/workspaces-and-guardrails', title: 'Workspaces and Guardrails', section: 'Operations' },
+      { slug: 'operations/safety-and-confirmations', title: 'Safety and Guardrails', section: 'Operations' }
     ]
   },
   {

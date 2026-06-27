@@ -1,57 +1,52 @@
 ---
 title: Setup and First Run
-description: "A practical path to bootstrapping Senderos and using it through the CLI and an agent skill."
+description: "How Senderos is installed, configured, and started in a real environment."
 ---
 
-## High-level setup flow
+Senderos is installed into the local environment and operated through the CLI.
 
-A practical first-run path looks like this:
+## First-run flow
 
-1. install the Senderos CLI in the user environment,
+1. install the CLI,
 2. run `senderos init`,
-3. run `senderos doctor`,
-4. configure at least one source adapter,
-5. configure at least one agent adapter,
-6. create or sync the first feature,
-7. clarify and approve the spec,
-8. generate acceptance criteria,
-9. kick off the implementation run.
+3. review the generated configuration file,
+4. run `senderos doctor --json`,
+5. confirm database connectivity,
+6. create the first feature,
+7. start the loop.
 
-## Example bootstrap flow
+## Example
 
 ```bash
 senderos init
-senderos doctor
-senderos source add github
-senderos agent add codex
-senderos feature create
-senderos spec start feature-001
-senderos feature approve feature-001
-senderos gherkin generate feature-001
-senderos feature kickoff feature-001
+senderos doctor --json
+senderos feature create --title "Add billing portal"
+senderos loop start feature-001
+senderos status --json
 ```
 
-## What the agent skill should do
+## What `senderos init` creates
 
-A Senderos skill should not pretend to know every capability up front.
+`senderos init` creates the Senderos home directory and the minimum runtime structure:
 
-Instead it should:
+- config file,
+- SQLite database or remote DB configuration,
+- artifact directories,
+- workspace root,
+- initial schema.
 
-1. check `senderos capability list --json`,
-2. inspect the relevant `help` output for the requested action,
-3. guide the user through missing configuration,
-4. ask for confirmation before destructive or external actions,
-5. keep using the CLI for status and follow-up operations.
+## Required configuration
 
-## Suggested minimum viable configuration
+The configuration file defines:
 
-For a realistic v1, the minimum setup can be:
+- database driver and connection details,
+- workspace root,
+- artifact directories,
+- default harness,
+- output mode defaults,
+- guardrail settings.
 
-- one source adapter,
-- one agent adapter,
-- local SQLite persistence,
-- local filesystem artifacts,
-- one scheduling backend,
-- one target repo workflow.
+## Manual and scheduled operation
 
-That is enough to prove the architecture without building an entire civilization on day one.
+Senderos can always be run manually through the CLI.
+If the host environment supports scheduling, the host agent can install scheduled jobs from a scheduling plan emitted by Senderos.

@@ -1,53 +1,75 @@
 ---
 title: How Senderos Works
-description: "The main workflow from clarified feature request to tracked implementation and completion."
+description: "The end-to-end loop from feature definition to deployable outcome."
 ---
 
-## End-to-end flow
+Senderos follows a loop-engineering execution model inspired by the workflow described in this repository.
 
-At its core, Senderos manages a sequence like this:
+## End-to-end loop
 
-1. **Capture intent**: a user proposes a feature or task.
-2. **Clarify and specify**: the spec agent or operator flow resolves ambiguities.
-3. **Approve**: the human confirms that the spec matches the intended outcome.
-4. **Generate acceptance criteria**: for example as Gherkin scenarios or another durable format.
-5. **Queue and validate**: Senderos checks dependencies, readiness, and policy.
-6. **Kick off implementation**: a run is created and dispatched to an agent adapter.
-7. **Track execution**: sessions, logs, workspace state, and outcomes are persisted.
-8. **Reconcile and report**: Senderos refreshes status and exposes it through the CLI.
-9. **Complete or recover**: the feature moves forward, gets retried, or is canceled with history intact.
+```text
+intent
+  -> feature definition
+  -> executable feature contract
+  -> loop start
+  -> TDD implementation cycle
+  -> review and pruning
+  -> mutation confidence gate
+  -> deployable outcome
+  -> user evaluation
+```
 
-## Control plane vs execution plane
+The loop does not pause for the user to review an intermediate pull request.
+The loop advances until Senderos has a deployable outcome or a terminal failure state that requires intervention.
 
-A useful way to think about Senderos is:
+## Detailed flow
 
-- **control plane** = CLI + state + policy + adapters + scheduling,
-- **execution plane** = the actual coding agent session doing work in a repo.
+1. A user or host agent requests new work through the CLI.
+2. Senderos creates or updates a Senderos feature.
+3. Senderos' internal operating layer refines the feature contract.
+4. The contract is translated into executable scenarios.
+5. Senderos opens a loop for that feature.
+6. Senderos assigns a dedicated workspace and execution policy.
+7. Senderos instructs the host agent to execute the next step in the loop.
+8. The host agent performs implementation work in the assigned workspace.
+9. Senderos records the resulting run, session, and workspace state.
+10. Senderos continues the loop through test-driven implementation, review, and mutation validation.
+11. Senderos only surfaces the result back to the user after the loop reaches a deployable end state.
 
-Senderos should decide **what is supposed to happen** and **what the current truth is**. The coding agent should perform the implementation work itself.
+## Control plane and execution plane
 
-## Dispatch model
+Senderos is the control plane.
+The host agent is the execution plane.
 
-When a feature is kicked off, Senderos should:
+### Senderos decides:
 
-1. create a run record,
-2. resolve the target repo/workspace,
-3. select an agent adapter,
-4. launch the session,
-5. capture the external session handle,
-6. persist run and workspace metadata,
-7. update state as progress arrives.
+- what feature is active,
+- what the next valid step is,
+- which workspace is reserved,
+- what state transition is allowed,
+- what the host agent must do next,
+- whether the loop can continue,
+- whether reconciliation is needed.
 
-## Reconciliation model
+### The host agent does:
 
-Because external sessions can drift, Senderos also needs a reconciliation path.
+- read Senderos instructions,
+- enter the assigned workspace,
+- perform the coding task,
+- run the requested checks,
+- return machine-readable execution results.
 
-That means it can periodically ask:
+## Why the loop is autonomous
 
-- Is the session still active?
-- Did it fail?
-- Did it produce logs or artifacts?
-- Did it already push a branch?
-- Does the feature need retry, review, or cleanup?
+The purpose of Senderos is not to ask the user for constant approval.
+The purpose is to complete the engineering loop responsibly.
 
-This is why the worker model matters. Senderos should not depend on a user manually babysitting every run.
+That means the loop continues through:
+
+- specification translation,
+- TDD implementation,
+- review,
+- mutation testing,
+- final packaging of the outcome.
+
+Only then does the user re-enter the loop to test the finished result.

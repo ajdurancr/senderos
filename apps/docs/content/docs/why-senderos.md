@@ -1,68 +1,49 @@
 ---
 title: Why Senderos Exists
-description: "Why the project was built and which failure modes it is designed to eliminate."
+description: "Why the project exists and what problem it solves for serious agent-driven delivery."
 ---
 
-## The short version
+Software teams can now generate code quickly. That is not the hard part anymore.
 
-Senderos exists because agent-driven software work gets flaky fast when the only control surface is a conversation.
+The hard part is finishing a feature loop without losing control of the system.
 
-That setup feels good at first, then falls apart when you need real operational discipline.
+## The actual bottleneck
 
-## The failure modes it targets
+Teams do not usually fail because code could not be typed fast enough.
+They fail because the execution loop breaks down:
 
-### Prompt soup
+- the spec is vague,
+- the acceptance criteria drift,
+- implementation starts too early,
+- session state disappears into chat,
+- testing becomes superficial,
+- mutation confidence is missing,
+- parallel work collides in the same workspace,
+- humans get interrupted to review half-baked output,
+- nobody can answer what the system is doing right now.
 
-Without a control plane, every new action becomes another prompt asking an agent to remember context, infer the right next step, and avoid repeating work. That is brittle.
+Senderos exists to remove that ambiguity.
 
-### Session dependency
+## The product thesis
 
-When status lives inside one active shell or one cloud session, the user loses visibility the moment that session hangs, exits, or gets abandoned.
+Senderos treats software delivery as a factory loop.
 
-### No durable audit trail
+The loop starts from clarified intent, translates that intent into a feature contract, drives implementation through test-first execution, validates through review and mutation testing, and keeps advancing until the work is actually deployable.
 
-Users need to answer boring but essential questions:
+The user is not dragged into the middle of the loop to babysit partial outputs.
+The user comes back in when the loop has produced something ready to evaluate.
 
-- What was started?
-- What is blocked?
-- What failed?
-- What already got pushed?
-- Was the temp workspace cleaned up?
-- Which agent session should be resumed?
+## Why the CLI matters
 
-If the system cannot answer those quickly, it is not operationally serious.
+A chat thread is not a durable operating surface.
+A transient session is not a system of record.
 
-### Unsafe automation
+Senderos uses a CLI because the factory needs:
 
-Autonomy without state and policy is how you get duplicate runs, surprise branches, accidental pushes, and a nice little pile of chaos.
+- a stable entry point,
+- machine-readable outputs,
+- deterministic state transitions,
+- repeatable operations,
+- auditable history.
 
-Senderos is meant to enable automation **with boundaries**, not automation by vibes.
-
-## Why local-first matters
-
-The actual coding work should run inside the user’s environment whenever possible.
-
-That gives the user:
-
-- direct ownership of repos and credentials,
-- simpler debugging,
-- fewer hidden external dependencies,
-- better portability across agents,
-- easier recovery when a run fails mid-stream.
-
-External systems still matter, but they should be integrations, not the soul of the product.
-
-## Why a CLI instead of a giant skill
-
-Skills are useful. They are also a terrible place to bury core platform logic.
-
-A CLI gives Senderos:
-
-- explicit commands,
-- machine-readable discovery,
-- repeatable automation,
-- shell and script compatibility,
-- easier testing,
-- a stable interface across agent ecosystems.
-
-That is the real reason Senderos makes sense as a system rather than “just more prompt instructions.”
+That is what makes the system operable by different host agents without turning the whole product into prompt soup.

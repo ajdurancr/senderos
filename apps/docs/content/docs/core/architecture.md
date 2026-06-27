@@ -1,87 +1,105 @@
 ---
 title: Architecture
-description: "The recommended architecture: CLI first, persistent local state, adapters, and thin agent integrations."
+description: "The production architecture for Senderos: CLI, internal operating layer, SQLite state, and host-agent orchestration."
 ---
 
-## Recommended layers
+Senderos has four architectural layers.
 
-Senderos works best when split into four layers.
+## 1. CLI surface
 
-### 1. CLI
+The `senderos` CLI is the only public control surface.
 
-The CLI is the public operational interface.
+Humans and host agents both use it.
+The CLI exposes:
 
-Examples:
+- state inspection,
+- feature lifecycle operations,
+- loop operations,
+- configuration,
+- reconciliation,
+- status and reporting,
+- machine-readable outputs.
 
-```bash
-senderos capability list --json
-senderos feature status feature-42
-senderos worker tick
-senderos schedule list
-senderos session resume sess-99
+The host agent knows Senderos through this interface only.
+It does not need awareness of Senderos' internal operating roles.
+
+## 2. Senderos operating layer
+
+Inside Senderos lives an opinionated operating layer.
+
+This layer is made of internal agents and deterministic services dedicated to operating Senderos itself.
+These internal roles know:
+
+- the Senderos data model,
+- the SQLite schema,
+- loop transitions,
+- reconciliation rules,
+- dispatch rules,
+- configuration rules,
+- workspace guardrails,
+- harness communication requirements.
+
+The CLI invokes this layer.
+The host agent never does.
+
+## 3. Persistent state layer
+
+Senderos stores all orchestration state in SQLite.
+
+By default, Senderos uses a local SQLite database in the Senderos home directory.
+It also supports SQLite-compatible remote services, with Turso as the supported remote option.
+
+This keeps the data model consistent while allowing different deployment modes.
+
+## 4. Host-agent execution layer
+
+Senderos does not edit product code itself.
+Instead, it instructs a host agent to execute work inside a Senderos-managed workspace.
+
+The host agent may be OpenClaw, Codex, Claude Code, or another supported harness.
+Harness support exists only to let Senderos communicate with the host agent reliably.
+
+## Architecture diagram
+
+```text
++---------------------------+
+| human / automation / CLI  |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| senderos CLI              |
+| commands + JSON output    |
++-------------+-------------+
+              |
+              v
++---------------------------+
+| senderos operating layer  |
+| internal agents + rules   |
++------+------+-------------+
+       |      |
+       |      +----------------------+
+       |                             |
+       v                             v
++-------------+               +-------------------+
+| SQLite/Turso|               | workspace manager |
+| state store |               | guardrails        |
++------+------+               +---------+---------+
+       |                                |
+       +-------------------+------------+
+                           |
+                           v
+                 +----------------------+
+                 | host agent harness    |
+                 | executes code changes |
+                 +----------------------+
 ```
 
-This layer should support both human-readable help and machine-readable output.
+## Why there are no generic service adapters in v1
 
-### 2. Local runtime and persistent state
+Senderos does not build direct adapters for GitHub, Jira, Linear, notifications, or repository hosting in v1.
 
-This layer stores the truth that must outlive any prompt or process.
+When external work is required, Senderos tells the host agent exactly what to do.
+That keeps Senderos focused on orchestration instead of re-implementing capabilities the host agent likely already has.
 
-That includes:
-
-- features,
-- tasks,
-- runs,
-- sessions,
-- source integrations,
-- schedules,
-- events,
-- workspaces,
-- artifacts.
-
-### 3. Adapters and providers
-
-These connect Senderos to the outside world.
-
-Common adapter categories:
-
-- source adapters: GitHub Issues, Linear, Notion, local files,
-- agent adapters: Codex, Claude Code, OpenClaw, generic shell,
-- repo adapters: git and remote hosting,
-- scheduler adapters: cron, OpenClaw cron, daemon mode,
-- notification adapters: chat messages, webhooks, status sinks.
-
-### 4. Agent integrations
-
-Skills and harness wrappers live here.
-
-Their job is to:
-
-- teach the agent how to discover Senderos capabilities,
-- guide setup and environment configuration,
-- standardize confirmation patterns,
-- recover status cleanly.
-
-They should **not** become the system of record.
-
-## Design rules
-
-### Local-first by default
-
-Keep core state and orchestration inside the user environment.
-
-### Structured discovery
-
-Prefer commands like:
-
-```bash
-senderos capability list --json
-senderos config schema --json
-senderos doctor --json
-```
-
-That is more reliable for agents than freeform prose alone.
-
-### Adapter boundaries stay real
-
-If Senderos knows too much about one agent or one backlog system, it becomes sticky and brittle. Adapters are there to prevent that.
+The only adapter family inside Senderos is the harness adapter family used to communicate with supported host-agent environments.

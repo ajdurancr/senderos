@@ -1,81 +1,85 @@
 ---
 title: Persistence and State
-description: "How Senderos should persist structured data, artifacts, sessions, and event history."
+description: "How Senderos stores durable state in SQLite, when Turso is used, and what still lives in the Senderos home directory."
 ---
 
-## Persistence goals
+Senderos stores orchestration state in SQLite.
+That is the default and the baseline model.
 
-Senderos needs persistence because orchestration without durability is theater.
+## Supported database modes
 
-The system should preserve enough information to:
+### Local SQLite
 
-- resume work,
-- inspect failures,
-- generate reports,
-- recover from crashed sessions,
-- prove whether cleanup happened.
+By default, Senderos creates and uses a local SQLite database inside the Senderos home directory.
 
-## Recommended storage split
+This is the standard deployment mode.
 
-### Structured state: SQLite
+### Remote SQLite-compatible service
 
-SQLite is a strong default because it is:
+Senderos also supports a SQLite-compatible remote service, with Turso as the supported option.
 
-- local,
-- transactional,
-- easy to inspect,
-- easy to back up,
-- enough for single-user and small-team local-first workflows.
+The model does not change between local SQLite and Turso.
+The schema stays the same.
+The difference is only where the database is hosted.
 
-Tables usually include:
+## What lives in SQLite
 
-- `features`,
-- `tasks`,
-- `runs`,
-- `sessions`,
-- `sources`,
-- `schedules`,
-- `workspaces`,
-- `events`,
-- `artifacts`.
+All durable Senderos entity state lives in SQLite:
 
-### File artifacts: filesystem
+- features,
+- tasks,
+- runs,
+- sessions,
+- workspaces,
+- events,
+- configuration references,
+- loop state,
+- reconciliation state.
 
-Large or human-facing artifacts should live on disk, for example:
+SQLite is the state authority.
 
-- specs,
-- generated Gherkin,
+## What does not live in SQLite
+
+Large artifacts stay on disk inside the Senderos home directory and are referenced from SQLite:
+
 - logs,
 - transcripts,
-- patches,
-- reports,
-- cached external payloads.
+- generated reports,
+- temporary execution files,
+- cached instruction payloads,
+- exported artifacts.
 
-A typical home directory could look like:
+## Senderos home directory
 
 ```text
 ~/.senderos/
-  senderos.db
   config.yaml
+  senderos.db
   artifacts/
   logs/
-  cache/
+  sessions/
   workspaces/
+  cache/
 ```
 
-## Event log
+When Turso is used, `senderos.db` is replaced by remote database configuration, but the rest of the home directory still exists.
 
-An append-only event stream is extremely useful even if Senderos does not go full event-sourcing monk mode.
+## Configuration file
 
-Typical events:
+Senderos uses a single configuration file with the minimum required runtime configuration.
 
-- `feature.created`,
-- `feature.approved`,
-- `run.started`,
-- `run.failed`,
-- `session.attached`,
-- `session.heartbeat.missed`,
-- `workspace.cleaned`,
-- `schedule.executed`.
+It defines:
 
-This is how the system later answers “what actually happened?” without making up stories.
+- database mode,
+- local SQLite path or Turso connection parameters,
+- workspace root path,
+- artifact directories,
+- default harness,
+- machine-readable output defaults,
+- guardrail settings.
+
+## Guardrail: state never spills outside Senderos
+
+Senderos state and Senderos-managed artifacts never live outside the Senderos directory structure.
+
+The system may instruct the host agent to operate inside a Senderos-managed workspace, but Senderos itself does not mutate arbitrary locations on the machine.

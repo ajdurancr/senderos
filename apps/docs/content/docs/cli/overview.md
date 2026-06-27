@@ -1,64 +1,66 @@
 ---
 title: CLI Overview
-description: "Why the CLI is the main interface and how agents should discover Senderos capabilities."
+description: "The minimal command surface: small, consistent, machine-readable by default, and built for host-agent operation."
 ---
 
-## CLI as source of truth
+Senderos keeps the CLI intentionally small.
 
-Senderos should expose its capabilities through a CLI because that creates a portable, inspectable, scriptable interface.
+The command surface is grouped around a few stable nouns instead of a huge list of tiny commands.
 
-Skills should tell agents to ask Senderos what it can do instead of hardcoding all capabilities into prompt text.
+## Command groups
 
-## Discovery pattern
-
-Good discovery commands look like this:
-
-```bash
-senderos help
-senderos capability list --json
-senderos feature help
-senderos source help
-senderos doctor --json
+```text
+senderos init
+senderos doctor
+senderos config ...
+senderos feature ...
+senderos loop ...
+senderos run ...
+senderos session ...
+senderos status
+senderos reconcile
+senderos schedule-plan
 ```
 
-The first command is for humans. The JSON variants are for agents and automation.
+## Design rules
 
-## Why machine-readable output matters
+### Small surface area
 
-Agents are better operators when they can consume structured data such as:
+Every command group exists because it owns a real operational concept.
+There are no extra command families for responsibilities Senderos does not own.
 
-- command capability lists,
-- config schemas,
-- doctor output,
-- status payloads,
-- run summaries.
+### Consistent verbs
 
-That reduces guesswork and makes multi-agent operation more reliable.
+Subcommands use predictable verbs such as:
 
-## Core principles for the command surface
+- `create`
+- `list`
+- `show`
+- `update`
+- `start`
+- `resume`
+- `cancel`
 
-### Make reads easy
+### Machine-readable by default
 
-Read-only operations should be fast and obvious:
+Senderos is optimized for host-agent use.
+The preferred output mode is machine-readable.
+Human-readable rendering is the host agent's job when it needs to explain something to a user.
 
-```bash
-senderos feature list
-senderos feature status feature-123
-senderos run list --active
-senderos report blocked
-```
+## Command map
 
-### Make writes explicit
+- `init` — create the local Senderos runtime.
+- `doctor` — validate the installation and runtime.
+- `config` — inspect or update Senderos configuration.
+- `feature` — manage Senderos features.
+- `loop` — start, resume, tick, or inspect the engineering loop.
+- `run` — inspect execution attempts.
+- `session` — inspect host-agent execution handles recorded by Senderos.
+- `status` — show the current high-level system state.
+- `reconcile` — repair derived truth when state drifts.
+- `schedule-plan` — print scheduling instructions for the host agent.
 
-State-changing operations should be deliberate:
+## Documentation structure
 
-```bash
-senderos feature kickoff feature-123
-senderos feature cancel feature-123
-senderos source update primary
-senderos schedule add queue-poller
-```
-
-### Make destructive actions impossible to do by accident
-
-Cleanup, cancelation, deletion, external pushes, and force overrides should require confirmation or explicit flags.
+Each primary command has its own page.
+Where a command group contains several related actions, the group page explains the shared behavior and the child actions together.

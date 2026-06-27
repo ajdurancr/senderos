@@ -1,82 +1,79 @@
 ---
 title: Introduction
-description: "What Senderos is, what problem it solves, and the core mental model behind the project."
+description: "What Senderos is, what it owns, and the operating model behind the system."
 ---
+
+Senderos is the orchestration system for a loop-engineering software factory.
+
+It does not write application code itself. It keeps the factory coherent.
+
+Senderos owns the operational truth of the system:
+
+- which features exist,
+- what state each feature is in,
+- which loop is active,
+- which host-agent sessions belong to that loop,
+- which workspace is reserved for that work,
+- what happened during execution,
+- what still needs reconciliation.
 
 ## What Senderos is
 
-Senderos is a **local-first orchestration system for agent-driven software delivery**.
+Senderos is a CLI-first system with an internal operating layer.
 
-In plain English: it gives a user and their coding agents a durable control plane for work that would otherwise disappear into chat threads, temporary shells, or half-finished sessions.
+The CLI is the public interface. Under it lives Senderos' own operating logic: dedicated internal agents and deterministic services that know how Senderos works, how its state is modeled, how its database is queried, how work is dispatched, and how runs are reconciled.
 
-Senderos is meant to coordinate the full path from:
+The host agent never needs to know those internal roles directly. The host agent talks to `senderos` through the CLI. Senderos decides which internal operating role is responsible.
 
-1. a feature idea,
-2. to a clarified spec,
-3. to acceptance criteria,
-4. to implementation kickoff,
-5. to tracked coding runs,
-6. to final completion and cleanup.
+## What Senderos is not
 
-## What problem it solves
+Senderos is not:
 
-Most agent workflows break down in the same places:
+- a smart prompt,
+- a giant external skill,
+- a backlog sync engine for v1,
+- a coding agent,
+- a hidden integration layer that directly manipulates every external service.
 
-- the plan lives in chat, not in durable state,
-- status depends on one specific session still being alive,
-- there is no clean distinction between a feature, a task, a run, and an agent session,
-- automation becomes risky because there is no real policy layer,
-- users cannot reliably resume, inspect, or audit what happened.
+Senderos is the factory orchestrator.
 
-Senderos fixes that by making the **CLI and persisted state** the source of truth.
+The host agent is the execution engine that performs code changes inside the workspaces Senderos manages.
 
-## Core mental model
+## What Senderos owns
 
-Senderos is not “the smart prompt.” It is not “a giant skill.” It is not “just a bot command.”
+Senderos owns:
 
-It is a system with three strong opinions:
+- feature records,
+- Senderos tasks,
+- loop state,
+- run state,
+- session state,
+- workspace allocation state,
+- event history,
+- configuration,
+- reconciliation,
+- dispatch decisions,
+- host-agent instructions for execution.
 
-### 1. The CLI is the control plane
+## What Senderos does not own
 
-Everything important should be inspectable and operable through a command surface such as:
+Senderos does not own:
 
-```bash
-senderos feature create
-senderos feature kickoff feature-123
-senderos run status run-456
-senderos worker tick
-```
+- source-system tickets such as GitHub issues, Jira tickets, or Linear issues,
+- the host agent's prompt/runtime internals,
+- the implementation diff itself,
+- scheduling infrastructure on the host,
+- outbound service adapters beyond harness communication.
 
-### 2. State must outlive the agent session
+Those things may be referenced by Senderos, but they are not Senderos state.
 
-Feature state, task status, run attempts, workspace cleanup, and session handles should survive:
+## The core distinction that matters
 
-- agent restarts,
-- shell crashes,
-- process exits,
-- context window loss,
-- switching from one agent to another.
+There are two separate realities:
 
-### 3. Skills and harnesses are adapters
+1. **Senderos state** — durable orchestration truth stored in Senderos.
+2. **Host-agent session state** — transient execution context owned by the host environment.
 
-An OpenClaw skill, a Codex session, or a Claude Code harness should **operate** Senderos, not become Senderos.
+Senderos records the second one, but it is never replaced by it.
 
-That keeps the workflow portable and prevents prompt logic from becoming the architecture.
-
-## What Senderos is responsible for
-
-Senderos owns orchestration concerns such as:
-
-- specs and feature state,
-- queued work and dependency tracking,
-- coding run metadata,
-- external session references,
-- reconciliation and status reporting,
-- scheduling and worker execution,
-- safety policy and confirmation boundaries.
-
-## What Senderos does not try to own
-
-Senderos should not pretend to replace the coding agent itself.
-
-It does **not** need to be the LLM, the code editor, the git remote, or the full backlog tool. It coordinates those things through adapters and stores the state that makes the whole workflow understandable.
+That separation is the reason a loop can survive session death, shell crashes, or a switch from one host agent to another.

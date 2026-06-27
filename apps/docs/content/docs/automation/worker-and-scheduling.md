@@ -1,60 +1,66 @@
 ---
-title: Worker and Scheduling
-description: "How Senderos should poll, reconcile, and dispatch work without turning into an unsafe autonomous mess."
+title: Loop Execution and Scheduling
+description: "How Senderos starts the loop manually, how it emits scheduling instructions, and how host-driven automation fits in."
 ---
 
-## Worker model
+Senderos can advance the factory loop in two ways:
 
-Instead of thinking in terms of “loop through tasks forever,” Senderos should expose a worker model.
+- manual invocation through the CLI,
+- host-driven scheduling created by the host agent from Senderos instructions.
+
+## Manual loop execution
+
+Manual execution is always available.
 
 Examples:
 
 ```bash
-senderos worker tick
-senderos worker run --once
-senderos worker daemon
-senderos worker reconcile
+senderos loop start <feature-id>
+senderos loop resume <feature-id>
+senderos loop tick <feature-id>
+senderos reconcile
 ```
 
-A worker can:
-
-- poll configured sources,
-- refresh ready or blocked work,
-- reconcile active runs,
-- queue eligible features,
-- dispatch work when policy allows,
-- emit events and status updates.
+This matters because not every host environment supports cron or scheduled jobs.
 
 ## Scheduling model
 
-Schedules should be represented in Senderos state, not hidden only in an external cron system.
+Senderos does not create cron jobs itself.
+It does not own that host capability.
 
-That allows Senderos to answer:
+Instead, Senderos emits the scheduling plan the host agent should install.
+The host agent creates the real scheduled job in its own environment.
 
-- which schedules exist,
-- what they are supposed to do,
-- when they last ran,
-- whether they are paused,
-- which backend is executing them.
+A scheduling plan contains:
 
-## Backend examples
+- the command to execute,
+- the cadence,
+- required environment variables,
+- guardrail notes,
+- expected outputs,
+- recovery instructions.
 
-Senderos can support several scheduling backends:
+## Scheduling flow
 
-- local cron,
-- OpenClaw cron,
-- internal daemon,
-- external job runners.
+```text
+senderos schedule plan
+  -> senderos emits host-job instructions
+  -> host agent installs the real job
+  -> scheduled job runs `senderos ...`
+  -> senderos advances or reconciles loop state
+```
 
-The desired schedule definition should stay consistent even if the backend changes.
+## Why scheduling stays outside Senderos
 
-## Safe autonomy
+Scheduling infrastructure belongs to the host environment.
+Senderos keeps orchestration portable by describing what should be scheduled instead of directly taking ownership of the scheduler.
 
-Start with low-risk automation:
+## Safe loop automation
 
-- polling,
-- status refresh,
-- stale-run detection,
-- queue maintenance.
+Loop automation is still governed by Senderos state and guardrails.
+A scheduled invocation does not bypass:
 
-Move to auto-dispatch only when policy is clear. Otherwise the system will happily create duplicate work and surprise branches. Nobody needs that nonsense.
+- workspace locks,
+- feature-state rules,
+- reconciliation checks,
+- failure boundaries.

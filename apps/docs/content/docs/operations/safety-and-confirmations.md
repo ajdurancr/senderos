@@ -1,58 +1,63 @@
 ---
-title: Safety and Confirmations
-description: "Boundaries for destructive actions, external effects, and safe operational defaults."
+title: Safety and Guardrails
+description: "The hard boundaries that keep Senderos contained, consistent, and safe to operate through a host agent."
 ---
 
-## Full access does not mean no guardrails
+Senderos is opinionated about safety.
 
-Senderos should provide broad operational access to its capabilities, but always under policy and confirmation boundaries.
+## Filesystem guardrail
 
-That means the system should distinguish between read-only visibility and high-impact actions.
+Senderos never modifies anything outside the Senderos directory tree.
 
-## Action classes
+That includes:
 
-### Safe reads
+- the database,
+- config,
+- logs,
+- artifacts,
+- session records,
+- Senderos-managed workspaces.
 
-No confirmation required:
+If a workspace is used for host-agent coding work, that workspace must be allocated and tracked by Senderos first.
 
-- list features,
-- inspect runs,
-- check schedules,
-- show logs,
-- generate reports,
-- print config schema.
+## Session guardrail
 
-### Local transformations
+A host-agent session is not Senderos state.
 
-Usually safe with light warnings:
+Senderos may record a host-agent session handle, but it does not trust the live session as the source of truth.
+All meaningful state must be persisted back into Senderos.
 
-- refine a spec,
-- regenerate Gherkin,
-- sync source metadata,
-- rebuild search indexes,
-- refresh local cache.
+## Confirmation policy
 
-### Destructive or external actions
+Senderos is designed for agent operation, so confirmations happen where they matter.
 
-These should require confirmation or explicit force flags:
+### No confirmation required
 
-- kickoff a feature,
-- cancel a feature,
-- delete records,
-- push branches,
-- open or merge a PR,
-- clean a workspace,
-- overwrite integration configuration.
+- read-only inspection,
+- status queries,
+- reports,
+- JSON output,
+- reconciliation checks,
+- schedule-plan generation.
 
-## Why this matters for agents
+### Explicit Senderos confirmation required
 
-Agents are fast. That is not the same thing as safe.
+- feature cancellation,
+- workspace retirement,
+- forceful state repair,
+- loop restart after terminal failure,
+- configuration rewrite.
 
-Senderos should make it difficult for an agent to:
+### Host-agent confirmation required
 
-- start duplicate work,
-- push code without approval,
-- clean the wrong workspace,
-- mutate production-facing config casually.
+If the host agent must do something outside Senderos' own responsibility, the host agent handles that confirmation in its own environment.
+Examples:
 
-Good boundaries are not friction for its own sake. They are what make automation acceptable.
+- create a cron job,
+- push a branch,
+- open a pull request,
+- call an external API.
+
+## Why the split matters
+
+This keeps Senderos strict about its own boundaries while still letting the host agent act in the outside world when instructed.
