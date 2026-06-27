@@ -57,10 +57,11 @@ code {
 }
 
 pre {
-  background: var(--code-bg) !important;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  padding: 1rem;
+  background: linear-gradient(180deg, rgba(8, 17, 40, 0.96), rgba(11, 20, 44, 0.96)) !important;
+  border: 1px solid rgba(86, 108, 170, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 45px rgba(0,0,0,0.22);
+  border-radius: 1.15rem;
+  padding: 1.1rem 1.25rem;
   overflow-x: auto;
 }
 
@@ -68,6 +69,8 @@ pre code {
   background: transparent;
   border: 0;
   padding: 0;
+  font-size: 0.96rem;
+  line-height: 1.8;
 }
 
 blockquote {
@@ -170,6 +173,15 @@ th {
   margin: 1.25rem 0 1.5rem;
 }
 
+.doc-content pre code span {
+  font-style: normal !important;
+}
+
+.doc-content pre code .line {
+  display: block;
+  min-height: 1.6em;
+}
+
 .doc-content :not(pre) > code {
   word-break: break-word;
 }
@@ -182,6 +194,16 @@ th {
 
 .doc-content a:hover {
   text-decoration-color: var(--accent-strong);
+}
+
+.doc-content blockquote p,
+.doc-content blockquote li {
+  color: var(--text);
+}
+
+.doc-content > h2:first-child,
+.doc-content > h3:first-child {
+  margin-top: 0;
 }
 
 .doc-shell {
