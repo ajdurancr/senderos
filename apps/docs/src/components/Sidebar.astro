@@ -3,7 +3,7 @@ import { NAVIGATION } from '@/data/site';
 const { currentSlug } = Astro.props as { currentSlug: string };
 ---
 
-<aside class="doc-sidebar sticky top-24 h-max rounded-3xl border border-[var(--border)] bg-[rgba(18,26,47,0.8)] p-5">
+<aside class="doc-sidebar sticky top-24 h-max rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(24,34,61,0.92),rgba(15,22,40,0.92))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
   <div class="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Documentation</div>
   <nav class="space-y-6">
     {NAVIGATION.map((group) => (
