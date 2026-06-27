@@ -10,12 +10,15 @@
   "scripts": {
     "dev:senderos": "bun run --cwd apps/senderos dev",
     "dev:studio": "bun run --cwd apps/studio dev",
-    "build": "bun run build:senderos && bun run build:studio",
+    "dev:docs": "bun run --cwd apps/docs dev",
+    "build": "bun run build:senderos && bun run build:studio && bun run build:docs",
     "build:senderos": "bun run --cwd apps/senderos build",
     "build:studio": "bun run --cwd apps/studio build",
-    "typecheck": "bun run typecheck:senderos && bun run typecheck:studio",
+    "build:docs": "bun run --cwd apps/docs build",
+    "typecheck": "bun run typecheck:senderos && bun run typecheck:studio && bun run typecheck:docs",
     "typecheck:senderos": "bun run --cwd apps/senderos typecheck",
     "typecheck:studio": "bun run --cwd apps/studio typecheck",
+    "typecheck:docs": "bun run --cwd apps/docs typecheck",
     "test": "bun run test:senderos",
     "test:senderos": "bun run --cwd apps/senderos test"
   }

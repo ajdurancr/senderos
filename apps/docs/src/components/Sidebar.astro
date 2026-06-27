@@ -1,0 +1,35 @@
+---
+import { NAVIGATION } from '@/data/site';
+const { currentSlug } = Astro.props as { currentSlug: string };
+---
+
+<aside class="doc-sidebar sticky top-24 h-max rounded-3xl border border-[var(--border)] bg-[rgba(18,26,47,0.8)] p-5">
+  <div class="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Documentation</div>
+  <nav class="space-y-6">
+    {NAVIGATION.map((group) => (
+      <section>
+        <h2 class="mb-2 text-sm font-semibold text-[var(--text)]">{group.section}</h2>
+        <ul class="m-0 list-none space-y-1 p-0">
+          {group.items.map((item) => {
+            const active = item.slug === currentSlug;
+            return (
+              <li>
+                <a
+                  href={`/docs/${item.slug}`}
+                  class:list={[
+                    'block rounded-xl px-3 py-2 text-sm no-underline transition',
+                    active
+                      ? 'bg-[var(--accent-soft)] text-[var(--text)]'
+                      : 'text-[var(--muted)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text)]'
+                  ]}
+                >
+                  {item.title}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
+  </nav>
+</aside>

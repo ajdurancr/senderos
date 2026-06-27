@@ -1,0 +1,19 @@
+---
+const { headings } = Astro.props as { headings: { depth: number; slug: string; text: string }[] };
+const filtered = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+<aside class="doc-toc sticky top-24 h-max rounded-3xl border border-[var(--border)] bg-[rgba(18,26,47,0.65)] p-5">
+  <div class="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">On this page</div>
+  {filtered.length ? (
+    <ul class="m-0 list-none space-y-2 p-0">
+      {filtered.map((heading) => (
+        <li class:list={[heading.depth === 3 ? 'pl-4' : 'pl-0']}>
+          <a class="text-sm text-[var(--muted)] no-underline hover:text-[var(--text)]" href={`#${heading.slug}`}>{heading.text}</a>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="m-0 text-sm text-[var(--muted)]">No section headings on this page.</p>
+  )}
+</aside>
