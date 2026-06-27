@@ -8,14 +8,15 @@ import {
   cancelRun,
   createFeature,
   doctor,
-  getFeature,
   initializeRuntime,
   listFeatures,
   listRuns,
+  listTasks,
   loadConfig,
   reconcile,
   resolveRuntime,
   schedulePlan,
+  showLoop,
   startLoop,
   status,
   tickLoop,
@@ -52,8 +53,10 @@ describe('feature lifecycle', () => {
     const approved = approveFeature(created.id, home);
     expect(approved?.status).toBe('ready');
     const started = startLoop(created.id, home);
-    expect(started.feature?.status).toBe('active');
-    expect(started.feature?.loopPhase).toBe('implementation');
+    expect(started.feature?.status).toBe('ready');
+    expect(started.feature?.loopPhase).toBe('contract');
+    expect(started.task?.phase).toBe('contract');
+    expect(listTasks(created.id, home).length).toBeGreaterThan(0);
     expect(status(home).activeLoops).toBe(1);
   });
 
@@ -62,6 +65,7 @@ describe('feature lifecycle', () => {
     initializeRuntime(home);
     const feature = approveFeature(createFeature({ home, title: 'Ship it' }).id, home)!;
     startLoop(feature.id, home);
+    expect(tickLoop(feature.id, home).feature?.loopPhase).toBe('implementation');
     expect(tickLoop(feature.id, home).feature?.loopPhase).toBe('review');
     expect(tickLoop(feature.id, home).feature?.loopPhase).toBe('mutation');
     const done = tickLoop(feature.id, home).feature;
@@ -79,6 +83,7 @@ describe('run and reconcile behavior', () => {
     const run = cancelRun(started.run.id, home) as any;
     expect(run.status).toBe('canceled');
     expect(schedulePlan(home).command).toContain('senderos reconcile');
+    expect(schedulePlan(home).hostAgentContract.hostResponsibleForScheduling).toBe(true);
     expect(listRuns(home).length).toBeGreaterThan(0);
   });
 
@@ -93,7 +98,20 @@ describe('run and reconcile behavior', () => {
     const result = reconcile(home);
     expect(result.repairedSessions).toContain(started.session.id);
     expect(result.releasedWorkspaces.length).toBeGreaterThan(0);
+    expect(result.revivedTasks.length).toBeGreaterThan(0);
     db.close();
+  });
+});
+
+describe('loop visibility', () => {
+  test('showLoop exposes tasks and next dispatch instruction', () => {
+    const home = tempHome();
+    initializeRuntime(home);
+    const feature = approveFeature(createFeature({ home, title: 'Visible loop' }).id, home)!;
+    startLoop(feature.id, home);
+    const shown = showLoop(feature.id, home);
+    expect(shown.tasks.length).toBeGreaterThan(0);
+    expect(shown.nextDispatch.phase).toBe('contract');
   });
 });
 

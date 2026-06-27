@@ -1,10 +1,11 @@
-import { mkdirSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve, relative } from 'node:path';
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join, resolve, relative } from 'node:path';
 import { Database } from 'bun:sqlite';
 
 export type DatabaseKind = 'local' | 'turso';
 export type FeatureStatus = 'defined' | 'ready' | 'active' | 'verifying' | 'completed' | 'failed' | 'canceled';
 export type LoopPhase = 'idle' | 'contract' | 'implementation' | 'review' | 'mutation' | 'done' | 'blocked';
+export type TaskStatus = 'pending' | 'ready' | 'running' | 'completed' | 'failed' | 'canceled';
 export type RunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
 export type SessionStatus = 'active' | 'stale' | 'completed' | 'failed';
 export type WorkspaceStatus = 'allocated' | 'locked' | 'active' | 'verifying' | 'released' | 'cleaned' | 'retained';
@@ -46,6 +47,23 @@ export interface FeatureRecord {
   updatedAt: string;
 }
 
+export interface TaskRecord {
+  id: string;
+  featureId: string;
+  name: string;
+  phase: LoopPhase;
+  status: TaskStatus;
+  instructionJson: string;
+  resultJson: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const LOOP_SEQUENCE: LoopPhase[] = ['contract', 'implementation', 'review', 'mutation'];
+
+function now() { return new Date().toISOString(); }
+function randomId(prefix: string) { return `${prefix}-${Math.random().toString(36).slice(2, 10)}`; }
+
 function mapFeatureRow(row: any): FeatureRecord | null {
   if (!row) return null;
   return {
@@ -63,10 +81,23 @@ function mapFeatureRow(row: any): FeatureRecord | null {
   };
 }
 
-function now() { return new Date().toISOString(); }
-function randomId(prefix: string) { return `${prefix}-${Math.random().toString(36).slice(2, 10)}`; }
+function mapTaskRow(row: any): TaskRecord | null {
+  if (!row) return null;
+  return {
+    id: row.id,
+    featureId: row.feature_id,
+    name: row.name,
+    phase: row.phase,
+    status: row.status,
+    instructionJson: row.instruction_json,
+    resultJson: row.result_json,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 export function defaultHomePath() { return resolve(process.env.SENDEROS_HOME ?? join(process.env.HOME ?? process.cwd(), '.senderos')); }
+
 export function defaultConfigForHome(home: string): SenderosConfig {
   return {
     database: { kind: 'local', path: join(home, 'senderos.db') },
@@ -82,17 +113,12 @@ export function defaultConfigForHome(home: string): SenderosConfig {
 }
 
 export function configPathForHome(home: string) { return join(home, 'config.json'); }
-export function loadConfig(home = defaultHomePath()): SenderosConfig {
-  return JSON.parse(readFileSync(configPathForHome(home), 'utf8')) as SenderosConfig;
-}
+export function loadConfig(home = defaultHomePath()): SenderosConfig { return JSON.parse(readFileSync(configPathForHome(home), 'utf8')) as SenderosConfig; }
 
 function ensureWithinHome(home: string, target: string) {
   const rel = relative(home, target);
-  if (rel.startsWith('..') || rel === '' && !target.startsWith(home)) {
-    throw new Error(`Guardrail violation: path outside Senderos home: ${target}`);
-  }
+  if (rel.startsWith('..') || (!rel && resolve(target) !== resolve(home))) throw new Error(`Guardrail violation: path outside Senderos home: ${target}`);
 }
-
 function ensureDir(path: string) { mkdirSync(path, { recursive: true }); }
 
 export function initializeRuntime(home = defaultHomePath(), config?: Partial<SenderosConfig>) {
@@ -117,13 +143,12 @@ export function initializeRuntime(home = defaultHomePath(), config?: Partial<Sen
 
 export function resolveRuntime(home = defaultHomePath()) {
   const config = loadConfig(home);
-  const dbPath = config.database.kind === 'local' ? (config.database.path ?? join(home, 'senderos.db')) : join(home, 'senderos.db');
   return {
     config,
     paths: {
       home,
       configPath: configPathForHome(home),
-      dbPath,
+      dbPath: config.database.path ?? join(home, 'senderos.db'),
       workspaceRoot: config.workspaceRoot,
       artifactRoot: config.artifactRoot,
       logRoot: config.logRoot,
@@ -160,8 +185,10 @@ function migrate(db: Database) {
       id text primary key,
       feature_id text not null,
       name text not null,
+      phase text not null,
       status text not null,
-      payload_json text not null,
+      instruction_json text not null,
+      result_json text not null default '{}',
       created_at text not null,
       updated_at text not null
     );
@@ -216,6 +243,78 @@ function emitEvent(db: Database, eventType: string, entityType: string, entityId
     .run(randomId('event'), eventType, entityType, entityId, JSON.stringify(payload ?? {}), now());
 }
 
+function nextPhase(current: LoopPhase): LoopPhase {
+  if (current === 'idle') return 'contract';
+  const index = LOOP_SEQUENCE.indexOf(current);
+  if (index === -1 || index === LOOP_SEQUENCE.length - 1) return 'done';
+  return LOOP_SEQUENCE[index + 1];
+}
+
+function statusForPhase(phase: LoopPhase): FeatureStatus {
+  if (phase === 'contract') return 'ready';
+  if (phase === 'implementation') return 'active';
+  if (phase === 'review' || phase === 'mutation') return 'verifying';
+  if (phase === 'done') return 'completed';
+  return 'failed';
+}
+
+function defaultInstruction(feature: FeatureRecord, phase: LoopPhase, workspaceRoot?: string) {
+  const base = {
+    featureId: feature.id,
+    featureTitle: feature.title,
+    phase,
+    workspaceRoot,
+    constraints: [
+      'Operate only inside the assigned Senderos workspace',
+      'Do not mutate Senderos state directly; report results back through Senderos',
+      'Return machine-readable execution results',
+    ],
+  };
+  if (phase === 'contract') return { ...base, objective: 'Refine the executable feature contract and acceptance criteria.' };
+  if (phase === 'implementation') return { ...base, objective: 'Implement the feature through the TDD loop inside the assigned workspace.' };
+  if (phase === 'review') return { ...base, objective: 'Review the implementation, prune issues, and confirm readiness for mutation testing.' };
+  if (phase === 'mutation') return { ...base, objective: 'Run the mutation-confidence gate and report survivors or a clean pass.' };
+  return { ...base, objective: 'No further work required.' };
+}
+
+function ensurePhaseTask(feature: FeatureRecord, phase: LoopPhase, home?: string) {
+  const db = openDb(home);
+  const existing = mapTaskRow(db.query('select * from tasks where feature_id=? and phase=? order by created_at desc limit 1').get(feature.id, phase));
+  if (existing) { db.close(); return existing; }
+  const workspace = feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) as any : null;
+  const instruction = defaultInstruction(feature, phase, workspace?.root_path);
+  const task: TaskRecord = {
+    id: randomId('task'),
+    featureId: feature.id,
+    name: `${phase} task for ${feature.title}`,
+    phase,
+    status: phase === 'contract' ? 'ready' : 'pending',
+    instructionJson: JSON.stringify(instruction),
+    resultJson: '{}',
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  db.prepare('insert into tasks (id,feature_id,name,phase,status,instruction_json,result_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)')
+    .run(task.id, task.featureId, task.name, task.phase, task.status, task.instructionJson, task.resultJson, task.createdAt, task.updatedAt);
+  emitEvent(db, 'task.created', 'task', task.id, { featureId: feature.id, phase });
+  db.close();
+  return task;
+}
+
+export function listTasks(featureId: string, home?: string) {
+  const db = openDb(home);
+  const rows = db.query('select * from tasks where feature_id=? order by created_at asc').all(featureId).map(mapTaskRow);
+  db.close();
+  return rows.filter(Boolean) as TaskRecord[];
+}
+
+function updateTaskStatus(taskId: string, status: TaskStatus, result?: unknown, home?: string) {
+  const db = openDb(home);
+  db.prepare('update tasks set status=?, result_json=?, updated_at=? where id=?').run(status, JSON.stringify(result ?? {}), now(), taskId);
+  emitEvent(db, 'task.updated', 'task', taskId, { status, result });
+  db.close();
+}
+
 export function createFeature(input: { home?: string; title: string; problemStatement?: string; contractText?: string; completionCriteria?: string; id?: string }) {
   const db = openDb(input.home);
   const ts = now();
@@ -223,8 +322,9 @@ export function createFeature(input: { home?: string; title: string; problemStat
   db.prepare(`insert into features (id,title,problem_statement,contract_text,status,loop_phase,completion_criteria,current_workspace_id,current_run_id,created_at,updated_at)
     values (?,?,?,?,?,?,?,?,?,?,?)`).run(id, input.title, input.problemStatement ?? '', input.contractText ?? '', 'defined', 'idle', input.completionCriteria ?? '', null, null, ts, ts);
   emitEvent(db, 'feature.created', 'feature', id, { title: input.title });
-  const feature = getFeature(id, input.home)!;
   db.close();
+  const feature = getFeature(id, input.home)!;
+  ensurePhaseTask(feature, 'contract', input.home);
   return feature;
 }
 
@@ -257,15 +357,17 @@ export function approveFeature(id: string, home?: string) {
   const current = getFeature(id, home);
   if (!current) throw new Error(`Feature not found: ${id}`);
   const db = openDb(home);
-  db.prepare('update features set status=?, updated_at=? where id=?').run('ready', now(), id);
+  db.prepare('update features set status=?, loop_phase=?, updated_at=? where id=?').run('ready', 'contract', now(), id);
   emitEvent(db, 'feature.approved', 'feature', id, {});
   db.close();
+  ensurePhaseTask(getFeature(id, home)!, 'contract', home);
   return getFeature(id, home);
 }
 
 export function cancelFeature(id: string, home?: string) {
   const db = openDb(home);
   db.prepare('update features set status=?, updated_at=? where id=?').run('canceled', now(), id);
+  db.prepare("update tasks set status='canceled', updated_at=? where feature_id=? and status not in ('completed','failed')").run(now(), id);
   emitEvent(db, 'feature.canceled', 'feature', id, {});
   db.close();
   return getFeature(id, home);
@@ -278,84 +380,131 @@ function allocateWorkspace(featureId: string, home?: string) {
   ensureDir(rootPath);
   const db = openDb(home);
   db.prepare('insert into workspaces (id,feature_id,run_id,session_id,root_path,status,branch_name,retention_reason,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)')
-    .run(id, featureId, null, null, rootPath, 'allocated', null, null, now(), now());
+    .run(id, featureId, null, null, rootPath, 'allocated', `senderos/${featureId}`, null, now(), now());
   emitEvent(db, 'workspace.allocated', 'workspace', id, { featureId, rootPath });
   db.close();
   return { id, rootPath };
 }
 
-function createRunRecord(featureId: string, phase: LoopPhase, instruction: unknown, home?: string) {
+function latestWorkspaceForFeature(featureId: string, home?: string) {
+  const db = openDb(home);
+  const row = db.query('select * from workspaces where feature_id=? order by created_at desc limit 1').get(featureId) as any;
+  db.close();
+  return row;
+}
+
+function createRunRecord(featureId: string, taskId: string, phase: LoopPhase, instruction: unknown, home?: string) {
   const db = openDb(home);
   const id = randomId('run');
   db.prepare('insert into runs (id,feature_id,task_id,phase,status,instruction_json,result_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)')
-    .run(id, featureId, null, phase, 'queued', JSON.stringify(instruction), '{}', now(), now());
-  emitEvent(db, 'run.created', 'run', id, { featureId, phase });
+    .run(id, featureId, taskId, phase, 'queued', JSON.stringify(instruction), '{}', now(), now());
+  emitEvent(db, 'run.created', 'run', id, { featureId, taskId, phase });
   db.close();
   return id;
 }
 
-function createSession(runId: string, harness: string, resumeCommand: string, home?: string) {
+function createSession(runId: string, harness: string, phase: LoopPhase, home?: string) {
   const db = openDb(home);
   const id = randomId('session');
+  const resumeCommand = `senderos session resume ${id}`;
   db.prepare('insert into sessions (id,run_id,harness,external_session_id,status,status_snapshot_json,heartbeat_at,resume_command,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)')
-    .run(id, runId, harness, null, 'active', '{}', now(), resumeCommand, now(), now());
-  emitEvent(db, 'session.created', 'session', id, { runId, harness });
+    .run(id, runId, harness, null, 'active', JSON.stringify({ phase }), now(), resumeCommand, now(), now());
+  emitEvent(db, 'session.created', 'session', id, { runId, harness, phase });
   db.close();
   return id;
+}
+
+function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?: string) {
+  let workspace = feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) as any : null;
+  if (!workspace) workspace = allocateWorkspace(feature.id, home);
+  const task = ensurePhaseTask({ ...feature, currentWorkspaceId: workspace.id } as FeatureRecord, phase, home);
+  const instruction = defaultInstruction({ ...feature, currentWorkspaceId: workspace.id } as FeatureRecord, phase, workspace.root_path);
+  updateTaskStatus(task.id, 'running', { dispatchedAt: now() }, home);
+  const runId = createRunRecord(feature.id, task.id, phase, instruction, home);
+  const { config } = resolveRuntime(home);
+  const sessionId = createSession(runId, config.defaultHarness, phase, home);
+  const db = openDb(home);
+  db.prepare('update workspaces set run_id=?, session_id=?, status=?, updated_at=? where id=?').run(runId, sessionId, phase === 'implementation' ? 'active' : 'locked', now(), workspace.id);
+  db.prepare('update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, updated_at=? where id=?').run(statusForPhase(phase), phase, workspace.id, runId, now(), feature.id);
+  db.prepare("update runs set status='running', updated_at=? where id=?").run(now(), runId);
+  emitEvent(db, 'dispatch.completed', 'feature', feature.id, { runId, sessionId, taskId: task.id, phase });
+  db.close();
+  return { feature: getFeature(feature.id, home), run: getRun(runId, home), session: getSession(sessionId, home), task: getTask(task.id, home) };
+}
+
+export function getTask(id: string, home?: string) {
+  const db = openDb(home);
+  const row = mapTaskRow(db.query('select * from tasks where id=?').get(id));
+  db.close();
+  return row;
 }
 
 export function startLoop(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
   if (!feature) throw new Error(`Feature not found: ${featureId}`);
   if (!['ready', 'active', 'failed'].includes(feature.status)) throw new Error(`Feature is not dispatchable from status ${feature.status}`);
-  const workspace = feature.currentWorkspaceId ? null : allocateWorkspace(featureId, home);
-  const instruction = { action: 'implement feature loop', featureId, nextPhase: 'implementation' };
-  const runId = createRunRecord(featureId, 'implementation', instruction, home);
-  const { config } = resolveRuntime(home);
-  const sessionId = createSession(runId, config.defaultHarness, `senderos session resume ${runId}`, home);
-  const db = openDb(home);
-  db.prepare('update workspaces set run_id=?, session_id=?, status=?, updated_at=? where feature_id=? and status in (?,?,?)')
-    .run(runId, sessionId, 'locked', now(), featureId, 'allocated', 'released', 'retained');
-  const workspaceId = (db.query('select id from workspaces where feature_id=? order by created_at desc limit 1').get(featureId) as {id:string}|null)?.id ?? null;
-  db.prepare('update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, updated_at=? where id=?')
-    .run('active', 'implementation', workspaceId, runId, now(), featureId);
-  emitEvent(db, 'feature.loop_started', 'feature', featureId, { runId, sessionId, workspaceId });
-  db.close();
-  return { feature: getFeature(featureId, home), run: getRun(runId, home), session: getSession(sessionId, home) };
+  const phase = feature.loopPhase === 'idle' ? 'contract' : feature.loopPhase;
+  return dispatchForPhase(feature, phase, home);
 }
 
 export function tickLoop(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
   if (!feature) throw new Error(`Feature not found: ${featureId}`);
-  const transitions: Record<LoopPhase, LoopPhase> = { idle: 'implementation', contract: 'implementation', implementation: 'review', review: 'mutation', mutation: 'done', done: 'done', blocked: 'implementation' };
-  const next = transitions[feature.loopPhase];
-  const status: FeatureStatus = next === 'done' ? 'completed' : next === 'mutation' || next === 'review' ? 'verifying' : 'active';
-  const db = openDb(home);
-  let runId = feature.currentRunId;
-  if (next !== 'done') runId = createRunRecord(featureId, next, { action: `advance to ${next}`, featureId }, home);
-  db.prepare('update features set loop_phase=?, status=?, current_run_id=?, updated_at=? where id=?').run(next, status, runId, now(), featureId);
-  if (feature.currentWorkspaceId && next === 'done') db.prepare('update workspaces set status=?, updated_at=? where id=?').run('released', now(), feature.currentWorkspaceId);
-  emitEvent(db, 'feature.loop_ticked', 'feature', featureId, { next });
-  db.close();
-  return { feature: getFeature(featureId, home), run: runId ? getRun(runId, home) : null };
+  const currentPhase = feature.loopPhase === 'idle' ? 'contract' : feature.loopPhase;
+  const tasks = listTasks(featureId, home);
+  const currentTask = tasks.find((task) => task.phase === currentPhase && task.status === 'running') ?? tasks.find((task) => task.phase === currentPhase);
+  if (currentTask && currentTask.status !== 'completed') updateTaskStatus(currentTask.id, 'completed', { completedAt: now() }, home);
+  if (feature.currentRunId) {
+    const db = openDb(home);
+    db.prepare("update runs set status='completed', result_json=?, updated_at=? where id=?").run(JSON.stringify({ phase: currentPhase, completedAt: now() }), now(), feature.currentRunId);
+    db.close();
+  }
+  const next = nextPhase(currentPhase);
+  if (next === 'done') {
+    const db = openDb(home);
+    db.prepare('update features set loop_phase=?, status=?, updated_at=? where id=?').run('done', 'completed', now(), feature.id);
+    if (feature.currentWorkspaceId) db.prepare('update workspaces set status=?, updated_at=? where id=?').run('released', now(), feature.currentWorkspaceId);
+    if (feature.currentRunId) {
+      const session = db.query('select * from sessions where run_id=? order by created_at desc limit 1').get(feature.currentRunId) as any;
+      if (session) db.prepare("update sessions set status='completed', updated_at=? where id=?").run(now(), session.id);
+    }
+    emitEvent(db, 'feature.completed', 'feature', feature.id, {});
+    db.close();
+    return { feature: getFeature(feature.id, home), run: null, task: null };
+  }
+  ensurePhaseTask(feature, next, home);
+  return dispatchForPhase(getFeature(feature.id, home)!, next, home);
 }
 
 export function showLoop(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
   if (!feature) throw new Error(`Feature not found: ${featureId}`);
+  const tasks = listTasks(featureId, home);
+  const pendingTask = tasks.find((task) => ['ready', 'running', 'pending'].includes(task.status));
   return {
     feature,
+    tasks,
     currentRun: feature.currentRunId ? getRun(feature.currentRunId, home) : null,
     workspace: feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) : null,
+    nextDispatch: pendingTask ? JSON.parse(pendingTask.instructionJson) : null,
   };
 }
 
 export function listRuns(home?: string) { const db = openDb(home); const rows = db.query('select * from runs order by created_at asc').all(); db.close(); return rows; }
 export function getRun(id: string, home?: string) { const db = openDb(home); const row = db.query('select * from runs where id=?').get(id); db.close(); return row; }
-export function cancelRun(id: string, home?: string) { const db = openDb(home); db.prepare('update runs set status=?, updated_at=? where id=?').run('canceled', now(), id); emitEvent(db, 'run.canceled', 'run', id, {}); db.close(); return getRun(id, home); }
+export function cancelRun(id: string, home?: string) {
+  const db = openDb(home);
+  const run = db.query('select * from runs where id=?').get(id) as any;
+  if (!run) { db.close(); throw new Error(`Run not found: ${id}`); }
+  db.prepare('update runs set status=?, updated_at=? where id=?').run('canceled', now(), id);
+  if (run.task_id) db.prepare('update tasks set status=?, updated_at=? where id=?').run('canceled', now(), run.task_id);
+  emitEvent(db, 'run.canceled', 'run', id, {});
+  db.close();
+  return getRun(id, home);
+}
 export function listSessions(home?: string) { const db = openDb(home); const rows = db.query('select * from sessions order by created_at asc').all(); db.close(); return rows; }
 export function getSession(id: string, home?: string) { const db = openDb(home); const row = db.query('select * from sessions where id=?').get(id); db.close(); return row; }
-export function resumeSession(id: string, home?: string) { const row = getSession(id, home) as any; if (!row) throw new Error(`Session not found: ${id}`); return { session: row, resumeCommand: row.resume_command ?? row.resumeCommand }; }
+export function resumeSession(id: string, home?: string) { const row = getSession(id, home) as any; if (!row) throw new Error(`Session not found: ${id}`); return { session: row, resumeCommand: row.resume_command ?? row.resumeCommand, harness: row.harness }; }
 export function getWorkspace(id: string, home?: string) { const db = openDb(home); const row = db.query('select * from workspaces where id=?').get(id); db.close(); return row; }
 
 export function doctor(home = defaultHomePath()) {
@@ -363,15 +512,14 @@ export function doctor(home = defaultHomePath()) {
   if (!existsSync(configPathForHome(home))) issues.push('missing config');
   if (issues.length) return { ok: false, issues };
   const { config, paths } = resolveRuntime(home);
-  const dirs = [paths.workspaceRoot, paths.artifactRoot, paths.logRoot, paths.sessionRoot, paths.cacheRoot];
-  for (const dir of dirs) if (!existsSync(dir)) issues.push(`missing dir:${dir}`);
+  for (const dir of [paths.workspaceRoot, paths.artifactRoot, paths.logRoot, paths.sessionRoot, paths.cacheRoot]) if (!existsSync(dir)) issues.push(`missing dir:${dir}`);
   if (config.database.kind === 'local') {
     try { const db = openDb(home); db.close(); } catch (error) { issues.push(`db:${(error as Error).message}`); }
   } else {
     if (!config.database.turso?.url) issues.push('missing turso url');
     if (!config.database.turso?.authTokenEnv) issues.push('missing turso authTokenEnv');
   }
-  return { ok: issues.length === 0, issues, databaseKind: config.database.kind, defaultHarness: config.defaultHarness };
+  return { ok: issues.length === 0, issues, databaseKind: config.database.kind, defaultHarness: config.defaultHarness, workspaceRoot: paths.workspaceRoot };
 }
 
 export function status(home?: string) {
@@ -380,6 +528,7 @@ export function status(home?: string) {
     openFeatures: (db.query("select count(*) as c from features where status not in ('completed','canceled')").get() as any).c,
     activeLoops: (db.query("select count(*) as c from features where loop_phase not in ('idle','done')").get() as any).c,
     activeRuns: (db.query("select count(*) as c from runs where status in ('queued','running')").get() as any).c,
+    pendingTasks: (db.query("select count(*) as c from tasks where status in ('pending','ready','running')").get() as any).c,
     sessionHealth: (db.query("select count(*) as c from sessions where status='stale'").get() as any).c === 0 ? 'ok' : 'stale',
     workspaceLocks: (db.query("select count(*) as c from workspaces where status in ('locked','active','verifying')").get() as any).c,
     pendingReconciliation: (db.query("select count(*) as c from sessions where status='stale'").get() as any).c,
@@ -391,33 +540,46 @@ export function status(home?: string) {
 export function reconcile(home?: string) {
   const db = openDb(home);
   const stale = db.query("select * from sessions where status='stale'").all() as any[];
-  const repaired: string[] = [];
+  const repairedSessions: string[] = [];
+  const releasedWorkspaces: string[] = [];
+  const revivedTasks: string[] = [];
   for (const session of stale) {
     db.prepare("update sessions set status='failed', updated_at=? where id=?").run(now(), session.id);
-    if (session.run_id) db.prepare("update runs set status='failed', updated_at=? where id=? and status in ('queued','running')").run(now(), session.run_id);
-    repaired.push(session.id);
+    if (session.run_id) {
+      const run = db.query('select * from runs where id=?').get(session.run_id) as any;
+      db.prepare("update runs set status='failed', result_json=?, updated_at=? where id=? and status in ('queued','running')").run(JSON.stringify({ reason: 'stale_session' }), now(), session.run_id);
+      if (run?.task_id) {
+        db.prepare("update tasks set status='ready', result_json=?, updated_at=? where id=? and status='running'").run(JSON.stringify({ reason: 'reconcile_restart' }), now(), run.task_id);
+        revivedTasks.push(run.task_id);
+      }
+    }
+    repairedSessions.push(session.id);
   }
-  const orphaned = db.query("select * from workspaces where status='locked' and (session_id is null or session_id not in (select id from sessions where status='active'))").all() as any[];
-  const released: string[] = [];
+  const orphaned = db.query("select * from workspaces where status in ('locked','active','verifying') and (session_id is null or session_id not in (select id from sessions where status='active'))").all() as any[];
   for (const workspace of orphaned) {
     db.prepare("update workspaces set status='released', updated_at=? where id=?").run(now(), workspace.id);
-    released.push(workspace.id);
+    releasedWorkspaces.push(workspace.id);
   }
-  emitEvent(db, 'reconciliation.completed', 'system', 'senderos', { repaired, released });
+  emitEvent(db, 'reconciliation.completed', 'system', 'senderos', { repairedSessions, releasedWorkspaces, revivedTasks });
   db.close();
-  return { repairedSessions: repaired, releasedWorkspaces: released };
+  return { repairedSessions, releasedWorkspaces, revivedTasks };
 }
 
 export function schedulePlan(home?: string) {
   const { config } = resolveRuntime(home);
   return {
-    command: 'senderos reconcile && senderos loop tick <feature-id>',
+    jobName: 'senderos-loop-maintenance',
+    command: 'senderos reconcile && senderos status && senderos loop tick <feature-id>',
     cadence: '*/15 * * * *',
-    env: { SENDEROS_HOME: defaultHomePath() },
-    guardrails: ['Run only in the configured Senderos home', 'Do not bypass workspace locks or reconciliation'],
-    outputs: ['Machine-readable JSON status', 'Reconciliation events'],
-    recovery: ['Run senderos reconcile', 'Resume with senderos loop resume <feature-id>'],
-    harness: config.defaultHarness,
+    env: { SENDEROS_HOME: defaultHomePath(), SENDEROS_OUTPUT: config.output.format },
+    guardrails: ['Run only in the configured Senderos home', 'Do not bypass workspace locks or reconciliation', 'Treat Senderos JSON output as the source of truth'],
+    expectedOutputs: ['Reconciliation summary', 'Current system status', 'Optional loop advancement result'],
+    recovery: ['Run senderos reconcile', 'Inspect senderos status', 'Resume with senderos loop resume <feature-id>'],
+    hostAgentContract: {
+      harness: config.defaultHarness,
+      outputMode: 'json',
+      hostResponsibleForScheduling: true,
+    },
   };
 }
 
@@ -434,14 +596,13 @@ function setByPath(obj: any, path: string, value: any) {
   cur[parts[parts.length - 1]] = value;
 }
 function parseArgs(argv: string[]) {
-  const positionals: string[] = []; const options: Record<string,string|boolean> = {};
-  for (let i=0;i<argv.length;i++) {
+  const positionals: string[] = []; const options: Record<string, string | boolean> = {};
+  for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg.startsWith('--')) {
-      const key = arg.slice(2);
-      const next = argv[i+1];
+      const key = arg.slice(2); const next = argv[i + 1];
       if (!next || next.startsWith('--')) options[key] = true;
-      else { options[key]=next; i++; }
+      else { options[key] = next; i++; }
     } else positionals.push(arg);
   }
   return { positionals, options };
@@ -466,7 +627,7 @@ export async function runCli(argv = process.argv.slice(2)) {
         if (sub === 'create') result = createFeature({ home, title: String(options.title ?? ''), problemStatement: String(options['problem-statement'] ?? ''), contractText: String(options.contract ?? ''), completionCriteria: String(options['completion-criteria'] ?? '') });
         else if (sub === 'list') result = listFeatures(home);
         else if (sub === 'show') result = getFeature(positionals[2], home);
-        else if (sub === 'update') result = updateFeature({ home, id: positionals[2], title: options.title as string|undefined, problemStatement: options['problem-statement'] as string|undefined, contractText: options.contract as string|undefined, completionCriteria: options['completion-criteria'] as string|undefined });
+        else if (sub === 'update') result = updateFeature({ home, id: positionals[2], title: options.title as string | undefined, problemStatement: options['problem-statement'] as string | undefined, contractText: options.contract as string | undefined, completionCriteria: options['completion-criteria'] as string | undefined });
         else if (sub === 'approve') result = approveFeature(positionals[2], home);
         else if (sub === 'cancel') result = cancelFeature(positionals[2], home);
         else throw new Error('Unknown feature action');
