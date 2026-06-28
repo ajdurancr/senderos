@@ -1,0 +1,62 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SITE, NAVIGATION } from '@/data/site';
+---
+
+<BaseLayout title="Senderos Docs" description={SITE.description}>
+  <main class="mx-auto max-w-7xl px-5 py-10 md:py-16">
+    <section class="rounded-[2rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(25,35,63,0.92),rgba(14,21,39,0.9))] px-6 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:px-10 md:py-14">
+      <div class="max-w-4xl space-y-6">
+        <div class="inline-flex rounded-full border border-[var(--border)] bg-[var(--accent-soft)] px-4 py-1 text-sm font-medium text-[var(--accent)]">
+          Local-first orchestration for agent-driven software delivery
+        </div>
+        <h1 class="m-0 max-w-4xl text-5xl font-bold tracking-tight md:text-6xl">
+          Senderos turns specs, queued work, coding runs, and durable status into one coherent system.
+        </h1>
+        <p class="max-w-3xl text-xl leading-8 text-[var(--muted)]">
+          It exists to stop agent work from dissolving into prompt soup. Senderos keeps the control plane local, exposes it through a CLI, and tracks real state for features, tasks, runs, sessions, and workspaces.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a class="rounded-2xl bg-[var(--accent)] px-5 py-3 font-semibold text-slate-950 no-underline hover:bg-[var(--accent-strong)]" href="/docs/introduction">Read the docs</a>
+          <a class="rounded-2xl border border-[var(--border)] px-5 py-3 font-semibold text-[var(--text)] no-underline hover:border-[var(--accent)]" href={SITE.repoUrl} target="_blank" rel="noreferrer">View repository</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-10 grid gap-5 md:grid-cols-3">
+      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
+        <h2 class="mt-0 text-xl">CLI first</h2>
+        <p>The CLI is the control plane. Skills and harnesses are adapters, not the system of record.</p>
+      </div>
+      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
+        <h2 class="mt-0 text-xl">Durable state</h2>
+        <p>Senderos persists features, runs, sessions, artifacts, schedules, and cleanup status so work survives session death.</p>
+      </div>
+      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
+        <h2 class="mt-0 text-xl">Controlled automation</h2>
+        <p>Workers can poll, queue, reconcile, and dispatch work while respecting confirmation and safety policies.</p>
+      </div>
+    </section>
+
+    <section class="mt-10 rounded-[2rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(21,30,53,0.88),rgba(14,20,37,0.84))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-8">
+      <div class="mb-6">
+        <h2 class="m-0 text-2xl font-semibold">Documentation map</h2>
+        <p class="mt-2 text-[var(--muted)]">Everything important, without template filler.</p>
+      </div>
+      <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {NAVIGATION.map((group) => (
+          <section class="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-5 transition hover:border-[rgba(112,225,200,0.28)] hover:bg-[rgba(255,255,255,0.03)]">
+            <h3 class="mt-0 text-lg">{group.section}</h3>
+            <ul class="m-0 list-none space-y-2 p-0">
+              {group.items.map((item) => (
+                <li>
+                  <a class="text-[var(--muted)] no-underline hover:text-[var(--text)]" href={`/docs/${item.slug}`}>{item.title}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

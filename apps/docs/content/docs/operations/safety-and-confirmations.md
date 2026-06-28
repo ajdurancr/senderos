@@ -1,0 +1,63 @@
+---
+title: Safety and Guardrails
+description: "The hard boundaries that keep Senderos contained, consistent, and safe to operate through a host agent."
+---
+
+Senderos is opinionated about safety.
+
+## Filesystem guardrail
+
+Senderos never modifies anything outside the Senderos directory tree.
+
+That includes:
+
+- the database,
+- config,
+- logs,
+- artifacts,
+- session records,
+- Senderos-managed workspaces.
+
+If a workspace is used for host-agent coding work, that workspace must be allocated and tracked by Senderos first.
+
+## Session guardrail
+
+A host-agent session is not Senderos state.
+
+Senderos may record a host-agent session handle, but it does not trust the live session as the source of truth.
+All meaningful state must be persisted back into Senderos.
+
+## Confirmation policy
+
+Senderos is designed for agent operation, so confirmations happen where they matter.
+
+### No confirmation required
+
+- read-only inspection,
+- status queries,
+- reports,
+- JSON output,
+- reconciliation checks,
+- schedule-plan generation.
+
+### Explicit Senderos confirmation required
+
+- feature cancellation,
+- workspace retirement,
+- forceful state repair,
+- loop restart after terminal failure,
+- configuration rewrite.
+
+### Host-agent confirmation required
+
+If the host agent must do something outside Senderos' own responsibility, the host agent handles that confirmation in its own environment.
+Examples:
+
+- create a cron job,
+- push a branch,
+- open a pull request,
+- call an external API.
+
+## Why the split matters
+
+This keeps Senderos strict about its own boundaries while still letting the host agent act in the outside world when instructed.

@@ -1,0 +1,57 @@
+---
+import Sidebar from '@/components/Sidebar.astro';
+import TableOfContents from '@/components/TableOfContents.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getNeighbors } from '@/data/site';
+
+const {
+  title,
+  description,
+  currentSlug,
+  headings = []
+} = Astro.props as {
+  title: string;
+  description: string;
+  currentSlug: string;
+  headings?: { depth: number; slug: string; text: string }[];
+};
+
+const neighbors = getNeighbors(currentSlug);
+---
+
+<BaseLayout title={`${title} | Senderos Docs`} description={description}>
+  <main class="mx-auto max-w-7xl px-5 py-8">
+    <div class="doc-shell">
+      <Sidebar currentSlug={currentSlug} />
+
+      <article class="min-w-0 rounded-[2rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(21,30,53,0.92),rgba(14,20,37,0.92))] px-6 py-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:px-10 lg:px-12">
+        <div class="mb-8 border-b border-[var(--border)] pb-6">
+          <div class="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Senderos documentation</div>
+          <h1 class="m-0 text-4xl font-bold tracking-tight">{title}</h1>
+          <p class="mb-0 mt-4 max-w-3xl text-lg text-[var(--muted)]">{description}</p>
+        </div>
+
+        <div class="doc-content">
+          <slot />
+        </div>
+
+        <div class="mt-10 grid gap-4 border-t border-[var(--border)] pt-6 md:grid-cols-2">
+          {neighbors.previous ? (
+            <a href={`/docs/${neighbors.previous.slug}`} class="rounded-2xl border border-[var(--border)] p-4 no-underline hover:border-[var(--accent)]">
+              <div class="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Previous</div>
+              <div class="mt-1 font-semibold text-[var(--text)]">{neighbors.previous.title}</div>
+            </a>
+          ) : <div />}
+          {neighbors.next ? (
+            <a href={`/docs/${neighbors.next.slug}`} class="rounded-2xl border border-[var(--border)] p-4 no-underline hover:border-[var(--accent)] md:text-right">
+              <div class="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Next</div>
+              <div class="mt-1 font-semibold text-[var(--text)]">{neighbors.next.title}</div>
+            </a>
+          ) : <div />}
+        </div>
+      </article>
+
+      <TableOfContents headings={headings} />
+    </div>
+  </main>
+</BaseLayout>

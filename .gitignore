@@ -13,5 +13,7 @@ coverage
 .idea
 .vscode
 apps/*/.react-router
+apps/*/.astro
 apps/*/build
+apps/*/dist
 apps/*/.cache
