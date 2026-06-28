@@ -7,6 +7,7 @@ import type { FeatureRecord, LoopPhase } from '../../domain/types';
 import { openConfiguredCommandDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
+import { completeActiveSessionsForFeature } from '../session-lifecycle';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -69,22 +70,6 @@ function allocateWorkspace(feature: FeatureRecord, home?: string) {
 
   db.close();
   return { id, rootPath };
-}
-
-function completeActiveSessionsForFeature(featureId: string, home?: string) {
-  const db = openConfiguredCommandDb(home);
-  const activeSessions = db
-    .query(
-      "select sessions.id from sessions join runs on runs.id = sessions.run_id where runs.feature_id = ? and sessions.status = 'active'"
-    )
-    .all(featureId) as Array<{ id: string }>;
-
-  for (const session of activeSessions) {
-    db.prepare("update sessions set status='completed', updated_at=? where id=?").run(now(), session.id);
-    emitEvent(db, 'session.completed', 'session', session.id, { reason: 'phase_transition' });
-  }
-
-  db.close();
 }
 
 function createRunRecord(
@@ -185,7 +170,7 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
 }
 
 export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?: string) {
-  completeActiveSessionsForFeature(feature.id, home);
+  completeActiveSessionsForFeature(feature.id, home, 'phase_transition');
 
   let workspace = feature.currentWorkspaceId
     ? (getWorkspace(feature.currentWorkspaceId, home) as any)
