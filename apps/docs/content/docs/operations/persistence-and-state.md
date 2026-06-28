@@ -18,9 +18,11 @@ This is the standard deployment mode.
 
 Senderos also supports a SQLite-compatible remote service, with Turso as the supported option.
 
+Turso is integrated as a built-in Senderos database adapter. The rest of Senderos resolves a database adapter from configuration instead of hard-coding database behavior into higher-level orchestration code.
+
 The model does not change between local SQLite and Turso.
 The schema stays the same.
-The difference is only where the database is hosted.
+The difference is only where the database is hosted and which built-in adapter is selected.
 
 ## What lives in SQLite
 

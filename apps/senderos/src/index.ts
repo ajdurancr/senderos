@@ -2,7 +2,8 @@ export * from './domain/types';
 export * from './config/runtime';
 export * from './services/loop';
 export * from './services/runtime';
+export * from './utils/harness';
+export { runCli } from './cli/run';
 
-import { runCli } from './services/runtime';
-
+import { runCli } from './cli/run';
 if (import.meta.main) await runCli();

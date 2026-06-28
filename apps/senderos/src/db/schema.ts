@@ -1,5 +1,4 @@
 import type { Database } from "bun:sqlite";
-
 export function migrate(db: Database) {
   db.exec(`
     create table if not exists features (
