@@ -7,6 +7,7 @@ import { handleLoop } from './commands/loop';
 import { handleRun } from './commands/run';
 import { handleSession } from './commands/session';
 import { handleSystemCommand } from './commands/system';
+import { resolveHelp } from './help';
 
 export async function runCli(argv = process.argv.slice(2)) {
   const { positionals, options } = parseArgs(argv);
@@ -35,6 +36,9 @@ export async function runCli(argv = process.argv.slice(2)) {
         break;
       case 'session':
         result = handleSession(sub, positionals, home);
+        break;
+      case 'help':
+        result = resolveHelp(positionals[1]);
         break;
       case 'doctor':
       case 'status':

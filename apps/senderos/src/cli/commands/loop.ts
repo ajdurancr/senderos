@@ -1,6 +1,16 @@
 import { showLoop, startLoop, tickLoop } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
+export const loopCommandHelp = {
+  command: 'loop',
+  summary: 'Operate the loop-engineering workflow for a feature.',
+  usage: [
+    'senderos loop start <feature-id>',
+    'senderos loop tick <feature-id>',
+    'senderos loop show <feature-id>',
+  ],
+};
+
 export function handleLoop(sub: string | undefined, positionals: string[], home: string) {
   const featureId = requirePositional(positionals[2], 'feature id');
 

@@ -2,6 +2,16 @@ import { getRun } from '../../services/loop';
 import { cancelRun, listRuns } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
+export const runCommandHelp = {
+  command: 'run',
+  summary: 'Inspect and manage Senderos runs.',
+  usage: [
+    'senderos run list',
+    'senderos run show <run-id>',
+    'senderos run cancel <run-id>',
+  ],
+};
+
 export function handleRun(sub: string | undefined, positionals: string[], home: string) {
   switch (sub) {
     case 'list':

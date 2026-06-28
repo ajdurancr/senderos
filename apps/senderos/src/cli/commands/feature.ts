@@ -8,6 +8,16 @@ import {
 } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
+export const featureCommandHelp = {
+  command: 'feature',
+  summary: 'Create and manage Senderos features.',
+  usage: [
+    'senderos feature create --title "Add billing portal"',
+    'senderos feature list',
+    'senderos feature approve <feature-id>',
+  ],
+};
+
 function parseFeatureCreateOptions(home: string, options: Record<string, string | boolean>) {
   return {
     home,

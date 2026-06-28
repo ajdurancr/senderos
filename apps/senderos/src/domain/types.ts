@@ -69,4 +69,13 @@ export interface DbAdapter {
   kind: DatabaseKind;
   describe(home?: string): Record<string, unknown>;
   healthcheck(home?: string): { ok: boolean; issues: string[]; warnings?: string[] };
+  openCommandConnection?(home?: string): unknown;
+}
+
+export interface CommandHelp {
+  command: string;
+  summary: string;
+  usage: string[];
+  options?: Array<{ name: string; description: string; required?: boolean }>;
+  subcommands?: CommandHelp[];
 }

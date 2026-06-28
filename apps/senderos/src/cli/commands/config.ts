@@ -2,6 +2,16 @@ import { loadConfig } from '../../config/runtime';
 import { getConfigPath, updateConfigPath } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
+export const configCommandHelp = {
+  command: 'config',
+  summary: 'Inspect or update Senderos configuration.',
+  usage: [
+    'senderos config show',
+    'senderos config get database.kind',
+    'senderos config set defaultHarness codex',
+  ],
+};
+
 export function handleConfig(sub: string | undefined, positionals: string[], home: string) {
   switch (sub) {
     case 'show':

@@ -1,6 +1,7 @@
-import type { SenderosConfig, DbAdapter } from '../domain/types';
+import type { Database } from 'bun:sqlite';
+import type { DbAdapter, SenderosConfig } from '../domain/types';
 import { resolveRuntime } from '../config/runtime';
-import { localSqliteAdapter, openLocalSqlite } from '../adapters/db/local-sqlite';
+import { localSqliteAdapter } from '../adapters/db/local-sqlite';
 import { tursoAdapter } from '../adapters/db/turso';
 
 export function resolveDbAdapter(kind: SenderosConfig['database']['kind']): DbAdapter {
@@ -13,24 +14,25 @@ export function resolveDbAdapter(kind: SenderosConfig['database']['kind']): DbAd
   }
 }
 
-export function describeCurrentDb(home?: string) {
+export function resolveConfiguredDbAdapter(home?: string) {
   const { config } = resolveRuntime(home);
-  return resolveDbAdapter(config.database.kind).describe(home);
+  return resolveDbAdapter(config.database.kind);
+}
+
+export function describeCurrentDb(home?: string) {
+  return resolveConfiguredDbAdapter(home).describe(home);
 }
 
 export function healthcheckCurrentDb(home?: string) {
-  const { config } = resolveRuntime(home);
-  return resolveDbAdapter(config.database.kind).healthcheck(home);
+  return resolveConfiguredDbAdapter(home).healthcheck(home);
 }
 
-export function openLocalDb(home?: string) {
-  const { config } = resolveRuntime(home);
+export function openConfiguredCommandDb(home?: string): Database {
+  const adapter = resolveConfiguredDbAdapter(home);
 
-  if (config.database.kind !== 'local') {
-    throw new Error(
-      'This code path requires the local SQLite adapter. Turso is configured through the built-in adapter layer, but these runtime operations still execute through the local synchronous database path.'
-    );
+  if (!adapter.openCommandConnection) {
+    throw new Error(`Database adapter ${adapter.kind} does not expose a command execution connection.`);
   }
 
-  return openLocalSqlite(home);
+  return adapter.openCommandConnection(home) as Database;
 }

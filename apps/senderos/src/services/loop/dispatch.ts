@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { FeatureRecord, LoopPhase } from "../../domain/types";
 import { resolveRuntime, ensureDir } from "../../config/runtime";
 import { statusForPhase } from "../../domain/constants";
-import { openLocalDb } from "../../db/client";
+import { openConfiguredCommandDb } from "../../db/client";
 import { now, randomId } from "../../utils/common";
 import { emitEvent } from "../events";
 import { defaultInstruction } from "./instructions";
@@ -13,14 +13,14 @@ function allocateWorkspace(featureId: string, home?: string) {
   const id = randomId("workspace");
   const rootPath = join(paths.workspaceRoot, featureId);
   ensureDir(rootPath);
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   db.prepare("insert into workspaces (id,feature_id,run_id,session_id,root_path,status,branch_name,retention_reason,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)").run(id, featureId, null, null, rootPath, "allocated", `senderos/${featureId}`, null, now(), now());
   emitEvent(db, "workspace.allocated", "workspace", id, { featureId, rootPath });
   db.close();
   return { id, rootPath };
 }
 function createRunRecord(featureId: string, taskId: string, phase: LoopPhase, instruction: unknown, home?: string) {
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   const id = randomId("run");
   db.prepare("insert into runs (id,feature_id,task_id,phase,status,instruction_json,result_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)").run(id, featureId, taskId, phase, "queued", JSON.stringify(instruction), "{}", now(), now());
   emitEvent(db, "run.created", "run", id, { featureId, taskId, phase });
@@ -28,7 +28,7 @@ function createRunRecord(featureId: string, taskId: string, phase: LoopPhase, in
   return id;
 }
 function createSession(runId: string, harness: string, phase: LoopPhase, home?: string) {
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   const id = randomId("session");
   const resumeCommand = `senderos session resume ${id}`;
   db.prepare("insert into sessions (id,run_id,harness,external_session_id,status,status_snapshot_json,heartbeat_at,resume_command,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)").run(id, runId, harness, null, "active", JSON.stringify({ phase }), now(), resumeCommand, now(), now());
@@ -45,7 +45,7 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
   const runId = createRunRecord(feature.id, task.id, phase, instruction, home);
   const { config } = resolveRuntime(home);
   const sessionId = createSession(runId, config.defaultHarness, phase, home);
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   db.prepare("update workspaces set run_id=?, session_id=?, status=?, updated_at=? where id=?").run(runId, sessionId, phase === "implementation" ? "active" : "locked", now(), workspace.id);
   db.prepare("update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, updated_at=? where id=?").run(statusForPhase(phase), phase, workspace.id, runId, now(), feature.id);
   db.prepare("update runs set status='running', updated_at=? where id=?").run(now(), runId);

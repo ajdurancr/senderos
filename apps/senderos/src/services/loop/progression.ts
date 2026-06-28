@@ -1,6 +1,6 @@
 import type { FeatureRecord } from "../../domain/types";
 import { nextPhase } from "../../domain/constants";
-import { openLocalDb } from "../../db/client";
+import { openConfiguredCommandDb } from "../../db/client";
 import { now } from "../../utils/common";
 import { emitEvent } from "../events";
 import { dispatchForPhase } from "./dispatch";
@@ -16,13 +16,13 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
   const currentTask = tasks.find((task) => task.phase === currentPhase && task.status === "running") ?? tasks.find((task) => task.phase === currentPhase);
   if (currentTask && currentTask.status !== "completed") updateTaskStatus(currentTask.id, "completed", { completedAt: now() }, home);
   if (feature.currentRunId) {
-    const db = openLocalDb(home);
+    const db = openConfiguredCommandDb(home);
     db.prepare("update runs set status='completed', result_json=?, updated_at=? where id=?").run(JSON.stringify({ phase: currentPhase, completedAt: now() }), now(), feature.currentRunId);
     db.close();
   }
   const next = nextPhase(currentPhase);
   if (next === "done") {
-    const db = openLocalDb(home);
+    const db = openConfiguredCommandDb(home);
     db.prepare("update features set loop_phase=?, status=?, updated_at=? where id=?").run("done", "completed", now(), feature.id);
     if (feature.currentWorkspaceId) db.prepare("update workspaces set status=?, updated_at=? where id=?").run("released", now(), feature.currentWorkspaceId);
     if (feature.currentRunId) {

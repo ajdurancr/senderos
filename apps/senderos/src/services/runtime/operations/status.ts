@@ -1,7 +1,7 @@
-import { openLocalDb } from '../../../db/client';
+import { openConfiguredCommandDb } from '../../../db/client';
 
 export function status(home?: string) {
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   const summary = {
     openFeatures: (db.query("select count(*) as c from features where status not in ('completed','canceled')").get() as any).c,
     activeLoops: (db.query("select count(*) as c from features where loop_phase not in ('idle','done')").get() as any).c,

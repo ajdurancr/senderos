@@ -1,9 +1,9 @@
-import { openLocalDb } from '../../../db/client';
+import { openConfiguredCommandDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
 
 export function reconcile(home?: string) {
-  const db = openLocalDb(home);
+  const db = openConfiguredCommandDb(home);
   const stale = db.query("select * from sessions where status='stale'").all() as any[];
   const repairedSessions: string[] = [];
   const releasedWorkspaces: string[] = [];
