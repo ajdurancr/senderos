@@ -1,5 +1,14 @@
 import { existsSync } from 'node:fs';
-import { defaultHomePath, ensureWithinHome, loadConfig, previewInit, resolveRuntime, runtimeExists, initializeRuntime } from '../../../config/runtime';
+
+import {
+  defaultHomePath,
+  ensureWithinHome,
+  initializeRuntime,
+  loadConfig,
+  previewInit,
+  resolveRuntime,
+  runtimeExists,
+} from '../../../config/runtime';
 import { describeCurrentDb, healthcheckCurrentDb } from '../../../db/client';
 
 export { defaultHomePath, initializeRuntime, loadConfig, previewInit, resolveRuntime };
@@ -11,6 +20,7 @@ export function doctor(home = defaultHomePath()) {
   if (!runtimeExists(home)) {
     issues.push('missing config');
   }
+
   if (issues.length) {
     return { ok: false, issues, warnings };
   }

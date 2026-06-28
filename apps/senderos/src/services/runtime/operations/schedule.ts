@@ -2,6 +2,7 @@ import { defaultHomePath, resolveRuntime } from '../../../config/runtime';
 
 export function schedulePlan(home?: string) {
   const { config } = resolveRuntime(home);
+
   return {
     jobName: 'senderos-loop-maintenance',
     command: 'senderos reconcile && senderos status && senderos loop tick <feature-id>',

@@ -10,16 +10,23 @@ export function reconcile(home?: string) {
   const revivedTasks: string[] = [];
 
   for (const session of stale) {
-    db.prepare("update sessions set status='failed', updated_at=? where id=?").run(now(), session.id);
+    db.prepare("update sessions set status='failed', updated_at=? where id=?").run(
+      now(),
+      session.id
+    );
 
     if (session.run_id) {
       const run = db.query('select * from runs where id=?').get(session.run_id) as any;
-      db.prepare("update runs set status='failed', result_json=?, updated_at=? where id=? and status in ('queued','running')")
-        .run(JSON.stringify({ reason: 'stale_session' }), now(), session.run_id);
+
+      db.prepare(
+        "update runs set status='failed', result_json=?, updated_at=? where id=? and status in ('queued','running')"
+      ).run(JSON.stringify({ reason: 'stale_session' }), now(), session.run_id);
 
       if (run?.task_id) {
-        db.prepare("update tasks set status='ready', result_json=?, updated_at=? where id=? and status='running'")
-          .run(JSON.stringify({ reason: 'reconcile_restart' }), now(), run.task_id);
+        db.prepare(
+          "update tasks set status='ready', result_json=?, updated_at=? where id=? and status='running'"
+        ).run(JSON.stringify({ reason: 'reconcile_restart' }), now(), run.task_id);
+
         revivedTasks.push(run.task_id);
       }
     }
@@ -32,7 +39,11 @@ export function reconcile(home?: string) {
   ).all() as any[];
 
   for (const workspace of orphaned) {
-    db.prepare("update workspaces set status='released', updated_at=? where id=?").run(now(), workspace.id);
+    db.prepare("update workspaces set status='released', updated_at=? where id=?").run(
+      now(),
+      workspace.id
+    );
+
     releasedWorkspaces.push(workspace.id);
   }
 
@@ -43,5 +54,10 @@ export function reconcile(home?: string) {
   });
 
   db.close();
-  return { repairedSessions, releasedWorkspaces, revivedTasks };
+
+  return {
+    repairedSessions,
+    releasedWorkspaces,
+    revivedTasks,
+  };
 }

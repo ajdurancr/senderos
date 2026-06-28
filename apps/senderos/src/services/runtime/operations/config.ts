@@ -1,5 +1,10 @@
 import { writeFileSync } from 'node:fs';
-import { configPathForHome, defaultHomePath, loadConfig } from '../../../config/runtime';
+
+import {
+  configPathForHome,
+  defaultHomePath,
+  loadConfig,
+} from '../../../config/runtime';
 
 export function updateConfigPath(path: string, value: any, home = defaultHomePath()) {
   const cfg = loadConfig(home);
@@ -13,6 +18,7 @@ export function updateConfigPath(path: string, value: any, home = defaultHomePat
 
   current[parts[parts.length - 1]] = value;
   writeFileSync(configPathForHome(home), JSON.stringify(cfg, null, 2));
+
   return cfg;
 }
 
