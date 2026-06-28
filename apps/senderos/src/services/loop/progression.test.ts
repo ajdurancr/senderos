@@ -27,7 +27,7 @@ describe('loop progression', () => {
       }
     }
     expect(getFeature(feature.id, home)?.status).toBe('completed');
-    expect((getWorkspace(current.currentWorkspaceId!, home) as any).status).toBe('released');
+    expect((getWorkspace(current.currentWorkspaceId!, home) as any).status).toBe('cleaned');
     const db = new Database(resolveRuntime(home).paths.dbPath);
     expect((db.query('select status from sessions order by created_at desc limit 1').get() as any).status).toBe('completed');
     db.close();

@@ -71,9 +71,12 @@ export function resumeSession(id: string, home?: string) {
     throw new Error(`Session not found: ${id}`);
   }
 
+  const snapshot = JSON.parse(row.status_snapshot_json ?? row.statusSnapshotJson ?? '{}');
+
   return {
     session: row,
     resumeCommand: row.resume_command ?? row.resumeCommand,
+    launchCommand: snapshot.launchCommand ?? null,
     harness: row.harness,
   };
 }

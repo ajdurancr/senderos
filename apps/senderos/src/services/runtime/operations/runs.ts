@@ -1,7 +1,7 @@
 import { openConfiguredCommandDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getFeature, updateFeature } from '../features';
+import { cancelFeature, getFeature } from '../features';
 import { getRun } from '../../loop';
 
 export function listRuns(home?: string) {
@@ -36,20 +36,7 @@ export function cancelRun(id: string, home?: string) {
 
   const feature = getFeature(run.feature_id, home);
   if (feature) {
-    updateFeature({ home, id: feature.id, featureBranchName: null, prUrl: feature.prUrl, prNumber: feature.prNumber });
-    const db2 = openConfiguredCommandDb(home);
-    db2.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
-      'canceled',
-      'blocked',
-      null,
-      now(),
-      feature.id
-    );
-    emitEvent(db2, 'feature.canceled', 'feature', feature.id, {
-      viaRunCancel: true,
-      deletedFeatureBranch: Boolean(feature.featureBranchName),
-    });
-    db2.close();
+    cancelFeature(feature.id, home);
   }
 
   return getRun(id, home);

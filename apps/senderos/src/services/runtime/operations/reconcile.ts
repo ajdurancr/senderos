@@ -19,7 +19,7 @@ export function reconcile(home?: string) {
       const run = db.query('select * from runs where id=?').get(session.run_id) as any;
 
       db.prepare(
-        "update runs set status='failed', result_json=?, updated_at=? where id=? and status in ('queued','running')"
+        "update runs set status='failed', result_json=?, updated_at=? where id=? and status not in ('succeeded','failed','canceled')"
       ).run(JSON.stringify({ reason: 'stale_session' }), now(), session.run_id);
 
       if (run?.task_id) {

@@ -3,7 +3,7 @@ import { openConfiguredCommandDb } from '../../db/client';
 import { mapFeatureRow, mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
-import { ensurePhaseTask } from '../loop';
+import { cleanupWorkspace, ensurePhaseTask } from '../loop';
 
 function requireProject(projectId: string, home?: string) {
   const db = openConfiguredCommandDb(home);
@@ -15,6 +15,22 @@ function requireProject(projectId: string, home?: string) {
   }
 
   return project;
+}
+
+function completeActiveSessionsForFeature(featureId: string, home?: string, reason = 'feature_canceled') {
+  const db = openConfiguredCommandDb(home);
+  const sessions = db
+    .query(
+      "select sessions.id from sessions join runs on runs.id = sessions.run_id where runs.feature_id = ? and sessions.status = 'active'"
+    )
+    .all(featureId) as Array<{ id: string }>;
+
+  for (const session of sessions) {
+    db.prepare("update sessions set status='completed', updated_at=? where id=?").run(now(), session.id);
+    emitEvent(db, 'session.completed', 'session', session.id, { reason });
+  }
+
+  db.close();
 }
 
 export function createFeature(input: {
@@ -153,6 +169,8 @@ export function cancelFeature(id: string, home?: string) {
     throw new Error(`Feature not found: ${id}`);
   }
 
+  completeActiveSessionsForFeature(id, home);
+
   const db = openConfiguredCommandDb(home);
 
   db.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
@@ -175,6 +193,10 @@ export function cancelFeature(id: string, home?: string) {
     deletedFeatureBranch: Boolean(current.featureBranchName),
   });
   db.close();
+
+  if (current.currentWorkspaceId) {
+    cleanupWorkspace(current.currentWorkspaceId, home, 'feature_canceled');
+  }
 
   return getFeature(id, home);
 }

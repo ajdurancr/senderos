@@ -71,14 +71,24 @@ Examples:
 
 ```bash
 senderos help
-senderos help feature
+senderos help project
 senderos help feature approve
 ```
+
+Current top-level workflow commands now include:
+
+- `project`
+- `feature`
+- `loop`
+- `run`
+- `session`
+- `status` / `doctor` / `reconcile`
 
 ## What lives here
 
 - `src/` — SenderOS runtime, CLI, services, and colocated tests
 - `tests/helpers/` — shared test helpers
+- `src/cli/integration.test.ts` — end-to-end local/CI CLI smoke coverage
 - `agents/` — canonical vendor-neutral agent roles in Markdown
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
