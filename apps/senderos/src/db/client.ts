@@ -23,14 +23,14 @@ export function healthcheckCurrentDb(home?: string) {
   return resolveDbAdapter(config.database.kind).healthcheck(home);
 }
 
-export function openDb(home?: string) {
+export function openLocalDb(home?: string) {
   const { config } = resolveRuntime(home);
 
-  if (config.database.kind === 'local') {
-    return openLocalSqlite(home);
+  if (config.database.kind !== 'local') {
+    throw new Error(
+      'This code path requires the local SQLite adapter. Turso is configured through the built-in adapter layer, but these runtime operations still execute through the local synchronous database path.'
+    );
   }
 
-  throw new Error(
-    'The Turso adapter is built in and current for configuration and health checks, but live command execution still uses the synchronous local SQLite path. Switch the runtime execution path to async/libsql before using Turso as the active backend.'
-  );
+  return openLocalSqlite(home);
 }
