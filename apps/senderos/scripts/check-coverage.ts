@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const threshold = Number(process.argv[2] ?? '90');
 const coverageDir = process.argv[3] ?? 'coverage';
-const lcovPath = join(process.cwd(), coverageDir, 'lcov.info');
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const packageRoot = resolve(scriptDir, '..');
+const lcovPath = join(packageRoot, coverageDir, 'lcov.info');
 const lcov = readFileSync(lcovPath, 'utf8');
 
 let foundFiles = 0;
@@ -34,6 +37,7 @@ console.log(
         pct: Number(functionPct.toFixed(2)),
       },
       threshold,
+      lcovPath,
     },
     null,
     2
@@ -41,7 +45,6 @@ console.log(
 );
 
 if (linePct < threshold || functionPct < threshold) {
-  process.exitCode = 1;
   throw new Error(
     `Coverage threshold not met. lines=${linePct.toFixed(2)}%, functions=${functionPct.toFixed(2)}%, threshold=${threshold}%`
   );
