@@ -8,6 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test --isolate",
+    "test:unit": "sh ./scripts/run-unit-tests.sh",
+    "test:integration": "bun test --isolate ./src/cli/integration.test.ts",
     "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run scripts/check-coverage.ts 90 coverage"
   },
   "devDependencies": {
