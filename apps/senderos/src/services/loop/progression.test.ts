@@ -1,23 +1,30 @@
 import { describe, expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import { createFeature, getFeature } from '../runtime';
+import { approveFeature, createFeature, getFeature } from '../runtime';
 import { dispatchForPhase, getRun, getSession, getWorkspace, startLoopForFeature, tickLoopForFeature } from './index';
 import { resolveRuntime } from '../../config/runtime';
-import { initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('loop progression', () => {
   test('starts and advances a feature to completion', () => {
     const home = initHome();
-    const feature = createFeature({ home, title: 'Progress me' });
-    const first: any = dispatchForPhase(feature, 'contract', home);
+    const project = createProjectFixture(home);
+    const feature = approveFeature(
+      createFeature({ home, projectId: project.id, title: 'Progress me', gherkinText: 'Feature: Progress me' }).id,
+      home
+    )!;
+    const first: any = dispatchForPhase(feature, 'implementation', home);
     const second: any = startLoopForFeature(getFeature(feature.id, home)!, home);
     expect(second.run.id).not.toBe(first.run.id);
     let current = getFeature(feature.id, home)!;
-    for (const expected of ['implementation','review','mutation','done'] as const) {
+    for (const expected of ['review', 'mutation', 'done'] as const) {
       const result = tickLoopForFeature(current, home);
       expect(getFeature(feature.id, home)?.loopPhase).toBe(expected);
       current = getFeature(feature.id, home)!;
-      if (expected === 'done') { expect(result.run).toBeNull(); expect(result.task).toBeNull(); }
+      if (expected === 'done') {
+        expect(result.run).toBeNull();
+        expect(result.task).toBeNull();
+      }
     }
     expect(getFeature(feature.id, home)?.status).toBe('completed');
     expect((getWorkspace(current.currentWorkspaceId!, home) as any).status).toBe('released');

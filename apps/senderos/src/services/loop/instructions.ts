@@ -7,27 +7,25 @@ export function defaultInstruction(
 ) {
   const base = {
     featureId: feature.id,
+    projectId: feature.projectId,
     featureTitle: feature.title,
     phase,
     workspaceRoot,
+    baseTargetBranch: feature.baseTargetBranch,
+    featureBranchName: feature.featureBranchName,
+    gherkinText: feature.gherkinText,
     constraints: [
       'Operate only inside the assigned Senderos workspace',
       'Do not mutate Senderos state directly; report results back through Senderos',
+      'Treat the stored Gherkin contract as canonical execution input',
       'Return machine-readable execution results',
     ],
   };
 
-  if (phase === 'contract') {
-    return {
-      ...base,
-      objective: 'Refine the executable feature contract and acceptance criteria.',
-    };
-  }
-
   if (phase === 'implementation') {
     return {
       ...base,
-      objective: 'Implement the feature through the TDD loop inside the assigned workspace.',
+      objective: 'Implement the approved Gherkin contract through the TDD loop inside the assigned workspace.',
     };
   }
 

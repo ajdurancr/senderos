@@ -15,7 +15,7 @@ export function startLoop(featureId: string, home?: string) {
     throw new Error(`Feature not found: ${featureId}`);
   }
 
-  if (!['ready_contract', 'active_implementation', 'failed'].includes(feature.status)) {
+  if (!['active', 'failed'].includes(feature.status)) {
     throw new Error(`Feature is not dispatchable from status ${feature.status}`);
   }
 

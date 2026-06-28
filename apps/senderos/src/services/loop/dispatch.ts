@@ -20,7 +20,7 @@ function allocateWorkspace(featureId: string, home?: string) {
   const db = openConfiguredCommandDb(home);
   db.prepare(
     'insert into workspaces (id,feature_id,run_id,session_id,root_path,status,branch_name,retention_reason,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)'
-  ).run(id, featureId, null, null, rootPath, 'allocated', `senderos/${featureId}`, null, now(), now());
+  ).run(id, featureId, null, null, rootPath, 'allocated', null, null, now(), now());
 
   emitEvent(db, 'workspace.allocated', 'workspace', id, {
     featureId,
@@ -32,7 +32,7 @@ function allocateWorkspace(featureId: string, home?: string) {
 }
 
 function createRunRecord(
-  featureId: string,
+  feature: FeatureRecord,
   taskId: string,
   phase: LoopPhase,
   instruction: unknown,
@@ -40,19 +40,38 @@ function createRunRecord(
 ) {
   const db = openConfiguredCommandDb(home);
   const id = randomId('run');
+  const branchName = `run/${feature.id}/${id}`;
+  const baseBranch = feature.featureBranchName ?? feature.baseTargetBranch;
 
   db.prepare(
-    'insert into runs (id,feature_id,task_id,phase,status,instruction_json,result_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)'
-  ).run(id, featureId, taskId, phase, 'queued', JSON.stringify(instruction), '{}', now(), now());
-
-  emitEvent(db, 'run.created', 'run', id, {
-    featureId,
+    'insert into runs (id,feature_id,task_id,phase,status,branch_name,base_branch,max_attempts,attempt_count,current_attempt,instruction_json,result_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+  ).run(
+    id,
+    feature.id,
     taskId,
     phase,
+    'queued',
+    branchName,
+    baseBranch,
+    3,
+    0,
+    0,
+    JSON.stringify(instruction),
+    JSON.stringify({ attempts: [] }),
+    now(),
+    now()
+  );
+
+  emitEvent(db, 'run.created', 'run', id, {
+    featureId: feature.id,
+    taskId,
+    phase,
+    branchName,
+    baseBranch,
   });
 
   db.close();
-  return id;
+  return { id, branchName };
 }
 
 function createSession(runId: string, harness: string, phase: LoopPhase, home?: string) {
@@ -108,27 +127,36 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
 
   updateTaskStatus(task.id, 'running', { dispatchedAt: now() }, home);
 
-  const runId = createRunRecord(feature.id, task.id, phase, instruction, home);
+  const runRecord = createRunRecord(feature, task.id, phase, instruction, home);
   const { config } = resolveRuntime(home);
-  const sessionId = createSession(runId, config.defaultHarness, phase, home);
+  const sessionId = createSession(runRecord.id, config.defaultHarness, phase, home);
 
   const db = openConfiguredCommandDb(home);
-  db.prepare('update workspaces set run_id=?, session_id=?, status=?, updated_at=? where id=?').run(
-    runId,
+  db.prepare('update workspaces set run_id=?, session_id=?, status=?, branch_name=?, updated_at=? where id=?').run(
+    runRecord.id,
     sessionId,
     phase === 'implementation' ? 'active' : 'locked',
+    runRecord.branchName,
     now(),
     workspace.id
   );
 
   db.prepare(
-    'update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, updated_at=? where id=?'
-  ).run(statusForPhase(phase), phase, workspace.id, runId, now(), feature.id);
+    'update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
+  ).run(
+    statusForPhase(phase),
+    phase,
+    workspace.id,
+    runRecord.id,
+    feature.featureBranchName ?? `feature/${feature.id}`,
+    now(),
+    feature.id
+  );
 
-  db.prepare("update runs set status='running', updated_at=? where id=?").run(now(), runId);
+  db.prepare("update runs set status='executing', current_attempt=1, attempt_count=1, updated_at=? where id=?").run(now(), runRecord.id);
 
   emitEvent(db, 'dispatch.completed', 'feature', feature.id, {
-    runId,
+    runId: runRecord.id,
     sessionId,
     taskId: task.id,
     phase,
@@ -138,7 +166,7 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
 
   return {
     feature,
-    run: getRun(runId, home),
+    run: getRun(runRecord.id, home),
     session: getSession(sessionId, home),
     task: getTask(task.id, home),
   };

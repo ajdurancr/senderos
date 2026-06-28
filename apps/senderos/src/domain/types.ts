@@ -1,11 +1,31 @@
-export type DatabaseKind = "local" | "turso";
-export type HarnessKind = "openclaw" | "codex" | "claude-code" | "unknown";
-export type FeatureStatus = "defined" | "ready_contract" | "active_implementation" | "verifying_review" | "verifying_mutation" | "completed" | "failed" | "canceled";
-export type LoopPhase = "idle" | "contract" | "implementation" | "review" | "mutation" | "done" | "blocked";
-export type TaskStatus = "pending" | "ready" | "running" | "completed" | "failed" | "canceled";
-export type RunStatus = "queued" | "running" | "completed" | "failed" | "canceled";
-export type SessionStatus = "active" | "stale" | "completed" | "failed";
-export type WorkspaceStatus = "allocated" | "locked" | "active" | "verifying" | "released" | "cleaned" | "retained";
+export type DatabaseKind = 'local' | 'turso';
+export type HarnessKind = 'openclaw' | 'codex' | 'claude-code' | 'unknown';
+
+export type ProjectStatus = 'healthy' | 'setup_failed' | 'broken' | 'archived';
+export type IntegrationMode = 'github_pr' | 'local_merge';
+export type FeatureStatus =
+  | 'awaiting_scenario_approval'
+  | 'active'
+  | 'failed'
+  | 'blocked'
+  | 'canceled'
+  | 'completed';
+export type LoopPhase = 'idle' | 'implementation' | 'review' | 'mutation' | 'done' | 'blocked';
+export type TaskStatus = 'pending' | 'ready' | 'running' | 'completed' | 'failed' | 'canceled';
+export type RunStatus =
+  | 'queued'
+  | 'preparing'
+  | 'executing'
+  | 'validating'
+  | 'repairing'
+  | 'merging'
+  | 'updating_pr'
+  | 'cleaning_up'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled';
+export type SessionStatus = 'active' | 'stale' | 'completed' | 'failed';
+export type WorkspaceStatus = 'allocated' | 'locked' | 'active' | 'verifying' | 'released' | 'cleaned' | 'retained';
 
 export interface SenderosConfig {
   database: { kind: DatabaseKind; path?: string; turso?: { url: string; authTokenEnv: string } };
@@ -15,7 +35,7 @@ export interface SenderosConfig {
   sessionRoot: string;
   cacheRoot: string;
   defaultHarness: HarnessKind;
-  output: { format: "json" | "text" };
+  output: { format: 'json' | 'text' };
   guardrails: { restrictToHome: boolean };
 }
 
@@ -30,14 +50,36 @@ export interface RuntimePaths {
   cacheRoot: string;
 }
 
+export interface ProjectRecord {
+  id: string;
+  name: string;
+  canonicalPath: string;
+  githubOwner: string;
+  githubRepo: string;
+  githubRemote: string;
+  targetBranch: string;
+  status: ProjectStatus;
+  integrationMode: IntegrationMode;
+  inferredCommandsJson: string;
+  healthDetailsJson: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface FeatureRecord {
   id: string;
+  projectId: string;
   title: string;
-  problemStatement: string;
-  contractText: string;
+  specText: string;
+  sourceRequestText: string;
+  gherkinText: string;
+  gherkinMetaJson: string;
   status: FeatureStatus;
   loopPhase: LoopPhase;
-  completionCriteria: string;
+  baseTargetBranch: string;
+  featureBranchName: string | null;
+  prUrl: string | null;
+  prNumber: number | null;
   currentWorkspaceId: string | null;
   currentRunId: string | null;
   createdAt: string;

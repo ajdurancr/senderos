@@ -10,13 +10,16 @@ import { requirePositional } from '../shared';
 
 const featureCreateHelp = {
   command: 'create',
-  summary: 'Create a Senderos feature.',
-  usage: ['senderos feature create --title "Add billing portal" [--problem-statement ...] [--contract ...] [--completion-criteria ...]'],
+  summary: 'Create a Senderos feature from an approved Gherkin contract.',
+  usage: [
+    'senderos feature create --project-id <project-id> --title "Add billing portal" --gherkin "Feature: ..." [--spec-text ...] [--source-request ...]',
+  ],
   options: [
+    { name: '--project-id', description: 'Owning project identifier.', required: true },
     { name: '--title', description: 'Feature title.', required: true },
-    { name: '--problem-statement', description: 'Problem statement for the feature.' },
-    { name: '--contract', description: 'Initial contract text.' },
-    { name: '--completion-criteria', description: 'Completion criteria for the feature.' },
+    { name: '--gherkin', description: 'Canonical Gherkin contract text.', required: true },
+    { name: '--spec-text', description: 'Approved spec text backing the feature.' },
+    { name: '--source-request', description: 'Original user request or prompt.' },
   ],
 };
 
@@ -36,26 +39,26 @@ const featureShowHelp = {
 const featureUpdateHelp = {
   command: 'update',
   summary: 'Update a Senderos feature.',
-  usage: ['senderos feature update <feature-id> [--title ...] [--problem-statement ...] [--contract ...] [--completion-criteria ...]'],
+  usage: ['senderos feature update <feature-id> [--title ...] [--spec-text ...] [--gherkin ...] [--source-request ...]'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
   options: [
     { name: '--title', description: 'New feature title.' },
-    { name: '--problem-statement', description: 'New problem statement.' },
-    { name: '--contract', description: 'New contract text.' },
-    { name: '--completion-criteria', description: 'New completion criteria.' },
+    { name: '--spec-text', description: 'New approved spec text.' },
+    { name: '--gherkin', description: 'New canonical Gherkin contract text.' },
+    { name: '--source-request', description: 'Updated original request text.' },
   ],
 };
 
 const featureApproveHelp = {
   command: 'approve',
-  summary: 'Approve a feature for loop execution.',
+  summary: 'Approve a feature for implementation runs.',
   usage: ['senderos feature approve <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
 
 const featureCancelHelp = {
   command: 'cancel',
-  summary: 'Cancel a feature and remaining active tasks.',
+  summary: 'Cancel a feature, its active run, and cleanup-related state.',
   usage: ['senderos feature cancel <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
@@ -77,10 +80,11 @@ export const featureCommandHelp = {
 function parseFeatureCreateOptions(home: string, options: Record<string, string | boolean>) {
   return {
     home,
+    projectId: String(options['project-id'] ?? ''),
     title: String(options.title ?? ''),
-    problemStatement: String(options['problem-statement'] ?? ''),
-    contractText: String(options.contract ?? ''),
-    completionCriteria: String(options['completion-criteria'] ?? ''),
+    specText: String(options['spec-text'] ?? ''),
+    sourceRequestText: String(options['source-request'] ?? ''),
+    gherkinText: String(options.gherkin ?? ''),
   };
 }
 
@@ -93,9 +97,9 @@ function parseFeatureUpdateOptions(
     home,
     id,
     title: options.title as string | undefined,
-    problemStatement: options['problem-statement'] as string | undefined,
-    contractText: options.contract as string | undefined,
-    completionCriteria: options['completion-criteria'] as string | undefined,
+    specText: options['spec-text'] as string | undefined,
+    sourceRequestText: options['source-request'] as string | undefined,
+    gherkinText: options.gherkin as string | undefined,
   };
 }
 

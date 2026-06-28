@@ -2,29 +2,33 @@
 
 SenderOS is the orchestration engine for Senderos.
 
-This app contains the runtime, CLI, domain model, colocated tests, canonical agent-role definitions, and supporting docs for the control plane described in the documentation site.
+This app contains the runtime, CLI, domain model, canonical agent-role definitions, colocated tests, and the docs that define the control-plane workflow.
 
 ## Runtime model
 
 SenderOS stores durable orchestration state in SQLite.
 
-That state includes Senderos-owned entities such as:
+The primary runtime entities are:
 
+- projects
 - features
-- tasks
 - runs
+- run attempts
+- tasks
 - sessions
 - workspaces
 - events
 
-The default executable mode uses a local SQLite database in the Senderos home directory. The configuration model also supports a Turso-compatible remote SQLite mode through a built-in database adapter.
+Approved specs and canonical Gherkin feature contracts live in SenderOS state.
+Standalone feature files are not the source of truth.
 
 ## Important boundary
 
 SenderOS is the factory.
-It is not the coding agent and it is not an external backlog-sync engine.
+It is not the coding agent and it is not a backlog mirror.
 
-SenderOS owns orchestration truth and instructions. A host agent executes coding work inside SenderOS-managed workspaces.
+SenderOS owns orchestration truth and workflow state.
+A host agent executes coding work inside SenderOS-managed workspaces.
 
 ## Senderos home
 
@@ -40,6 +44,24 @@ In the current repository-local workflow, runtime state lives inside a dedicated
   workspaces/
   cache/
 ```
+
+## Workflow shape
+
+The strict path is now:
+
+1. user intent
+2. `spec_partner` refines the spec
+3. human approves the spec
+4. `gherkin_author` emits raw Gherkin + structured metadata
+5. SenderOS creates the feature record from that approved contract
+6. human approves the executable contract for implementation
+7. implementation / review / mutation / PR flow begins
+
+See:
+
+- `docs/workflow.md`
+- `docs/state-model.md`
+- `docs/storage-model.md`
 
 ## CLI discovery
 
@@ -60,4 +82,4 @@ senderos help feature approve
 - `agents/` — canonical vendor-neutral agent roles in Markdown
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
-- `templates/` — sample assets and historical references
+- `templates/` — historical references and examples, not live runtime truth
