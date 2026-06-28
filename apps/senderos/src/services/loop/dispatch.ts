@@ -4,7 +4,7 @@ import { join, relative, resolve } from 'node:path';
 import { ensureDir, resolveRuntime } from '../../config/runtime';
 import { statusForPhase } from '../../domain/constants';
 import type { FeatureRecord, LoopPhase } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
@@ -57,7 +57,7 @@ function allocateWorkspace(feature: FeatureRecord, home?: string) {
   mkdirSync(rootPath, { recursive: true });
   materializeProjectSnapshot(project.canonicalPath, rootPath);
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare(
     'insert into workspaces (id,feature_id,run_id,session_id,root_path,status,branch_name,retention_reason,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)'
   ).run(id, feature.id, null, null, rootPath, 'allocated', null, null, now(), now());
@@ -79,7 +79,7 @@ function createRunRecord(
   instruction: unknown,
   home?: string
 ) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const id = randomId('run');
   const branchName = `run/${feature.id}/${id}`;
   const baseBranch = feature.featureBranchName ?? feature.baseTargetBranch;
@@ -116,7 +116,7 @@ function createRunRecord(
 }
 
 function createSession(runId: string, harness: string, phase: LoopPhase, workspaceRoot: string, home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const id = randomId('session');
   const resumeCommand = `senderos session resume ${id}`;
   const launchCommand = `cd ${JSON.stringify(workspaceRoot)} && ${harness} exec`;
@@ -158,7 +158,7 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
     rmSync(workspace.root_path, { recursive: true, force: true });
   }
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare('update workspaces set status=?, retention_reason=?, updated_at=? where id=?').run(
     'cleaned',
     retentionReason ?? null,
@@ -198,7 +198,7 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
   const { config } = resolveRuntime(home);
   const sessionId = createSession(runRecord.id, config.defaultHarness, phase, workspace.root_path, home);
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare('update workspaces set run_id=?, session_id=?, status=?, branch_name=?, updated_at=? where id=?').run(
     runRecord.id,
     sessionId,

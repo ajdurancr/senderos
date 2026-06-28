@@ -1,4 +1,4 @@
-import { openConfiguredCommandDb } from '../db/client';
+import { openRuntimeDb } from '../db/client';
 import { now } from '../utils/common';
 import { emitEvent } from './events';
 
@@ -7,7 +7,7 @@ export function completeActiveSessionsForFeature(
   home?: string,
   reason = 'phase_completed'
 ) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const sessions = db
     .query(
       "select sessions.id from sessions join runs on runs.id = sessions.run_id where runs.feature_id = ? and sessions.status = 'active'"

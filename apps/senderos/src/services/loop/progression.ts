@@ -1,6 +1,6 @@
 import { nextPhase } from '../../domain/constants';
 import type { FeatureRecord } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { now } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
@@ -25,7 +25,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
   }
 
   if (feature.currentRunId) {
-    const db = openConfiguredCommandDb(home);
+    const db = openRuntimeDb(home);
     db.prepare("update runs set status='succeeded', result_json=?, updated_at=? where id=?").run(
       JSON.stringify({ phase: currentPhase, completedAt: now() }),
       now(),
@@ -39,7 +39,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
   const next = nextPhase(currentPhase);
 
   if (next === 'done') {
-    const db = openConfiguredCommandDb(home);
+    const db = openRuntimeDb(home);
 
     db.prepare('update features set loop_phase=?, status=?, current_run_id=?, updated_at=? where id=?').run(
       'done',

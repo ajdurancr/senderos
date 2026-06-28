@@ -2,10 +2,19 @@ import { describe, expect, test } from 'bun:test';
 import { mapFeatureRow, mapProjectRow, mapTaskRow } from './mappers';
 
 describe('db mappers', () => {
-  test('maps project, feature and task rows and nulls', () => {
+  test('return null when project row input is null', () => {
     expect(mapProjectRow(null)).toBeNull();
+  });
+
+  test('return null when feature row input is null', () => {
     expect(mapFeatureRow(null)).toBeNull();
+  });
+
+  test('return null when task row input is null', () => {
     expect(mapTaskRow(null)).toBeNull();
+  });
+
+  test('map project rows into domain records', () => {
     expect(
       mapProjectRow({
         id: 'p',
@@ -23,6 +32,9 @@ describe('db mappers', () => {
         updated_at: 'b',
       })?.targetBranch
     ).toBe('main');
+  });
+
+  test('map feature rows into domain records', () => {
     expect(
       mapFeatureRow({
         id: 'f',
@@ -44,6 +56,9 @@ describe('db mappers', () => {
         updated_at: 'b',
       })?.projectId
     ).toBe('p');
+  });
+
+  test('map task rows into domain records', () => {
     expect(
       mapTaskRow({
         id: 't',

@@ -27,7 +27,7 @@ export function healthcheckCurrentDb(home?: string) {
   return resolveConfiguredDbAdapter(home).healthcheck(home);
 }
 
-export function openConfiguredCommandDb(home?: string): Database {
+export function openRuntimeDb(home?: string): Database {
   const adapter = resolveConfiguredDbAdapter(home);
 
   if (!adapter.openCommandConnection) {

@@ -1,5 +1,5 @@
 import type { FeatureRecord } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { mapFeatureRow, mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -7,7 +7,7 @@ import { cleanupWorkspace, ensurePhaseTask } from '../loop';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
 
 function requireProject(projectId: string, home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const project = mapProjectRow(db.query('select * from projects where id = ?').get(projectId));
   db.close();
 
@@ -29,7 +29,7 @@ export function createFeature(input: {
   id?: string;
 }) {
   const project = requireProject(input.projectId, input.home);
-  const db = openConfiguredCommandDb(input.home);
+  const db = openRuntimeDb(input.home);
   const ts = now();
   const id = input.id ?? randomId('feature');
 
@@ -66,7 +66,7 @@ export function createFeature(input: {
 }
 
 export function listFeatures(home?: string): FeatureRecord[] {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const rows = db.query('select * from features order by created_at asc').all().map(mapFeatureRow) as FeatureRecord[];
   db.close();
 
@@ -74,7 +74,7 @@ export function listFeatures(home?: string): FeatureRecord[] {
 }
 
 export function getFeature(id: string, home?: string): FeatureRecord | null {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const row = mapFeatureRow(db.query('select * from features where id = ?').get(id));
   db.close();
 
@@ -103,7 +103,7 @@ export function updateFeature(input: {
     throw new Error('Cannot change feature contract while a run is active');
   }
 
-  const db = openConfiguredCommandDb(input.home);
+  const db = openRuntimeDb(input.home);
   db.prepare(
     'update features set title=?, spec_text=?, source_request_text=?, gherkin_text=?, gherkin_meta_json=?, pr_url=?, pr_number=?, feature_branch_name=?, updated_at=? where id=?'
   ).run(
@@ -132,7 +132,7 @@ export function approveFeature(id: string, home?: string) {
     throw new Error(`Feature not found: ${id}`);
   }
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare('update features set status=?, loop_phase=?, updated_at=? where id=?').run(
     'active',
     'idle',
@@ -156,7 +156,7 @@ export function cancelFeature(id: string, home?: string) {
 
   completeActiveSessionsForFeature(id, home);
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
 
   db.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
     'canceled',

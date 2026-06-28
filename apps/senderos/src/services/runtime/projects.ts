@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
 import type { IntegrationMode, ProjectRecord, ProjectStatus } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -56,7 +56,7 @@ export function createProject(input: {
   status?: ProjectStatus;
   id?: string;
 }) {
-  const db = openConfiguredCommandDb(input.home);
+  const db = openRuntimeDb(input.home);
   const ts = now();
   const id = input.id ?? defaultProjectIdForPath(input.canonicalPath);
   const githubRemote =
@@ -91,14 +91,14 @@ export function createProject(input: {
 }
 
 export function getProject(id: string, home?: string): ProjectRecord | null {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const row = mapProjectRow(db.query('select * from projects where id = ?').get(id));
   db.close();
   return row;
 }
 
 export function listProjects(home?: string): ProjectRecord[] {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const rows = db
     .query('select * from projects order by created_at asc')
     .all()
@@ -127,7 +127,7 @@ export function updateProject(input: {
     throw new Error(`Project not found: ${input.id}`);
   }
 
-  const db = openConfiguredCommandDb(input.home);
+  const db = openRuntimeDb(input.home);
   db.prepare(
     'update projects set name=?, canonical_path=?, github_owner=?, github_repo=?, github_remote=?, target_branch=?, status=?, integration_mode=?, inferred_commands_json=?, health_details_json=?, updated_at=? where id=?'
   ).run(
