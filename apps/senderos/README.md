@@ -44,7 +44,7 @@ Runtime state lives inside a dedicated Senderos home directory:
 ## What lives here
 
 - `src/` — SenderOS runtime, CLI, and services
-- `tests/` — SenderOS verification
+- `tests/` — SenderOS verification and CLI/runtime regression coverage
 - `agents/` — canonical vendor-neutral agent roles in Markdown
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs

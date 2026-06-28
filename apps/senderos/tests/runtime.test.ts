@@ -8,6 +8,7 @@ import {
   cancelRun,
   createFeature,
   doctor,
+  inferHarnessFromEnvironment,
   initializeRuntime,
   listFeatures,
   listRuns,
@@ -28,6 +29,12 @@ function tempHome() { const dir = mkdtempSync(join(tmpdir(), 'senderos-test-'));
 afterEach(() => { while (homes.length) rmSync(homes.pop()!, { recursive: true, force: true }); });
 
 describe('runtime init', () => {
+  test('infers harness from known environment markers', () => {
+    expect(inferHarnessFromEnvironment({ OPENCLAW_WORKSPACE_DIR: '/tmp/x' } as NodeJS.ProcessEnv)).toBe('openclaw');
+    expect(inferHarnessFromEnvironment({ CODEX_SANDBOX: '1' } as NodeJS.ProcessEnv)).toBe('codex');
+    expect(inferHarnessFromEnvironment({} as NodeJS.ProcessEnv)).toBe('unknown');
+  });
+
   test('creates home, config, and database', () => {
     const home = tempHome();
     initializeRuntime(home);
@@ -51,9 +58,9 @@ describe('feature lifecycle', () => {
     expect(created.status).toBe('defined');
     expect(listFeatures(home)).toHaveLength(1);
     const approved = approveFeature(created.id, home);
-    expect(approved?.status).toBe('ready');
+    expect(approved?.status).toBe('ready_contract');
     const started = startLoop(created.id, home);
-    expect(started.feature?.status).toBe('ready');
+    expect(started.feature?.status).toBe('ready_contract');
     expect(started.feature?.loopPhase).toBe('contract');
     expect(started.task?.phase).toBe('contract');
     expect(listTasks(created.id, home).length).toBeGreaterThan(0);
@@ -118,9 +125,23 @@ describe('loop visibility', () => {
 });
 
 describe('cli and config', () => {
-  test('config set/get and CLI init work', async () => {
+  test('init previews before approval and config set/get work', async () => {
     const home = tempHome();
-    await runCli(['init', '--home', home]);
+
+    const logs: string[] = [];
+    const originalLog = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+
+    try {
+      await runCli(['init', '--home', home, '--harness', 'codex']);
+    } finally {
+      console.log = originalLog;
+    }
+
+    expect(logs.join('\n')).toContain('requiresApproval');
+    expect(existsSync(join(home, 'config.json'))).toBe(false);
+
+    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
     await runCli(['config', 'set', 'defaultHarness', 'codex', '--home', home]);
     const config = loadConfig(home);
     expect(config.defaultHarness).toBe('codex');
