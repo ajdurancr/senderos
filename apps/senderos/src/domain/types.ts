@@ -76,6 +76,7 @@ export interface CommandHelp {
   command: string;
   summary: string;
   usage: string[];
+  arguments?: Array<{ name: string; description: string; required?: boolean }>;
   options?: Array<{ name: string; description: string; required?: boolean }>;
   subcommands?: CommandHelp[];
 }

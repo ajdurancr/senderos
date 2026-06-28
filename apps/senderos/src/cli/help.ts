@@ -11,7 +11,11 @@ import { systemCommandsHelp } from './commands/system';
 export const rootHelp: CommandHelp = {
   command: 'senderos',
   summary: 'SQLite-backed control plane for Senderos loop engineering.',
-  usage: ['senderos <command> [options]'],
+  usage: ['senderos <command> [subcommand] [arguments] [options]'],
+  arguments: [
+    { name: 'command', description: 'Top-level command to execute.', required: true },
+    { name: 'subcommand', description: 'Nested action for grouped commands when applicable.' },
+  ],
   subcommands: [
     initCommandHelp,
     configCommandHelp,
@@ -23,7 +27,30 @@ export const rootHelp: CommandHelp = {
   ],
 };
 
-export function resolveHelp(command?: string): CommandHelp {
-  if (!command) return rootHelp;
-  return rootHelp.subcommands?.find((entry) => entry.command === command) ?? rootHelp;
+export function resolveHelp(command?: string, subcommand?: string): CommandHelp {
+  if (!command) {
+    return rootHelp;
+  }
+
+  const commandHelp = rootHelp.subcommands?.find((entry) => entry.command === command);
+
+  if (!commandHelp) {
+    return rootHelp;
+  }
+
+  if (!subcommand) {
+    return commandHelp;
+  }
+
+  return commandHelp.subcommands?.find((entry) => entry.command === subcommand) ?? commandHelp;
+}
+
+export function collectHelpLeaves(help: CommandHelp): CommandHelp[] {
+  const children = help.subcommands ?? [];
+
+  if (!children.length) {
+    return [help];
+  }
+
+  return [help, ...children.flatMap(collectHelpLeaves)];
 }

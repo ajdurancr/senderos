@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import {
   approveFeature,
   cancelRun,
+  collectHelpLeaves,
   createFeature,
   doctor,
   inferHarnessFromEnvironment,
@@ -15,7 +16,9 @@ import {
   listTasks,
   loadConfig,
   reconcile,
+  resolveHelp,
   resolveRuntime,
+  rootHelp,
   schedulePlan,
   showLoop,
   startLoop,
@@ -121,6 +124,32 @@ describe('loop visibility', () => {
     const shown = showLoop(feature.id, home);
     expect(shown.tasks.length).toBeGreaterThan(0);
     expect(shown.nextDispatch.phase).toBe('contract');
+  });
+});
+
+describe('cli help metadata', () => {
+  test('documents every command and subcommand with usage data', () => {
+    const root = rootHelp;
+    expect(root.subcommands?.length).toBeGreaterThan(0);
+
+    const featureHelp = resolveHelp('feature');
+    expect(featureHelp.subcommands?.map((entry) => entry.command)).toEqual([
+      'create',
+      'list',
+      'show',
+      'update',
+      'approve',
+      'cancel',
+    ]);
+
+    const configSetHelp = resolveHelp('config', 'set');
+    expect(configSetHelp.arguments?.map((entry) => entry.name)).toEqual(['config-path', 'value']);
+
+    const leaves = collectHelpLeaves(root);
+    for (const help of leaves) {
+      expect(help.summary.length).toBeGreaterThan(0);
+      expect(help.usage.length).toBeGreaterThan(0);
+    }
   });
 });
 
