@@ -7,11 +7,10 @@ import { tempHome } from '../../tests/helpers/runtime';
 import { runCli } from './run';
 
 describe('runCli', () => {
-  test('handles init preview, approval, and routes real commands', async () => {
+  test('init without approve only prints the preview', async () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-
     console.log = (...args: unknown[]) => logs.push(args.join(' '));
 
     try {
@@ -22,10 +21,18 @@ describe('runCli', () => {
 
     expect(logs.join('\n')).toContain('requiresApproval');
     expect(existsSync(join(home, 'config.json'))).toBe(false);
+  });
 
+  test('init with approve creates the runtime', async () => {
+    const home = tempHome();
+    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+    expect(existsSync(join(home, 'config.json'))).toBe(true);
+  });
+
+  test('config commands route through runCli and persist updates', async () => {
+    const home = tempHome();
     await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
     await runCli(['config', 'set', 'defaultHarness', 'codex', '--home', home]);
-
     expect(loadConfig(home).defaultHarness).toBe('codex');
     expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('codex');
   });
