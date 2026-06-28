@@ -88,7 +88,7 @@ Current top-level workflow commands now include:
 
 - `src/` — SenderOS runtime, CLI, services, and colocated tests
 - `tests/helpers/` — shared test helpers
-- `src/cli/integration.test.ts` — end-to-end local/CI CLI smoke coverage
+- `src/integration/` — integration test suite with flow-focused end-to-end coverage
 - `agents/` — canonical vendor-neutral agent roles in Markdown
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
