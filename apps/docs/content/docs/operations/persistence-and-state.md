@@ -12,15 +12,19 @@ That is the default and the baseline model.
 
 By default, Senderos creates and uses a local SQLite database inside the Senderos home directory.
 
-This is the standard deployment mode.
+This is the standard executable deployment mode today.
 
 ### Remote SQLite-compatible service
 
 Senderos also supports a SQLite-compatible remote service, with Turso as the supported option.
 
+Turso is integrated as a built-in Senderos database adapter. The rest of Senderos resolves a database adapter from configuration instead of hard-coding database behavior into higher-level orchestration code.
+
 The model does not change between local SQLite and Turso.
 The schema stays the same.
-The difference is only where the database is hosted.
+The difference is only where the database is hosted and which built-in adapter is selected.
+
+At the current implementation level, Turso participates in configuration, adapter resolution, and adapter health checks. The synchronous command-execution path still runs through the local SQLite adapter.
 
 ## What lives in SQLite
 
@@ -51,9 +55,11 @@ Large artifacts stay on disk inside the Senderos home directory and are referenc
 
 ## Senderos home directory
 
+A typical runtime created from the current repository-local workflow looks like this:
+
 ```text
-~/.senderos/
-  config.yaml
+<workspace>/.senderos/
+  config.json
   senderos.db
   artifacts/
   logs/
@@ -66,7 +72,7 @@ When Turso is used, `senderos.db` is replaced by remote database configuration, 
 
 ## Configuration file
 
-Senderos uses a single configuration file with the minimum required runtime configuration.
+Senderos uses a single `config.json` file with the minimum required runtime configuration.
 
 It defines:
 

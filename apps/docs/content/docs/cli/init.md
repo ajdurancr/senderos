@@ -3,10 +3,14 @@ title: init
 description: "Create the Senderos runtime directory, configuration, and initial database state."
 ---
 
-`senderos init` bootstraps a working Senderos runtime.
+`senderos init` is a two-step bootstrap command.
+
+On first run, it previews the exact configuration Senderos will use and requires explicit approval before it creates anything.
 
 ## What it does
 
+- previews the proposed Senderos home, database adapter, harness, and runtime paths,
+- requires explicit approval before writing files,
 - creates the Senderos home directory,
 - writes the configuration file,
 - creates artifact directories,
@@ -17,7 +21,8 @@ description: "Create the Senderos runtime directory, configuration, and initial 
 
 ```bash
 senderos init
-senderos init --json
+senderos init --home /path/to/.senderos --harness codex
+senderos init --home /path/to/.senderos --harness codex --approve
 ```
 
 ## Typical use cases

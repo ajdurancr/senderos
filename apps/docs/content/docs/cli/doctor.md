@@ -8,7 +8,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 ## What it checks
 
 - configuration validity,
-- local SQLite or Turso connectivity,
+- selected database adapter health,
 - directory integrity,
 - workspace root accessibility,
 - harness readiness,
@@ -18,7 +18,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 
 ```bash
 senderos doctor
-senderos doctor --json
+senderos help doctor
 ```
 
 ## Typical use cases

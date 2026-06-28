@@ -108,15 +108,16 @@ Examples:
 All stateful entities live in SQLite.
 Artifacts such as logs, transcripts, reports, and generated outputs live in the Senderos home directory and are referenced from the database.
 
-## Suggested lifecycle
+## Current lifecycle labels
 
 ```text
 defined
--> ready
--> active
--> verifying
+-> ready_contract
+-> active_implementation
+-> verifying_review
+-> verifying_mutation
 -> completed
 -> failed | canceled
 ```
 
-The exact state names matter less than one requirement: every transition must be explicit, queryable, and enforceable.
+The exact labels are implementation-level details, but the key requirement remains the same: every transition must be explicit, queryable, and enforceable.

@@ -9,25 +9,26 @@ Senderos is installed into the local environment and operated through the CLI.
 
 1. install the CLI,
 2. run `senderos init`,
-3. review the generated configuration file,
-4. run `senderos doctor --json`,
-5. confirm database connectivity,
+3. inspect the previewed configuration,
+4. rerun `senderos init --approve` once the configuration is acceptable,
+5. run `senderos doctor`,
 6. create the first feature,
 7. start the loop.
 
 ## Example
 
 ```bash
-senderos init
-senderos doctor --json
+senderos init --home ./.senderos --harness codex
+senderos init --home ./.senderos --harness codex --approve
+senderos doctor
 senderos feature create --title "Add billing portal"
 senderos loop start feature-001
-senderos status --json
+senderos status
 ```
 
 ## What `senderos init` creates
 
-`senderos init` creates the Senderos home directory and the minimum runtime structure:
+`senderos init` creates the Senderos runtime only after approval. The resulting structure includes:
 
 - config file,
 - SQLite database or remote DB configuration,

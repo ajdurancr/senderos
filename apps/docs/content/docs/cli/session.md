@@ -14,8 +14,8 @@ description: "Inspect the host-agent execution handles Senderos records for acti
 ## Examples
 
 ```bash
-senderos session list --json
-senderos session show session-009 --json
+senderos session list
+senderos session show session-009
 senderos session resume session-009
 ```
 
