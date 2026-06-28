@@ -1,16 +1,21 @@
 import { describe, expect, test } from 'bun:test';
-import { createFeature, getFeature } from '../runtime';
+import { approveFeature, createFeature, getFeature } from '../runtime';
 import { dispatchForPhase, getWorkspace } from './index';
-import { initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('dispatchForPhase', () => {
   test('allocates workspaces and starts run/session/task', () => {
     const home = initHome();
-    const feature = createFeature({ home, title: 'Dispatch me' });
-    const dispatched: any = dispatchForPhase(feature, 'contract', home);
-    expect(dispatched.run.status).toBe('running');
+    const project = createProjectFixture(home);
+    const feature = approveFeature(
+      createFeature({ home, projectId: project.id, title: 'Dispatch me', gherkinText: 'Feature: Dispatch me' }).id,
+      home
+    )!;
+    const dispatched: any = dispatchForPhase(feature, 'implementation', home);
+    expect(dispatched.run.status).toBe('executing');
     expect(dispatched.session.status).toBe('active');
     expect(dispatched.task.status).toBe('running');
-    expect((getWorkspace(getFeature(feature.id, home)!.currentWorkspaceId!, home) as any).status).toBe('locked');
+    const persistedFeature = getFeature(feature.id, home)!;
+    expect((getWorkspace(persistedFeature.currentWorkspaceId!, home) as any).status).toBe('active');
   });
 });

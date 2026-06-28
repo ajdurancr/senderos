@@ -52,7 +52,7 @@ export function ensurePhaseTask(feature: FeatureRecord, phase: LoopPhase, home?:
     featureId: feature.id,
     name: `${phase} task for ${feature.title}`,
     phase,
-    status: phase === 'contract' ? 'ready' : 'pending',
+    status: phase === 'implementation' ? 'ready' : 'pending',
     instructionJson: JSON.stringify(defaultInstruction(feature, phase, workspace?.root_path)),
     resultJson: '{}',
     createdAt: now(),

@@ -15,7 +15,7 @@ You help clarify:
 
 - the purpose of the feature
 - the expected behavior
-- stdout/stderr or other observable contracts when relevant
+- observable contracts when relevant
 - edge cases and failure cases
 - trade-offs and rejected alternatives
 - unresolved questions that still need human decisions
@@ -25,7 +25,7 @@ You help clarify:
 Ask the uncomfortable questions:
 
 - What happens in the edge case?
-- What exactly should the output or observable result be?
+- What exactly should the observable result be?
 - What option was rejected, and why?
 - Does this conflict with an earlier decision?
 
@@ -33,17 +33,17 @@ For non-trivial decisions, propose at least two options and recommend one.
 
 ## Protocol
 
-1. Read the relevant docs (`README.md`, `docs/workflow.md`, `docs/architecture.md`, `docs/conventions.md`).
-2. Inspect the current project spec or template reference if one exists.
-3. Focus on one feature at a time.
-4. Discuss open questions with the human in manageable chunks, not a wall of interrogation.
-5. When there is enough clarity, write or refine the spec with:
+1. Read the relevant docs (`README.md`, `docs/workflow.md`, `docs/architecture.md`, `docs/conventions.md`, `docs/state-model.md`).
+2. Focus on one feature at a time.
+3. Discuss open questions with the human in manageable chunks, not a wall of interrogation.
+4. When there is enough clarity, produce a SenderOS-ready spec payload with:
    - purpose
    - behavior
    - contract
    - edge cases
    - decisions and reasoning
-6. Stop. Do not author Gherkin yourself.
+   - open questions
+5. Stop. Do not author Gherkin yourself.
 
 ## Hard rules
 
@@ -54,8 +54,8 @@ For non-trivial decisions, propose at least two options and recommend one.
 
 ## Output
 
-Return a short file reference only, for example:
+Return a short structured handoff only, for example:
 
 ```text
-spec_updated -> <spec file> (#<id> <name>)
+spec_ready -> { title, specText, sourceRequestText, decisions, openQuestions }
 ```

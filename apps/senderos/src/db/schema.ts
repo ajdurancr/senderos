@@ -1,19 +1,43 @@
-import type { Database } from "bun:sqlite";
+import type { Database } from 'bun:sqlite';
+
 export function migrate(db: Database) {
   db.exec(`
+    create table if not exists projects (
+      id text primary key,
+      name text not null,
+      canonical_path text not null,
+      github_owner text not null,
+      github_repo text not null,
+      github_remote text not null,
+      target_branch text not null,
+      status text not null,
+      integration_mode text not null,
+      inferred_commands_json text not null default '{}',
+      health_details_json text not null default '{}',
+      created_at text not null,
+      updated_at text not null
+    );
+
     create table if not exists features (
       id text primary key,
+      project_id text not null,
       title text not null,
-      problem_statement text not null default '',
-      contract_text text not null default '',
+      spec_text text not null default '',
+      source_request_text text not null default '',
+      gherkin_text text not null default '',
+      gherkin_meta_json text not null default '{}',
       status text not null,
       loop_phase text not null,
-      completion_criteria text not null default '',
+      base_target_branch text not null,
+      feature_branch_name text,
+      pr_url text,
+      pr_number integer,
       current_workspace_id text,
       current_run_id text,
       created_at text not null,
       updated_at text not null
     );
+
     create table if not exists tasks (
       id text primary key,
       feature_id text not null,
@@ -25,17 +49,38 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
+
     create table if not exists runs (
       id text primary key,
       feature_id text not null,
       task_id text,
       phase text not null,
       status text not null,
+      branch_name text,
+      base_branch text,
+      max_attempts integer not null default 3,
+      attempt_count integer not null default 0,
+      current_attempt integer not null default 0,
       instruction_json text not null,
       result_json text not null default '{}',
       created_at text not null,
       updated_at text not null
     );
+
+    create table if not exists run_attempts (
+      id text primary key,
+      run_id text not null,
+      attempt_number integer not null,
+      status text not null,
+      branch_name text,
+      source_feature_sha text,
+      failure_step text,
+      failure_summary text,
+      details_json text not null default '{}',
+      created_at text not null,
+      updated_at text not null
+    );
+
     create table if not exists sessions (
       id text primary key,
       run_id text,
@@ -48,6 +93,7 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
+
     create table if not exists workspaces (
       id text primary key,
       feature_id text,
@@ -60,6 +106,7 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
+
     create table if not exists events (
       id text primary key,
       event_type text not null,

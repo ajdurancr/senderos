@@ -6,9 +6,11 @@ SenderOS stores durable orchestration state in SQLite.
 
 ### SenderOS repository
 The repository contains:
+
 - runtime and domain code
 - tests
 - SenderOS documentation
+- canonical agent definitions
 - templates and examples
 
 The repository does **not** contain live SenderOS runtime state as the canonical persistence model.
@@ -27,20 +29,29 @@ Real orchestration state lives in the Senderos home directory, with SQLite as th
   cache/
 ```
 
-## Database modes
+## What belongs in SQLite
 
-SenderOS supports:
-- local SQLite by default
-- Turso-compatible remote SQLite configuration as the supported remote mode
+Structured SenderOS truth belongs in SQLite, including:
 
-The schema stays consistent across both modes.
+- projects
+- approved specs
+- feature contracts in raw Gherkin form
+- parsed Gherkin metadata
+- feature / run / attempt / task lifecycle state
+- PR and branch linkage
+- event history
 
-## Artifact model
+## What belongs on disk
 
-Structured state lives in SQLite.
-Large artifacts such as logs, transcripts, reports, and cached payloads live under the Senderos home directory and are referenced from the database.
+Large runtime artifacts still belong under the Senderos home directory and are referenced from SQLite, for example:
+
+- logs
+- transcripts
+- reports
+- cached payloads
+- temporary workspace files
 
 ## Design rule
 
-If data describes SenderOS state transitions, ownership, runs, or sessions, it belongs in SQLite.
+If data describes SenderOS state transitions, ownership, workflow, project identity, features, runs, or sessions, it belongs in SQLite.
 If data is a large runtime artifact, it belongs under the Senderos home directory.
