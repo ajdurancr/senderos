@@ -11,6 +11,7 @@ The command surface is grouped around a few stable nouns instead of a huge list 
 
 ```text
 senderos init
+senderos help [command] [subcommand]
 senderos doctor
 senderos config ...
 senderos feature ...
@@ -44,12 +45,25 @@ Subcommands use predictable verbs such as:
 ### Machine-readable by default
 
 Senderos is optimized for host-agent use.
-The preferred output mode is machine-readable.
+The default output mode is machine-readable JSON.
 Human-readable rendering is the host agent's job when it needs to explain something to a user.
+
+### Command-level help metadata
+
+Each command and subcommand exposes its own help metadata.
+That metadata is the source of truth for:
+
+- command discovery,
+- usage patterns,
+- expected arguments,
+- available options.
+
+Use `senderos help`, `senderos help <command>`, or `senderos help <command> <subcommand>` to inspect it.
 
 ## Command map
 
-- `init` — create the local Senderos runtime.
+- `init` — preview or create the Senderos runtime.
+- `help` — show machine-readable help for commands and subcommands.
 - `doctor` — validate the installation and runtime.
 - `config` — inspect or update Senderos configuration.
 - `feature` — manage Senderos features.

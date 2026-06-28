@@ -16,15 +16,16 @@ description: "Operate the engineering loop: start it, resume it, tick it manuall
 
 ```bash
 senderos loop start feature-001
-senderos loop show feature-001 --json
+senderos loop show feature-001
 senderos loop tick feature-001
 senderos loop resume feature-001
+senderos help loop show
 ```
 
 ## What it means
 
 `loop start` opens the autonomous feature-delivery loop.
-From there, Senderos drives the sequence through implementation, review, and mutation validation until the feature reaches a deployable end state or a terminal failure condition.
+From there, Senderos drives the sequence through contract, implementation, review, and mutation validation until the feature reaches a deployable end state or a terminal failure condition.
 
 ## Manual use cases
 

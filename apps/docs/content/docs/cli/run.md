@@ -14,8 +14,8 @@ description: "Inspect Senderos execution attempts for loop phases and operationa
 ## Examples
 
 ```bash
-senderos run list --json
-senderos run show run-014 --json
+senderos run list
+senderos run show run-014
 senderos run cancel run-014
 ```
 

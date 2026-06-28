@@ -12,14 +12,16 @@ Returns a high-level summary of:
 - open features,
 - active loops,
 - active runs,
+- pending tasks,
 - session health,
 - workspace locks,
-- pending reconciliation.
+- pending reconciliation,
+- active feature/run/session/workspace identifiers.
 
 ### Example
 
 ```bash
-senderos status --json
+senderos status
 ```
 
 ## `senderos reconcile`
@@ -29,7 +31,7 @@ Repairs stale derived state by running Senderos' reconciliation process.
 ### Example
 
 ```bash
-senderos reconcile --json
+senderos reconcile
 ```
 
 ## `senderos schedule-plan`
@@ -39,7 +41,7 @@ Prints the host-job instructions needed to automate loop execution.
 ### Example
 
 ```bash
-senderos schedule-plan --json
+senderos schedule-plan
 ```
 
 ## Typical use cases

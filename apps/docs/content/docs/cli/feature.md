@@ -9,18 +9,19 @@ description: "Create, inspect, update, approve, and manage Senderos features."
 
 - `create`
 - `list`
-- `show`
-- `update`
-- `approve`
-- `cancel`
+- `show <feature-id>`
+- `update <feature-id>`
+- `approve <feature-id>`
+- `cancel <feature-id>`
 
 ## Examples
 
 ```bash
 senderos feature create --title "Add billing portal"
-senderos feature list --json
-senderos feature show feature-001 --json
+senderos feature list
+senderos feature show feature-001
 senderos feature approve feature-001
+senderos help feature approve
 ```
 
 ## Typical use cases
@@ -30,7 +31,7 @@ Use `feature` to:
 - register new work,
 - inspect current feature truth,
 - update the feature contract,
-- mark a feature ready for loop execution.
+- mark a feature ready for contract-phase loop execution.
 
 ## Important distinction
 
