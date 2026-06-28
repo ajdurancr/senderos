@@ -1,92 +1,98 @@
 ---
 title: Domain Model
-description: "The durable entities Senderos stores in SQLite and how they differ from external systems and host-agent sessions."
+description: "The durable entities SenderOS stores in SQLite and how they differ from external systems and host-agent sessions."
 ---
 
-Senderos stores its orchestration model in SQLite.
-Every operational state transition belongs to a Senderos entity.
+SenderOS stores its orchestration model in SQLite.
+Every operational state transition belongs to a SenderOS entity.
 
 ## Core rule
 
-Senderos entities are not the same thing as external-system entities.
+SenderOS entities are not the same thing as external-system entities.
 
-A Senderos feature is not a GitHub issue.
-A Senderos task is not a Jira ticket.
-A Senderos session is not the host-agent's entire memory.
+A SenderOS feature is not a GitHub issue.
+A SenderOS task is not a Jira ticket.
+A SenderOS session is not the host-agent's entire memory.
 
-Senderos may reference outside systems later, but its own model stays separate.
+SenderOS may reference outside systems later, but its own model stays separate.
 
 ## Core entities
 
+### Project
+
+A project combines:
+
+- canonical local repository path
+- canonical GitHub repository identity
+- target branch
+- integration mode
+- inferred or stored execution commands
+- health state
+
 ### Feature
 
-A feature is the main business work item inside Senderos.
+A feature is the durable work item inside SenderOS.
 
 A feature contains:
 
-- identity,
-- title,
-- problem statement,
-- executable feature contract,
-- lifecycle state,
-- loop state,
-- completion criteria,
-- current workspace binding,
-- current active run.
+- identity
+- title
+- approved spec text
+- original request text
+- raw Gherkin contract
+- parsed Gherkin metadata
+- lifecycle state
+- loop state
+- current workspace binding
+- current active run
 
 ### Task
 
-A task is a Senderos-owned operational unit under a feature.
+A task is a SenderOS-owned operational unit under a feature.
 
-Examples:
+The current loop uses tasks to represent phase work such as:
 
-- define feature contract,
-- generate executable scenarios,
-- run TDD cycle,
-- perform review pass,
-- run mutation gate,
-- reconcile workspace,
-- finalize outcome package.
-
-Tasks are Senderos tasks, not external backlog records.
+- implementation
+- review
+- mutation
 
 ### Run
 
 A run is a single execution attempt for one task or loop phase.
 
-A feature can have many runs.
-A failed run does not imply a failed feature.
+A feature can have many runs over time.
+Only one run may be active per feature at once.
 
 ### Session
 
-A session is Senderos' record of a host-agent execution handle.
+A session is SenderOS' record of a host-agent execution handle.
 
 The host agent owns the live session.
-Senderos owns the durable reference to it.
+SenderOS owns the durable reference to it.
 
 Typical session state includes:
 
-- harness kind,
-- external session identifier,
-- status snapshot,
-- heartbeat timestamps,
-- resume metadata,
-- attached run id.
+- harness kind
+- external session identifier when available
+- status snapshot
+- heartbeat timestamps
+- resume metadata
+- attached run id
 
 ### Workspace
 
-A workspace is a Senderos-managed execution directory.
+A workspace is a SenderOS-managed execution directory.
 
-Senderos allocates it, tracks it, guards it, and retires it.
+SenderOS allocates it, tracks it, guards it, and retires it.
 
 Workspace state includes:
 
-- root path,
-- lock ownership,
-- branch identity,
-- cleanup state,
-- retention state,
-- associated feature/run/session ids.
+- root path
+- lock ownership
+- branch identity
+- cleanup state
+- retention state
+- associated project / feature / run / session ids
 
 ### Event
 
@@ -94,30 +100,34 @@ An event is the append-only history record for a meaningful state transition.
 
 Examples:
 
-- feature.created,
-- feature.loop_started,
-- run.started,
-- run.completed,
-- session.stale,
-- workspace.locked,
-- workspace.released,
-- reconciliation.completed.
+- `project.created`
+- `feature.created`
+- `run.created`
+- `session.completed`
+- `workspace.cleaned`
+- `reconciliation.completed`
 
 ## Storage model
 
 All stateful entities live in SQLite.
-Artifacts such as logs, transcripts, reports, and generated outputs live in the Senderos home directory and are referenced from the database.
+Artifacts such as logs, transcripts, reports, and generated outputs live in the SenderOS home directory and are referenced from the database.
 
 ## Current lifecycle labels
 
+Feature lifecycle today is intentionally small and explicit:
+
 ```text
-defined
--> ready_contract
--> active_implementation
--> verifying_review
--> verifying_mutation
--> completed
--> failed | canceled
+awaiting_scenario_approval
+-> active
+-> completed | failed | blocked | canceled
 ```
 
-The exact labels are implementation-level details, but the key requirement remains the same: every transition must be explicit, queryable, and enforceable.
+Loop phase progression is currently:
+
+```text
+idle
+-> implementation
+-> review
+-> mutation
+-> done
+```
