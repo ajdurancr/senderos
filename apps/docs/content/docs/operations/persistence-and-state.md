@@ -1,24 +1,24 @@
 ---
 title: Persistence and State
-description: "How Senderos stores durable state in SQLite, when Turso is used, and what still lives in the Senderos home directory."
+description: "How SenderOS stores durable state in SQLite, when Turso is used, and what still lives in the SenderOS home directory."
 ---
 
-Senderos stores orchestration state in SQLite.
+SenderOS stores orchestration state in SQLite.
 That is the default and the baseline model.
 
 ## Supported database modes
 
 ### Local SQLite
 
-By default, Senderos creates and uses a local SQLite database inside the Senderos home directory.
+By default, SenderOS creates and uses a local SQLite database inside the SenderOS home directory.
 
 This is the standard executable deployment mode today.
 
 ### Remote SQLite-compatible service
 
-Senderos also supports a SQLite-compatible remote service, with Turso as the supported option.
+SenderOS also supports a SQLite-compatible remote service, with Turso as the supported option.
 
-Turso is integrated as a built-in Senderos database adapter. The rest of Senderos resolves a database adapter from configuration instead of hard-coding database behavior into higher-level orchestration code.
+Turso is integrated as a built-in SenderOS database adapter. The rest of SenderOS resolves a database adapter from configuration instead of hard-coding database behavior into higher-level orchestration code.
 
 The model does not change between local SQLite and Turso.
 The schema stays the same.
@@ -28,32 +28,34 @@ At the current implementation level, Turso participates in configuration, adapte
 
 ## What lives in SQLite
 
-All durable Senderos entity state lives in SQLite:
+All durable SenderOS entity state lives in SQLite:
 
-- features,
-- tasks,
-- runs,
-- sessions,
-- workspaces,
-- events,
-- configuration references,
-- loop state,
-- reconciliation state.
+- projects
+- features
+- tasks
+- runs
+- run attempts
+- sessions
+- workspaces
+- events
+- configuration references
+- loop state
+- reconciliation state
 
 SQLite is the state authority.
 
 ## What does not live in SQLite
 
-Large artifacts stay on disk inside the Senderos home directory and are referenced from SQLite:
+Large artifacts stay on disk inside the SenderOS home directory and are referenced from SQLite:
 
-- logs,
-- transcripts,
-- generated reports,
-- temporary execution files,
-- cached instruction payloads,
-- exported artifacts.
+- logs
+- transcripts
+- generated reports
+- temporary execution files
+- cached instruction payloads
+- exported artifacts
 
-## Senderos home directory
+## SenderOS home directory
 
 A typical runtime created from the current repository-local workflow looks like this:
 
@@ -72,20 +74,14 @@ When Turso is used, `senderos.db` is replaced by remote database configuration, 
 
 ## Configuration file
 
-Senderos uses a single `config.json` file with the minimum required runtime configuration.
+SenderOS uses a single `config.json` file with the minimum required runtime configuration.
 
 It defines:
 
-- database mode,
-- local SQLite path or Turso connection parameters,
-- workspace root path,
-- artifact directories,
-- default harness,
-- machine-readable output defaults,
-- guardrail settings.
-
-## Guardrail: state never spills outside Senderos
-
-Senderos state and Senderos-managed artifacts never live outside the Senderos directory structure.
-
-The system may instruct the host agent to operate inside a Senderos-managed workspace, but Senderos itself does not mutate arbitrary locations on the machine.
+- database mode
+- local SQLite path or Turso connection parameters
+- workspace root path
+- artifact directories
+- default harness
+- machine-readable output defaults
+- guardrail settings

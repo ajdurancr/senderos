@@ -1,9 +1,9 @@
-import { openConfiguredCommandDb } from '../../../db/client';
+import { openRuntimeDb } from '../../../db/client';
 
 const ACTIVE_RUN_STATUSES = ['queued', 'preparing', 'executing', 'validating', 'repairing', 'merging', 'updating_pr', 'cleaning_up'];
 
 export function status(home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
 
   const summary = {
     projects: {

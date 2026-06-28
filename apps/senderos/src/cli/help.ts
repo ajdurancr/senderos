@@ -3,6 +3,7 @@ import type { CommandHelp } from '../domain/types';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
+import { projectCommandHelp } from './commands/project';
 import { loopCommandHelp } from './commands/loop';
 import { runCommandHelp } from './commands/run';
 import { sessionCommandHelp } from './commands/session';
@@ -19,6 +20,7 @@ export const rootHelp: CommandHelp = {
   subcommands: [
     initCommandHelp,
     configCommandHelp,
+    projectCommandHelp,
     featureCommandHelp,
     loopCommandHelp,
     runCommandHelp,

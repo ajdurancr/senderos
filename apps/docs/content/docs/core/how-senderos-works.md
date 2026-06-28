@@ -1,75 +1,62 @@
 ---
-title: How Senderos Works
-description: "The end-to-end loop from feature definition to deployable outcome."
+title: How SenderOS Works
+description: "The end-to-end loop from approved Gherkin contract to recorded execution outcome."
 ---
 
-Senderos follows a loop-engineering execution model inspired by the workflow described in this repository.
+SenderOS follows a loop-engineering execution model.
 
 ## End-to-end loop
 
 ```text
 intent
-  -> feature definition
-  -> executable feature contract
+  -> approved spec
+  -> approved Gherkin contract
+  -> project-linked feature record
   -> loop start
-  -> TDD implementation cycle
-  -> review and pruning
-  -> mutation confidence gate
-  -> deployable outcome
-  -> user evaluation
+  -> implementation
+  -> review
+  -> mutation
+  -> completed outcome or explicit failure state
 ```
-
-The loop does not pause for the user to review an intermediate pull request.
-The loop advances until Senderos has a deployable outcome or a terminal failure state that requires intervention.
 
 ## Detailed flow
 
-1. A user or host agent requests new work through the CLI.
-2. Senderos creates or updates a Senderos feature.
-3. Senderos' internal operating layer refines the feature contract.
-4. The contract is translated into executable scenarios.
-5. Senderos opens a loop for that feature.
-6. Senderos assigns a dedicated workspace and execution policy.
-7. Senderos instructs the host agent to execute the next step in the loop.
-8. The host agent performs implementation work in the assigned workspace.
-9. Senderos records the resulting run, session, and workspace state.
-10. Senderos continues the loop through test-driven implementation, review, and mutation validation.
-11. Senderos only surfaces the result back to the user after the loop reaches a deployable end state.
+1. A user or host agent creates or selects a SenderOS project.
+2. SenderOS stores the project identity and target branch.
+3. SenderOS creates a feature from an approved Gherkin contract.
+4. The feature is explicitly approved for implementation.
+5. SenderOS opens a loop for that feature.
+6. SenderOS allocates a project-aware workspace.
+7. SenderOS creates the run, task, and session records for the current phase.
+8. The host agent performs work in the assigned workspace.
+9. SenderOS records the resulting run, session, and workspace state.
+10. SenderOS continues the loop through implementation, review, and mutation validation.
+11. When the loop finishes, SenderOS closes the active session records and cleans the workspace.
 
 ## Control plane and execution plane
 
-Senderos is the control plane.
+SenderOS is the control plane.
 The host agent is the execution plane.
 
-### Senderos decides:
+### SenderOS decides:
 
-- what feature is active,
-- what the next valid step is,
-- which workspace is reserved,
-- what state transition is allowed,
-- what the host agent must do next,
-- whether the loop can continue,
-- whether reconciliation is needed.
+- what project and feature are active
+- what the next valid step is
+- which workspace is reserved
+- what state transition is allowed
+- what the host agent must do next
+- whether the loop can continue
+- whether reconciliation is needed
 
 ### The host agent does:
 
-- read Senderos instructions,
-- enter the assigned workspace,
-- perform the coding task,
-- run the requested checks,
-- return machine-readable execution results.
+- read SenderOS instructions
+- enter the assigned workspace
+- perform the coding task
+- run the requested checks
+- return machine-readable execution results
 
-## Why the loop is autonomous
+## Current implementation note
 
-The purpose of Senderos is not to ask the user for constant approval.
-The purpose is to complete the engineering loop responsibly.
-
-That means the loop continues through:
-
-- specification translation,
-- TDD implementation,
-- review,
-- mutation testing,
-- final packaging of the outcome.
-
-Only then does the user re-enter the loop to test the finished result.
+The current runtime and tests fully exercise the SenderOS state machine, CLI flow, workspace lifecycle, and reconciliation behavior.
+Harness-specific execution is still represented as recorded session metadata plus launch instructions rather than a fully bound external agent session in every environment.

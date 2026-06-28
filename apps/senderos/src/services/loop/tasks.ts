@@ -4,7 +4,7 @@ import type {
   TaskRecord,
   TaskStatus,
 } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { mapTaskRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -17,7 +17,7 @@ export function updateTaskStatus(
   result?: unknown,
   home?: string
 ) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
 
   db.prepare('update tasks set status=?, result_json=?, updated_at=? where id=?').run(
     status,
@@ -31,7 +31,7 @@ export function updateTaskStatus(
 }
 
 export function ensurePhaseTask(feature: FeatureRecord, phase: LoopPhase, home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const existing = mapTaskRow(
     db
       .query('select * from tasks where feature_id=? and phase=? order by created_at desc limit 1')

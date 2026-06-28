@@ -1,11 +1,11 @@
-import { openConfiguredCommandDb } from '../../../db/client';
+import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getFeature, updateFeature } from '../features';
+import { cancelFeature, getFeature } from '../features';
 import { getRun } from '../../loop';
 
 export function listRuns(home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const rows = db.query('select * from runs order by created_at asc').all();
   db.close();
 
@@ -13,7 +13,7 @@ export function listRuns(home?: string) {
 }
 
 export function cancelRun(id: string, home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const run = db.query('select * from runs where id=?').get(id) as any;
 
   if (!run) {
@@ -36,27 +36,14 @@ export function cancelRun(id: string, home?: string) {
 
   const feature = getFeature(run.feature_id, home);
   if (feature) {
-    updateFeature({ home, id: feature.id, featureBranchName: null, prUrl: feature.prUrl, prNumber: feature.prNumber });
-    const db2 = openConfiguredCommandDb(home);
-    db2.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
-      'canceled',
-      'blocked',
-      null,
-      now(),
-      feature.id
-    );
-    emitEvent(db2, 'feature.canceled', 'feature', feature.id, {
-      viaRunCancel: true,
-      deletedFeatureBranch: Boolean(feature.featureBranchName),
-    });
-    db2.close();
+    cancelFeature(feature.id, home);
   }
 
   return getRun(id, home);
 }
 
 export function listSessions(home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const rows = db.query('select * from sessions order by created_at asc').all();
   db.close();
 

@@ -1,29 +1,70 @@
-import { join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 
 import { ensureDir, resolveRuntime } from '../../config/runtime';
 import { statusForPhase } from '../../domain/constants';
 import type { FeatureRecord, LoopPhase } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
+import { completeActiveSessionsForFeature } from '../session-lifecycle';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
+import { getProject } from '../runtime/projects';
 
-function allocateWorkspace(featureId: string, home?: string) {
+const COPY_EXCLUDES = new Set(['.git', '.senderos', 'node_modules', 'coverage', 'dist', 'build']);
+
+function materializeProjectSnapshot(sourceRoot: string, targetRoot: string) {
+  ensureDir(targetRoot);
+
+  for (const entry of readdirSync(sourceRoot, { withFileTypes: true })) {
+    if (COPY_EXCLUDES.has(entry.name)) {
+      continue;
+    }
+
+    const sourcePath = join(sourceRoot, entry.name);
+    const targetPath = join(targetRoot, entry.name);
+
+    if (entry.isDirectory()) {
+      cpSync(sourcePath, targetPath, { recursive: true });
+      continue;
+    }
+
+    if (entry.isSymbolicLink()) {
+      const resolved = resolve(sourceRoot, entry.name);
+      const linkTarget = relative(targetRoot, resolved) || resolved;
+      symlinkSync(linkTarget, targetPath);
+      continue;
+    }
+
+    cpSync(sourcePath, targetPath);
+  }
+}
+
+function allocateWorkspace(feature: FeatureRecord, home?: string) {
+  const project = getProject(feature.projectId, home);
+
+  if (!project) {
+    throw new Error(`Project not found for feature ${feature.id}: ${feature.projectId}`);
+  }
+
   const { paths } = resolveRuntime(home);
   const id = randomId('workspace');
-  const rootPath = join(paths.workspaceRoot, featureId);
+  const rootPath = join(paths.workspaceRoot, project.id, feature.id);
 
-  ensureDir(rootPath);
+  rmSync(rootPath, { recursive: true, force: true });
+  mkdirSync(rootPath, { recursive: true });
+  materializeProjectSnapshot(project.canonicalPath, rootPath);
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare(
     'insert into workspaces (id,feature_id,run_id,session_id,root_path,status,branch_name,retention_reason,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)'
-  ).run(id, featureId, null, null, rootPath, 'allocated', null, null, now(), now());
+  ).run(id, feature.id, null, null, rootPath, 'allocated', null, null, now(), now());
 
   emitEvent(db, 'workspace.allocated', 'workspace', id, {
-    featureId,
+    featureId: feature.id,
+    projectId: project.id,
     rootPath,
   });
 
@@ -38,7 +79,7 @@ function createRunRecord(
   instruction: unknown,
   home?: string
 ) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const id = randomId('run');
   const branchName = `run/${feature.id}/${id}`;
   const baseBranch = feature.featureBranchName ?? feature.baseTargetBranch;
@@ -74,10 +115,11 @@ function createRunRecord(
   return { id, branchName };
 }
 
-function createSession(runId: string, harness: string, phase: LoopPhase, home?: string) {
-  const db = openConfiguredCommandDb(home);
+function createSession(runId: string, harness: string, phase: LoopPhase, workspaceRoot: string, home?: string) {
+  const db = openRuntimeDb(home);
   const id = randomId('session');
   const resumeCommand = `senderos session resume ${id}`;
+  const launchCommand = `cd ${JSON.stringify(workspaceRoot)} && ${harness} exec`;
 
   db.prepare(
     'insert into sessions (id,run_id,harness,external_session_id,status,status_snapshot_json,heartbeat_at,resume_command,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)'
@@ -87,7 +129,7 @@ function createSession(runId: string, harness: string, phase: LoopPhase, home?: 
     harness,
     null,
     'active',
-    JSON.stringify({ phase }),
+    JSON.stringify({ phase, launchCommand }),
     now(),
     resumeCommand,
     now(),
@@ -98,19 +140,44 @@ function createSession(runId: string, harness: string, phase: LoopPhase, home?: 
     runId,
     harness,
     phase,
+    launchCommand,
   });
 
   db.close();
   return id;
 }
 
+export function cleanupWorkspace(workspaceId: string, home?: string, retentionReason?: string) {
+  const workspace = getWorkspace(workspaceId, home) as any;
+
+  if (!workspace) {
+    return;
+  }
+
+  if (workspace.root_path && existsSync(workspace.root_path)) {
+    rmSync(workspace.root_path, { recursive: true, force: true });
+  }
+
+  const db = openRuntimeDb(home);
+  db.prepare('update workspaces set status=?, retention_reason=?, updated_at=? where id=?').run(
+    'cleaned',
+    retentionReason ?? null,
+    now(),
+    workspaceId
+  );
+  emitEvent(db, 'workspace.cleaned', 'workspace', workspaceId, { retentionReason: retentionReason ?? null });
+  db.close();
+}
+
 export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?: string) {
+  completeActiveSessionsForFeature(feature.id, home, 'phase_transition');
+
   let workspace = feature.currentWorkspaceId
     ? (getWorkspace(feature.currentWorkspaceId, home) as any)
     : null;
 
   if (!workspace) {
-    workspace = allocateWorkspace(feature.id, home);
+    workspace = allocateWorkspace(feature, home);
   }
 
   const task = ensurePhaseTask(
@@ -129,9 +196,9 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
 
   const runRecord = createRunRecord(feature, task.id, phase, instruction, home);
   const { config } = resolveRuntime(home);
-  const sessionId = createSession(runRecord.id, config.defaultHarness, phase, home);
+  const sessionId = createSession(runRecord.id, config.defaultHarness, phase, workspace.root_path, home);
 
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   db.prepare('update workspaces set run_id=?, session_id=?, status=?, branch_name=?, updated_at=? where id=?').run(
     runRecord.id,
     sessionId,

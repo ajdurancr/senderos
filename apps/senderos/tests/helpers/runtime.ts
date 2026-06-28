@@ -1,5 +1,5 @@
 import { afterEach } from 'bun:test';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,11 +8,36 @@ import type { SenderosConfig } from '../../src/domain/types';
 import { createProject } from '../../src/services/runtime';
 
 const homes: string[] = [];
+const projects: string[] = [];
 
 export function tempHome() {
   const home = mkdtempSync(join(tmpdir(), 'senderos-test-'));
   homes.push(home);
   return home;
+}
+
+export function tempProjectDir(dirPrefix = 'senderos-demo', packageName = dirPrefix) {
+  const projectRoot = mkdtempSync(join(tmpdir(), `${dirPrefix}-`));
+  projects.push(projectRoot);
+  writeFileSync(
+    join(projectRoot, 'package.json'),
+    JSON.stringify(
+      {
+        name: packageName,
+        private: true,
+        scripts: {
+          build: 'echo build',
+          test: 'echo test',
+          lint: 'echo lint',
+        },
+      },
+      null,
+      2
+    )
+  );
+  mkdirSync(join(projectRoot, 'src'), { recursive: true });
+  writeFileSync(join(projectRoot, 'src', 'index.ts'), 'export const smoke = true;\n');
+  return projectRoot;
 }
 
 export function initHome(config?: SenderosConfig) {
@@ -21,11 +46,14 @@ export function initHome(config?: SenderosConfig) {
   return home;
 }
 
-export function createProjectFixture(home: string, overrides: Partial<Parameters<typeof createProject>[0]> = {}) {
+export function createProjectFixture(
+  home: string,
+  overrides: Partial<Parameters<typeof createProject>[0]> = {}
+) {
   return createProject({
     home,
     name: 'Senderos Demo',
-    canonicalPath: '/tmp/senderos-demo',
+    canonicalPath: tempProjectDir('senderos-demo'),
     githubOwner: 'ajdurancr',
     githubRepo: 'senderos-demo',
     inferredCommands: {
@@ -55,6 +83,10 @@ export function tursoConfigForHome(home: string): SenderosConfig {
 afterEach(() => {
   while (homes.length) {
     rmSync(homes.pop()!, { recursive: true, force: true });
+  }
+
+  while (projects.length) {
+    rmSync(projects.pop()!, { recursive: true, force: true });
   }
 
   delete process.env.SENDEROS_TURSO_TOKEN;

@@ -1,9 +1,9 @@
-import { openConfiguredCommandDb } from '../../../db/client';
+import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
 
 export function reconcile(home?: string) {
-  const db = openConfiguredCommandDb(home);
+  const db = openRuntimeDb(home);
   const stale = db.query("select * from sessions where status='stale'").all() as any[];
   const repairedSessions: string[] = [];
   const releasedWorkspaces: string[] = [];
@@ -19,7 +19,7 @@ export function reconcile(home?: string) {
       const run = db.query('select * from runs where id=?').get(session.run_id) as any;
 
       db.prepare(
-        "update runs set status='failed', result_json=?, updated_at=? where id=? and status in ('queued','running')"
+        "update runs set status='failed', result_json=?, updated_at=? where id=? and status not in ('succeeded','failed','canceled')"
       ).run(JSON.stringify({ reason: 'stale_session' }), now(), session.run_id);
 
       if (run?.task_id) {

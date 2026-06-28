@@ -1,9 +1,10 @@
 import { nextPhase } from '../../domain/constants';
 import type { FeatureRecord } from '../../domain/types';
-import { openConfiguredCommandDb } from '../../db/client';
+import { openRuntimeDb } from '../../db/client';
 import { now } from '../../utils/common';
 import { emitEvent } from '../events';
-import { dispatchForPhase } from './dispatch';
+import { completeActiveSessionsForFeature } from '../session-lifecycle';
+import { cleanupWorkspace, dispatchForPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
 
@@ -24,7 +25,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
   }
 
   if (feature.currentRunId) {
-    const db = openConfiguredCommandDb(home);
+    const db = openRuntimeDb(home);
     db.prepare("update runs set status='succeeded', result_json=?, updated_at=? where id=?").run(
       JSON.stringify({ phase: currentPhase, completedAt: now() }),
       now(),
@@ -33,10 +34,12 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
     db.close();
   }
 
+  completeActiveSessionsForFeature(feature.id, home, `phase_${currentPhase}_completed`);
+
   const next = nextPhase(currentPhase);
 
   if (next === 'done') {
-    const db = openConfiguredCommandDb(home);
+    const db = openRuntimeDb(home);
 
     db.prepare('update features set loop_phase=?, status=?, current_run_id=?, updated_at=? where id=?').run(
       'done',
@@ -46,29 +49,12 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
       feature.id
     );
 
-    if (feature.currentWorkspaceId) {
-      db.prepare("update workspaces set status=?, updated_at=? where id=?").run(
-        'released',
-        now(),
-        feature.currentWorkspaceId
-      );
-    }
-
-    if (feature.currentRunId) {
-      const session = db
-        .query('select * from sessions where run_id=? order by created_at desc limit 1')
-        .get(feature.currentRunId) as any;
-
-      if (session) {
-        db.prepare("update sessions set status='completed', updated_at=? where id=?").run(
-          now(),
-          session.id
-        );
-      }
-    }
-
     emitEvent(db, 'feature.completed', 'feature', feature.id, {});
     db.close();
+
+    if (feature.currentWorkspaceId) {
+      cleanupWorkspace(feature.currentWorkspaceId, home, 'feature_completed');
+    }
 
     return { feature, run: null, task: null };
   }
