@@ -1,5 +1,4 @@
 import { Database } from 'bun:sqlite';
-import { afterAll, afterEach } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -85,13 +84,13 @@ export function pathExists(path: string) {
   return existsSync(path);
 }
 
-afterEach(() => {
+export function cleanupIntegrationTemps() {
   while (tempPaths.length) {
     rmSync(tempPaths.pop()!, { recursive: true, force: true });
   }
-});
+}
 
-afterAll(() => {
+export function cleanupIntegrationRunRoot() {
   rmSync(integrationRunRoot, { recursive: true, force: true });
 
   try {
@@ -104,4 +103,4 @@ afterAll(() => {
   } catch {
     // best-effort cleanup only
   }
-});
+}

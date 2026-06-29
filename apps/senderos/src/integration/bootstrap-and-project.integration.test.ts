@@ -1,6 +1,9 @@
-import { describe, expect, test } from 'bun:test';
+import { afterAll, afterEach, describe, expect, test } from 'bun:test';
 
-import { cli, createTempProject, openDb, tempDir } from './helpers';
+import { cleanupIntegrationRunRoot, cleanupIntegrationTemps, cli, createTempProject, openDb, tempDir } from './helpers';
+
+afterEach(cleanupIntegrationTemps);
+afterAll(cleanupIntegrationRunRoot);
 
 describe('integration: bootstrap and project cli', () => {
   test('initializes runtime and manages project records through the cli', () => {
