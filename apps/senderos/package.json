@@ -9,7 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test --isolate",
     "test:unit": "find ./src -name '*.test.ts' ! -path './src/integration/*.integration.test.ts' -print0 | xargs -0 bun test --isolate",
-    "test:integration": "bun test --isolate ./src/integration/*.integration.test.ts",
+    "test:integration": "rm -rf ./.tmp/integration-tests && mkdir -p ./.tmp/integration-tests && bun test --isolate ./src/integration/*.integration.test.ts",
     "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run scripts/check-coverage.ts 90 coverage"
   },
   "devDependencies": {
