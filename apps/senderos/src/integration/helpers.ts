@@ -1,15 +1,17 @@
 import { Database } from 'bun:sqlite';
-import { afterEach } from 'bun:test';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const tempPaths: string[] = [];
+const integrationArtifactsRoot = join(process.cwd(), '.tmp', 'integration-tests');
+
+function ensureIntegrationArtifactsRoot() {
+  mkdirSync(integrationArtifactsRoot, { recursive: true });
+  return integrationArtifactsRoot;
+}
 
 export function tempDir(prefix: string) {
-  const path = mkdtempSync(join(tmpdir(), `${prefix}-`));
-  tempPaths.push(path);
-  return path;
+  ensureIntegrationArtifactsRoot();
+  return mkdtempSync(join(integrationArtifactsRoot, `${prefix}-`));
 }
 
 export function createTempProject(options?: {
@@ -75,8 +77,6 @@ export function pathExists(path: string) {
   return existsSync(path);
 }
 
-afterEach(() => {
-  while (tempPaths.length) {
-    rmSync(tempPaths.pop()!, { recursive: true, force: true });
-  }
-});
+export function getIntegrationArtifactsRoot() {
+  return ensureIntegrationArtifactsRoot();
+}
