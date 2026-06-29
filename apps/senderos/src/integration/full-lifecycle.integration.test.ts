@@ -1,7 +1,18 @@
-import { describe, expect, test } from 'bun:test';
+import { afterAll, afterEach, describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
 
-import { cli, createTempProject, openDb, pathExists, tempDir } from './helpers';
+import {
+  cleanupIntegrationRunRoot,
+  cleanupIntegrationTemps,
+  cli,
+  createTempProject,
+  openDb,
+  pathExists,
+  tempDir,
+} from './helpers';
+
+afterEach(cleanupIntegrationTemps);
+afterAll(cleanupIntegrationRunRoot);
 
 describe('integration: full lifecycle flow', () => {
   test('runs project -> feature -> implementation/review/mutation -> completion with cleanup', () => {

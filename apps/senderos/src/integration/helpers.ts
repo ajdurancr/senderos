@@ -1,17 +1,24 @@
 import { Database } from 'bun:sqlite';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const integrationArtifactsRoot = join(process.cwd(), '.tmp', 'integration-tests');
+const tempRoot = join(process.cwd(), '.tmp');
+const integrationArtifactsRoot = join(tempRoot, 'integration-tests');
+const integrationRunRoot = join(
+  integrationArtifactsRoot,
+  `run-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+);
+const tempPaths: string[] = [];
 
-function ensureIntegrationArtifactsRoot() {
-  mkdirSync(integrationArtifactsRoot, { recursive: true });
-  return integrationArtifactsRoot;
+function ensureIntegrationRunRoot() {
+  mkdirSync(integrationRunRoot, { recursive: true });
+  return integrationRunRoot;
 }
 
 export function tempDir(prefix: string) {
-  ensureIntegrationArtifactsRoot();
-  return mkdtempSync(join(integrationArtifactsRoot, `${prefix}-`));
+  const path = mkdtempSync(join(ensureIntegrationRunRoot(), `${prefix}-`));
+  tempPaths.push(path);
+  return path;
 }
 
 export function createTempProject(options?: {
@@ -77,6 +84,23 @@ export function pathExists(path: string) {
   return existsSync(path);
 }
 
-export function getIntegrationArtifactsRoot() {
-  return ensureIntegrationArtifactsRoot();
+export function cleanupIntegrationTemps() {
+  while (tempPaths.length) {
+    rmSync(tempPaths.pop()!, { recursive: true, force: true });
+  }
+}
+
+export function cleanupIntegrationRunRoot() {
+  rmSync(integrationRunRoot, { recursive: true, force: true });
+
+  try {
+    if (existsSync(integrationArtifactsRoot) && readdirSync(integrationArtifactsRoot).length === 0) {
+      rmSync(integrationArtifactsRoot, { recursive: true, force: true });
+    }
+    if (existsSync(tempRoot) && readdirSync(tempRoot).length === 0) {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  } catch {
+    // best-effort cleanup only
+  }
 }
