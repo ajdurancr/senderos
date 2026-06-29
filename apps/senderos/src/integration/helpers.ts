@@ -3,7 +3,8 @@ import { afterAll, afterEach } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const integrationArtifactsRoot = join(process.cwd(), '.tmp', 'integration-tests');
+const tempRoot = join(process.cwd(), '.tmp');
+const integrationArtifactsRoot = join(tempRoot, 'integration-tests');
 const integrationRunRoot = join(
   integrationArtifactsRoot,
   `run-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
@@ -96,6 +97,9 @@ afterAll(() => {
   try {
     if (existsSync(integrationArtifactsRoot) && readdirSync(integrationArtifactsRoot).length === 0) {
       rmSync(integrationArtifactsRoot, { recursive: true, force: true });
+    }
+    if (existsSync(tempRoot) && readdirSync(tempRoot).length === 0) {
+      rmSync(tempRoot, { recursive: true, force: true });
     }
   } catch {
     // best-effort cleanup only
