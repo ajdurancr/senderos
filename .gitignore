@@ -17,3 +17,4 @@ apps/*/.astro
 apps/*/build
 apps/*/dist
 apps/*/.cache
+apps/*/.tmp/
