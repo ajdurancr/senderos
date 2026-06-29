@@ -1,5 +1,6 @@
 import type { CommandHelp } from '../domain/types';
 
+import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
@@ -19,6 +20,7 @@ export const rootHelp: CommandHelp = {
   ],
   subcommands: [
     initCommandHelp,
+    bootstrapAgentSkillCommandHelp,
     configCommandHelp,
     projectCommandHelp,
     featureCommandHelp,
