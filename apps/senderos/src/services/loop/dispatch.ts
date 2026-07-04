@@ -2,12 +2,13 @@ import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 
 import { join, relative, resolve } from 'node:path';
 
 import { ensureDir, resolveRuntime } from '../../config/runtime';
-import { statusForPhase } from '../../domain/constants';
+import { nextPhase, statusForPhase } from '../../domain/constants';
 import type { FeatureRecord, LoopPhase } from '../../domain/types';
 import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
+import { getAgentBySlug, getDefaultSenderoForAgent, getSendero, getAgentRun, createAgentRun } from '../runtime/agents';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -147,6 +148,76 @@ function createSession(runId: string, harness: string, phase: LoopPhase, workspa
   return id;
 }
 
+const PHASE_AGENT_SLUG: Record<LoopPhase, string | null> = {
+  idle: null,
+  implementation: 'tdd-craftsman',
+  review: 'judge',
+  mutation: 'mutation-tester',
+  done: null,
+  blocked: null,
+};
+
+function agentSlugForPhase(phase: LoopPhase) {
+  return PHASE_AGENT_SLUG[phase] ?? null;
+}
+
+function createAgentRunForDispatch(input: {
+  feature: FeatureRecord;
+  phase: LoopPhase;
+  runId: string;
+  sessionId: string;
+  workspaceRoot: string;
+  harness: string;
+  instruction: ReturnType<typeof defaultInstruction>;
+  home?: string;
+}) {
+  const sourceSlug = agentSlugForPhase(input.phase);
+
+  if (!sourceSlug) {
+    return null;
+  }
+
+  const sourceAgent = getAgentBySlug(sourceSlug, input.home);
+
+  if (!sourceAgent) {
+    return null;
+  }
+
+  const next = nextPhase(input.phase);
+  const targetSlug = next === 'done' ? null : agentSlugForPhase(next);
+  const targetAgent = targetSlug ? getAgentBySlug(targetSlug, input.home) : null;
+  const defaultSendero = getDefaultSenderoForAgent(sourceAgent.id, input.home);
+  const sendero = defaultSendero ? getSendero(defaultSendero.id, input.home) : null;
+
+  return createAgentRun({
+    home: input.home,
+    agentId: sourceAgent.id,
+    senderoId: sendero?.id ?? null,
+    targetAgentId: targetAgent?.id ?? null,
+    featureId: input.feature.id,
+    runId: input.runId,
+    goal: input.instruction.objective,
+    harness: input.harness as any,
+    status: 'running',
+    hostEnvironmentName: 'senderos',
+    hostEnvironmentSessionId: input.sessionId,
+    checkpoint: `${input.phase}:dispatched`,
+    statusSnapshot: {
+      featureId: input.feature.id,
+      phase: input.phase,
+      workspaceRoot: input.workspaceRoot,
+      sessionId: input.sessionId,
+      runId: input.runId,
+    },
+    debugMeta: {
+      sourceAgentSlug: sourceAgent.slug,
+      targetAgentSlug: targetAgent?.slug ?? null,
+      senderoName: sendero?.name ?? null,
+    },
+    startedAt: now(),
+  });
+}
+
 export function cleanupWorkspace(workspaceId: string, home?: string, retentionReason?: string) {
   const workspace = getWorkspace(workspaceId, home) as any;
 
@@ -231,10 +302,22 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
 
   db.close();
 
+  const agentRun = createAgentRunForDispatch({
+    feature,
+    phase,
+    runId: runRecord.id,
+    sessionId,
+    workspaceRoot: workspace.root_path,
+    harness: config.defaultHarness,
+    instruction,
+    home,
+  });
+
   return {
     feature,
     run: getRun(runRecord.id, home),
     session: getSession(sessionId, home),
     task: getTask(task.id, home),
+    agentRun: agentRun ? getAgentRun(agentRun.id, home) : null,
   };
 }

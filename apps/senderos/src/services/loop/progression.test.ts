@@ -62,6 +62,7 @@ describe('loop progression', () => {
     }
     const db = new Database(resolveRuntime(home).paths.dbPath);
     expect((db.query('select status from sessions order by created_at desc limit 1').get() as any).status).toBe('completed');
+    expect((db.query('select status from agent_runs order by created_at desc limit 1').get() as any).status).toBe('succeeded');
     db.close();
   });
 

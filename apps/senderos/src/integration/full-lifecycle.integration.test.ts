@@ -68,12 +68,14 @@ describe('integration: full lifecycle flow', () => {
 
     const implementationState: any = cli(['loop', 'show', feature.id, '--home', home]);
     expect(implementationState.feature.loopPhase).toBe('implementation');
+    expect(implementationState.currentAgentRun.status).toBe('running');
     expect(implementationState.workspace.root_path).toContain(`${project.id}/${feature.id}`);
     expect(pathExists(implementationState.workspace.root_path)).toBe(true);
     expect(pathExists(join(implementationState.workspace.root_path, 'package.json'))).toBe(true);
 
     const sessionsAtStart: any[] = cli(['session', 'list', '--home', home]);
     expect(sessionsAtStart).toHaveLength(1);
+    expect(implementationState.currentAgentRun.hostEnvironmentSessionId).toBe(sessionsAtStart[0].id);
     const resumedSession: any = cli(['session', 'resume', sessionsAtStart[0].id, '--home', home]);
     expect(resumedSession.launchCommand).toContain('codex exec');
 
@@ -110,6 +112,12 @@ describe('integration: full lifecycle flow', () => {
       { phase: 'implementation', status: 'succeeded' },
       { phase: 'review', status: 'succeeded' },
       { phase: 'mutation', status: 'succeeded' },
+    ]);
+    const agentRunRows = db.query('select status from agent_runs order by created_at asc').all() as Array<{ status: string }>;
+    expect(agentRunRows).toEqual([
+      { status: 'succeeded' },
+      { status: 'succeeded' },
+      { status: 'succeeded' },
     ]);
     const events = db.query('select event_type from events order by created_at asc').all() as Array<{ event_type: string }>;
     expect(events.map((row) => row.event_type)).toContain('feature.completed');

@@ -188,6 +188,13 @@ export function getAgent(id: string, home?: string) {
   return row;
 }
 
+export function getAgentBySlug(slug: string, home?: string) {
+  const db = openRuntimeDb(home);
+  const row = mapAgentRow(db.query('select * from agents where slug=?').get(slug));
+  db.close();
+  return row;
+}
+
 export function createSendero(input: {
   sourceAgentId: string;
   targetAgentId?: string | null;
@@ -253,6 +260,15 @@ export function listSenderos(home?: string) {
 export function getSendero(id: string, home?: string) {
   const db = openRuntimeDb(home);
   const row = mapSenderoRow(db.query('select * from senderos where id=?').get(id));
+  db.close();
+  return row;
+}
+
+export function getDefaultSenderoForAgent(agentId: string, home?: string) {
+  const db = openRuntimeDb(home);
+  const row = mapSenderoRow(
+    db.query("select * from senderos where source_agent_id=? and name='default sendero' order by created_at asc limit 1").get(agentId)
+  );
   db.close();
   return row;
 }
@@ -348,6 +364,92 @@ export function createAgentRun(input: {
 
   db.close();
   return record;
+}
+
+export function updateAgentRun(
+  id: string,
+  input: {
+    status?: AgentRunRecord['status'];
+    checkpoint?: string | null;
+    statusSnapshot?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+    failureSummary?: string | null;
+    debugMeta?: Record<string, unknown>;
+    hostEnvironmentName?: string | null;
+    hostEnvironmentSessionId?: string | null;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+  },
+  home?: string
+) {
+  const current = getAgentRun(id, home);
+
+  if (!current) {
+    throw new Error(`Agent run not found: ${id}`);
+  }
+
+  const db = openRuntimeDb(home);
+  db.prepare(
+    `update agent_runs
+     set status=?, checkpoint=?, status_snapshot_json=?, result_json=?, failure_summary=?, debug_meta_json=?,
+         host_environment_name=?, host_environment_session_id=?, started_at=?, finished_at=?, updated_at=?
+     where id=?`
+  ).run(
+    input.status ?? current.status,
+    input.checkpoint ?? current.checkpoint,
+    JSON.stringify(input.statusSnapshot ?? JSON.parse(current.statusSnapshotJson ?? '{}')),
+    JSON.stringify(input.result ?? JSON.parse(current.resultJson ?? '{}')),
+    input.failureSummary ?? current.failureSummary,
+    JSON.stringify(input.debugMeta ?? JSON.parse(current.debugMetaJson ?? '{}')),
+    input.hostEnvironmentName ?? current.hostEnvironmentName,
+    input.hostEnvironmentSessionId ?? current.hostEnvironmentSessionId,
+    input.startedAt ?? current.startedAt,
+    input.finishedAt ?? current.finishedAt,
+    now(),
+    id
+  );
+
+  emitEvent(db, 'agent-run.updated', 'agent-run', id, {
+    status: input.status ?? current.status,
+    checkpoint: input.checkpoint ?? current.checkpoint,
+  });
+
+  db.close();
+  return getAgentRun(id, home);
+}
+
+export function getAgentRunByRunId(runId: string, home?: string) {
+  const db = openRuntimeDb(home);
+  const row = mapAgentRunRow(
+    db.query('select * from agent_runs where run_id=? order by created_at desc limit 1').get(runId)
+  );
+  db.close();
+  return row;
+}
+
+export function updateAgentRunByRunId(
+  runId: string,
+  input: {
+    status?: AgentRunRecord['status'];
+    checkpoint?: string | null;
+    statusSnapshot?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+    failureSummary?: string | null;
+    debugMeta?: Record<string, unknown>;
+    hostEnvironmentName?: string | null;
+    hostEnvironmentSessionId?: string | null;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+  },
+  home?: string
+) {
+  const row = getAgentRunByRunId(runId, home);
+
+  if (!row) {
+    return null;
+  }
+
+  return updateAgentRun(row.id, input, home);
 }
 
 export function listAgentRuns(agentId?: string, home?: string) {

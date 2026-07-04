@@ -1,8 +1,9 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { cancelFeature, getFeature } from '../features';
 import { getRun } from '../../loop';
+import { updateAgentRunByRunId } from '../agents';
+import { cancelFeature, getFeature } from '../features';
 
 export function listRuns(home?: string) {
   const db = openRuntimeDb(home);
@@ -33,6 +34,17 @@ export function cancelRun(id: string, home?: string) {
 
   emitEvent(db, 'run.canceled', 'run', id, { cancelScope: 'feature' });
   db.close();
+
+  updateAgentRunByRunId(
+    id,
+    {
+      status: 'canceled',
+      checkpoint: 'run_canceled',
+      failureSummary: 'Run canceled by SenderOS.',
+      finishedAt: now(),
+    },
+    home
+  );
 
   const feature = getFeature(run.feature_id, home);
   if (feature) {

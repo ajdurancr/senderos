@@ -4,6 +4,7 @@ import { openRuntimeDb } from '../../db/client';
 import { now } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
+import { updateAgentRunByRunId } from '../runtime/agents';
 import { cleanupWorkspace, dispatchForPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -32,6 +33,17 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
       feature.currentRunId
     );
     db.close();
+
+    updateAgentRunByRunId(
+      feature.currentRunId,
+      {
+        status: 'succeeded',
+        checkpoint: `${currentPhase}:completed`,
+        result: { phase: currentPhase, completedAt: now() },
+        finishedAt: now(),
+      },
+      home
+    );
   }
 
   completeActiveSessionsForFeature(feature.id, home, `phase_${currentPhase}_completed`);
@@ -56,7 +68,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
       cleanupWorkspace(feature.currentWorkspaceId, home, 'feature_completed');
     }
 
-    return { feature, run: null, task: null };
+    return { feature, run: null, task: null, agentRun: null };
   }
 
   ensurePhaseTask(feature, next, home);

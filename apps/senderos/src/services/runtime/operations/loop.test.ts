@@ -26,6 +26,7 @@ describe('runtime loop operations', () => {
     const started: any = startLoop(feature.id, home);
     const shown = showLoop(feature.id, home) as any;
     expect(shown.currentRun.id).toBe(started.run.id);
+    expect(shown.currentAgentRun.runId).toBe(started.run.id);
   });
 
   test('resumeSession returns resume metadata', () => {
