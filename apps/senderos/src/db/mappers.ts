@@ -6,7 +6,7 @@ export function mapProjectRow(row: any): ProjectRecord | null {
 }
 export function mapFeatureRow(row: any): FeatureRecord | null {
   if (!row) return null;
-  return { id: row.id, projectId: row.project_id, title: row.title, specText: row.spec_text, sourceRequestText: row.source_request_text, gherkinText: row.gherkin_text, gherkinMetaJson: row.gherkin_meta_json, status: row.status, runPhase: row.run_phase, baseTargetBranch: row.base_target_branch, featureBranchName: row.feature_branch_name, prUrl: row.pr_url, prNumber: row.pr_number, currentWorkspaceId: row.current_workspace_id, currentRunId: row.current_run_id, createdAt: row.created_at, updatedAt: row.updated_at };
+  return { id: row.id, projectId: row.project_id, title: row.title, specText: row.spec_text, sourceRequestText: row.source_request_text, gherkinText: row.gherkin_text, gherkinMetaJson: row.gherkin_meta_json, status: row.status, senderoStep: row.sendero_step, baseTargetBranch: row.base_target_branch, featureBranchName: row.feature_branch_name, prUrl: row.pr_url, prNumber: row.pr_number, currentWorkspaceId: row.current_workspace_id, currentRunId: row.current_run_id, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 export function mapTaskRow(row: any): TaskRecord | null {
   if (!row) return null;

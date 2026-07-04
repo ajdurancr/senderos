@@ -3,7 +3,7 @@ import { join, relative, resolve } from 'node:path';
 
 import { ensureDir, resolveRuntime } from '../../config/runtime';
 import { nextPhase, statusForPhase } from '../../domain/constants';
-import type { FeatureRecord, RunPhase } from '../../domain/types';
+import type { FeatureRecord, SenderoStep } from '../../domain/types';
 import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -76,7 +76,7 @@ function allocateWorkspace(feature: FeatureRecord, home?: string) {
 function createRunRecord(
   feature: FeatureRecord,
   taskId: string,
-  phase: RunPhase,
+  phase: SenderoStep,
   instruction: unknown,
   home?: string
 ) {
@@ -116,7 +116,7 @@ function createRunRecord(
   return { id, branchName };
 }
 
-function createSession(runId: string, harness: string, phase: RunPhase, workspaceRoot: string, home?: string) {
+function createSession(runId: string, harness: string, phase: SenderoStep, workspaceRoot: string, home?: string) {
   const db = openRuntimeDb(home);
   const id = randomId('session');
   const resumeCommand = `senderos session resume ${id}`;
@@ -148,7 +148,7 @@ function createSession(runId: string, harness: string, phase: RunPhase, workspac
   return id;
 }
 
-const PHASE_AGENT_SLUG: Record<RunPhase, string | null> = {
+const PHASE_AGENT_SLUG: Record<SenderoStep, string | null> = {
   idle: null,
   implementation: 'tdd-craftsman',
   review: 'judge',
@@ -157,13 +157,13 @@ const PHASE_AGENT_SLUG: Record<RunPhase, string | null> = {
   blocked: null,
 };
 
-function agentSlugForPhase(phase: RunPhase) {
+function agentSlugForPhase(phase: SenderoStep) {
   return PHASE_AGENT_SLUG[phase] ?? null;
 }
 
 function createRunExecutionForDispatch(input: {
   feature: FeatureRecord;
-  phase: RunPhase;
+  phase: SenderoStep;
   runId: string;
   sessionId: string;
   workspaceRoot: string;
@@ -242,9 +242,9 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
   db.close();
 }
 
-export function dispatchForPhase(
+export function dispatchSupervisorPhase(
   feature: FeatureRecord,
-  phase: RunPhase,
+  phase: SenderoStep,
   home?: string,
   options?: { agentId?: string; senderoId?: string }
 ) {
@@ -287,7 +287,7 @@ export function dispatchForPhase(
   );
 
   db.prepare(
-    'update features set status=?, run_phase=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
+    'update features set status=?, sendero_step=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
   ).run(
     statusForPhase(phase),
     phase,

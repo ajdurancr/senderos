@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { approveFeature, cancelFeature, createFeature, getFeature, listFeatures, updateFeature } from './index';
-import { listTasks } from '../runs';
+import { listTasks } from '../sendero-supervisor';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('feature services', () => {

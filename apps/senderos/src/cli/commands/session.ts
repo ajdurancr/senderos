@@ -1,4 +1,4 @@
-import { getSession } from '../../services/runs';
+import { getSession } from '../../services/sendero-supervisor';
 import { listSessions, resumeSession } from '../../services/runtime';
 import { requirePositional } from '../shared';
 

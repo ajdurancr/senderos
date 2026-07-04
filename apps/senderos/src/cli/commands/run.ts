@@ -1,5 +1,5 @@
-import { getRun } from '../../services/runs';
-import { cancelRun, listRuns, showLoop, startLoop, tickLoop } from '../../services/runtime';
+import { getRun } from '../../services/sendero-supervisor';
+import { cancelRun, listRuns, showSupervision, startSupervision, advanceSupervision } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
 const runStartHelp = {
@@ -61,7 +61,7 @@ export function handleRun(
   home: string
 ) {
   if (!sub || sub.startsWith('--')) {
-    return startLoop(
+    return startSupervision(
       requirePositional(String(options['feature-id'] ?? ''), 'feature id'),
       home,
       {
@@ -73,14 +73,14 @@ export function handleRun(
 
   switch (sub) {
     case 'start':
-      return startLoop(requirePositional(featureIdForRun(positionals, options), 'feature id'), home, {
+      return startSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home, {
         senderoId: options['sendero-id'] as string | undefined,
         agentId: options['agent-id'] as string | undefined,
       });
     case 'advance':
-      return tickLoop(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
+      return advanceSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
     case 'state':
-      return showLoop(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
+      return showSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
     case 'list':
       return listRuns(home);
     case 'show':

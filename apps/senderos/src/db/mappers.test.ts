@@ -45,7 +45,7 @@ describe('db mappers', () => {
         gherkin_text: 'Feature: test',
         gherkin_meta_json: '{}',
         status: 'awaiting_scenario_approval',
-        run_phase: 'idle',
+        sendero_step: 'idle',
         base_target_branch: 'main',
         feature_branch_name: null,
         pr_url: null,

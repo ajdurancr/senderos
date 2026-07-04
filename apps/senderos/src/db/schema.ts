@@ -26,7 +26,7 @@ export function migrate(db: Database) {
       gherkin_text text not null default '',
       gherkin_meta_json text not null default '{}',
       status text not null,
-      run_phase text not null,
+      sendero_step text not null,
       base_target_branch text not null,
       feature_branch_name text,
       pr_url text,

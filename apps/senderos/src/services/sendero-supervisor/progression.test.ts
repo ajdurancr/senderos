@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { approveFeature, createFeature, getFeature } from '../runtime';
-import { dispatchForPhase, getRun, getSession, getWorkspace, startLoopForFeature, tickLoopForFeature } from './index';
+import { dispatchSupervisorPhase, getRun, getSession, getWorkspace, superviseFeature, advanceSupervision } from './index';
 import { resolveRuntime } from '../../config/runtime';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('run progression', () => {
+describe('sendero supervisor progression', () => {
   function setupFeature(home: string) {
     const project = createProjectFixture(home);
     return approveFeature(
@@ -14,22 +14,22 @@ describe('run progression', () => {
     )!;
   }
 
-  test('startLoopForFeature dispatches the current phase', () => {
+  test('superviseFeature dispatches the current phase', () => {
     const home = initHome();
     const feature = setupFeature(home);
-    const first: any = dispatchForPhase(feature, 'implementation', home);
-    const second: any = startLoopForFeature(getFeature(feature.id, home)!, home);
+    const first: any = dispatchSupervisorPhase(feature, 'implementation', home);
+    const second: any = superviseFeature(getFeature(feature.id, home)!, home);
     expect(second.run.id).not.toBe(first.run.id);
   });
 
-  test('tickLoopForFeature advances a feature to done', () => {
+  test('advanceSupervision advances a feature to done', () => {
     const home = initHome();
     const feature = setupFeature(home);
-    dispatchForPhase(feature, 'implementation', home);
+    dispatchSupervisorPhase(feature, 'implementation', home);
     let current = getFeature(feature.id, home)!;
     for (const expected of ['review', 'mutation', 'done'] as const) {
-      const result = tickLoopForFeature(current, home);
-      expect(getFeature(feature.id, home)?.runPhase).toBe(expected);
+      const result = advanceSupervision(current, home);
+      expect(getFeature(feature.id, home)?.senderoStep).toBe(expected);
       current = getFeature(feature.id, home)!;
       if (expected === 'done') {
         expect(result.run).toBeNull();
@@ -41,10 +41,10 @@ describe('run progression', () => {
   test('completion marks the feature completed and cleans the workspace', () => {
     const home = initHome();
     const feature = setupFeature(home);
-    dispatchForPhase(feature, 'implementation', home);
+    dispatchSupervisorPhase(feature, 'implementation', home);
     let current = getFeature(feature.id, home)!;
     for (let i = 0; i < 3; i++) {
-      tickLoopForFeature(current, home);
+      advanceSupervision(current, home);
       current = getFeature(feature.id, home)!;
     }
     expect(getFeature(feature.id, home)?.status).toBe('completed');
@@ -54,10 +54,10 @@ describe('run progression', () => {
   test('completion marks the latest session completed in persistence', () => {
     const home = initHome();
     const feature = setupFeature(home);
-    dispatchForPhase(feature, 'implementation', home);
+    dispatchSupervisorPhase(feature, 'implementation', home);
     let current = getFeature(feature.id, home)!;
     for (let i = 0; i < 3; i++) {
-      tickLoopForFeature(current, home);
+      advanceSupervision(current, home);
       current = getFeature(feature.id, home)!;
     }
     const db = new Database(resolveRuntime(home).paths.dbPath);
@@ -69,7 +69,7 @@ describe('run progression', () => {
   test('query helpers can still read the original run and session records', () => {
     const home = initHome();
     const feature = setupFeature(home);
-    const first: any = dispatchForPhase(feature, 'implementation', home);
+    const first: any = dispatchSupervisorPhase(feature, 'implementation', home);
     expect(getRun(first.run.id, home)).toBeTruthy();
     expect(getSession(first.session.id, home)).toBeTruthy();
   });

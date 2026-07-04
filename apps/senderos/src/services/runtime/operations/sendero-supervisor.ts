@@ -3,13 +3,13 @@ import {
   getSession,
   getWorkspace,
   listTasks,
-  startLoopForFeature,
-  tickLoopForFeature,
-} from '../../runs';
+  superviseFeature,
+  advanceSupervision as advanceFeatureSupervision,
+} from '../../sendero-supervisor';
 import { getRunExecutionByRunId } from '../agents';
 import { getFeature } from '../features';
 
-export function startLoop(
+export function startSupervision(
   featureId: string,
   home?: string,
   options?: { agentId?: string; senderoId?: string }
@@ -24,7 +24,7 @@ export function startLoop(
     throw new Error(`Feature is not dispatchable from status ${feature.status}`);
   }
 
-  const result = startLoopForFeature(feature, home, options);
+  const result = superviseFeature(feature, home, options);
 
   return {
     feature: getFeature(feature.id, home),
@@ -35,14 +35,14 @@ export function startLoop(
   };
 }
 
-export function tickLoop(featureId: string, home?: string) {
+export function advanceSupervision(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
 
   if (!feature) {
     throw new Error(`Feature not found: ${featureId}`);
   }
 
-  const result = tickLoopForFeature(feature, home);
+  const result = advanceFeatureSupervision(feature, home);
 
   const nextRun = result.run as { id?: string } | null;
 
@@ -54,7 +54,7 @@ export function tickLoop(featureId: string, home?: string) {
   };
 }
 
-export function showLoop(featureId: string, home?: string) {
+export function showSupervision(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
 
   if (!feature) {

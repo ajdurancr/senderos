@@ -1,8 +1,8 @@
-import type { FeatureRecord, RunPhase } from '../../domain/types';
+import type { FeatureRecord, SenderoStep } from '../../domain/types';
 
 export function defaultInstruction(
   feature: FeatureRecord,
-  phase: RunPhase,
+  phase: SenderoStep,
   workspaceRoot?: string
 ) {
   const base = {

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { LOOP_SEQUENCE, nextPhase, statusForPhase } from './constants';
+import { SENDERO_STEP_SEQUENCE, nextPhase, statusForPhase } from './constants';
 
 describe('domain constants', () => {
-  test('maps run progression and statuses', () => {
-    expect(LOOP_SEQUENCE).toEqual(['implementation', 'review', 'mutation']);
+  test('maps sendero supervisor progression and statuses', () => {
+    expect(SENDERO_STEP_SEQUENCE).toEqual(['implementation', 'review', 'mutation']);
     expect(nextPhase('idle')).toBe('implementation');
     expect(nextPhase('mutation')).toBe('done');
     expect(statusForPhase('review')).toBe('active');

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { approveFeature, createFeature } from '../index';
-import { startLoop } from './runs-lifecycle';
+import { startSupervision } from './sendero-supervisor';
 import { reconcile } from './reconcile';
 import { resolveRuntime } from '../../../config/runtime';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
@@ -11,7 +11,7 @@ describe('runtime reconcile operation', () => {
     const home = initHome();
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Reconcile target', gherkinText: 'Feature: Reconcile target' }).id, home)!;
-    const started: any = startLoop(feature.id, home);
+    const started: any = startSupervision(feature.id, home);
     const db = new Database(resolveRuntime(home).paths.dbPath);
     db.query("update sessions set status='stale' where id = ?").run(started.session.id);
     db.query("update runs set status='executing' where id = ?").run(started.run.id);

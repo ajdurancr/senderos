@@ -1,6 +1,6 @@
 import type {
   FeatureRecord,
-  RunPhase,
+  SenderoStep,
   TaskRecord,
   TaskStatus,
 } from '../../domain/types';
@@ -30,7 +30,7 @@ export function updateTaskStatus(
   db.close();
 }
 
-export function ensurePhaseTask(feature: FeatureRecord, phase: RunPhase, home?: string) {
+export function ensurePhaseTask(feature: FeatureRecord, phase: SenderoStep, home?: string) {
   const db = openRuntimeDb(home);
   const existing = mapTaskRow(
     db

@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { handleSession } from './session';
-import { approveFeature, createFeature, startLoop } from '../../services/runtime';
+import { approveFeature, createFeature, startSupervision } from '../../services/runtime';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('session command', () => {
   function setupSession(home: string) {
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Session command target', gherkinText: 'Feature: Session command target' }).id, home)!;
-    return startLoop(feature.id, home) as any;
+    return startSupervision(feature.id, home) as any;
   }
 
   test('list returns created sessions', () => {

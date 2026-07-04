@@ -67,7 +67,7 @@ describe('integration: full lifecycle flow', () => {
     expect(started.run.status).toBe('executing');
 
     const implementationState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
-    expect(implementationState.feature.runPhase).toBe('implementation');
+    expect(implementationState.feature.senderoStep).toBe('implementation');
     expect(implementationState.currentRunExecution.status).toBe('running');
     expect(implementationState.workspace.root_path).toContain(`${project.id}/${feature.id}`);
     expect(pathExists(implementationState.workspace.root_path)).toBe(true);
@@ -80,16 +80,16 @@ describe('integration: full lifecycle flow', () => {
     expect(resumedSession.launchCommand).toContain('codex exec');
 
     const reviewTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(reviewTick.feature.runPhase).toBe('review');
+    expect(reviewTick.feature.senderoStep).toBe('review');
     const reviewState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(reviewState.currentRun.phase).toBe('review');
     expect(reviewState.currentRun.base_branch).toBe(`feature/${feature.id}`);
 
     const mutationTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(mutationTick.feature.runPhase).toBe('mutation');
+    expect(mutationTick.feature.senderoStep).toBe('mutation');
 
     const completionTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(completionTick.feature.runPhase).toBe('done');
+    expect(completionTick.feature.senderoStep).toBe('done');
     expect(completionTick.feature.status).toBe('completed');
 
     const completedFeature: any = cli(['feature', 'show', feature.id, '--home', home]);
@@ -97,7 +97,7 @@ describe('integration: full lifecycle flow', () => {
 
     const status: any = cli(['status', '--home', home]);
     expect(status.openFeatures).toBe(0);
-    expect(status.activeRunPhases).toBe(0);
+    expect(status.activeSupervisions).toBe(0);
     expect(status.activeRuns).toBe(0);
     expect(status.activeSessionIds).toEqual([]);
     expect(status.workspaceLocks).toBe(0);

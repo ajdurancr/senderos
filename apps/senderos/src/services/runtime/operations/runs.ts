@@ -1,7 +1,7 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getRun } from '../../runs';
+import { getRun } from '../../sendero-supervisor';
 import { updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
 

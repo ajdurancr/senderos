@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { approveFeature, createFeature, getFeature } from '../index';
-import { cancelRun, listRuns, listSessions, startLoop } from './index';
+import { cancelRun, listRuns, listSessions, startSupervision } from './index';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
-describe('runtime run operations', () => {
+describe('runtime sendero supervisor operations', () => {
   function setupStartedRun(home: string) {
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Run target', gherkinText: 'Feature: Run target' }).id, home)!;
-    return { feature, started: startLoop(feature.id, home) as any };
+    return { feature, started: startSupervision(feature.id, home) as any };
   }
 
   test('listRuns returns created runs', () => {
