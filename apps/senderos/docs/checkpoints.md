@@ -6,7 +6,7 @@
 - [ ] `docs/storage-model.md` exists and matches the intended repo-vs-workspace split.
 
 ## C2 — Runtime model is complete
-- [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and agent-run state.
+- [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and run-execution state.
 - [ ] Built-in agents seed from markdown into SQLite runtime state.
 - [ ] Default senderos are assigned during runtime init.
 
@@ -23,5 +23,5 @@
 
 ## C5 — CLI shape is current
 - [ ] `run` is the primary execution command.
-- [ ] `loop` is not part of the public top-level workflow surface.
-- [ ] `agent-run` is not part of the public top-level workflow surface.
+- [ ] deprecated execution command aliases are not part of the public top-level workflow surface.
+- [ ] `run-execution` is not part of the public top-level workflow surface.

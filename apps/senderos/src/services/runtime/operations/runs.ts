@@ -1,8 +1,8 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getRun } from '../../loop';
-import { updateAgentRunByRunId } from '../agents';
+import { getRun } from '../../runs';
+import { updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
 
 export function listRuns(home?: string) {
@@ -35,7 +35,7 @@ export function cancelRun(id: string, home?: string) {
   emitEvent(db, 'run.canceled', 'run', id, { cancelScope: 'feature' });
   db.close();
 
-  updateAgentRunByRunId(
+  updateRunExecutionByRunId(
     id,
     {
       status: 'canceled',

@@ -3,7 +3,7 @@ import { openRuntimeDb } from '../../db/client';
 import { mapFeatureRow, mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
-import { cleanupWorkspace, ensurePhaseTask } from '../loop';
+import { cleanupWorkspace, ensurePhaseTask } from '../runs';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
 
 function requireProject(projectId: string, home?: string) {
@@ -34,7 +34,7 @@ export function createFeature(input: {
   const id = input.id ?? randomId('feature');
 
   db.prepare(
-    'insert into features (id,project_id,title,spec_text,source_request_text,gherkin_text,gherkin_meta_json,status,loop_phase,base_target_branch,feature_branch_name,pr_url,pr_number,current_workspace_id,current_run_id,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    'insert into features (id,project_id,title,spec_text,source_request_text,gherkin_text,gherkin_meta_json,status,run_phase,base_target_branch,feature_branch_name,pr_url,pr_number,current_workspace_id,current_run_id,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
   ).run(
     id,
     input.projectId,
@@ -133,7 +133,7 @@ export function approveFeature(id: string, home?: string) {
   }
 
   const db = openRuntimeDb(home);
-  db.prepare('update features set status=?, loop_phase=?, updated_at=? where id=?').run(
+  db.prepare('update features set status=?, run_phase=?, updated_at=? where id=?').run(
     'active',
     'idle',
     now(),
@@ -158,7 +158,7 @@ export function cancelFeature(id: string, home?: string) {
 
   const db = openRuntimeDb(home);
 
-  db.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
+  db.prepare('update features set status=?, run_phase=?, current_run_id=?, updated_at=? where id=?').run(
     'canceled',
     'blocked',
     null,

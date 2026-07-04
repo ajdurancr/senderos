@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { approveFeature, createFeature } from '../index';
 import { status } from './status';
-import { startLoop } from './loop';
+import { startLoop } from './runs-lifecycle';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
 describe('runtime status operation', () => {

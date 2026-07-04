@@ -27,8 +27,8 @@ describe('run command', () => {
     );
 
     expect(started.run).toBeTruthy();
-    expect(started.agentRun.agentId).toBe(agent.id);
-    expect(started.agentRun.senderoId).toBe(sendero.id);
+    expect(started.runExecution.agentId).toBe(agent.id);
+    expect(started.runExecution.senderoId).toBe(sendero.id);
   });
 
   test('implicit run invocation starts when feature-id is provided', () => {
@@ -51,7 +51,7 @@ describe('run command', () => {
     handleRun('start', [], { 'feature-id': feature.id }, home);
     const state: any = handleRun('state', [], { 'feature-id': feature.id }, home);
     expect(state.feature.id).toBe(feature.id);
-    expect(state.currentAgentRun).toBeTruthy();
+    expect(state.currentRunExecution).toBeTruthy();
   });
 
   test('advance moves the feature forward', () => {

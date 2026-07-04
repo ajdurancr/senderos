@@ -1,7 +1,7 @@
 import { openRuntimeDb } from '../db/client';
 import { now } from '../utils/common';
 import { emitEvent } from './events';
-import { updateAgentRunByRunId } from './runtime/agents';
+import { updateRunExecutionByRunId } from './runtime/agents';
 
 export function completeActiveSessionsForFeature(
   featureId: string,
@@ -20,7 +20,7 @@ export function completeActiveSessionsForFeature(
     emitEvent(db, 'session.completed', 'session', session.id, { reason });
 
     if (session.run_id) {
-      updateAgentRunByRunId(
+      updateRunExecutionByRunId(
         session.run_id,
         {
           status: 'succeeded',

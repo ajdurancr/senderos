@@ -1,8 +1,8 @@
-import type { FeatureRecord, LoopPhase } from '../../domain/types';
+import type { FeatureRecord, RunPhase } from '../../domain/types';
 
 export function defaultInstruction(
   feature: FeatureRecord,
-  phase: LoopPhase,
+  phase: RunPhase,
   workspaceRoot?: string
 ) {
   const base = {
@@ -25,7 +25,7 @@ export function defaultInstruction(
   if (phase === 'implementation') {
     return {
       ...base,
-      objective: 'Implement the approved Gherkin contract through the TDD loop inside the assigned workspace.',
+      objective: 'Implement the approved Gherkin contract through the TDD cycle inside the assigned workspace.',
     };
   }
 

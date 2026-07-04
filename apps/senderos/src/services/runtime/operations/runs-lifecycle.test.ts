@@ -3,7 +3,7 @@ import { approveFeature, createFeature, getFeature } from '../index';
 import { showLoop, startLoop, tickLoop, resumeSession } from './index';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
-describe('runtime loop operations', () => {
+describe('runtime run operations', () => {
   function setupFeature(home: string) {
     const project = createProjectFixture(home);
     return approveFeature(createFeature({ home, projectId: project.id, title: 'Operations target', gherkinText: 'Feature: Operations target' }).id, home)!;
@@ -26,7 +26,7 @@ describe('runtime loop operations', () => {
     const started: any = startLoop(feature.id, home);
     const shown = showLoop(feature.id, home) as any;
     expect(shown.currentRun.id).toBe(started.run.id);
-    expect(shown.currentAgentRun.runId).toBe(started.run.id);
+    expect(shown.currentRunExecution.runId).toBe(started.run.id);
   });
 
   test('resumeSession returns resume metadata', () => {
@@ -46,6 +46,6 @@ describe('runtime loop operations', () => {
     const feature = setupFeature(home);
     startLoop(feature.id, home);
     tickLoop(feature.id, home);
-    expect(getFeature(feature.id, home)?.loopPhase).toBe('review');
+    expect(getFeature(feature.id, home)?.runPhase).toBe('review');
   });
 });

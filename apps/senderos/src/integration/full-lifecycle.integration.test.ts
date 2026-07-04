@@ -54,7 +54,7 @@ describe('integration: full lifecycle flow', () => {
       '--source-request',
       'Run a local SenderOS smoke test with Codex.',
       '--gherkin',
-      'Feature: Local smoke test\n  Scenario: Initialize SenderOS local flow\n    Given a configured local SenderOS project\n    When the feature is approved for implementation\n    Then SenderOS should create loop state for execution',
+      'Feature: Local smoke test\n  Scenario: Initialize SenderOS local flow\n    Given a configured local SenderOS project\n    When the feature is approved for implementation\n    Then SenderOS should create run state for execution',
     ]);
 
     expect(feature.status).toBe('awaiting_scenario_approval');
@@ -67,29 +67,29 @@ describe('integration: full lifecycle flow', () => {
     expect(started.run.status).toBe('executing');
 
     const implementationState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
-    expect(implementationState.feature.loopPhase).toBe('implementation');
-    expect(implementationState.currentAgentRun.status).toBe('running');
+    expect(implementationState.feature.runPhase).toBe('implementation');
+    expect(implementationState.currentRunExecution.status).toBe('running');
     expect(implementationState.workspace.root_path).toContain(`${project.id}/${feature.id}`);
     expect(pathExists(implementationState.workspace.root_path)).toBe(true);
     expect(pathExists(join(implementationState.workspace.root_path, 'package.json'))).toBe(true);
 
     const sessionsAtStart: any[] = cli(['session', 'list', '--home', home]);
     expect(sessionsAtStart).toHaveLength(1);
-    expect(implementationState.currentAgentRun.hostEnvironmentSessionId).toBe(sessionsAtStart[0].id);
+    expect(implementationState.currentRunExecution.hostEnvironmentSessionId).toBe(sessionsAtStart[0].id);
     const resumedSession: any = cli(['session', 'resume', sessionsAtStart[0].id, '--home', home]);
     expect(resumedSession.launchCommand).toContain('codex exec');
 
     const reviewTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(reviewTick.feature.loopPhase).toBe('review');
+    expect(reviewTick.feature.runPhase).toBe('review');
     const reviewState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(reviewState.currentRun.phase).toBe('review');
     expect(reviewState.currentRun.base_branch).toBe(`feature/${feature.id}`);
 
     const mutationTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(mutationTick.feature.loopPhase).toBe('mutation');
+    expect(mutationTick.feature.runPhase).toBe('mutation');
 
     const completionTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(completionTick.feature.loopPhase).toBe('done');
+    expect(completionTick.feature.runPhase).toBe('done');
     expect(completionTick.feature.status).toBe('completed');
 
     const completedFeature: any = cli(['feature', 'show', feature.id, '--home', home]);
@@ -97,7 +97,7 @@ describe('integration: full lifecycle flow', () => {
 
     const status: any = cli(['status', '--home', home]);
     expect(status.openFeatures).toBe(0);
-    expect(status.activeLoops).toBe(0);
+    expect(status.activeRunPhases).toBe(0);
     expect(status.activeRuns).toBe(0);
     expect(status.activeSessionIds).toEqual([]);
     expect(status.workspaceLocks).toBe(0);
@@ -113,8 +113,8 @@ describe('integration: full lifecycle flow', () => {
       { phase: 'review', status: 'succeeded' },
       { phase: 'mutation', status: 'succeeded' },
     ]);
-    const agentRunRows = db.query('select status from agent_runs order by created_at asc').all() as Array<{ status: string }>;
-    expect(agentRunRows).toEqual([
+    const runExecutionRows = db.query('select status from run_executions order by created_at asc').all() as Array<{ status: string }>;
+    expect(runExecutionRows).toEqual([
       { status: 'succeeded' },
       { status: 'succeeded' },
       { status: 'succeeded' },

@@ -5,8 +5,8 @@ import {
   listTasks,
   startLoopForFeature,
   tickLoopForFeature,
-} from '../../loop';
-import { getAgentRunByRunId } from '../agents';
+} from '../../runs';
+import { getRunExecutionByRunId } from '../agents';
 import { getFeature } from '../features';
 
 export function startLoop(
@@ -31,7 +31,7 @@ export function startLoop(
     run: result.run,
     session: result.session,
     task: result.task,
-    agentRun: result.agentRun,
+    runExecution: result.runExecution,
   };
 }
 
@@ -50,7 +50,7 @@ export function tickLoop(featureId: string, home?: string) {
     feature: getFeature(feature.id, home),
     run: result.run,
     task: result.task,
-    agentRun: nextRun?.id ? getAgentRunByRunId(nextRun.id, home) : null,
+    runExecution: nextRun?.id ? getRunExecutionByRunId(nextRun.id, home) : null,
   };
 }
 
@@ -68,7 +68,7 @@ export function showLoop(featureId: string, home?: string) {
     feature,
     tasks,
     currentRun: feature.currentRunId ? getRun(feature.currentRunId, home) : null,
-    currentAgentRun: feature.currentRunId ? getAgentRunByRunId(feature.currentRunId, home) : null,
+    currentRunExecution: feature.currentRunId ? getRunExecutionByRunId(feature.currentRunId, home) : null,
     workspace: feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) : null,
     nextDispatch: nextTask ? JSON.parse(nextTask.instructionJson) : null,
   };

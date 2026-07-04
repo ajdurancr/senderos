@@ -50,7 +50,7 @@ A run is the primary execution request against one feature.
 Runs are retry-aware, branch-aware, richly stateful, and may be explicitly bound to an agent and sendero.
 
 ### Agent run state
-Each run carries agent-execution context through linked agent-run records, including:
+Each run carries agent-execution context through linked run-execution records, including:
 
 - host environment name
 - host environment session id

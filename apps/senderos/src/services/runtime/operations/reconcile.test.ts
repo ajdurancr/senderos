@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import { approveFeature, createFeature } from '../index';
-import { startLoop } from './loop';
+import { startLoop } from './runs-lifecycle';
 import { reconcile } from './reconcile';
 import { resolveRuntime } from '../../../config/runtime';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';

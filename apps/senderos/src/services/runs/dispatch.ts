@@ -3,12 +3,12 @@ import { join, relative, resolve } from 'node:path';
 
 import { ensureDir, resolveRuntime } from '../../config/runtime';
 import { nextPhase, statusForPhase } from '../../domain/constants';
-import type { FeatureRecord, LoopPhase } from '../../domain/types';
+import type { FeatureRecord, RunPhase } from '../../domain/types';
 import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { createAgentRun, getAgent, getAgentBySlug, getAgentRun, getDefaultSenderoForAgent, getSendero } from '../runtime/agents';
+import { createRunExecution, getAgent, getAgentBySlug, getRunExecution, getDefaultSenderoForAgent, getSendero } from '../runtime/agents';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -76,7 +76,7 @@ function allocateWorkspace(feature: FeatureRecord, home?: string) {
 function createRunRecord(
   feature: FeatureRecord,
   taskId: string,
-  phase: LoopPhase,
+  phase: RunPhase,
   instruction: unknown,
   home?: string
 ) {
@@ -116,7 +116,7 @@ function createRunRecord(
   return { id, branchName };
 }
 
-function createSession(runId: string, harness: string, phase: LoopPhase, workspaceRoot: string, home?: string) {
+function createSession(runId: string, harness: string, phase: RunPhase, workspaceRoot: string, home?: string) {
   const db = openRuntimeDb(home);
   const id = randomId('session');
   const resumeCommand = `senderos session resume ${id}`;
@@ -148,7 +148,7 @@ function createSession(runId: string, harness: string, phase: LoopPhase, workspa
   return id;
 }
 
-const PHASE_AGENT_SLUG: Record<LoopPhase, string | null> = {
+const PHASE_AGENT_SLUG: Record<RunPhase, string | null> = {
   idle: null,
   implementation: 'tdd-craftsman',
   review: 'judge',
@@ -157,13 +157,13 @@ const PHASE_AGENT_SLUG: Record<LoopPhase, string | null> = {
   blocked: null,
 };
 
-function agentSlugForPhase(phase: LoopPhase) {
+function agentSlugForPhase(phase: RunPhase) {
   return PHASE_AGENT_SLUG[phase] ?? null;
 }
 
-function createAgentRunForDispatch(input: {
+function createRunExecutionForDispatch(input: {
   feature: FeatureRecord;
-  phase: LoopPhase;
+  phase: RunPhase;
   runId: string;
   sessionId: string;
   workspaceRoot: string;
@@ -191,7 +191,7 @@ function createAgentRunForDispatch(input: {
     ? getSendero(input.senderoId, input.home)
     : getDefaultSenderoForAgent(resolvedSourceAgent.id, input.home);
 
-  return createAgentRun({
+  return createRunExecution({
     home: input.home,
     agentId: resolvedSourceAgent.id,
     senderoId: sendero?.id ?? null,
@@ -244,7 +244,7 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
 
 export function dispatchForPhase(
   feature: FeatureRecord,
-  phase: LoopPhase,
+  phase: RunPhase,
   home?: string,
   options?: { agentId?: string; senderoId?: string }
 ) {
@@ -287,7 +287,7 @@ export function dispatchForPhase(
   );
 
   db.prepare(
-    'update features set status=?, loop_phase=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
+    'update features set status=?, run_phase=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
   ).run(
     statusForPhase(phase),
     phase,
@@ -309,7 +309,7 @@ export function dispatchForPhase(
 
   db.close();
 
-  const agentRun = createAgentRunForDispatch({
+  const runExecution = createRunExecutionForDispatch({
     feature,
     phase,
     runId: runRecord.id,
@@ -327,6 +327,6 @@ export function dispatchForPhase(
     run: getRun(runRecord.id, home),
     session: getSession(sessionId, home),
     task: getTask(task.id, home),
-    agentRun: agentRun ? getAgentRun(agentRun.id, home) : null,
+    runExecution: runExecution ? getRunExecution(runExecution.id, home) : null,
   };
 }

@@ -4,7 +4,7 @@ import { openRuntimeDb } from '../../db/client';
 import { now } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { updateAgentRunByRunId } from '../runtime/agents';
+import { updateRunExecutionByRunId } from '../runtime/agents';
 import { cleanupWorkspace, dispatchForPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -14,12 +14,12 @@ export function startLoopForFeature(
   home?: string,
   options?: { agentId?: string; senderoId?: string }
 ) {
-  const phase = feature.loopPhase === 'idle' ? 'implementation' : feature.loopPhase;
+  const phase = feature.runPhase === 'idle' ? 'implementation' : feature.runPhase;
   return dispatchForPhase(feature, phase, home, options);
 }
 
 export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
-  const currentPhase = feature.loopPhase === 'idle' ? 'implementation' : feature.loopPhase;
+  const currentPhase = feature.runPhase === 'idle' ? 'implementation' : feature.runPhase;
   const tasks = listTasks(feature.id, home) as any[];
   const currentTask =
     tasks.find((task) => task.phase === currentPhase && task.status === 'running') ??
@@ -38,7 +38,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
     );
     db.close();
 
-    updateAgentRunByRunId(
+    updateRunExecutionByRunId(
       feature.currentRunId,
       {
         status: 'succeeded',
@@ -57,7 +57,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
   if (next === 'done') {
     const db = openRuntimeDb(home);
 
-    db.prepare('update features set loop_phase=?, status=?, current_run_id=?, updated_at=? where id=?').run(
+    db.prepare('update features set run_phase=?, status=?, current_run_id=?, updated_at=? where id=?').run(
       'done',
       'completed',
       null,
@@ -72,7 +72,7 @@ export function tickLoopForFeature(feature: FeatureRecord, home?: string) {
       cleanupWorkspace(feature.currentWorkspaceId, home, 'feature_completed');
     }
 
-    return { feature, run: null, task: null, agentRun: null };
+    return { feature, run: null, task: null, runExecution: null };
   }
 
   ensurePhaseTask(feature, next, home);

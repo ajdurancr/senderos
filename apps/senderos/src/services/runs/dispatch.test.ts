@@ -26,12 +26,12 @@ describe('dispatchForPhase', () => {
     expect(dispatched.session.status).toBe('active');
   });
 
-  test('creates an agent run for the dispatched phase', () => {
+  test('creates an run execution for the dispatched phase', () => {
     const home = initHome();
     const feature = setupFeature(home);
     const dispatched: any = dispatchForPhase(feature, 'implementation', home);
-    expect(dispatched.agentRun.status).toBe('running');
-    expect(dispatched.agentRun.hostEnvironmentSessionId).toBe(dispatched.session.id);
+    expect(dispatched.runExecution.status).toBe('running');
+    expect(dispatched.runExecution.hostEnvironmentSessionId).toBe(dispatched.session.id);
   });
 
   test('marks the phase task as running', () => {

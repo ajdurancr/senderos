@@ -19,7 +19,7 @@ The primary runtime entities are:
 - workspaces
 - agents
 - senderos
-- agent runs
+- run executions
 - events
 
 Approved specs and canonical Gherkin feature contracts live in SenderOS state.

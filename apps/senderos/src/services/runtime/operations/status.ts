@@ -11,7 +11,7 @@ export function status(home?: string) {
       unhealthy: (db.query("select count(*) as c from projects where status != 'healthy'").get() as any).c,
     },
     openFeatures: (db.query("select count(*) as c from features where status not in ('completed','canceled')").get() as any).c,
-    activeLoops: (db.query("select count(*) as c from features where loop_phase not in ('idle','done','blocked')").get() as any).c,
+    activeRunPhases: (db.query("select count(*) as c from features where run_phase not in ('idle','done','blocked')").get() as any).c,
     activeRuns: (db.query(`select count(*) as c from runs where status in (${ACTIVE_RUN_STATUSES.map((s) => `'${s}'`).join(',')})`).get() as any).c,
     pendingTasks: (db.query("select count(*) as c from tasks where status in ('pending','ready','running')").get() as any).c,
     sessionHealth:

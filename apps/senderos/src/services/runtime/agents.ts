@@ -3,11 +3,11 @@ import { basename, extname, join, relative, resolve } from 'node:path';
 import type { Database } from 'bun:sqlite';
 
 import { openRuntimeDb } from '../../db/client';
-import { mapAgentRow, mapAgentRunRow, mapSenderoRow } from '../../db/mappers';
+import { mapAgentRow, mapRunExecutionRow, mapSenderoRow } from '../../db/mappers';
 import type {
   AgentKind,
   AgentRecord,
-  AgentRunRecord,
+  RunExecutionRecord,
   HarnessKind,
   SeedAgentsOptions,
   SenderoGoalMode,
@@ -283,18 +283,21 @@ export function listSenderosForAgent(agentId: string, home?: string) {
   return rows;
 }
 
-export function createAgentRun(input: {
+export function createRunExecution(input: {
   agentId: string;
   senderoId?: string | null;
   targetAgentId?: string | null;
   featureId?: string | null;
   runId?: string | null;
   goal: string;
-  status?: AgentRunRecord['status'];
+  status?: RunExecutionRecord['status'];
+  attemptNumber?: number;
   harness: HarnessKind;
   hostEnvironmentName?: string | null;
   hostEnvironmentSessionId?: string | null;
   checkpoint?: string | null;
+  sourceFeatureSha?: string | null;
+  failureStep?: string | null;
   statusSnapshot?: Record<string, unknown>;
   result?: Record<string, unknown>;
   failureSummary?: string | null;
@@ -305,19 +308,22 @@ export function createAgentRun(input: {
 }) {
   const db = openRuntimeDb(input.home);
   const timestamp = now();
-  const record: AgentRunRecord = {
-    id: randomId('agent-run'),
+  const record: RunExecutionRecord = {
+    id: randomId('run-execution'),
+    runId: input.runId ?? null,
+    featureId: input.featureId ?? null,
+    attemptNumber: input.attemptNumber ?? 1,
     agentId: input.agentId,
     senderoId: input.senderoId ?? null,
     targetAgentId: input.targetAgentId ?? null,
-    featureId: input.featureId ?? null,
-    runId: input.runId ?? null,
     status: input.status ?? 'queued',
     goal: input.goal,
     hostEnvironmentName: input.hostEnvironmentName ?? null,
     hostEnvironmentSessionId: input.hostEnvironmentSessionId ?? null,
     harness: input.harness,
     checkpoint: input.checkpoint ?? null,
+    sourceFeatureSha: input.sourceFeatureSha ?? null,
+    failureStep: input.failureStep ?? null,
     statusSnapshotJson: JSON.stringify(input.statusSnapshot ?? {}),
     resultJson: JSON.stringify(input.result ?? {}),
     failureSummary: input.failureSummary ?? null,
@@ -329,22 +335,25 @@ export function createAgentRun(input: {
   };
 
   db.prepare(
-    `insert into agent_runs
-    (id,agent_id,sendero_id,target_agent_id,feature_id,run_id,status,goal,host_environment_name,host_environment_session_id,harness,checkpoint,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at)
-    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    `insert into run_executions
+    (id,run_id,feature_id,attempt_number,agent_id,sendero_id,target_agent_id,status,goal,host_environment_name,host_environment_session_id,harness,checkpoint,source_feature_sha,failure_step,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at)
+    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).run(
     record.id,
+    record.runId,
+    record.featureId,
+    record.attemptNumber,
     record.agentId,
     record.senderoId,
     record.targetAgentId,
-    record.featureId,
-    record.runId,
     record.status,
     record.goal,
     record.hostEnvironmentName,
     record.hostEnvironmentSessionId,
     record.harness,
     record.checkpoint,
+    record.sourceFeatureSha,
+    record.failureStep,
     record.statusSnapshotJson,
     record.resultJson,
     record.failureSummary,
@@ -355,7 +364,7 @@ export function createAgentRun(input: {
     record.updatedAt
   );
 
-  emitEvent(db, 'agent-run.created', 'agent-run', record.id, {
+  emitEvent(db, 'run-execution.created', 'run-execution', record.id, {
     agentId: record.agentId,
     senderoId: record.senderoId,
     targetAgentId: record.targetAgentId,
@@ -366,10 +375,10 @@ export function createAgentRun(input: {
   return record;
 }
 
-export function updateAgentRun(
+export function updateRunExecution(
   id: string,
   input: {
-    status?: AgentRunRecord['status'];
+    status?: RunExecutionRecord['status'];
     checkpoint?: string | null;
     statusSnapshot?: Record<string, unknown>;
     result?: Record<string, unknown>;
@@ -382,15 +391,15 @@ export function updateAgentRun(
   },
   home?: string
 ) {
-  const current = getAgentRun(id, home);
+  const current = getRunExecution(id, home);
 
   if (!current) {
-    throw new Error(`Agent run not found: ${id}`);
+    throw new Error(`Run execution not found: ${id}`);
   }
 
   const db = openRuntimeDb(home);
   db.prepare(
-    `update agent_runs
+    `update run_executions
      set status=?, checkpoint=?, status_snapshot_json=?, result_json=?, failure_summary=?, debug_meta_json=?,
          host_environment_name=?, host_environment_session_id=?, started_at=?, finished_at=?, updated_at=?
      where id=?`
@@ -409,28 +418,28 @@ export function updateAgentRun(
     id
   );
 
-  emitEvent(db, 'agent-run.updated', 'agent-run', id, {
+  emitEvent(db, 'run-execution.updated', 'run-execution', id, {
     status: input.status ?? current.status,
     checkpoint: input.checkpoint ?? current.checkpoint,
   });
 
   db.close();
-  return getAgentRun(id, home);
+  return getRunExecution(id, home);
 }
 
-export function getAgentRunByRunId(runId: string, home?: string) {
+export function getRunExecutionByRunId(runId: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapAgentRunRow(
-    db.query('select * from agent_runs where run_id=? order by created_at desc limit 1').get(runId)
+  const row = mapRunExecutionRow(
+    db.query('select * from run_executions where run_id=? order by created_at desc limit 1').get(runId)
   );
   db.close();
   return row;
 }
 
-export function updateAgentRunByRunId(
+export function updateRunExecutionByRunId(
   runId: string,
   input: {
-    status?: AgentRunRecord['status'];
+    status?: RunExecutionRecord['status'];
     checkpoint?: string | null;
     statusSnapshot?: Record<string, unknown>;
     result?: Record<string, unknown>;
@@ -443,28 +452,28 @@ export function updateAgentRunByRunId(
   },
   home?: string
 ) {
-  const row = getAgentRunByRunId(runId, home);
+  const row = getRunExecutionByRunId(runId, home);
 
   if (!row) {
     return null;
   }
 
-  return updateAgentRun(row.id, input, home);
+  return updateRunExecution(row.id, input, home);
 }
 
-export function listAgentRuns(agentId?: string, home?: string) {
+export function listRunExecutions(agentId?: string, home?: string) {
   const db = openRuntimeDb(home);
   const query = agentId
-    ? db.query('select * from agent_runs where agent_id=? order by created_at asc')
-    : db.query('select * from agent_runs order by created_at asc');
-  const rows = (agentId ? query.all(agentId) : query.all()).map(mapAgentRunRow) as AgentRunRecord[];
+    ? db.query('select * from run_executions where agent_id=? order by created_at asc')
+    : db.query('select * from run_executions order by created_at asc');
+  const rows = (agentId ? query.all(agentId) : query.all()).map(mapRunExecutionRow) as RunExecutionRecord[];
   db.close();
   return rows;
 }
 
-export function getAgentRun(id: string, home?: string) {
+export function getRunExecution(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapAgentRunRow(db.query('select * from agent_runs where id=?').get(id));
+  const row = mapRunExecutionRow(db.query('select * from run_executions where id=?').get(id));
   db.close();
   return row;
 }

@@ -13,7 +13,7 @@ raw user intent
   → human approves executable contract for implementation
   → SenderOS starts a run for the feature
   → the run binds to one executing agent
-  → the agent runs a sendero toward its goal
+  → the run executes a sendero toward its goal
   → [tdd_craftsman] Red → Green → Refactor
   → [judge] review and pruning
   → [mutation_tester] mutation confidence gate

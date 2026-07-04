@@ -45,7 +45,7 @@ Structured SenderOS truth belongs in SQLite, including:
 - workspaces
 - agents
 - senderos
-- agent-run execution state
+- run-execution execution state
 - PR and branch linkage
 - event history
 

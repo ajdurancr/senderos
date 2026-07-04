@@ -11,7 +11,7 @@ import { systemCommandsHelp } from './commands/system';
 
 export const rootHelp: CommandHelp = {
   command: 'senderos',
-  summary: 'SQLite-backed control plane for Senderos loop engineering.',
+  summary: 'SQLite-backed control plane for Senderos run orchestration.',
   usage: ['senderos <command> [subcommand] [arguments] [options]'],
   arguments: [
     { name: 'command', description: 'Top-level command to execute.', required: true },

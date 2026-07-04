@@ -7,13 +7,12 @@ The core runtime entities are:
 - `projects`
 - `features`
 - `runs`
-- `run_attempts`
 - `tasks`
 - `sessions`
 - `workspaces`
 - `agents`
 - `senderos`
-- `agent_runs`
+- `run_executions`
 - `events`
 
 ## Projects
@@ -114,7 +113,7 @@ Run lifecycle detail lives in the run status, not the feature status:
 - `failed`
 - `canceled`
 
-## Agent runs
+## Run executions
 
 Agent-run records capture execution context linked to a run.
 

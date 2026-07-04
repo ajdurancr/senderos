@@ -1,4 +1,4 @@
-export * from './loop';
+export * from './runs-lifecycle';
 export * from './runs';
 export * from './health';
 export * from './status';

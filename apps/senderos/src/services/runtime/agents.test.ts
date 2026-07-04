@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test';
 
 import { initHome } from '../../../tests/helpers/runtime';
 import {
-  createAgentRun,
+  createRunExecution,
   createSendero,
-  listAgentRuns,
+  listRunExecutions,
   listAgents,
   listSenderosForAgent,
 } from './agents';
@@ -54,7 +54,7 @@ describe('runtime agents', () => {
     expect(senderos.some((record) => record.name === 'Spec handoff')).toBe(true);
   });
 
-  test('creates agent runs with debugging metadata', () => {
+  test('creates run executions with debugging metadata', () => {
     const home = initHome();
     const [sourceAgent, targetAgent] = listAgents(home);
     const sendero = createSendero({
@@ -65,8 +65,9 @@ describe('runtime agents', () => {
       goal: 'Advance work from planning to implementation.',
     });
 
-    const agentRun = createAgentRun({
+    const runExecution = createRunExecution({
       home,
+      runId: 'run-manual',
       agentId: sourceAgent!.id,
       senderoId: sendero.id,
       targetAgentId: targetAgent!.id,
@@ -81,10 +82,10 @@ describe('runtime agents', () => {
       startedAt: '2026-07-04T20:00:00.000Z',
     });
 
-    expect(agentRun.hostEnvironmentSessionId).toBe('session-123');
-    expect(agentRun.checkpoint).toBe('contract-approved');
+    expect(runExecution.hostEnvironmentSessionId).toBe('session-123');
+    expect(runExecution.checkpoint).toBe('contract-approved');
 
-    const runs = listAgentRuns(sourceAgent!.id, home);
+    const runs = listRunExecutions(sourceAgent!.id, home);
     expect(runs).toHaveLength(1);
     expect(runs[0]?.senderoId).toBe(sendero.id);
     expect(runs[0]?.debugMetaJson).toContain('slack-dm');

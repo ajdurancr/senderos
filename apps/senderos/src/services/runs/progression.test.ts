@@ -5,7 +5,7 @@ import { dispatchForPhase, getRun, getSession, getWorkspace, startLoopForFeature
 import { resolveRuntime } from '../../config/runtime';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('loop progression', () => {
+describe('run progression', () => {
   function setupFeature(home: string) {
     const project = createProjectFixture(home);
     return approveFeature(
@@ -29,7 +29,7 @@ describe('loop progression', () => {
     let current = getFeature(feature.id, home)!;
     for (const expected of ['review', 'mutation', 'done'] as const) {
       const result = tickLoopForFeature(current, home);
-      expect(getFeature(feature.id, home)?.loopPhase).toBe(expected);
+      expect(getFeature(feature.id, home)?.runPhase).toBe(expected);
       current = getFeature(feature.id, home)!;
       if (expected === 'done') {
         expect(result.run).toBeNull();
@@ -62,7 +62,7 @@ describe('loop progression', () => {
     }
     const db = new Database(resolveRuntime(home).paths.dbPath);
     expect((db.query('select status from sessions order by created_at desc limit 1').get() as any).status).toBe('completed');
-    expect((db.query('select status from agent_runs order by created_at desc limit 1').get() as any).status).toBe('succeeded');
+    expect((db.query('select status from run_executions order by created_at desc limit 1').get() as any).status).toBe('succeeded');
     db.close();
   });
 

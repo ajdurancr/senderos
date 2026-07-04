@@ -1,6 +1,6 @@
 export * from './domain/types';
 export * from './config/runtime';
-export * from './services/loop';
+export * from './services/runs';
 export * from './services/runtime';
 export * from './utils/harness';
 export * from './cli/help';

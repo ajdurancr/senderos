@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { LOOP_SEQUENCE, nextPhase, statusForPhase } from './constants';
 
 describe('domain constants', () => {
-  test('maps loop progression and statuses', () => {
+  test('maps run progression and statuses', () => {
     expect(LOOP_SEQUENCE).toEqual(['implementation', 'review', 'mutation']);
     expect(nextPhase('idle')).toBe('implementation');
     expect(nextPhase('mutation')).toBe('done');

@@ -17,7 +17,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists features (
       id text primary key,
       project_id text not null,
@@ -27,7 +26,7 @@ export function migrate(db: Database) {
       gherkin_text text not null default '',
       gherkin_meta_json text not null default '{}',
       status text not null,
-      loop_phase text not null,
+      run_phase text not null,
       base_target_branch text not null,
       feature_branch_name text,
       pr_url text,
@@ -37,7 +36,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists tasks (
       id text primary key,
       feature_id text not null,
@@ -49,7 +47,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists runs (
       id text primary key,
       feature_id text not null,
@@ -66,21 +63,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
-    create table if not exists run_attempts (
-      id text primary key,
-      run_id text not null,
-      attempt_number integer not null,
-      status text not null,
-      branch_name text,
-      source_feature_sha text,
-      failure_step text,
-      failure_summary text,
-      details_json text not null default '{}',
-      created_at text not null,
-      updated_at text not null
-    );
-
     create table if not exists sessions (
       id text primary key,
       run_id text,
@@ -93,7 +75,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists workspaces (
       id text primary key,
       feature_id text,
@@ -106,7 +87,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists agents (
       id text primary key,
       slug text not null unique,
@@ -122,7 +102,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists senderos (
       id text primary key,
       source_agent_id text not null,
@@ -136,20 +115,22 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
-    create table if not exists agent_runs (
+    create table if not exists run_executions (
       id text primary key,
+      run_id text not null,
+      feature_id text,
+      attempt_number integer not null default 1,
       agent_id text not null,
       sendero_id text,
       target_agent_id text,
-      feature_id text,
-      run_id text,
       status text not null,
       goal text not null,
       host_environment_name text,
       host_environment_session_id text,
       harness text not null,
       checkpoint text,
+      source_feature_sha text,
+      failure_step text,
       status_snapshot_json text not null default '{}',
       result_json text not null default '{}',
       failure_summary text,
@@ -159,7 +140,6 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-
     create table if not exists events (
       id text primary key,
       event_type text not null,
@@ -168,11 +148,11 @@ export function migrate(db: Database) {
       payload_json text not null,
       created_at text not null
     );
-
     create index if not exists idx_agents_slug on agents(slug);
     create index if not exists idx_senderos_source_agent on senderos(source_agent_id);
     create index if not exists idx_senderos_target_agent on senderos(target_agent_id);
-    create index if not exists idx_agent_runs_agent on agent_runs(agent_id);
-    create index if not exists idx_agent_runs_sendero on agent_runs(sendero_id);
+    create index if not exists idx_run_executions_run on run_executions(run_id);
+    create index if not exists idx_run_executions_agent on run_executions(agent_id);
+    create index if not exists idx_run_executions_sendero on run_executions(sendero_id);
   `);
 }

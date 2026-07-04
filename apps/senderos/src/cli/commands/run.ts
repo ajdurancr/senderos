@@ -1,4 +1,4 @@
-import { getRun } from '../../services/loop';
+import { getRun } from '../../services/runs';
 import { cancelRun, listRuns, showLoop, startLoop, tickLoop } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
