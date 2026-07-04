@@ -7,7 +7,7 @@ describe('cli help metadata', () => {
     expect(resolveHelp('feature').subcommands?.map((x) => x.command)).toContain('approve');
     expect(resolveHelp('agent').subcommands?.map((x) => x.command)).toContain('list');
     expect(resolveHelp('sendero').subcommands?.map((x) => x.command)).toContain('create');
-    expect(resolveHelp('agent-run').subcommands?.map((x) => x.command)).toContain('show');
+    expect(resolveHelp('run').subcommands?.map((x) => x.command)).toContain('start');
     expect(resolveHelp('config', 'set').arguments?.map((x) => x.name)).toEqual(['config-path', 'value']);
     for (const help of collectHelpLeaves(rootHelp)) {
       expect(help.summary.length).toBeGreaterThan(0);

@@ -1,11 +1,10 @@
 import type { CommandHelp } from '../domain/types';
 
-import { agentCommandHelp, agentRunCommandHelp, senderoCommandHelp } from './commands/agent';
+import { agentCommandHelp, senderoCommandHelp } from './commands/agent';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
 import { projectCommandHelp } from './commands/project';
-import { loopCommandHelp } from './commands/loop';
 import { runCommandHelp } from './commands/run';
 import { sessionCommandHelp } from './commands/session';
 import { systemCommandsHelp } from './commands/system';
@@ -24,9 +23,7 @@ export const rootHelp: CommandHelp = {
     projectCommandHelp,
     agentCommandHelp,
     senderoCommandHelp,
-    agentRunCommandHelp,
     featureCommandHelp,
-    loopCommandHelp,
     runCommandHelp,
     sessionCommandHelp,
     ...systemCommandsHelp,

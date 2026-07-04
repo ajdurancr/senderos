@@ -37,7 +37,7 @@ describe('integration: cancellation and reconciliation flows', () => {
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);
-    const started: any = cli(['loop', 'start', feature.id, '--home', home]);
+    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
     const canceledRun: any = cli(['run', 'cancel', started.run.id, '--home', home]);
     expect(canceledRun.status).toBe('canceled');
 
@@ -86,7 +86,7 @@ describe('integration: cancellation and reconciliation flows', () => {
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);
-    const started: any = cli(['loop', 'start', feature.id, '--home', home]);
+    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
 
     const db = openDb(home);
     db.query("update sessions set status='stale' where id = ?").run(started.session.id);

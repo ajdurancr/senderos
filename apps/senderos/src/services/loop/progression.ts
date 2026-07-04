@@ -9,9 +9,13 @@ import { cleanupWorkspace, dispatchForPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
 
-export function startLoopForFeature(feature: FeatureRecord, home?: string) {
+export function startLoopForFeature(
+  feature: FeatureRecord,
+  home?: string,
+  options?: { agentId?: string; senderoId?: string }
+) {
   const phase = feature.loopPhase === 'idle' ? 'implementation' : feature.loopPhase;
-  return dispatchForPhase(feature, phase, home);
+  return dispatchForPhase(feature, phase, home, options);
 }
 
 export function tickLoopForFeature(feature: FeatureRecord, home?: string) {

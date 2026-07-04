@@ -8,7 +8,7 @@ import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { getAgentBySlug, getDefaultSenderoForAgent, getSendero, getAgentRun, createAgentRun } from '../runtime/agents';
+import { createAgentRun, getAgent, getAgentBySlug, getAgentRun, getDefaultSenderoForAgent, getSendero } from '../runtime/agents';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -169,29 +169,31 @@ function createAgentRunForDispatch(input: {
   workspaceRoot: string;
   harness: string;
   instruction: ReturnType<typeof defaultInstruction>;
+  agentId?: string;
+  senderoId?: string;
   home?: string;
 }) {
   const sourceSlug = agentSlugForPhase(input.phase);
+  const resolvedSourceAgent = input.agentId
+    ? getAgent(input.agentId, input.home)
+    : sourceSlug
+      ? getAgentBySlug(sourceSlug, input.home)
+      : null;
 
-  if (!sourceSlug) {
-    return null;
-  }
-
-  const sourceAgent = getAgentBySlug(sourceSlug, input.home);
-
-  if (!sourceAgent) {
+  if (!resolvedSourceAgent) {
     return null;
   }
 
   const next = nextPhase(input.phase);
   const targetSlug = next === 'done' ? null : agentSlugForPhase(next);
   const targetAgent = targetSlug ? getAgentBySlug(targetSlug, input.home) : null;
-  const defaultSendero = getDefaultSenderoForAgent(sourceAgent.id, input.home);
-  const sendero = defaultSendero ? getSendero(defaultSendero.id, input.home) : null;
+  const sendero = input.senderoId
+    ? getSendero(input.senderoId, input.home)
+    : getDefaultSenderoForAgent(resolvedSourceAgent.id, input.home);
 
   return createAgentRun({
     home: input.home,
-    agentId: sourceAgent.id,
+    agentId: resolvedSourceAgent.id,
     senderoId: sendero?.id ?? null,
     targetAgentId: targetAgent?.id ?? null,
     featureId: input.feature.id,
@@ -210,7 +212,7 @@ function createAgentRunForDispatch(input: {
       runId: input.runId,
     },
     debugMeta: {
-      sourceAgentSlug: sourceAgent.slug,
+      sourceAgentSlug: resolvedSourceAgent.slug,
       targetAgentSlug: targetAgent?.slug ?? null,
       senderoName: sendero?.name ?? null,
     },
@@ -240,7 +242,12 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
   db.close();
 }
 
-export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?: string) {
+export function dispatchForPhase(
+  feature: FeatureRecord,
+  phase: LoopPhase,
+  home?: string,
+  options?: { agentId?: string; senderoId?: string }
+) {
   completeActiveSessionsForFeature(feature.id, home, 'phase_transition');
 
   let workspace = feature.currentWorkspaceId
@@ -310,6 +317,8 @@ export function dispatchForPhase(feature: FeatureRecord, phase: LoopPhase, home?
     workspaceRoot: workspace.root_path,
     harness: config.defaultHarness,
     instruction,
+    agentId: options?.agentId,
+    senderoId: options?.senderoId,
     home,
   });
 

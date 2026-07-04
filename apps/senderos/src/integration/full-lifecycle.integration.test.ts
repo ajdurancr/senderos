@@ -63,10 +63,10 @@ describe('integration: full lifecycle flow', () => {
     const approved: any = cli(['feature', 'approve', feature.id, '--home', home]);
     expect(approved.status).toBe('active');
 
-    const started: any = cli(['loop', 'start', feature.id, '--home', home]);
+    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
     expect(started.run.status).toBe('executing');
 
-    const implementationState: any = cli(['loop', 'show', feature.id, '--home', home]);
+    const implementationState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(implementationState.feature.loopPhase).toBe('implementation');
     expect(implementationState.currentAgentRun.status).toBe('running');
     expect(implementationState.workspace.root_path).toContain(`${project.id}/${feature.id}`);
@@ -79,16 +79,16 @@ describe('integration: full lifecycle flow', () => {
     const resumedSession: any = cli(['session', 'resume', sessionsAtStart[0].id, '--home', home]);
     expect(resumedSession.launchCommand).toContain('codex exec');
 
-    const reviewTick: any = cli(['loop', 'tick', feature.id, '--home', home]);
+    const reviewTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
     expect(reviewTick.feature.loopPhase).toBe('review');
-    const reviewState: any = cli(['loop', 'show', feature.id, '--home', home]);
+    const reviewState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(reviewState.currentRun.phase).toBe('review');
     expect(reviewState.currentRun.base_branch).toBe(`feature/${feature.id}`);
 
-    const mutationTick: any = cli(['loop', 'tick', feature.id, '--home', home]);
+    const mutationTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
     expect(mutationTick.feature.loopPhase).toBe('mutation');
 
-    const completionTick: any = cli(['loop', 'tick', feature.id, '--home', home]);
+    const completionTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
     expect(completionTick.feature.loopPhase).toBe('done');
     expect(completionTick.feature.status).toBe('completed');
 

@@ -9,7 +9,11 @@ import {
 import { getAgentRunByRunId } from '../agents';
 import { getFeature } from '../features';
 
-export function startLoop(featureId: string, home?: string) {
+export function startLoop(
+  featureId: string,
+  home?: string,
+  options?: { agentId?: string; senderoId?: string }
+) {
   const feature = getFeature(featureId, home);
 
   if (!feature) {
@@ -20,7 +24,7 @@ export function startLoop(featureId: string, home?: string) {
     throw new Error(`Feature is not dispatchable from status ${feature.status}`);
   }
 
-  const result = startLoopForFeature(feature, home);
+  const result = startLoopForFeature(feature, home, options);
 
   return {
     feature: getFeature(feature.id, home),
