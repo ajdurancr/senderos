@@ -36,4 +36,50 @@ describe('runCli', () => {
     expect(loadConfig(home).defaultHarness).toBe('codex');
     expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('codex');
   });
+
+  test('bootstrap-agent-skill writes a skill scaffold and next-step guidance', async () => {
+    const home = tempHome();
+    const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+
+    try {
+      await runCli([
+        'bootstrap-agent-skill',
+        '--path',
+        skillPath,
+        '--home',
+        join(home, '.senderos'),
+        '--harness',
+        'codex',
+      ]);
+    } finally {
+      console.log = original;
+    }
+
+    expect(existsSync(skillPath)).toBe(true);
+    expect(readFileSync(skillPath, 'utf8')).toContain('SenderOS Operator');
+    expect(readFileSync(skillPath, 'utf8')).toContain('senderos init --home');
+    expect(logs.join('\n')).toContain('agentPrompt');
+    expect(logs.join('\n')).toContain('senderos init');
+  });
+
+  test('bootstrap-agent-skill can print the scaffold without writing it', async () => {
+    const home = tempHome();
+    const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+
+    try {
+      await runCli(['bootstrap-agent-skill', '--path', skillPath, '--print']);
+    } finally {
+      console.log = original;
+    }
+
+    expect(existsSync(skillPath)).toBe(false);
+    expect(logs.join('\n')).toContain('SenderOS Operator');
+    expect(logs.join('\n')).toContain('copy-pasteable skill');
+  });
 });

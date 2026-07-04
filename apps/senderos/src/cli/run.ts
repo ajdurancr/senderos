@@ -1,5 +1,6 @@
 import { parseArgs } from './args';
 import { resolveHome } from './shared';
+import { handleBootstrapAgentSkill } from './commands/bootstrap-agent-skill';
 import { handleConfig } from './commands/config';
 import { handleFeature } from './commands/feature';
 import { handleInit } from './commands/init';
@@ -22,6 +23,9 @@ export async function runCli(argv = process.argv.slice(2)) {
     switch (cmd) {
       case 'init':
         result = await handleInit(options);
+        break;
+      case 'bootstrap-agent-skill':
+        result = await handleBootstrapAgentSkill(options);
         break;
       case 'config':
         result = handleConfig(sub, positionals, home);
