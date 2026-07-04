@@ -11,6 +11,9 @@ The core runtime entities are:
 - `tasks`
 - `sessions`
 - `workspaces`
+- `agents`
+- `senderos`
+- `agent_runs`
 - `events`
 
 ## Projects
@@ -55,9 +58,38 @@ Feature statuses are intentionally small and strict:
 - `canceled`
 - `completed`
 
+## Agents
+
+An agent is a first-class executor.
+
+Agent records store:
+
+- slug and display name
+- source markdown path
+- definition body
+- kind/status
+- default goal
+- bootstrap metadata
+
+Built-in agents are seeded from `apps/senderos/agents/*.md` during `senderos init`.
+
+## Senderos
+
+A sendero is an execution path owned by a source agent.
+
+A sendero record stores:
+
+- source agent id
+- optional target agent id
+- goal and goal mode
+- assignment metadata
+- status and timestamps
+
+Each built-in agent receives a seeded `default sendero` during runtime init.
+
 ## Runs
 
-A run is one execution request against one feature.
+A run is the primary execution request against one feature.
 
 Rules:
 
@@ -66,6 +98,7 @@ Rules:
 - retries reuse the same logical run branch name but recreate the branch from a clean base
 - retries start from the latest accepted feature branch tip
 - successful runs merge into the feature branch automatically
+- a run may be explicitly started with `--agent-id` and `--sendero-id`
 
 Run lifecycle detail lives in the run status, not the feature status:
 
@@ -80,6 +113,26 @@ Run lifecycle detail lives in the run status, not the feature status:
 - `succeeded`
 - `failed`
 - `canceled`
+
+## Agent runs
+
+Agent-run records capture execution context linked to a run.
+
+Each record can store:
+
+- agent id
+- sendero id
+- target agent id
+- feature id / run id linkage
+- host environment name
+- host environment session id
+- harness
+- checkpoint
+- status snapshot
+- result metadata
+- failure summary
+- debug metadata
+- started / finished timestamps
 
 ## Attempts
 

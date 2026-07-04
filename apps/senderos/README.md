@@ -17,6 +17,9 @@ The primary runtime entities are:
 - tasks
 - sessions
 - workspaces
+- agents
+- senderos
+- agent runs
 - events
 
 Approved specs and canonical Gherkin feature contracts live in SenderOS state.
@@ -55,7 +58,9 @@ The strict path is now:
 4. `gherkin_author` emits raw Gherkin + structured metadata
 5. SenderOS creates the feature record from that approved contract
 6. human approves the executable contract for implementation
-7. implementation / review / mutation / PR flow begins
+7. SenderOS starts a `run` for the feature
+8. the run is bound to an executing agent and sendero
+9. implementation / review / mutation / PR flow begins
 
 See:
 
@@ -72,14 +77,15 @@ Examples:
 ```bash
 senderos help
 senderos help project
-senderos help feature approve
+senderos help run start
 ```
 
 Current top-level workflow commands now include:
 
 - `project`
 - `feature`
-- `loop`
+- `agent`
+- `sendero`
 - `run`
 - `session`
 - `status` / `doctor` / `reconcile`
@@ -89,7 +95,7 @@ Current top-level workflow commands now include:
 - `src/` — SenderOS runtime, CLI, services, and colocated tests
 - `tests/helpers/` — shared test helpers
 - `src/integration/` — integration test suite with flow-focused end-to-end coverage
-- `agents/` — canonical vendor-neutral agent roles in Markdown
+- `agents/` — canonical vendor-neutral agent roles in Markdown, used as bootstrap seed input
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
 - `templates/` — historical references and examples, not live runtime truth

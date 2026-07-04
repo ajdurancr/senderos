@@ -5,10 +5,10 @@
 - [ ] Live project execution state is not stored directly under `apps/senderos`.
 - [ ] `docs/storage-model.md` exists and matches the intended repo-vs-workspace split.
 
-## C2 — Harness completeness
-- [ ] `AGENTS.md`, `init.sh`, and core docs exist inside `apps/senderos`.
-- [ ] Template and example directories exist.
-- [ ] `bun run init` exits successfully.
+## C2 — Runtime model is complete
+- [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and agent-run state.
+- [ ] Built-in agents seed from markdown into SQLite runtime state.
+- [ ] Default senderos are assigned during runtime init.
 
 ## C3 — Technology discipline
 - [ ] Source code is TypeScript only.
@@ -18,4 +18,10 @@
 ## C4 — Verification is real
 - [ ] Typecheck passes.
 - [ ] Tests pass.
+- [ ] Coverage threshold passes.
 - [ ] Build passes.
+
+## C5 — CLI shape is current
+- [ ] `run` is the primary execution command.
+- [ ] `loop` is not part of the public top-level workflow surface.
+- [ ] `agent-run` is not part of the public top-level workflow surface.

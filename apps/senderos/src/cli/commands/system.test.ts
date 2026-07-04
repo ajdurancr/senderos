@@ -20,7 +20,7 @@ describe('system commands', () => {
 
   test('schedule-plan returns the maintenance job plan', () => {
     const home = initHome();
-    expect((handleSystemCommand('schedule-plan', home) as any).jobName).toBe('senderos-loop-maintenance');
+    expect((handleSystemCommand('schedule-plan', home) as any).jobName).toBe('senderos-run-maintenance');
   });
 
   test('unknown commands throw', () => {

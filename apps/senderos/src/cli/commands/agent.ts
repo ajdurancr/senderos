@@ -1,10 +1,7 @@
 import {
-  createAgentRun,
   createSendero,
   getAgent,
-  getAgentRun,
   getSendero,
-  listAgentRuns,
   listAgents,
   listSenderos,
   listSenderosForAgent,
@@ -45,27 +42,6 @@ const senderoCreateHelp = {
   ],
 };
 
-const agentRunListHelp = {
-  command: 'list',
-  summary: 'List agent runs, optionally scoped to an agent.',
-  usage: ['senderos agent-run list', 'senderos agent-run list --agent-id <agent-id>'],
-};
-
-const agentRunShowHelp = {
-  command: 'show',
-  summary: 'Show an agent run.',
-  usage: ['senderos agent-run show <agent-run-id>'],
-  arguments: [{ name: 'agent-run-id', description: 'Agent run identifier.', required: true }],
-};
-
-const agentRunCreateHelp = {
-  command: 'create',
-  summary: 'Create an agent run record.',
-  usage: [
-    'senderos agent-run create --agent-id <agent-id> --goal "..." --harness codex [--sendero-id <sendero-id>] [--target-agent-id <agent-id>] [--status running] [--host-environment-name openclaw-main] [--host-environment-session-id abc123] [--checkpoint ...]',
-  ],
-};
-
 export const agentCommandHelp = {
   command: 'agent',
   summary: 'Inspect Senderos agents.',
@@ -80,13 +56,6 @@ export const senderoCommandHelp = {
   subcommands: [senderoCreateHelp, senderoListHelp, senderoShowHelp],
 };
 
-export const agentRunCommandHelp = {
-  command: 'agent-run',
-  summary: 'Create and inspect agent execution records.',
-  usage: ['senderos agent-run <create|list|show> ...'],
-  subcommands: [agentRunCreateHelp, agentRunListHelp, agentRunShowHelp],
-};
-
 function parseSenderoCreateOptions(home: string, options: Record<string, string | boolean>) {
   return {
     home,
@@ -96,24 +65,6 @@ function parseSenderoCreateOptions(home: string, options: Record<string, string 
     description: (options.description as string | undefined) ?? '',
     goal: String(options.goal ?? ''),
     goalMode: options['goal-mode'] as any,
-  };
-}
-
-function parseAgentRunCreateOptions(home: string, options: Record<string, string | boolean>) {
-  return {
-    home,
-    agentId: String(options['agent-id'] ?? ''),
-    senderoId: (options['sendero-id'] as string | undefined) ?? null,
-    targetAgentId: (options['target-agent-id'] as string | undefined) ?? null,
-    featureId: (options['feature-id'] as string | undefined) ?? null,
-    runId: (options['run-id'] as string | undefined) ?? null,
-    goal: String(options.goal ?? ''),
-    harness: String(options.harness ?? '') as any,
-    status: options.status as any,
-    hostEnvironmentName: (options['host-environment-name'] as string | undefined) ?? null,
-    hostEnvironmentSessionId:
-      (options['host-environment-session-id'] as string | undefined) ?? null,
-    checkpoint: (options.checkpoint as string | undefined) ?? null,
   };
 }
 
@@ -145,23 +96,5 @@ export function handleSendero(
       return getSendero(requirePositional(positionals[2], 'sendero id'), home);
     default:
       throw new Error('Unknown sendero action');
-  }
-}
-
-export function handleAgentRun(
-  sub: string | undefined,
-  positionals: string[],
-  options: Record<string, string | boolean>,
-  home: string
-) {
-  switch (sub) {
-    case 'create':
-      return createAgentRun(parseAgentRunCreateOptions(home, options));
-    case 'list':
-      return listAgentRuns(options['agent-id'] ? String(options['agent-id']) : undefined, home);
-    case 'show':
-      return getAgentRun(requirePositional(positionals[2], 'agent run id'), home);
-    default:
-      throw new Error('Unknown agent-run action');
   }
 }

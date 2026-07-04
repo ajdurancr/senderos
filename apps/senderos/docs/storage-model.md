@@ -37,7 +37,15 @@ Structured SenderOS truth belongs in SQLite, including:
 - approved specs
 - feature contracts in raw Gherkin form
 - parsed Gherkin metadata
-- feature / run / attempt / task lifecycle state
+- features
+- runs
+- run attempts
+- tasks
+- sessions
+- workspaces
+- agents
+- senderos
+- agent-run execution state
 - PR and branch linkage
 - event history
 
@@ -53,5 +61,5 @@ Large runtime artifacts still belong under the Senderos home directory and are r
 
 ## Design rule
 
-If data describes SenderOS state transitions, ownership, workflow, project identity, features, runs, or sessions, it belongs in SQLite.
+If data describes SenderOS state transitions, ownership, workflow, project identity, features, runs, sessions, agents, senderos, or agent execution state, it belongs in SQLite.
 If data is a large runtime artifact, it belongs under the Senderos home directory.
