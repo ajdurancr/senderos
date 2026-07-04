@@ -107,6 +107,59 @@ export function migrate(db: Database) {
       updated_at text not null
     );
 
+    create table if not exists agents (
+      id text primary key,
+      slug text not null unique,
+      name text not null,
+      description text not null default '',
+      kind text not null,
+      status text not null,
+      source_path text,
+      definition_format text not null default 'markdown',
+      definition_body text not null,
+      default_goal text,
+      default_meta_json text not null default '{}',
+      created_at text not null,
+      updated_at text not null
+    );
+
+    create table if not exists senderos (
+      id text primary key,
+      source_agent_id text not null,
+      target_agent_id text,
+      name text not null,
+      description text not null default '',
+      status text not null,
+      goal text not null,
+      goal_mode text not null,
+      assignment_meta_json text not null default '{}',
+      created_at text not null,
+      updated_at text not null
+    );
+
+    create table if not exists agent_runs (
+      id text primary key,
+      agent_id text not null,
+      sendero_id text,
+      target_agent_id text,
+      feature_id text,
+      run_id text,
+      status text not null,
+      goal text not null,
+      host_environment_name text,
+      host_environment_session_id text,
+      harness text not null,
+      checkpoint text,
+      status_snapshot_json text not null default '{}',
+      result_json text not null default '{}',
+      failure_summary text,
+      debug_meta_json text not null default '{}',
+      started_at text,
+      finished_at text,
+      created_at text not null,
+      updated_at text not null
+    );
+
     create table if not exists events (
       id text primary key,
       event_type text not null,
@@ -115,5 +168,11 @@ export function migrate(db: Database) {
       payload_json text not null,
       created_at text not null
     );
+
+    create index if not exists idx_agents_slug on agents(slug);
+    create index if not exists idx_senderos_source_agent on senderos(source_agent_id);
+    create index if not exists idx_senderos_target_agent on senderos(target_agent_id);
+    create index if not exists idx_agent_runs_agent on agent_runs(agent_id);
+    create index if not exists idx_agent_runs_sendero on agent_runs(sendero_id);
   `);
 }

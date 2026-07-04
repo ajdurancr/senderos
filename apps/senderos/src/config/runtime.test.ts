@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { defaultHomePath, previewInit, initializeRuntime, resolveRuntime, runtimeExists } from './runtime';
+import { Database } from 'bun:sqlite';
+
+import {
+  defaultHomePath,
+  initializeRuntime,
+  previewInit,
+  resolveRuntime,
+  runtimeExists,
+} from './runtime';
 import { tempHome } from '../../tests/helpers/runtime';
 
 describe('runtime configuration', () => {
@@ -16,6 +24,19 @@ describe('runtime configuration', () => {
     const home = tempHome();
     initializeRuntime(home);
     expect(runtimeExists(home)).toBe(true);
+  });
+
+  test('initializeRuntime seeds built-in agents into the runtime database', () => {
+    const home = tempHome();
+    initializeRuntime(home);
+
+    const db = new Database(resolveRuntime(home).paths.dbPath);
+    const row = db.query("select slug from agents where slug='spec-partner'").get() as
+      | { slug: string }
+      | null;
+    db.close();
+
+    expect(row?.slug).toBe('spec-partner');
   });
 
   test('resolveRuntime returns persisted configuration and paths', () => {

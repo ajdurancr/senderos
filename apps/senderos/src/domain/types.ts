@@ -26,6 +26,11 @@ export type RunStatus =
   | 'canceled';
 export type SessionStatus = 'active' | 'stale' | 'completed' | 'failed';
 export type WorkspaceStatus = 'allocated' | 'locked' | 'active' | 'verifying' | 'released' | 'cleaned' | 'retained';
+export type AgentKind = 'system' | 'default' | 'custom';
+export type AgentStatus = 'active' | 'disabled' | 'archived';
+export type SenderoStatus = 'draft' | 'active' | 'disabled' | 'archived';
+export type SenderoGoalMode = 'terminal' | 'toward_agent';
+export type AgentRunStatus = 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'canceled';
 
 export interface SenderosConfig {
   database: { kind: DatabaseKind; path?: string; turso?: { url: string; authTokenEnv: string } };
@@ -96,6 +101,63 @@ export interface TaskRecord {
   resultJson: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AgentRecord {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  kind: AgentKind;
+  status: AgentStatus;
+  sourcePath: string | null;
+  definitionFormat: string;
+  definitionBody: string;
+  defaultGoal: string | null;
+  defaultMetaJson: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SenderoRecord {
+  id: string;
+  sourceAgentId: string;
+  targetAgentId: string | null;
+  name: string;
+  description: string;
+  status: SenderoStatus;
+  goal: string;
+  goalMode: SenderoGoalMode;
+  assignmentMetaJson: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentRunRecord {
+  id: string;
+  agentId: string;
+  senderoId: string | null;
+  targetAgentId: string | null;
+  featureId: string | null;
+  runId: string | null;
+  status: AgentRunStatus;
+  goal: string;
+  hostEnvironmentName: string | null;
+  hostEnvironmentSessionId: string | null;
+  harness: HarnessKind;
+  checkpoint: string | null;
+  statusSnapshotJson: string;
+  resultJson: string;
+  failureSummary: string | null;
+  debugMetaJson: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeedAgentsOptions {
+  definitionsDir?: string;
 }
 
 export interface InitPreview {
