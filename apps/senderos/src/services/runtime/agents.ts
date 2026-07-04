@@ -1,9 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join, relative, resolve } from 'node:path';
+import type { Database } from 'bun:sqlite';
 
 import { openRuntimeDb } from '../../db/client';
 import { mapAgentRow, mapAgentRunRow, mapSenderoRow } from '../../db/mappers';
 import type {
+  AgentKind,
   AgentRecord,
   AgentRunRecord,
   HarnessKind,
@@ -26,8 +28,58 @@ function defaultGoalFromSlug(slug: string) {
   return `Run ${slug} as a focused agent with a single explicit goal.`;
 }
 
-function inferAgentKind(slug: string) {
-  return slug === 'default-sendero' ? 'default' : 'system';
+function inferAgentKind(_slug: string): AgentKind {
+  return 'system';
+}
+
+function ensureDefaultSendero(db: Database, agent: AgentRecord) {
+  const existing = mapSenderoRow(
+    db.query("select * from senderos where source_agent_id=? and name='default sendero' limit 1").get(agent.id)
+  );
+
+  if (existing) {
+    return existing;
+  }
+
+  const record: SenderoRecord = {
+    id: randomId('sendero'),
+    sourceAgentId: agent.id,
+    targetAgentId: null,
+    name: 'default sendero',
+    description: `Default terminal sendero assigned to ${agent.slug}.`,
+    status: 'active',
+    goal: agent.defaultGoal ?? defaultGoalFromSlug(agent.slug),
+    goalMode: 'terminal',
+    assignmentMetaJson: JSON.stringify({ seeded: true, builtIn: true, default: true }),
+    createdAt: now(),
+    updatedAt: now(),
+  };
+
+  db.prepare(
+    `insert into senderos
+    (id,source_agent_id,target_agent_id,name,description,status,goal,goal_mode,assignment_meta_json,created_at,updated_at)
+    values (?,?,?,?,?,?,?,?,?,?,?)`
+  ).run(
+    record.id,
+    record.sourceAgentId,
+    record.targetAgentId,
+    record.name,
+    record.description,
+    record.status,
+    record.goal,
+    record.goalMode,
+    record.assignmentMetaJson,
+    record.createdAt,
+    record.updatedAt
+  );
+
+  emitEvent(db, 'sendero.seeded', 'sendero', record.id, {
+    sourceAgentId: record.sourceAgentId,
+    name: record.name,
+    goalMode: record.goalMode,
+  });
+
+  return record;
 }
 
 export function builtInAgentDefinitionsDir() {
@@ -69,7 +121,11 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
 
       const updated = mapAgentRow(db.query('select * from agents where id = ?').get(existing.id))!;
       seeded.push(updated);
-      emitEvent(db, 'agent.seeded', 'agent', updated.id, { slug: updated.slug, sourcePath: updated.sourcePath });
+      ensureDefaultSendero(db, updated);
+      emitEvent(db, 'agent.seeded', 'agent', updated.id, {
+        slug: updated.slug,
+        sourcePath: updated.sourcePath,
+      });
       continue;
     }
 
@@ -110,6 +166,7 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
     );
 
     seeded.push(record);
+    ensureDefaultSendero(db, record);
     emitEvent(db, 'agent.seeded', 'agent', record.id, { slug: record.slug, sourcePath: record.sourcePath });
   }
 
@@ -184,6 +241,20 @@ export function createSendero(input: {
 
   db.close();
   return record;
+}
+
+export function listSenderos(home?: string) {
+  const db = openRuntimeDb(home);
+  const rows = db.query('select * from senderos order by created_at asc').all().map(mapSenderoRow) as SenderoRecord[];
+  db.close();
+  return rows;
+}
+
+export function getSendero(id: string, home?: string) {
+  const db = openRuntimeDb(home);
+  const row = mapSenderoRow(db.query('select * from senderos where id=?').get(id));
+  db.close();
+  return row;
 }
 
 export function listSenderosForAgent(agentId: string, home?: string) {
@@ -279,12 +350,19 @@ export function createAgentRun(input: {
   return record;
 }
 
-export function listAgentRuns(agentId: string, home?: string) {
+export function listAgentRuns(agentId?: string, home?: string) {
   const db = openRuntimeDb(home);
-  const rows = db
-    .query('select * from agent_runs where agent_id=? order by created_at asc')
-    .all(agentId)
-    .map(mapAgentRunRow) as AgentRunRecord[];
+  const query = agentId
+    ? db.query('select * from agent_runs where agent_id=? order by created_at asc')
+    : db.query('select * from agent_runs order by created_at asc');
+  const rows = (agentId ? query.all(agentId) : query.all()).map(mapAgentRunRow) as AgentRunRecord[];
   db.close();
   return rows;
+}
+
+export function getAgentRun(id: string, home?: string) {
+  const db = openRuntimeDb(home);
+  const row = mapAgentRunRow(db.query('select * from agent_runs where id=?').get(id));
+  db.close();
+  return row;
 }

@@ -1,5 +1,6 @@
 import type { CommandHelp } from '../domain/types';
 
+import { agentCommandHelp, agentRunCommandHelp, senderoCommandHelp } from './commands/agent';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
@@ -21,6 +22,9 @@ export const rootHelp: CommandHelp = {
     initCommandHelp,
     configCommandHelp,
     projectCommandHelp,
+    agentCommandHelp,
+    senderoCommandHelp,
+    agentRunCommandHelp,
     featureCommandHelp,
     loopCommandHelp,
     runCommandHelp,

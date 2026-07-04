@@ -29,6 +29,22 @@ describe('runCli', () => {
     expect(existsSync(join(home, 'config.json'))).toBe(true);
   });
 
+  test('agent command family routes through runCli', async () => {
+    const home = tempHome();
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+
+    try {
+      await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['agent', 'list', '--home', home]);
+    } finally {
+      console.log = original;
+    }
+
+    expect(logs.join('\n')).toContain('spec-partner');
+  });
+
   test('config commands route through runCli and persist updates', async () => {
     const home = tempHome();
     await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);

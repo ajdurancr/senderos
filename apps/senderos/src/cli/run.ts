@@ -1,5 +1,6 @@
 import { parseArgs } from './args';
 import { resolveHome } from './shared';
+import { handleAgent, handleAgentRun, handleSendero } from './commands/agent';
 import { handleConfig } from './commands/config';
 import { handleFeature } from './commands/feature';
 import { handleInit } from './commands/init';
@@ -28,6 +29,15 @@ export async function runCli(argv = process.argv.slice(2)) {
         break;
       case 'project':
         result = handleProject(sub, positionals, options, home);
+        break;
+      case 'agent':
+        result = handleAgent(sub, positionals, home);
+        break;
+      case 'sendero':
+        result = handleSendero(sub, positionals, options, home);
+        break;
+      case 'agent-run':
+        result = handleAgentRun(sub, positionals, options, home);
         break;
       case 'feature':
         result = handleFeature(sub, positionals, options, home);

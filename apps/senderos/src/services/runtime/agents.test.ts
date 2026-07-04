@@ -20,6 +20,16 @@ describe('runtime agents', () => {
     expect(agents.every((agent) => agent.kind === 'system')).toBe(true);
   });
 
+  test('initialization seeds a default sendero for each built-in agent', () => {
+    const home = initHome();
+    const agents = listAgents(home);
+
+    for (const agent of agents) {
+      const senderos = listSenderosForAgent(agent.id, home);
+      expect(senderos.some((sendero) => sendero.name === 'default sendero')).toBe(true);
+    }
+  });
+
   test('creates senderos assigned to an agent and captures directed goal state', () => {
     const home = initHome();
     const agents = listAgents(home);
@@ -40,8 +50,8 @@ describe('runtime agents', () => {
     expect(sendero.targetAgentId).toBe(targetAgent.id);
 
     const senderos = listSenderosForAgent(sourceAgent.id, home);
-    expect(senderos).toHaveLength(1);
-    expect(senderos[0]?.name).toBe('Spec handoff');
+    expect(senderos.length).toBeGreaterThanOrEqual(2);
+    expect(senderos.some((record) => record.name === 'Spec handoff')).toBe(true);
   });
 
   test('creates agent runs with debugging metadata', () => {
