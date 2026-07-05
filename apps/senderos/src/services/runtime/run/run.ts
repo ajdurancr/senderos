@@ -1,54 +1,9 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getRun, getSession, getWorkspace, listTasks } from './queries';
-import { dispatchNextFeatureRun, dispatchFeatureRun } from './progression';
 import { getRunExecutionByRunId, updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
-
-function startRunState(
-  featureId: string,
-  home?: string,
-  options?: { agentId?: string; senderoId?: string }
-) {
-  const feature = getFeature(featureId, home);
-
-  if (!feature) {
-    throw new Error(`Feature not found: ${featureId}`);
-  }
-
-  if (!['active', 'failed'].includes(feature.status)) {
-    throw new Error(`Feature is not dispatchable from status ${feature.status}`);
-  }
-
-  const result = dispatchFeatureRun(feature, home, options);
-
-  return {
-    feature: getFeature(feature.id, home),
-    run: result.run,
-    session: result.session,
-    task: result.task,
-    runExecution: result.runExecution,
-  };
-}
-
-function advanceRunState(featureId: string, home?: string) {
-  const feature = getFeature(featureId, home);
-
-  if (!feature) {
-    throw new Error(`Feature not found: ${featureId}`);
-  }
-
-  const result = dispatchNextFeatureRun(feature, home);
-  const nextRun = result.run as { id?: string } | null;
-
-  return {
-    feature: getFeature(feature.id, home),
-    run: result.run,
-    task: result.task,
-    runExecution: nextRun?.id ? getRunExecutionByRunId(nextRun.id, home) : null,
-  };
-}
+import { attachRunToFeature, createRunExecutionRecord, createRunRecord, createSessionRecord, getRun, getSession } from './dispatch';
 
 export function showRunState(featureId: string, home?: string) {
   const feature = getFeature(featureId, home);
@@ -57,16 +12,10 @@ export function showRunState(featureId: string, home?: string) {
     throw new Error(`Feature not found: ${featureId}`);
   }
 
-  const tasks = listTasks(featureId, home) as any[];
-  const nextTask = tasks.find((task) => ['ready', 'running', 'pending'].includes(task.status));
-
   return {
     feature,
-    tasks,
     currentRun: feature.currentRunId ? getRun(feature.currentRunId, home) : null,
     currentRunExecution: feature.currentRunId ? getRunExecutionByRunId(feature.currentRunId, home) : null,
-    workspace: feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) : null,
-    nextDispatch: nextTask ? JSON.parse(nextTask.instructionJson) : null,
   };
 }
 
@@ -74,7 +23,6 @@ export function listRuns(home?: string) {
   const db = openRuntimeDb(home);
   const rows = db.query('select * from runs order by created_at asc').all();
   db.close();
-
   return rows;
 }
 
@@ -87,60 +35,43 @@ export function dispatchRun(
     throw new Error(`Feature not found: ${input.featureId}`);
   }
 
-  if (!feature.currentRunId) {
-    if (input.previousRunId) {
-      throw new Error('previous-run-id is not valid when the feature has no current run');
-    }
-
-    const started: any = startRunState(feature.id, home, {
-      senderoId: input.senderoId,
-      agentId: input.agentId,
-    });
-
-    return {
-      featureId: feature.id,
-      previousRunId: null,
-      runId: started.run?.id ?? null,
-      runExecutionId: started.runExecution?.id ?? null,
-      sessionId: started.session?.id ?? null,
-    };
-  }
-
-  if (input.previousRunId !== feature.currentRunId) {
+  if (feature.currentRunId !== (input.previousRunId ?? null)) {
     throw new Error('previous-run-id must match the feature current run id');
   }
 
-  const currentRun: any = getRun(feature.currentRunId, home);
-  if (!currentRun) {
-    throw new Error(`Current run not found: ${feature.currentRunId}`);
+  if (feature.currentRunId) {
+    const previousRun: any = getRun(feature.currentRunId, home);
+    if (!previousRun) {
+      throw new Error(`Current run not found: ${feature.currentRunId}`);
+    }
+    if (!['failed', 'succeeded'].includes(previousRun.status)) {
+      throw new Error(`Run is not dispatchable from status ${previousRun.status}`);
+    }
+    const previousSession = (listSessions(home) as any[]).find((session) => session.run_id === previousRun.id && session.status === 'active');
+    if (previousSession) {
+      throw new Error('Run is still active and cannot be redispatched');
+    }
   }
 
-  if (currentRun.status === 'failed') {
-    const retried: any = startRunState(feature.id, home, {
-      senderoId: input.senderoId,
-      agentId: input.agentId,
-    });
+  const run: any = createRunRecord(feature, input.senderoId, input.previousRunId ?? null, home);
+  const session: any = createSessionRecord(run.id, home);
+  const execution: any = createRunExecutionRecord({
+    feature,
+    runId: run.id,
+    sessionId: session.id,
+    senderoId: input.senderoId,
+    agentId: input.agentId,
+    previousRunId: input.previousRunId ?? null,
+    home,
+  });
+  attachRunToFeature(feature.id, run.id, home);
 
-    return {
-      featureId: feature.id,
-      previousRunId: input.previousRunId,
-      runId: retried.run?.id ?? null,
-      runExecutionId: retried.runExecution?.id ?? null,
-      sessionId: retried.session?.id ?? null,
-    };
-  }
-
-  if (currentRun.status === 'canceled') {
-    throw new Error(`Run is not dispatchable from status ${currentRun.status}`);
-  }
-
-  const advanced: any = advanceRunState(feature.id, home);
   return {
     featureId: feature.id,
-    previousRunId: input.previousRunId,
-    runId: advanced.run?.id ?? null,
-    runExecutionId: advanced.runExecution?.id ?? null,
-    sessionId: advanced.run ? showRunState(feature.id, home).currentRunExecution?.hostEnvironmentSessionId ?? null : null,
+    previousRunId: input.previousRunId ?? null,
+    runId: run.id,
+    runExecutionId: execution?.id ?? null,
+    sessionId: session.id,
   };
 }
 
@@ -154,11 +85,7 @@ export function cancelRun(id: string, home?: string) {
   }
 
   db.prepare('update runs set status=?, updated_at=? where id=?').run('canceled', now(), id);
-
-  if (run.task_id) {
-    db.prepare('update tasks set status=?, updated_at=? where id=?').run('canceled', now(), run.task_id);
-  }
-
+  db.prepare('update sessions set status=?, updated_at=? where run_id=? and status=?').run('completed', now(), id, 'active');
   emitEvent(db, 'run.canceled', 'run', id, { cancelScope: 'feature' });
   db.close();
 
@@ -185,7 +112,6 @@ export function listSessions(home?: string) {
   const db = openRuntimeDb(home);
   const rows = db.query('select * from sessions order by created_at asc').all();
   db.close();
-
   return rows;
 }
 
@@ -196,11 +122,8 @@ export function resumeSession(id: string, home?: string) {
     throw new Error(`Session not found: ${id}`);
   }
 
-  const snapshot = JSON.parse(row.status_snapshot_json ?? row.statusSnapshotJson ?? '{}');
-
   return {
     session: row,
     resumeCommand: row.resume_command ?? row.resumeCommand,
-    launchCommand: snapshot.launchCommand ?? null,
   };
 }

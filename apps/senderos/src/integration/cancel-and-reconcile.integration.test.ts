@@ -57,7 +57,7 @@ describe('integration: cancellation and status reporting flows', () => {
     db.close();
   });
 
-  test('status reports stale sessions and orphaned workspaces without mutating them', () => {
+  test('status reports stale sessions without mutating them', () => {
     const home = tempDir('senderos-int-home');
     const projectRoot = createTempProject({ dirPrefix: 'senderos-status-project', packageName: 'senderos-status' });
 
@@ -93,11 +93,9 @@ describe('integration: cancellation and status reporting flows', () => {
 
     const db = openDb(home);
     db.query("update sessions set status='stale' where id = ?").run(started.sessionId);
-    db.query("update workspaces set status='locked', session_id=? where run_id = ?").run(started.sessionId, started.runId);
     db.close();
 
     const snapshot: any = cli(['status', '--home', home]);
     expect(snapshot.staleSessionIds).toContain(started.sessionId);
-    expect(snapshot.orphanedWorkspaceIds.length).toBeGreaterThan(0);
   });
 });

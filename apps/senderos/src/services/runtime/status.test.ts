@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { approveFeature, createFeature, createSendero, listAgents } from './index';
-import { dispatchRun } from './run';
+import { dispatchRun } from './run/run';
 import { status } from './status';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 

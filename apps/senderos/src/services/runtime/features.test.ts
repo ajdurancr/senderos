@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
 import { approveFeature, cancelFeature, createFeature, getFeature, listFeatures, updateFeature } from './index';
-import { listTasks } from '../runtime/run';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('feature services', () => {
@@ -45,14 +44,14 @@ describe('feature services', () => {
     expect(updated?.gherkinText).toBe('Feature: Updated One');
   });
 
-  test('approve moves a feature into active implementation-ready state and seeds implementation task', () => {
+  test('approve moves a feature into active dispatchable state', () => {
     const home = initHome();
     const project = createProjectFixture(home);
     const created = createFeature({ home, projectId: project.id, title: 'Feature one', gherkinText: 'Feature: One' });
 
     const approved = approveFeature(created.id, home);
     expect(approved?.status).toBe('active');
-    expect(listTasks(created.id, home)[0]?.phase).toBe('implementation');
+    expect(approved?.senderoStep).toBe('idle');
   });
 
   test('cancel marks the feature canceled', () => {

@@ -1,8 +1,8 @@
 import type { FeatureStatus, SenderoRecord } from '../../domain/types';
-import { getRun } from './run';
+import { getRun } from './run/dispatch';
 import { getRunExecutionByRunId, listSenderos } from './agents';
 import { listFeatures } from './features';
-import { listSessions } from './run';
+import { listSessions } from './run/run';
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatus[] = ['active', 'failed'];
 

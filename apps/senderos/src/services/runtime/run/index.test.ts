@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { openRuntimeDb } from '../../../db/client';
 import { approveFeature, createFeature, createSendero, getFeature, listAgents } from '../index';
-import { cancelRun, dispatchRun, listRuns, listSessions, resumeSession, showRunState } from './index';
+import { cancelRun, dispatchRun, listRuns, listSessions, resumeSession, showRunState } from './run';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
 describe('runtime run operations', () => {

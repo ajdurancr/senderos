@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { openRuntimeDb } from '../../db/client';
 import { approveFeature, createFeature, createSendero, listAgents } from './index';
-import { dispatchRun } from './run';
+import { dispatchRun } from './run/run';
 import { plan } from './plan';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 

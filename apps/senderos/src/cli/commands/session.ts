@@ -1,4 +1,4 @@
-import { getSession } from '../../services/runtime/run';
+import { getSession } from '../../services/runtime/run/dispatch';
 import { listSessions, resumeSession } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
