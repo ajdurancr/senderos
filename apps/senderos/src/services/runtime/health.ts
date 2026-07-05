@@ -8,8 +8,8 @@ import {
   previewInit,
   resolveRuntime,
   runtimeExists,
-} from '../../../config/runtime';
-import { describeCurrentDb, healthcheckCurrentDb } from '../../../db/client';
+} from '../../config/runtime';
+import { describeCurrentDb, healthcheckCurrentDb } from '../../db/client';
 
 export { defaultHomePath, initializeRuntime, loadConfig, previewInit, resolveRuntime };
 

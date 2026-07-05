@@ -4,7 +4,7 @@ import {
   configPathForHome,
   defaultHomePath,
   loadConfig,
-} from '../../../config/runtime';
+} from '../../config/runtime';
 
 export function updateConfigPath(path: string, value: any, home = defaultHomePath()) {
   const cfg = loadConfig(home);

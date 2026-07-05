@@ -10,7 +10,7 @@ These commands expose the system-wide operating view.
 Returns a high-level summary of:
 
 - open features
-- active supervisions
+- active features in flight
 - active runs
 - pending tasks
 - stale session ids

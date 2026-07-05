@@ -1,10 +1,10 @@
-import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../domain/types';
-import { openRuntimeDb } from '../../db/client';
-import { now } from '../../utils/common';
-import { emitEvent } from '../events';
-import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { updateRunExecutionByRunId } from '../runtime/agents';
-import { cleanupWorkspace, dispatchSupervisorPhase } from './dispatch';
+import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../../domain/types';
+import { openRuntimeDb } from '../../../db/client';
+import { now } from '../../../utils/common';
+import { emitEvent } from '../../events';
+import { completeActiveSessionsForFeature } from '../../session-lifecycle';
+import { updateRunExecutionByRunId } from '../agents';
+import { cleanupWorkspace, dispatchRunPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
 
@@ -17,16 +17,16 @@ function nextSenderoStep(current: SenderoStep): SenderoStep {
   return SENDERO_STEP_SEQUENCE[index + 1];
 }
 
-export function superviseFeature(
+export function dispatchFeatureRun(
   feature: FeatureRecord,
   home?: string,
   options?: { agentId?: string; senderoId?: string }
 ) {
   const phase = feature.senderoStep === 'idle' ? 'implementation' : feature.senderoStep;
-  return dispatchSupervisorPhase(feature, phase, home, options);
+  return dispatchRunPhase(feature, phase, home, options);
 }
 
-export function advanceSupervision(feature: FeatureRecord, home?: string) {
+export function dispatchNextFeatureRun(feature: FeatureRecord, home?: string) {
   const currentPhase = feature.senderoStep === 'idle' ? 'implementation' : feature.senderoStep;
   const tasks = listTasks(feature.id, home) as any[];
   const currentTask =
@@ -84,5 +84,5 @@ export function advanceSupervision(feature: FeatureRecord, home?: string) {
   }
 
   ensurePhaseTask(feature, next, home);
-  return dispatchSupervisorPhase(feature, next, home);
+  return dispatchRunPhase(feature, next, home);
 }

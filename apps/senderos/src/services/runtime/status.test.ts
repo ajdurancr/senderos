@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { approveFeature, createFeature, createSendero, listAgents } from '../index';
-import { dispatchRun } from './runs';
+import { approveFeature, createFeature, createSendero, listAgents } from './index';
+import { dispatchRun } from './run';
 import { status } from './status';
-import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 describe('runtime status operation', () => {
   test('reports current runtime status', () => {

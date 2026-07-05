@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 
-import { approveFeature, createFeature, getFeature } from '../runtime';
+import { approveFeature, createFeature, getFeature } from '../index';
 import {
-  dispatchSupervisorPhase,
+  dispatchRunPhase,
   ensurePhaseTask,
   getRun,
   getSession,
@@ -10,7 +10,7 @@ import {
   getWorkspace,
   listTasks,
 } from './index';
-import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
 describe('run state queries', () => {
   test('getTask returns a stored task by id', () => {
@@ -33,7 +33,7 @@ describe('run state queries', () => {
     const home = initHome();
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Query target', gherkinText: 'Feature: Query target' }).id, home)!;
-    const dispatched = dispatchSupervisorPhase(feature, 'implementation', home) as any;
+    const dispatched = dispatchRunPhase(feature, 'implementation', home) as any;
     expect(getRun(dispatched.run.id, home)).toBeTruthy();
   });
 
@@ -41,7 +41,7 @@ describe('run state queries', () => {
     const home = initHome();
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Query target', gherkinText: 'Feature: Query target' }).id, home)!;
-    const dispatched = dispatchSupervisorPhase(feature, 'implementation', home) as any;
+    const dispatched = dispatchRunPhase(feature, 'implementation', home) as any;
     expect(getSession(dispatched.session.id, home)).toBeTruthy();
   });
 
@@ -49,7 +49,7 @@ describe('run state queries', () => {
     const home = initHome();
     const project = createProjectFixture(home);
     const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Query target', gherkinText: 'Feature: Query target' }).id, home)!;
-    dispatchSupervisorPhase(feature, 'implementation', home);
+    dispatchRunPhase(feature, 'implementation', home);
     const persistedFeature = getFeature(feature.id, home)!;
     expect(getWorkspace(persistedFeature.currentWorkspaceId!, home)).toBeTruthy();
   });

@@ -3,11 +3,11 @@ import type {
   SenderoStep,
   TaskRecord,
   TaskStatus,
-} from '../../domain/types';
-import { openRuntimeDb } from '../../db/client';
-import { mapTaskRow } from '../../db/mappers';
-import { now, randomId } from '../../utils/common';
-import { emitEvent } from '../events';
+} from '../../../domain/types';
+import { openRuntimeDb } from '../../../db/client';
+import { mapTaskRow } from '../../../db/mappers';
+import { now, randomId } from '../../../utils/common';
+import { emitEvent } from '../../events';
 import { defaultInstruction } from './instructions';
 import { getWorkspace } from './queries';
 

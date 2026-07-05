@@ -1,4 +1,4 @@
-import type { FeatureRecord, SenderoStep } from '../../domain/types';
+import type { FeatureRecord, SenderoStep } from '../../../domain/types';
 
 export function defaultInstruction(
   feature: FeatureRecord,

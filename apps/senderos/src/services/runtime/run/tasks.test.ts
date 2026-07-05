@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { createFeature } from '../runtime';
+import { createFeature } from '../index';
 import { ensurePhaseTask, getTask, listTasks, updateTaskStatus } from './index';
-import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
 describe('run state task helpers', () => {
   test('ensurePhaseTask creates a task for a new phase', () => {

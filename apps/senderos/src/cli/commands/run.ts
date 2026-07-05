@@ -1,4 +1,4 @@
-import { getRun } from '../../services/run-state';
+import { getRun } from '../../services/runtime/run';
 import { cancelRun, dispatchRun, listRuns, showRunState } from '../../services/runtime';
 import { optionString, requirePositional } from '../shared';
 

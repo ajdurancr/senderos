@@ -150,7 +150,7 @@ describe('integration: full lifecycle flow', () => {
 
     const status: any = cli(['status', '--home', home]);
     expect(status.openFeatures).toBe(0);
-    expect(status.activeSupervisions).toBe(0);
+    expect(status.activeFeaturesInFlight).toBe(0);
     expect(status.activeRuns).toBe(0);
     expect(status.activeSessionIds).toEqual([]);
     expect(status.lockedWorkspaceIds).toEqual([]);

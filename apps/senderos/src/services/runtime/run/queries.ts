@@ -1,5 +1,5 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapTaskRow } from '../../db/mappers';
+import { openRuntimeDb } from '../../../db/client';
+import { mapTaskRow } from '../../../db/mappers';
 
 export function getWorkspace(id: string, home?: string) {
   const db = openRuntimeDb(home);

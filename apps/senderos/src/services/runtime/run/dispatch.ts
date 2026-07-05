@@ -1,17 +1,17 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { ensureDir, resolveRuntime } from '../../config/runtime';
-import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../domain/types';
-import { openRuntimeDb } from '../../db/client';
-import { now, randomId } from '../../utils/common';
-import { emitEvent } from '../events';
-import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { createRunExecution, getAgent, getRunExecution, getSendero, listSenderos } from '../runtime/agents';
+import { ensureDir, resolveRuntime } from '../../../config/runtime';
+import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../../domain/types';
+import { openRuntimeDb } from '../../../db/client';
+import { now, randomId } from '../../../utils/common';
+import { emitEvent } from '../../events';
+import { completeActiveSessionsForFeature } from '../../session-lifecycle';
+import { createRunExecution, getAgent, getRunExecution, getSendero, listSenderos } from '../agents';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
-import { getProject } from '../runtime/projects';
+import { getProject } from '../projects';
 
 const COPY_EXCLUDES = new Set(['.git', '.senderos', 'node_modules', 'coverage', 'dist', 'build']);
 const SENDERO_STEP_SEQUENCE: SenderoStep[] = ['implementation', 'review', 'mutation'];
@@ -241,7 +241,7 @@ export function cleanupWorkspace(workspaceId: string, home?: string, retentionRe
   db.close();
 }
 
-export function dispatchSupervisorPhase(
+export function dispatchRunPhase(
   feature: FeatureRecord,
   phase: SenderoStep,
   home?: string,

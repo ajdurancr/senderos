@@ -1,14 +1,8 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import {
-  advanceSupervision,
-  getRun,
-  getSession,
-  getWorkspace,
-  listTasks,
-  superviseFeature,
-} from '../../run-state';
+import { getRun, getSession, getWorkspace, listTasks } from './queries';
+import { dispatchNextFeatureRun, dispatchFeatureRun } from './progression';
 import { getRunExecutionByRunId, updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
 
@@ -27,7 +21,7 @@ function startRunState(
     throw new Error(`Feature is not dispatchable from status ${feature.status}`);
   }
 
-  const result = superviseFeature(feature, home, options);
+  const result = dispatchFeatureRun(feature, home, options);
 
   return {
     feature: getFeature(feature.id, home),
@@ -45,7 +39,7 @@ function advanceRunState(featureId: string, home?: string) {
     throw new Error(`Feature not found: ${featureId}`);
   }
 
-  const result = advanceSupervision(feature, home);
+  const result = dispatchNextFeatureRun(feature, home);
   const nextRun = result.run as { id?: string } | null;
 
   return {

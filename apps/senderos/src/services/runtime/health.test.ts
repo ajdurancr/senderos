@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { rmSync } from 'node:fs';
 import { doctor } from './health';
-import { resolveRuntime } from '../../../config/runtime';
-import { initHome, tempHome } from '../../../../tests/helpers/runtime';
+import { resolveRuntime } from '../../config/runtime';
+import { initHome, tempHome } from '../../../tests/helpers/runtime';
 
 describe('runtime health operations', () => {
   test('reports doctor failures for missing config and directories', () => {
