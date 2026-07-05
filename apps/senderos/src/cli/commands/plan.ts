@@ -3,7 +3,7 @@ import { optionStrings } from '../shared';
 
 export const planCommandHelp = {
   command: 'plan',
-  summary: 'Plan the next dispatchable runs across SenderOS.',
+  summary: 'Plan the next dispatchable runs across Senderos.',
   agentDescription:
     'Call this first when you need actionable work. By default it returns only dispatchable items. Use repeated --feature-status filters only when you intentionally want planning scoped to specific feature statuses.',
   usage: [

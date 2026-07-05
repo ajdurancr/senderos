@@ -10,7 +10,7 @@ import { requirePositional } from '../shared';
 
 const featureCreateHelp = {
   command: 'create',
-  summary: 'Create a SenderOS feature from an approved Gherkin contract.',
+  summary: 'Create a Senderos feature from an approved Gherkin contract.',
   agentDescription:
     'Use this only after the spec and Gherkin contract are ready. It creates the persisted feature state that later planning and run dispatches will operate on.',
   usage: [
@@ -27,15 +27,15 @@ const featureCreateHelp = {
 
 const featureListHelp = {
   command: 'list',
-  summary: 'List SenderOS features.',
+  summary: 'List Senderos features.',
   agentDescription:
-    'Use this to inspect persisted features across the runtime. This is useful for operator context, but it is not the same as asking SenderOS what to dispatch next.',
+    'Use this to inspect persisted features across the runtime. This is useful for operator context, but it is not the same as asking Senderos what to dispatch next.',
   usage: ['senderos feature list'],
 };
 
 const featureShowHelp = {
   command: 'show',
-  summary: 'Show a SenderOS feature.',
+  summary: 'Show a Senderos feature.',
   agentDescription:
     'Use this to inspect one feature record in detail, including its sendero step, linked run, and stored contract fields.',
   usage: ['senderos feature show <feature-id>'],
@@ -44,9 +44,9 @@ const featureShowHelp = {
 
 const featureUpdateHelp = {
   command: 'update',
-  summary: 'Update a SenderOS feature.',
+  summary: 'Update a Senderos feature.',
   agentDescription:
-    'Use this to mutate persisted feature metadata or contract fields when no active run is depending on that contract. SenderOS will reject unsafe contract changes during active execution.',
+    'Use this to mutate persisted feature details or contract fields when no active run is depending on that contract. Senderos will reject unsafe contract changes during active execution.',
   usage: ['senderos feature update <feature-id> [--title ...] [--spec-text ...] [--gherkin ...] [--source-request ...]'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
   options: [
@@ -61,7 +61,7 @@ const featureApproveHelp = {
   command: 'approve',
   summary: 'Approve a feature for dispatchable runs.',
   agentDescription:
-    'Use this when the feature contract is ready to enter SenderOS orchestration. Approval moves the feature into an active state so planning can surface it as dispatchable work.',
+    'Use this when the feature contract is ready to enter Senderos orchestration. Approval moves the feature into an active state so planning can surface it as dispatchable work.',
   usage: ['senderos feature approve <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
@@ -77,9 +77,9 @@ const featureCancelHelp = {
 
 export const featureCommandHelp = {
   command: 'feature',
-  summary: 'Create and manage SenderOS features.',
+  summary: 'Create and manage Senderos features.',
   agentDescription:
-    'Use the feature command to manage the persisted work items that SenderOS plans and dispatches. This is feature state management, not execution.',
+    'Use the feature command to manage the persisted work items that Senderos plans and dispatches. This is feature state management, not execution.',
   usage: ['senderos feature <create|list|show|update|approve|cancel> ...'],
   subcommands: [
     featureCreateHelp,

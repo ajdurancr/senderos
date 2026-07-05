@@ -1,4 +1,4 @@
-# Architecture — SenderOS Runtime Boundaries
+# Architecture — Senderos Runtime Boundaries
 
 ## Monorepo shape
 
@@ -17,8 +17,8 @@
 
 ## Boundaries
 
-- SenderOS owns orchestration/runtime concerns.
-- SenderOS is the system of record for approved specs, Gherkin feature contracts, lifecycle state, event history, agent definitions, sendero assignments, run execution metadata, and planning/dispatch state.
+- Senderos owns orchestration/runtime concerns.
+- Senderos is the system of record for approved specs, Gherkin feature contracts, lifecycle state, event history, agent definitions, sendero assignments, run execution metadata, and planning/dispatch state.
 - Studio owns product experience and operator workflows.
 - Shared abstractions move into `packages/` only when reused by at least two apps.
 
@@ -63,12 +63,12 @@ Each run carries concrete execution context through linked `run_executions`, inc
 - result/failure metadata
 
 ### Host-agent contract
-The host agent interacts with SenderOS in two phases:
+The host agent interacts with Senderos in two phases:
 
 1. `senderos plan` returns minimal dispatchable items.
 2. `senderos run dispatch ...` consumes one planning item and creates the persisted runtime state for one external execution session.
 
-SenderOS does not perform the real coding work.
+Senderos does not perform the real coding work.
 The host agent does.
 
 ### Event stream

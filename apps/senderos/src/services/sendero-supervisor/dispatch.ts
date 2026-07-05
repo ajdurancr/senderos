@@ -8,7 +8,7 @@ import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
-import { createRunExecution, getAgent, getAgentBySlug, getRunExecution, getDefaultSenderoForAgent, getSendero } from '../runtime/agents';
+import { createRunExecution, getAgent, getRunExecution, getSendero, listSenderos } from '../runtime/agents';
 import { defaultInstruction } from './instructions';
 import { getRun, getSession, getTask, getWorkspace } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
@@ -148,17 +148,8 @@ function createSession(runId: string, harness: string, phase: SenderoStep, works
   return id;
 }
 
-const PHASE_AGENT_SLUG: Record<SenderoStep, string | null> = {
-  idle: null,
-  implementation: 'tdd-craftsman',
-  review: 'judge',
-  mutation: 'mutation-tester',
-  done: null,
-  blocked: null,
-};
-
-function agentSlugForPhase(phase: SenderoStep) {
-  return PHASE_AGENT_SLUG[phase] ?? null;
+function firstActiveSendero(home?: string) {
+  return listSenderos(home).find((sendero) => sendero.status === 'active') ?? null;
 }
 
 function createRunExecutionForDispatch(input: {
@@ -173,23 +164,18 @@ function createRunExecutionForDispatch(input: {
   senderoId?: string;
   home?: string;
 }) {
-  const sourceSlug = agentSlugForPhase(input.phase);
+  const sendero = input.senderoId ? getSendero(input.senderoId, input.home) : firstActiveSendero(input.home);
   const resolvedSourceAgent = input.agentId
     ? getAgent(input.agentId, input.home)
-    : sourceSlug
-      ? getAgentBySlug(sourceSlug, input.home)
+    : sendero
+      ? getAgent(sendero.sourceAgentId, input.home)
       : null;
 
-  if (!resolvedSourceAgent) {
+  if (!resolvedSourceAgent || !sendero) {
     return null;
   }
 
-  const next = nextPhase(input.phase);
-  const targetSlug = next === 'done' ? null : agentSlugForPhase(next);
-  const targetAgent = targetSlug ? getAgentBySlug(targetSlug, input.home) : null;
-  const sendero = input.senderoId
-    ? getSendero(input.senderoId, input.home)
-    : getDefaultSenderoForAgent(resolvedSourceAgent.id, input.home);
+  const targetAgent = sendero.targetAgentId ? getAgent(sendero.targetAgentId, input.home) : null;
 
   return createRunExecution({
     home: input.home,

@@ -50,11 +50,11 @@ describe('integration: full lifecycle flow', () => {
       '--title',
       'Local smoke test feature',
       '--spec-text',
-      'Validate local Codex-driven SenderOS flow.',
+      'Validate local Codex-driven Senderos flow.',
       '--source-request',
-      'Run a local SenderOS smoke test with Codex.',
+      'Run a local Senderos smoke test with Codex.',
       '--gherkin',
-      'Feature: Local smoke test\n  Scenario: Initialize SenderOS local flow\n    Given a configured local SenderOS project\n    When the feature is approved for implementation\n    Then SenderOS should create run state for execution',
+      'Feature: Local smoke test\n  Scenario: Initialize Senderos local flow\n    Given a configured local Senderos project\n    When the feature is approved for implementation\n    Then Senderos should create run state for execution',
     ]);
 
     expect(feature.status).toBe('awaiting_scenario_approval');

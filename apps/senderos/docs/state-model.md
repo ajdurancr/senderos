@@ -1,6 +1,6 @@
 # State Model
 
-SenderOS stores orchestration truth in SQLite.
+Senderos stores orchestration truth in SQLite.
 
 The core runtime entities are:
 
@@ -17,7 +17,7 @@ The core runtime entities are:
 
 ## Projects
 
-A project is valid only when SenderOS knows both:
+A project is valid only when Senderos knows both:
 
 - the canonical local repository path
 - the canonical GitHub repository identity
@@ -143,7 +143,7 @@ They are diagnostic/runtime records, distinct from runs and run executions.
 
 ## Event Log
 
-SenderOS keeps an append-only event stream for:
+Senderos keeps an append-only event stream for:
 
 - state transitions
 - user actions
@@ -152,4 +152,4 @@ SenderOS keeps an append-only event stream for:
 - PR operations
 
 Current state is the latest truth.
-The event log explains how SenderOS got there.
+The event log explains how Senderos got there.

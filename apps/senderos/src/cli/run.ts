@@ -1,6 +1,7 @@
 import { parseArgs } from './args';
 import { resolveHome } from './shared';
-import { handleAgent, handleSendero } from './commands/agent';
+import { handleAgent } from './commands/agent';
+import { handleSendero } from './commands/sendero';
 import { handleConfig } from './commands/config';
 import { handleFeature } from './commands/feature';
 import { handleInit } from './commands/init';

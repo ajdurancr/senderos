@@ -3,16 +3,16 @@ import { initializeRuntime, previewInit } from '../../config/runtime';
 
 export const initCommandHelp = {
   command: 'init',
-  summary: 'Preview or create the SenderOS runtime home.',
+  summary: 'Preview or create the Senderos runtime home.',
   agentDescription:
-    'Use init to preview or create the SenderOS home directory and database. This is a bootstrap/setup command and does not plan or dispatch any feature work.',
+    'Use init to preview or create the Senderos home directory and database. This is a bootstrap/setup command and does not plan or dispatch any feature work.',
   usage: [
     'senderos init',
     'senderos init --home /path/to/.senderos --harness codex',
     'senderos init --home /path/to/.senderos --harness codex --approve',
   ],
   options: [
-    { name: '--home', description: 'Proposed SenderOS home directory.' },
+    { name: '--home', description: 'Proposed Senderos home directory.' },
     { name: '--harness', description: 'Harness to use: openclaw|codex|claude-code.' },
     { name: '--approve', description: 'Approve the previewed configuration and create files.' },
   ],

@@ -3,9 +3,9 @@ import { requirePositional } from '../shared';
 
 const projectCreateHelp = {
   command: 'create',
-  summary: 'Create a SenderOS project.',
+  summary: 'Create a Senderos project.',
   agentDescription:
-    'Use this to register a repository as a SenderOS-managed project. It persists canonical repo identity and setup metadata that later features and runs depend on.',
+    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later features and runs depend on.',
   usage: [
     'senderos project create --canonical-path /repo --github-owner owner --github-repo repo [--id senderos-ab12cd34] [--name senderos] [--target-branch main] [--integration-mode github_pr]',
   ],
@@ -27,35 +27,35 @@ const projectCreateHelp = {
 
 const projectListHelp = {
   command: 'list',
-  summary: 'List SenderOS projects.',
+  summary: 'List Senderos projects.',
   agentDescription:
-    'Use this to inspect all persisted project records in the current SenderOS home.',
+    'Use this to inspect all persisted project records in the current Senderos home.',
   usage: ['senderos project list'],
 };
 
 const projectShowHelp = {
   command: 'show',
-  summary: 'Show a SenderOS project.',
+  summary: 'Show a Senderos project.',
   agentDescription:
-    'Use this to inspect one project record and its persisted repository metadata.',
+    'Use this to inspect one project record and its persisted repository details.',
   usage: ['senderos project show <project-id>'],
   arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
 };
 
 const projectUpdateHelp = {
   command: 'update',
-  summary: 'Update a SenderOS project.',
+  summary: 'Update a Senderos project.',
   agentDescription:
-    'Use this to mutate persisted project metadata when the repository, branch, or inferred commands need to change.',
+    'Use this to mutate persisted project details when the repository, branch, or inferred commands need to change.',
   usage: ['senderos project update <project-id> [--name ...] [--target-branch ...] [--integration-mode ...]'],
   arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
 };
 
 export const projectCommandHelp = {
   command: 'project',
-  summary: 'Create and manage SenderOS projects.',
+  summary: 'Create and manage Senderos projects.',
   agentDescription:
-    'Use the project command to manage the repository records that SenderOS attaches features and runs to. This surface is for project state only.',
+    'Use the project command to manage the repository records that Senderos attaches features and runs to. This surface is for project state only.',
   usage: ['senderos project <create|list|show|update> ...'],
   subcommands: [projectCreateHelp, projectListHelp, projectShowHelp, projectUpdateHelp],
 };

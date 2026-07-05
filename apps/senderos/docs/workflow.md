@@ -9,11 +9,11 @@ raw user intent
   → [spec_partner] refine behavior and decisions
   → human approves spec
   → [gherkin_author] emits canonical Gherkin contract + metadata
-  → SenderOS creates feature record from the approved contract
+  → Senderos creates feature record from the approved contract
   → human approves executable contract for implementation
-  → SenderOS plans the next dispatchable run
+  → Senderos plans the next dispatchable run
   → host agent calls senderos run dispatch with the planned ids
-  → SenderOS creates run/session/run-execution state
+  → Senderos creates run/session/run-execution state
   → host agent executes the work asynchronously in its own session
   → later dispatches continue the next sendero step after the previous run id
 ```
@@ -21,8 +21,8 @@ raw user intent
 ## Important rules
 
 - Features are created only after Gherkin exists.
-- The canonical feature contract is stored in SenderOS state, not in ad-hoc `.feature` files.
-- Approved specs also live in SenderOS state.
+- The canonical feature contract is stored in Senderos state, not in ad-hoc `.feature` files.
+- Approved specs also live in Senderos state.
 - Only one active run may exist per feature at a time.
 - `senderos plan` is global only and does not accept feature ids or run ids.
 - `senderos plan` returns only the next dispatchable items by default.
@@ -32,7 +32,7 @@ raw user intent
   - `agentId`
   - `previousRunId`
 - `senderos run dispatch` is the forward-dispatch mutation surface.
-- SenderOS manages orchestration state only; the host agent performs the real work.
+- Senderos manages orchestration state only; the host agent performs the real work.
 - A feature can exist before any PR exists.
 - The PR opens after the first successful run updates the feature branch.
 - Canceling a feature closes its PR and deletes its feature branch.

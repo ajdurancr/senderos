@@ -1,10 +1,80 @@
 import { openRuntimeDb } from '../../../db/client';
 import { now } from '../../../utils/common';
 import { emitEvent } from '../../events';
-import { getRun } from '../../sendero-supervisor';
-import { updateRunExecutionByRunId } from '../agents';
+import {
+  advanceSupervision,
+  getRun,
+  getSession,
+  getWorkspace,
+  listTasks,
+  superviseFeature,
+} from '../../sendero-supervisor';
+import { getRunExecutionByRunId, updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
-import { advanceSupervision, showSupervision, startSupervision } from './sendero-supervisor';
+
+function startRunState(
+  featureId: string,
+  home?: string,
+  options?: { agentId?: string; senderoId?: string }
+) {
+  const feature = getFeature(featureId, home);
+
+  if (!feature) {
+    throw new Error(`Feature not found: ${featureId}`);
+  }
+
+  if (!['active', 'failed'].includes(feature.status)) {
+    throw new Error(`Feature is not dispatchable from status ${feature.status}`);
+  }
+
+  const result = superviseFeature(feature, home, options);
+
+  return {
+    feature: getFeature(feature.id, home),
+    run: result.run,
+    session: result.session,
+    task: result.task,
+    runExecution: result.runExecution,
+  };
+}
+
+function advanceRunState(featureId: string, home?: string) {
+  const feature = getFeature(featureId, home);
+
+  if (!feature) {
+    throw new Error(`Feature not found: ${featureId}`);
+  }
+
+  const result = advanceSupervision(feature, home);
+  const nextRun = result.run as { id?: string } | null;
+
+  return {
+    feature: getFeature(feature.id, home),
+    run: result.run,
+    task: result.task,
+    runExecution: nextRun?.id ? getRunExecutionByRunId(nextRun.id, home) : null,
+  };
+}
+
+export function showRunState(featureId: string, home?: string) {
+  const feature = getFeature(featureId, home);
+
+  if (!feature) {
+    throw new Error(`Feature not found: ${featureId}`);
+  }
+
+  const tasks = listTasks(featureId, home) as any[];
+  const nextTask = tasks.find((task) => ['ready', 'running', 'pending'].includes(task.status));
+
+  return {
+    feature,
+    tasks,
+    currentRun: feature.currentRunId ? getRun(feature.currentRunId, home) : null,
+    currentRunExecution: feature.currentRunId ? getRunExecutionByRunId(feature.currentRunId, home) : null,
+    workspace: feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) : null,
+    nextDispatch: nextTask ? JSON.parse(nextTask.instructionJson) : null,
+  };
+}
 
 export function listRuns(home?: string) {
   const db = openRuntimeDb(home);
@@ -28,7 +98,7 @@ export function dispatchRun(
       throw new Error('previous-run-id is not valid when the feature has no current run');
     }
 
-    const started: any = startSupervision(feature.id, home, {
+    const started: any = startRunState(feature.id, home, {
       senderoId: input.senderoId,
       agentId: input.agentId,
     });
@@ -51,19 +121,8 @@ export function dispatchRun(
     throw new Error(`Current run not found: ${feature.currentRunId}`);
   }
 
-  if (currentRun.status === 'succeeded') {
-    const advanced: any = advanceSupervision(feature.id, home);
-    return {
-      featureId: feature.id,
-      previousRunId: input.previousRunId,
-      runId: advanced.run?.id ?? null,
-      runExecutionId: advanced.runExecution?.id ?? null,
-      sessionId: advanced.run ? showSupervision(feature.id, home).currentRunExecution?.hostEnvironmentSessionId ?? null : null,
-    };
-  }
-
   if (currentRun.status === 'failed') {
-    const retried: any = startSupervision(feature.id, home, {
+    const retried: any = startRunState(feature.id, home, {
       senderoId: input.senderoId,
       agentId: input.agentId,
     });
@@ -81,13 +140,13 @@ export function dispatchRun(
     throw new Error(`Run is not dispatchable from status ${currentRun.status}`);
   }
 
-  const advanced: any = advanceSupervision(feature.id, home);
+  const advanced: any = advanceRunState(feature.id, home);
   return {
     featureId: feature.id,
     previousRunId: input.previousRunId,
     runId: advanced.run?.id ?? null,
     runExecutionId: advanced.runExecution?.id ?? null,
-    sessionId: advanced.run ? showSupervision(feature.id, home).currentRunExecution?.hostEnvironmentSessionId ?? null : null,
+    sessionId: advanced.run ? showRunState(feature.id, home).currentRunExecution?.hostEnvironmentSessionId ?? null : null,
   };
 }
 
@@ -114,7 +173,7 @@ export function cancelRun(id: string, home?: string) {
     {
       status: 'canceled',
       checkpoint: 'run_canceled',
-      failureSummary: 'Run canceled by SenderOS.',
+      failureSummary: 'Run canceled by Senderos.',
       finishedAt: now(),
     },
     home
@@ -134,4 +193,20 @@ export function listSessions(home?: string) {
   db.close();
 
   return rows;
+}
+
+export function resumeSession(id: string, home?: string) {
+  const row = getSession(id, home) as any;
+
+  if (!row) {
+    throw new Error(`Session not found: ${id}`);
+  }
+
+  const snapshot = JSON.parse(row.status_snapshot_json ?? row.statusSnapshotJson ?? '{}');
+
+  return {
+    session: row,
+    resumeCommand: row.resume_command ?? row.resumeCommand,
+    launchCommand: snapshot.launchCommand ?? null,
+  };
 }

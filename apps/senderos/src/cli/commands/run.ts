@@ -1,12 +1,12 @@
 import { getRun } from '../../services/sendero-supervisor';
-import { cancelRun, dispatchRun, listRuns, showSupervision } from '../../services/runtime';
+import { cancelRun, dispatchRun, listRuns, showRunState } from '../../services/runtime';
 import { optionString, requirePositional } from '../shared';
 
 const runDispatchHelp = {
   command: 'dispatch',
   summary: 'Create the next concrete run dispatch from a planning item.',
   agentDescription:
-    'Call this only after `senderos plan` returns a dispatchable item. Pass through the ids that plan returned so SenderOS can atomically create the new run, session, and run execution records for that dispatch.',
+    'Call this only after `senderos plan` returns a dispatchable item. Pass through the ids that plan returned so Senderos can atomically create the new run, session, and run execution records for that dispatch.',
   usage: [
     'senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id> [--previous-run-id <run-id>]',
   ],
@@ -28,7 +28,7 @@ const runStateHelp = {
 
 const runListHelp = {
   command: 'list',
-  summary: 'List SenderOS runs.',
+  summary: 'List Senderos runs.',
   agentDescription:
     'Use this when you need a raw list of all persisted runs for debugging or audits. It is not the planning surface.',
   usage: ['senderos run list'],
@@ -36,7 +36,7 @@ const runListHelp = {
 
 const runShowHelp = {
   command: 'show',
-  summary: 'Show a persisted SenderOS run record.',
+  summary: 'Show a persisted Senderos run record.',
   agentDescription:
     'Use this to inspect one logical run record by id. This is useful when you already know the run id from dispatch output or stored state.',
   usage: ['senderos run show <run-id>'],
@@ -45,7 +45,7 @@ const runShowHelp = {
 
 const runCancelHelp = {
   command: 'cancel',
-  summary: 'Cancel a SenderOS run.',
+  summary: 'Cancel a Senderos run.',
   agentDescription:
     'Use this to stop a logical run and cascade cancellation into the linked feature state. This is a mutation and should only be used when you intentionally want to halt progress.',
   usage: ['senderos run cancel <run-id>'],
@@ -54,7 +54,7 @@ const runCancelHelp = {
 
 export const runCommandHelp = {
   command: 'run',
-  summary: 'Dispatch, inspect, and cancel SenderOS runs.',
+  summary: 'Dispatch, inspect, and cancel Senderos runs.',
   agentDescription:
     'The run command is the mutation and inspection surface for logical runs. Use `dispatch` with ids returned by `senderos plan`; use `state`, `list`, and `show` for inspection; use `cancel` to halt work intentionally.',
   usage: ['senderos run <dispatch|state|list|show|cancel> ...'],
@@ -83,7 +83,7 @@ export function handleRun(
         home
       );
     case 'state':
-      return showSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
+      return showRunState(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
     case 'list':
       return listRuns(home);
     case 'show':

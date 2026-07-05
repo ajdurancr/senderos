@@ -1,46 +1,43 @@
-import type { FeatureStatus } from '../../../domain/types';
+import type { FeatureStatus, SenderoRecord } from '../../../domain/types';
 import { getRun } from '../../sendero-supervisor';
-import { getAgentBySlug, getDefaultSenderoForAgent, getRunExecutionByRunId } from '../agents';
+import { getRunExecutionByRunId, listSenderos } from '../agents';
 import { listFeatures } from '../features';
 import { listSessions } from './runs';
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatus[] = ['active', 'failed'];
-const PHASE_AGENT_SLUG: Record<string, string | null> = {
-  idle: 'tdd-craftsman',
-  implementation: 'tdd-craftsman',
-  review: 'judge',
-  mutation: 'mutation-tester',
-  done: null,
-  blocked: null,
-};
 
-function plannedAgentForStep(senderoStep: string, previousRunId?: string, home?: string) {
-  if (previousRunId) {
-    const currentExecution = getRunExecutionByRunId(previousRunId, home);
-    if (currentExecution?.agentId) {
-      if (currentExecution.status === 'failed') {
-        return currentExecution.agentId;
-      }
-    }
-  }
-
-  const slug = PHASE_AGENT_SLUG[senderoStep] ?? null;
-  return slug ? getAgentBySlug(slug, home)?.id ?? null : null;
+function firstAvailableSendero(home?: string) {
+  return listSenderos(home).find((sendero) => sendero.status === 'active') ?? null;
 }
 
-function plannedSenderoForAgent(agentId: string | null, previousRunId?: string, home?: string) {
-  if (!agentId) {
+function senderoForSuccessfulRun(previousRunId: string, home?: string) {
+  const currentExecution = getRunExecutionByRunId(previousRunId, home);
+  if (!currentExecution) {
     return null;
   }
 
-  if (previousRunId) {
-    const currentExecution = getRunExecutionByRunId(previousRunId, home);
-    if (currentExecution?.status === 'failed' && currentExecution.senderoId) {
-      return currentExecution.senderoId;
-    }
+  if (currentExecution.status === 'failed') {
+    return currentExecution.senderoId
+      ? (listSenderos(home).find((sendero) => sendero.id === currentExecution.senderoId) ?? null)
+      : null;
   }
 
-  return getDefaultSenderoForAgent(agentId, home)?.id ?? null;
+  if (currentExecution.targetAgentId) {
+    const matches = listSenderos(home).filter(
+      (sendero) => sendero.status === 'active' && sendero.sourceAgentId === currentExecution.targetAgentId
+    );
+    return matches.at(-1) ?? null;
+  }
+
+  return null;
+}
+
+function planningTarget(previousRunId: string | undefined, home?: string): SenderoRecord | null {
+  if (!previousRunId) {
+    return firstAvailableSendero(home);
+  }
+
+  return senderoForSuccessfulRun(previousRunId, home) ?? firstAvailableSendero(home);
 }
 
 function featureIsRunning(currentRunId: string, home?: string) {
@@ -54,10 +51,14 @@ export function plan(input: { home?: string; featureStatuses?: FeatureStatus[] }
 
   for (const feature of features) {
     if (!feature.currentRunId) {
-      const agentId = plannedAgentForStep(feature.senderoStep, undefined, input.home);
-      const senderoId = plannedSenderoForAgent(agentId, undefined, input.home);
-      if (agentId && senderoId) {
-        items.push({ featureId: feature.id, senderoId, agentId, previousRunId: null });
+      const sendero = planningTarget(undefined, input.home);
+      if (sendero) {
+        items.push({
+          featureId: feature.id,
+          senderoId: sendero.id,
+          agentId: sendero.sourceAgentId,
+          previousRunId: null,
+        });
       }
       continue;
     }
@@ -72,10 +73,14 @@ export function plan(input: { home?: string; featureStatuses?: FeatureStatus[] }
     }
 
     if (currentRun.status === 'succeeded' || currentRun.status === 'failed') {
-      const agentId = plannedAgentForStep(feature.senderoStep, currentRun.id, input.home);
-      const senderoId = plannedSenderoForAgent(agentId, currentRun.id, input.home);
-      if (agentId && senderoId) {
-        items.push({ featureId: feature.id, senderoId, agentId, previousRunId: currentRun.id });
+      const sendero = planningTarget(currentRun.id, input.home);
+      if (sendero) {
+        items.push({
+          featureId: feature.id,
+          senderoId: sendero.id,
+          agentId: sendero.sourceAgentId,
+          previousRunId: currentRun.id,
+        });
       }
     }
   }

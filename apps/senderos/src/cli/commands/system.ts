@@ -2,15 +2,15 @@ import { doctor, status } from '../../services/runtime';
 
 const doctorHelp = {
   command: 'doctor',
-  summary: 'Validate SenderOS runtime health.',
+  summary: 'Validate Senderos runtime health.',
   agentDescription:
-    'Use this when you need a strict health validation of the configured SenderOS home and database wiring before relying on runtime output.',
+    'Use this when you need a strict health validation of the configured Senderos home and database wiring before relying on runtime output.',
   usage: ['senderos doctor'],
 };
 
 const statusHelp = {
   command: 'status',
-  summary: 'Show current SenderOS runtime status.',
+  summary: 'Show current Senderos runtime status.',
   agentDescription:
     'Use this for diagnostic visibility only. It reports aggregate counts plus stale sessions and orphaned workspaces, but it does not mutate state or create dispatches.',
   usage: ['senderos status'],

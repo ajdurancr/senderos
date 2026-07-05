@@ -1,6 +1,7 @@
 import type { CommandHelp } from '../domain/types';
 
-import { agentCommandHelp, senderoCommandHelp } from './commands/agent';
+import { agentCommandHelp } from './commands/agent';
+import { senderoCommandHelp } from './commands/sendero';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
@@ -14,7 +15,7 @@ export const rootHelp: CommandHelp = {
   command: 'senderos',
   summary: 'SQLite-backed control plane for Senderos orchestration.',
   agentDescription:
-    'Use SenderOS as a pure state and orchestration surface. Ask it for plans, inspect state, or mutate orchestration records, but do not expect it to execute the real coding work for you.',
+    'Use Senderos as a pure state and orchestration surface. Ask it for plans, inspect state, or mutate orchestration records, but do not expect it to execute the real coding work for you.',
   usage: ['senderos <command> [subcommand] [arguments] [options]'],
   arguments: [
     { name: 'command', description: 'Top-level command to execute.', required: true },

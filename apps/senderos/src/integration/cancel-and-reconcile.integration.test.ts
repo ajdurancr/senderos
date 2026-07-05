@@ -33,7 +33,7 @@ describe('integration: cancellation and status reporting flows', () => {
       '--title',
       'Cancel flow',
       '--gherkin',
-      'Feature: Cancel flow\n  Scenario: Cancel a running feature\n    Given a running SenderOS feature\n    When the run is canceled\n    Then SenderOS should cancel the feature',
+      'Feature: Cancel flow\n  Scenario: Cancel a running feature\n    Given a running Senderos feature\n    When the run is canceled\n    Then Senderos should cancel the feature',
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);
@@ -84,7 +84,7 @@ describe('integration: cancellation and status reporting flows', () => {
       '--title',
       'Status flow',
       '--gherkin',
-      'Feature: Status flow\n  Scenario: Report stale state\n    Given stale runtime state\n    When status runs\n    Then SenderOS should report it without mutating it',
+      'Feature: Status flow\n  Scenario: Report stale state\n    Given stale runtime state\n    When status runs\n    Then Senderos should report it without mutating it',
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);

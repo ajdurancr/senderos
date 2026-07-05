@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { handleAgent, handleSendero } from './agent';
+import { handleAgent } from './agent';
+import { handleSendero } from './sendero';
 import { initHome } from '../../../tests/helpers/runtime';
 
 describe('agent command family', () => {
