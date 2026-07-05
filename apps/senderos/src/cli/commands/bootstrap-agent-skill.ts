@@ -4,6 +4,8 @@ import { dirname, resolve } from 'node:path';
 export const bootstrapAgentSkillCommandHelp = {
   command: 'bootstrap-agent-skill',
   summary: 'Create or print a host-agent skill scaffold for operating SenderOS.',
+  agentDescription:
+    'Use this to bootstrap a SenderOS operator skill scaffold. It helps initialize a stable operating agent before routing work through the SenderOS CLI.',
   usage: [
     'senderos bootstrap-agent-skill',
     'senderos bootstrap-agent-skill --print',
