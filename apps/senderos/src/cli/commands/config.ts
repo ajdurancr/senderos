@@ -4,13 +4,17 @@ import { requirePositional } from '../shared';
 
 const configShowHelp = {
   command: 'show',
-  summary: 'Print the full Senderos config.',
+  summary: 'Print the full SenderOS config.',
+  agentDescription:
+    'Use this to inspect the persisted SenderOS configuration exactly as the runtime will load it. This is helpful for debugging environment and path issues.',
   usage: ['senderos config show'],
 };
 
 const configGetHelp = {
   command: 'get',
   summary: 'Read a specific config path.',
+  agentDescription:
+    'Use this when you need one exact configuration value without reading the whole config payload. The result is read-only and does not change runtime state.',
   usage: ['senderos config get <config-path>'],
   arguments: [{ name: 'config-path', description: 'Dot path inside config.json.', required: true }],
 };
@@ -18,6 +22,8 @@ const configGetHelp = {
 const configSetHelp = {
   command: 'set',
   summary: 'Write a specific config path.',
+  agentDescription:
+    'Use this to mutate one configuration path in SenderOS. This is an explicit state change and should only be used when configuration really needs to change.',
   usage: ['senderos config set <config-path> <value>'],
   arguments: [
     { name: 'config-path', description: 'Dot path inside config.json.', required: true },
@@ -27,7 +33,9 @@ const configSetHelp = {
 
 export const configCommandHelp = {
   command: 'config',
-  summary: 'Inspect or update Senderos configuration.',
+  summary: 'Inspect or update SenderOS configuration.',
+  agentDescription:
+    'Use the config command to inspect or mutate persisted SenderOS configuration values. This surface is for runtime setup state, not planning or dispatching work.',
   usage: ['senderos config <show|get|set> ...'],
   subcommands: [configShowHelp, configGetHelp, configSetHelp],
 };

@@ -1,6 +1,6 @@
-# Workflow — Spec → Gherkin → Agent-Driven Run Execution
+# Workflow — Spec → Gherkin → Planned Dispatch → Agent Execution
 
-This repository follows a disciplined, run-oriented workflow.
+This repository follows a disciplined, plan-oriented workflow.
 
 ## The execution path
 
@@ -11,13 +11,11 @@ raw user intent
   → [gherkin_author] emits canonical Gherkin contract + metadata
   → SenderOS creates feature record from the approved contract
   → human approves executable contract for implementation
-  → SenderOS starts a run for the feature
-  → the run binds to one executing agent
-  → the run executes a sendero toward its goal
-  → [tdd_craftsman] Red → Green → Refactor
-  → [judge] review and pruning
-  → [mutation_tester] mutation confidence gate
-  → feature PR evolves until merge to target branch
+  → SenderOS plans the next dispatchable run
+  → host agent calls senderos run dispatch with the planned ids
+  → SenderOS creates run/session/run-execution state
+  → host agent executes the work asynchronously in its own session
+  → later dispatches continue the next sendero step after the previous run id
 ```
 
 ## Important rules
@@ -26,27 +24,34 @@ raw user intent
 - The canonical feature contract is stored in SenderOS state, not in ad-hoc `.feature` files.
 - Approved specs also live in SenderOS state.
 - Only one active run may exist per feature at a time.
-- A run may be started with explicit `--agent-id` and `--sendero-id` bindings.
-- A sendero belongs to a source agent and may point toward a target agent.
-- Agent execution metadata is stored on the run path, not as an external sidecar command surface.
+- `senderos plan` is global only and does not accept feature ids or run ids.
+- `senderos plan` returns only the next dispatchable items by default.
+- Dispatchable planning payload is intentionally minimal:
+  - `featureId`
+  - `senderoId`
+  - `agentId`
+  - `previousRunId`
+- `senderos run dispatch` is the forward-dispatch mutation surface.
+- SenderOS manages orchestration state only; the host agent performs the real work.
 - A feature can exist before any PR exists.
 - The PR opens after the first successful run updates the feature branch.
 - Canceling a feature closes its PR and deletes its feature branch.
 - `failed` and `blocked` are different states:
-  - `failed` can revive on the same feature record
+  - `failed` can be retried and dispatched again
   - `blocked` must be duplicated into a new feature
 
 ## CLI shape
 
-The primary execution surface is now `run`, while `supervise-active` is the host-facing orchestrator entrypoint for ephemeral Sendero Supervisor passes across active features.
+The planning surface is `plan` and the dispatch surface is `run dispatch`.
 
 Examples:
 
 ```bash
-senderos run start --feature-id <feature-id>
-senderos run start --feature-id <feature-id> --agent-id <agent-id> --sendero-id <sendero-id>
+senderos plan
+senderos plan --feature-status active --feature-status failed
+senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id>
+senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id> --previous-run-id <run-id>
 senderos run state --feature-id <feature-id>
-senderos run advance --feature-id <feature-id>
 senderos run cancel <run-id>
 ```
 
@@ -55,4 +60,4 @@ senderos run cancel <run-id>
 Code generation is cheap.
 Coordination, verification, and judgment are not.
 
-The run model exists to make execution auditable, reviewable, and resilient to context loss while keeping agents and senderos as first-class orchestration concepts.
+The run model exists to make execution auditable, reviewable, and resilient to context loss while keeping agents and senderos as first-class orchestration concepts and keeping the host-agent contract explicit.

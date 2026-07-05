@@ -4,6 +4,13 @@ const ACTIVE_RUN_STATUSES = ['queued', 'preparing', 'executing', 'validating', '
 
 export function status(home?: string) {
   const db = openRuntimeDb(home);
+  const staleSessionIds = db.query("select id from sessions where status='stale' order by created_at asc").all().map((row: any) => row.id);
+  const orphanedWorkspaceIds = db
+    .query(
+      "select id from workspaces where status in ('locked','active','verifying') and (session_id is null or session_id not in (select id from sessions where status='active')) order by created_at asc"
+    )
+    .all()
+    .map((row: any) => row.id);
 
   const summary = {
     projects: {
@@ -14,12 +21,8 @@ export function status(home?: string) {
     activeSupervisions: (db.query("select count(*) as c from features where sendero_step not in ('idle','done','blocked')").get() as any).c,
     activeRuns: (db.query(`select count(*) as c from runs where status in (${ACTIVE_RUN_STATUSES.map((s) => `'${s}'`).join(',')})`).get() as any).c,
     pendingTasks: (db.query("select count(*) as c from tasks where status in ('pending','ready','running')").get() as any).c,
-    sessionHealth:
-      (db.query("select count(*) as c from sessions where status='stale'").get() as any).c === 0
-        ? 'ok'
-        : 'stale',
-    workspaceLocks: (db.query("select count(*) as c from workspaces where status in ('locked','active','verifying')").get() as any).c,
-    pendingReconciliation: (db.query("select count(*) as c from sessions where status='stale'").get() as any).c,
+    staleSessionIds,
+    orphanedWorkspaceIds,
     activeFeatureIds: db.query("select id from features where status not in ('completed','canceled') order by created_at asc").all().map((row: any) => row.id),
     runningRunIds: db.query(`select id from runs where status in (${ACTIVE_RUN_STATUSES.map((s) => `'${s}'`).join(',')}) order by created_at asc`).all().map((row: any) => row.id),
     activeSessionIds: db.query("select id from sessions where status='active' order by created_at asc").all().map((row: any) => row.id),

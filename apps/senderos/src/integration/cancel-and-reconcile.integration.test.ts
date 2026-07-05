@@ -5,7 +5,7 @@ import { cleanupIntegrationRunRoot, cleanupIntegrationTemps, cli, createTempProj
 afterEach(cleanupIntegrationTemps);
 afterAll(cleanupIntegrationRunRoot);
 
-describe('integration: cancellation and reconciliation flows', () => {
+describe('integration: cancellation and status reporting flows', () => {
   test('canceling a run cancels the feature and closes active sessions', () => {
     const home = tempDir('senderos-int-home');
     const projectRoot = createTempProject({ dirPrefix: 'senderos-cancel-project', packageName: 'senderos-cancel' });
@@ -37,8 +37,10 @@ describe('integration: cancellation and reconciliation flows', () => {
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);
-    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
-    const canceledRun: any = cli(['run', 'cancel', started.run.id, '--home', home]);
+    const planItems: any[] = cli(['plan', '--home', home]);
+    const item = planItems.find((entry) => entry.featureId === feature.id)!;
+    const started: any = cli(['run', 'dispatch', '--feature-id', item.featureId, '--sendero-id', item.senderoId, '--agent-id', item.agentId, '--home', home]);
+    const canceledRun: any = cli(['run', 'cancel', started.runId, '--home', home]);
     expect(canceledRun.status).toBe('canceled');
 
     const canceledFeature: any = cli(['feature', 'show', feature.id, '--home', home]);
@@ -55,9 +57,9 @@ describe('integration: cancellation and reconciliation flows', () => {
     db.close();
   });
 
-  test('reconcile repairs stale sessions and releases orphaned workspaces', () => {
+  test('status reports stale sessions and orphaned workspaces without mutating them', () => {
     const home = tempDir('senderos-int-home');
-    const projectRoot = createTempProject({ dirPrefix: 'senderos-reconcile-project', packageName: 'senderos-reconcile' });
+    const projectRoot = createTempProject({ dirPrefix: 'senderos-status-project', packageName: 'senderos-status' });
 
     cli(['init', '--home', home, '--harness', 'codex', '--approve']);
     const project: any = cli([
@@ -80,25 +82,22 @@ describe('integration: cancellation and reconciliation flows', () => {
       '--project-id',
       project.id,
       '--title',
-      'Reconcile flow',
+      'Status flow',
       '--gherkin',
-      'Feature: Reconcile flow\n  Scenario: Repair stale session\n    Given a stale session\n    When reconcile runs\n    Then SenderOS should repair runtime state',
+      'Feature: Status flow\n  Scenario: Report stale state\n    Given stale runtime state\n    When status runs\n    Then SenderOS should report it without mutating it',
     ]);
 
     cli(['feature', 'approve', feature.id, '--home', home]);
-    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
+    const item: any = (cli(['plan', '--home', home]) as any[]).find((entry) => entry.featureId === feature.id)!;
+    const started: any = cli(['run', 'dispatch', '--feature-id', item.featureId, '--sendero-id', item.senderoId, '--agent-id', item.agentId, '--home', home]);
 
     const db = openDb(home);
-    db.query("update sessions set status='stale' where id = ?").run(started.session.id);
-    db.query("update workspaces set status='locked', session_id=? where id = ?").run(
-      started.session.id,
-      started.feature.currentWorkspaceId
-    );
+    db.query("update sessions set status='stale' where id = ?").run(started.sessionId);
+    db.query("update workspaces set status='locked', session_id=? where run_id = ?").run(started.sessionId, started.runId);
     db.close();
 
-    const reconciled: any = cli(['reconcile', '--home', home]);
-    expect(reconciled.repairedSessions).toContain(started.session.id);
-    expect(reconciled.releasedWorkspaces).toContain(started.feature.currentWorkspaceId);
-    expect(reconciled.revivedTasks).toContain(started.task.id);
+    const snapshot: any = cli(['status', '--home', home]);
+    expect(snapshot.staleSessionIds).toContain(started.sessionId);
+    expect(snapshot.orphanedWorkspaceIds.length).toBeGreaterThan(0);
   });
 });

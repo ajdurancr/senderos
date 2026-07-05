@@ -34,7 +34,7 @@ A host agent executes coding work inside SenderOS-managed workspaces.
 
 ## Senderos home
 
-In the current repository-local workflow, runtime state lives inside a dedicated Senderos home directory such as:
+In the current repository-local workflow, runtime state lives inside a dedicated SenderOS home directory such as:
 
 ```text
 <workspace>/.senderos/
@@ -57,9 +57,9 @@ The strict path is now:
 4. `gherkin_author` emits raw Gherkin + structured metadata
 5. SenderOS creates the feature record from that approved contract
 6. human approves the executable contract for implementation
-7. SenderOS starts a `run` for the feature
-8. the run is bound to an executing agent and sendero
-9. implementation / review / mutation / PR flow begins
+7. SenderOS plans the next dispatchable run
+8. the host agent dispatches one run at a time with `senderos run dispatch ...`
+9. implementation / review / mutation / PR flow continues through sendero steps
 
 See:
 
@@ -76,7 +76,8 @@ Examples:
 ```bash
 senderos help
 senderos help project
-senderos help run start
+senderos help run dispatch
+senderos help run dispatch --omit-agent-description
 ```
 
 Current top-level workflow commands now include:
@@ -85,9 +86,10 @@ Current top-level workflow commands now include:
 - `feature`
 - `agent`
 - `sendero`
+- `plan`
 - `run`
 - `session`
-- `status` / `doctor` / `reconcile`
+- `status` / `doctor`
 
 ## What lives here
 
@@ -98,4 +100,3 @@ Current top-level workflow commands now include:
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
 - `templates/` — historical references and examples, not live runtime truth
-nd examples, not live runtime truth

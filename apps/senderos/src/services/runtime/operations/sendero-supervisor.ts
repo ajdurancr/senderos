@@ -7,8 +7,7 @@ import {
   advanceSupervision as advanceFeatureSupervision,
 } from '../../sendero-supervisor';
 import { getRunExecutionByRunId } from '../agents';
-import { getFeature, listFeatures } from '../features';
-import { listSessions } from './runs';
+import { getFeature } from '../features';
 
 export function startSupervision(
   featureId: string,
@@ -71,54 +70,6 @@ export function showSupervision(featureId: string, home?: string) {
     currentRunExecution: feature.currentRunId ? getRunExecutionByRunId(feature.currentRunId, home) : null,
     workspace: feature.currentWorkspaceId ? getWorkspace(feature.currentWorkspaceId, home) : null,
     nextDispatch: nextTask ? JSON.parse(nextTask.instructionJson) : null,
-  };
-}
-
-export function orchestrateSupervisions(home?: string) {
-  const features = listFeatures(home).filter((feature) => !['completed', 'canceled', 'blocked'].includes(feature.status));
-  const results: Array<Record<string, unknown>> = [];
-
-  for (const feature of features) {
-    if (!feature.currentRunId) {
-      const started = startSupervision(feature.id, home) as { run?: { id?: string } | null };
-      results.push({ featureId: feature.id, action: 'started', runId: started.run?.id ?? null });
-      continue;
-    }
-
-    const currentRun: any = getRun(feature.currentRunId, home);
-    const activeSession = currentRun
-      ? ((listSessions(home) as any[]).find((session) => session.run_id === currentRun.id && session.status === 'active') ?? null)
-      : null;
-
-    const sessionActive = activeSession?.status === 'active';
-
-    if (sessionActive) {
-      results.push({ featureId: feature.id, action: 'noop_running', runId: feature.currentRunId });
-      continue;
-    }
-
-    if (currentRun?.status === 'succeeded') {
-      const advanced = advanceSupervision(feature.id, home) as { run?: { id?: string } | null };
-      results.push({
-        featureId: feature.id,
-        action: 'advanced',
-        previousRunId: feature.currentRunId,
-        nextRunId: advanced.run?.id ?? null,
-      });
-      continue;
-    }
-
-    if (['failed', 'canceled'].includes(currentRun?.status)) {
-      results.push({ featureId: feature.id, action: 'halted', runId: feature.currentRunId, runStatus: currentRun.status });
-      continue;
-    }
-
-    results.push({ featureId: feature.id, action: 'noop_unknown', runId: feature.currentRunId, runStatus: currentRun?.status ?? null });
-  }
-
-  return {
-    scanned: features.length,
-    results,
   };
 }
 

@@ -10,13 +10,17 @@ import { requirePositional } from '../shared';
 
 const agentListHelp = {
   command: 'list',
-  summary: 'List Senderos agents.',
+  summary: 'List SenderOS agents.',
+  agentDescription:
+    'Use this to discover the persisted agent records that SenderOS can reference in plans, senderos, and run dispatches. This is the authoritative runtime list, not just the markdown seed files.',
   usage: ['senderos agent list'],
 };
 
 const agentShowHelp = {
   command: 'show',
-  summary: 'Show a Senderos agent.',
+  summary: 'Show a SenderOS agent.',
+  agentDescription:
+    'Use this to inspect one agent definition in detail, including its seeded metadata and persisted runtime fields.',
   usage: ['senderos agent show <agent-id>'],
   arguments: [{ name: 'agent-id', description: 'Agent identifier.', required: true }],
 };
@@ -24,12 +28,16 @@ const agentShowHelp = {
 const senderoListHelp = {
   command: 'list',
   summary: 'List senderos, optionally scoped to one source agent.',
+  agentDescription:
+    'Use this to inspect the execution paths currently available in SenderOS. Filter by agent when you need to know which senderos a specific source agent can dispatch through.',
   usage: ['senderos sendero list', 'senderos sendero list --agent-id <agent-id>'],
 };
 
 const senderoShowHelp = {
   command: 'show',
   summary: 'Show a sendero.',
+  agentDescription:
+    'Use this to inspect one sendero record, including its source agent, optional target agent, and persisted goal metadata.',
   usage: ['senderos sendero show <sendero-id>'],
   arguments: [{ name: 'sendero-id', description: 'Sendero identifier.', required: true }],
 };
@@ -37,6 +45,8 @@ const senderoShowHelp = {
 const senderoCreateHelp = {
   command: 'create',
   summary: 'Create a sendero assigned to a source agent.',
+  agentDescription:
+    'Use this to persist a new sendero path in SenderOS. This only creates orchestration state; it does not start work or dispatch any agent session.',
   usage: [
     'senderos sendero create --source-agent-id <agent-id> --name "Spec handoff" --goal "..." [--target-agent-id <agent-id>] [--description ...] [--goal-mode terminal|toward_agent]',
   ],
@@ -44,7 +54,9 @@ const senderoCreateHelp = {
 
 export const agentCommandHelp = {
   command: 'agent',
-  summary: 'Inspect Senderos agents.',
+  summary: 'Inspect SenderOS agents.',
+  agentDescription:
+    'Use the agent command to inspect runtime agent definitions that can participate in planning and dispatch. It is read-only and does not perform any execution work.',
   usage: ['senderos agent <list|show> ...'],
   subcommands: [agentListHelp, agentShowHelp],
 };
@@ -52,11 +64,13 @@ export const agentCommandHelp = {
 export const senderoCommandHelp = {
   command: 'sendero',
   summary: 'Create and inspect senderos.',
+  agentDescription:
+    'Use the sendero command to define and inspect the persisted paths that features follow. This surface manages sendero state only.',
   usage: ['senderos sendero <create|list|show> ...'],
   subcommands: [senderoCreateHelp, senderoListHelp, senderoShowHelp],
 };
 
-function parseSenderoCreateOptions(home: string, options: Record<string, string | boolean>) {
+function parseSenderoCreateOptions(home: string, options: Record<string, string | boolean | string[]>) {
   return {
     home,
     sourceAgentId: String(options['source-agent-id'] ?? ''),
@@ -82,7 +96,7 @@ export function handleAgent(sub: string | undefined, positionals: string[], home
 export function handleSendero(
   sub: string | undefined,
   positionals: string[],
-  options: Record<string, string | boolean>,
+  options: Record<string, string | boolean | string[]>,
   home: string
 ) {
   switch (sub) {

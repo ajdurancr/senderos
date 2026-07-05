@@ -22,6 +22,7 @@
 - [ ] Build passes.
 
 ## C5 — CLI shape is current
-- [ ] `run` is the primary execution command.
+- [ ] `plan` is the global planning command.
+- [ ] `run dispatch` is the forward-dispatch mutation command.
 - [ ] deprecated execution command aliases are not part of the public top-level workflow surface.
-- [ ] `run-execution` is not part of the public top-level workflow surface.
+- [ ] help output contains agent-focused descriptions by default and supports `--omit-agent-description`.

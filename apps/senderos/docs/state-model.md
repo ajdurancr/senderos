@@ -47,6 +47,7 @@ The feature record stores:
 - parsed Gherkin metadata
 - base target branch snapshot
 - feature branch / PR linkage when execution begins
+- current `sendero_step`
 
 Feature statuses are intentionally small and strict:
 
@@ -74,7 +75,7 @@ Built-in agents are seeded from `apps/senderos/agents/*.md` during `senderos ini
 
 ## Senderos
 
-A sendero is an execution path owned by a source agent.
+A sendero is the persisted path a feature follows.
 
 A sendero record stores:
 
@@ -94,10 +95,10 @@ Rules:
 
 - only one active run per feature at a time
 - a run can make up to three internal attempts
-- retries reuse the same logical run branch name but recreate the branch from a clean base
-- retries start from the latest accepted feature branch tip
-- successful runs merge into the feature branch automatically
-- a run may be explicitly started with `--agent-id` and `--sendero-id`
+- retries reuse the same logical feature context while creating new run state
+- a run can be dispatched only from explicit planning payload ids
+- `senderos plan` returns the next dispatchable payloads
+- `senderos run dispatch` consumes one payload and persists the new run state
 
 Run lifecycle detail lives in the run status, not the feature status:
 
@@ -115,14 +116,16 @@ Run lifecycle detail lives in the run status, not the feature status:
 
 ## Run executions
 
-Agent-run records capture execution context linked to a run.
+Run execution records capture concrete execution context linked to a run.
 
 Each record can store:
 
+- run id
+- attempt number
 - agent id
 - sendero id
 - target agent id
-- feature id / run id linkage
+- feature id linkage
 - host environment name
 - host environment session id
 - harness
@@ -133,18 +136,10 @@ Each record can store:
 - debug metadata
 - started / finished timestamps
 
-## Attempts
+## Sessions
 
-Attempt details live inside `run_executions` instead of a separate attempts table.
-
-Each run execution can capture:
-
-- attempt number
-- branch-adjacent debug context through run linkage
-- source feature SHA
-- failed step
-- failure summary
-- structured details
+Sessions are the persisted linkage to external host-agent execution instances.
+They are diagnostic/runtime records, distinct from runs and run executions.
 
 ## Event Log
 
@@ -153,12 +148,6 @@ SenderOS keeps an append-only event stream for:
 - state transitions
 - user actions
 - agent decisions and failures
-- branch operations
-- PR operations
-
-Current state is the latest truth.
-The event log explains how SenderOS got there.
-s and failures
 - branch operations
 - PR operations
 

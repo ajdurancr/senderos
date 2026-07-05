@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { approveFeature, createFeature, getFeature } from '../index';
-import { orchestrateSupervisions, showSupervision, startSupervision, advanceSupervision, resumeSession } from './index';
+import { showSupervision, startSupervision, advanceSupervision, resumeSession } from './index';
 import { createProjectFixture, initHome } from '../../../../tests/helpers/runtime';
 
 describe('runtime sendero supervisor operations', () => {
@@ -47,21 +47,5 @@ describe('runtime sendero supervisor operations', () => {
     startSupervision(feature.id, home);
     advanceSupervision(feature.id, home);
     expect(getFeature(feature.id, home)?.senderoStep).toBe('review');
-  });
-
-  test('orchestrateSupervisions starts idle active features', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const result: any = orchestrateSupervisions(home);
-    expect(result.scanned).toBeGreaterThan(0);
-    expect(result.results.some((item: any) => item.featureId === feature.id && item.action === 'started')).toBe(true);
-  });
-
-  test('orchestrateSupervisions no-ops when an agent session is still active', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const started: any = startSupervision(feature.id, home);
-    const result: any = orchestrateSupervisions(home);
-    expect(result.results.some((item: any) => item.featureId === feature.id && item.action === 'noop_running' && item.runId === started.run.id)).toBe(true);
   });
 });

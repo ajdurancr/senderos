@@ -1,84 +1,87 @@
 import { getRun } from '../../services/sendero-supervisor';
-import { cancelRun, listRuns, showSupervision, startSupervision, advanceSupervision } from '../../services/runtime';
-import { requirePositional } from '../shared';
+import { cancelRun, dispatchRun, listRuns, showSupervision } from '../../services/runtime';
+import { optionString, requirePositional } from '../shared';
 
-const runStartHelp = {
-  command: 'start',
-  summary: 'Start a run for a feature, optionally binding it to a specific sendero and agent.',
+const runDispatchHelp = {
+  command: 'dispatch',
+  summary: 'Create the next concrete run dispatch from a planning item.',
+  agentDescription:
+    'Call this only after `senderos plan` returns a dispatchable item. Pass through the ids that plan returned so SenderOS can atomically create the new run, session, and run execution records for that dispatch.',
   usage: [
-    'senderos run start --feature-id <feature-id> [--sendero-id <sendero-id>] [--agent-id <agent-id>]',
-    'senderos run --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id>',
+    'senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id> [--previous-run-id <run-id>]',
   ],
-};
-
-const runAdvanceHelp = {
-  command: 'advance',
-  summary: 'Advance an active feature run to the next phase.',
-  usage: ['senderos run advance <feature-id>', 'senderos run advance --feature-id <feature-id>'],
+  options: [
+    { name: '--feature-id', description: 'Feature identifier from senderos plan.', required: true },
+    { name: '--sendero-id', description: 'Sendero identifier from senderos plan.', required: true },
+    { name: '--agent-id', description: 'Agent identifier from senderos plan.', required: true },
+    { name: '--previous-run-id', description: 'Previous run id from senderos plan when dispatching after an earlier run.' },
+  ],
 };
 
 const runStateHelp = {
   command: 'state',
   summary: 'Show current run state for a feature.',
+  agentDescription:
+    'Use this for detailed state inspection on a specific feature after planning or dispatch. It returns the current run, current run execution, and workspace/session-linked state for that feature.',
   usage: ['senderos run state <feature-id>', 'senderos run state --feature-id <feature-id>'],
 };
 
 const runListHelp = {
   command: 'list',
-  summary: 'List Senderos runs.',
+  summary: 'List SenderOS runs.',
+  agentDescription:
+    'Use this when you need a raw list of all persisted runs for debugging or audits. It is not the planning surface.',
   usage: ['senderos run list'],
 };
 
 const runShowHelp = {
   command: 'show',
-  summary: 'Show a persisted Senderos run record.',
+  summary: 'Show a persisted SenderOS run record.',
+  agentDescription:
+    'Use this to inspect one logical run record by id. This is useful when you already know the run id from dispatch output or stored state.',
   usage: ['senderos run show <run-id>'],
   arguments: [{ name: 'run-id', description: 'Run identifier.', required: true }],
 };
 
 const runCancelHelp = {
   command: 'cancel',
-  summary: 'Cancel a Senderos run.',
+  summary: 'Cancel a SenderOS run.',
+  agentDescription:
+    'Use this to stop a logical run and cascade cancellation into the linked feature state. This is a mutation and should only be used when you intentionally want to halt progress.',
   usage: ['senderos run cancel <run-id>'],
   arguments: [{ name: 'run-id', description: 'Run identifier.', required: true }],
 };
 
 export const runCommandHelp = {
   command: 'run',
-  summary: 'Create, inspect, advance, and cancel Senderos runs.',
-  usage: ['senderos run <start|advance|state|list|show|cancel> ...'],
-  subcommands: [runStartHelp, runAdvanceHelp, runStateHelp, runListHelp, runShowHelp, runCancelHelp],
+  summary: 'Dispatch, inspect, and cancel SenderOS runs.',
+  agentDescription:
+    'The run command is the mutation and inspection surface for logical runs. Use `dispatch` with ids returned by `senderos plan`; use `state`, `list`, and `show` for inspection; use `cancel` to halt work intentionally.',
+  usage: ['senderos run <dispatch|state|list|show|cancel> ...'],
+  subcommands: [runDispatchHelp, runStateHelp, runListHelp, runShowHelp, runCancelHelp],
 };
 
-function featureIdForRun(positionals: string[], options: Record<string, string | boolean>) {
-  return String(options['feature-id'] ?? positionals[2] ?? '');
+function featureIdForRun(positionals: string[], options: Record<string, string | boolean | string[]>) {
+  return String(optionString(options['feature-id']) ?? positionals[2] ?? '');
 }
 
 export function handleRun(
   sub: string | undefined,
   positionals: string[],
-  options: Record<string, string | boolean>,
+  options: Record<string, string | boolean | string[]>,
   home: string
 ) {
-  if (!sub || sub.startsWith('--')) {
-    return startSupervision(
-      requirePositional(String(options['feature-id'] ?? ''), 'feature id'),
-      home,
-      {
-        senderoId: options['sendero-id'] as string | undefined,
-        agentId: options['agent-id'] as string | undefined,
-      }
-    );
-  }
-
   switch (sub) {
-    case 'start':
-      return startSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home, {
-        senderoId: options['sendero-id'] as string | undefined,
-        agentId: options['agent-id'] as string | undefined,
-      });
-    case 'advance':
-      return advanceSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
+    case 'dispatch':
+      return dispatchRun(
+        {
+          featureId: requirePositional(optionString(options['feature-id']), 'feature id'),
+          senderoId: requirePositional(optionString(options['sendero-id']), 'sendero id'),
+          agentId: requirePositional(optionString(options['agent-id']), 'agent id'),
+          previousRunId: optionString(options['previous-run-id']),
+        },
+        home
+      );
     case 'state':
       return showSupervision(requirePositional(featureIdForRun(positionals, options), 'feature id'), home);
     case 'list':

@@ -64,4 +64,12 @@ export interface RunExecutionRecord { id:string; runId:string|null; featureId:st
 export interface SeedAgentsOptions { definitionsDir?: string; }
 export interface InitPreview { home:string; configPath:string; config:SenderosConfig; inferredHarness:HarnessKind; assumptions:string[]; requiresApproval:true; }
 export interface DbAdapter { kind:DatabaseKind; describe(home?:string):Record<string,unknown>; healthcheck(home?:string):{ok:boolean;issues:string[];warnings?:string[]}; openCommandConnection?(home?:string):unknown; }
-export interface CommandHelp { command:string; summary:string; usage:string[]; arguments?:Array<{name:string;description:string;required?:boolean}>; options?:Array<{name:string;description:string;required?:boolean}>; subcommands?:CommandHelp[]; }
+export interface CommandHelp {
+  command:string;
+  summary:string;
+  agentDescription?: string;
+  usage:string[];
+  arguments?:Array<{name:string;description:string;required?:boolean}>;
+  options?:Array<{name:string;description:string;required?:boolean}>;
+  subcommands?:CommandHelp[];
+}

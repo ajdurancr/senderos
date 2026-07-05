@@ -4,6 +4,7 @@ import { handleAgent, handleSendero } from './commands/agent';
 import { handleConfig } from './commands/config';
 import { handleFeature } from './commands/feature';
 import { handleInit } from './commands/init';
+import { handlePlan } from './commands/plan';
 import { handleProject } from './commands/project';
 import { handleRun } from './commands/run';
 import { handleSession } from './commands/session';
@@ -17,6 +18,16 @@ export async function runCli(argv = process.argv.slice(2)) {
   const home = resolveHome(options.home);
 
   try {
+    if (options.help || cmd === 'help') {
+      const helpCommand = cmd === 'help' ? positionals[1] : cmd;
+      const helpSubcommand = cmd === 'help' ? positionals[2] : sub;
+      const result = resolveHelp(helpCommand, helpSubcommand, {
+        omitAgentDescription: Boolean(options['omit-agent-description']),
+      });
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
     let result: unknown;
 
     switch (cmd) {
@@ -38,19 +49,17 @@ export async function runCli(argv = process.argv.slice(2)) {
       case 'feature':
         result = handleFeature(sub, positionals, options, home);
         break;
+      case 'plan':
+        result = handlePlan(options, home);
+        break;
       case 'run':
         result = handleRun(sub, positionals, options, home);
         break;
       case 'session':
         result = handleSession(sub, positionals, home);
         break;
-      case 'help':
-        result = resolveHelp(positionals[1]);
-        break;
       case 'doctor':
       case 'status':
-      case 'reconcile':
-      case 'schedule-plan':
         result = handleSystemCommand(cmd, home);
         break;
       default:

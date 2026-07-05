@@ -1,14 +1,11 @@
-import {
-  createProject,
-  getProject,
-  listProjects,
-  updateProject,
-} from '../../services/runtime';
+import { createProject, getProject, listProjects, updateProject } from '../../services/runtime';
 import { requirePositional } from '../shared';
 
 const projectCreateHelp = {
   command: 'create',
-  summary: 'Create a Senderos project.',
+  summary: 'Create a SenderOS project.',
+  agentDescription:
+    'Use this to register a repository as a SenderOS-managed project. It persists canonical repo identity and setup metadata that later features and runs depend on.',
   usage: [
     'senderos project create --canonical-path /repo --github-owner owner --github-repo repo [--id senderos-ab12cd34] [--name senderos] [--target-branch main] [--integration-mode github_pr]',
   ],
@@ -30,32 +27,40 @@ const projectCreateHelp = {
 
 const projectListHelp = {
   command: 'list',
-  summary: 'List Senderos projects.',
+  summary: 'List SenderOS projects.',
+  agentDescription:
+    'Use this to inspect all persisted project records in the current SenderOS home.',
   usage: ['senderos project list'],
 };
 
 const projectShowHelp = {
   command: 'show',
-  summary: 'Show a Senderos project.',
+  summary: 'Show a SenderOS project.',
+  agentDescription:
+    'Use this to inspect one project record and its persisted repository metadata.',
   usage: ['senderos project show <project-id>'],
   arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
 };
 
 const projectUpdateHelp = {
   command: 'update',
-  summary: 'Update a Senderos project.',
+  summary: 'Update a SenderOS project.',
+  agentDescription:
+    'Use this to mutate persisted project metadata when the repository, branch, or inferred commands need to change.',
   usage: ['senderos project update <project-id> [--name ...] [--target-branch ...] [--integration-mode ...]'],
   arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
 };
 
 export const projectCommandHelp = {
   command: 'project',
-  summary: 'Create and manage Senderos projects.',
+  summary: 'Create and manage SenderOS projects.',
+  agentDescription:
+    'Use the project command to manage the repository records that SenderOS attaches features and runs to. This surface is for project state only.',
   usage: ['senderos project <create|list|show|update> ...'],
   subcommands: [projectCreateHelp, projectListHelp, projectShowHelp, projectUpdateHelp],
 };
 
-function commandMap(options: Record<string, string | boolean>) {
+function commandMap(options: Record<string, string | boolean | string[]>) {
   return {
     install: options['install-command'],
     build: options['build-command'],
@@ -64,7 +69,7 @@ function commandMap(options: Record<string, string | boolean>) {
   };
 }
 
-function parseProjectCreateOptions(home: string, options: Record<string, string | boolean>) {
+function parseProjectCreateOptions(home: string, options: Record<string, string | boolean | string[]>) {
   return {
     home,
     id: options.id as string | undefined,
@@ -84,7 +89,7 @@ function parseProjectCreateOptions(home: string, options: Record<string, string 
 function parseProjectUpdateOptions(
   home: string,
   id: string,
-  options: Record<string, string | boolean>
+  options: Record<string, string | boolean | string[]>
 ) {
   const commands = Object.fromEntries(
     Object.entries(commandMap(options)).filter(([, value]) => typeof value === 'string' && value)
@@ -107,7 +112,7 @@ function parseProjectUpdateOptions(
 export function handleProject(
   sub: string | undefined,
   positionals: string[],
-  options: Record<string, string | boolean>,
+  options: Record<string, string | boolean | string[]>,
   home: string
 ) {
   switch (sub) {

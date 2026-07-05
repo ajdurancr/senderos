@@ -63,8 +63,21 @@ describe('integration: full lifecycle flow', () => {
     const approved: any = cli(['feature', 'approve', feature.id, '--home', home]);
     expect(approved.status).toBe('active');
 
-    const started: any = cli(['run', 'start', '--feature-id', feature.id, '--home', home]);
-    expect(started.run.status).toBe('executing');
+    const firstPlan: any[] = cli(['plan', '--home', home]);
+    const firstDispatchItem = firstPlan.find((item) => item.featureId === feature.id)!;
+    const started: any = cli([
+      'run',
+      'dispatch',
+      '--feature-id',
+      firstDispatchItem.featureId,
+      '--sendero-id',
+      firstDispatchItem.senderoId,
+      '--agent-id',
+      firstDispatchItem.agentId,
+      '--home',
+      home,
+    ]);
+    expect(started.runId).toBeTruthy();
 
     const implementationState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(implementationState.feature.senderoStep).toBe('implementation');
@@ -79,20 +92,60 @@ describe('integration: full lifecycle flow', () => {
     const resumedSession: any = cli(['session', 'resume', sessionsAtStart[0].id, '--home', home]);
     expect(resumedSession.launchCommand).toContain('codex exec');
 
-    const reviewTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(reviewTick.feature.senderoStep).toBe('review');
+    const reviewTick: any = cli([
+      'run',
+      'dispatch',
+      '--feature-id',
+      feature.id,
+      '--sendero-id',
+      firstDispatchItem.senderoId,
+      '--agent-id',
+      firstDispatchItem.agentId,
+      '--previous-run-id',
+      started.runId,
+      '--home',
+      home,
+    ]);
+    expect(reviewTick.previousRunId).toBe(started.runId);
     const reviewState: any = cli(['run', 'state', '--feature-id', feature.id, '--home', home]);
     expect(reviewState.currentRun.phase).toBe('review');
     expect(reviewState.currentRun.base_branch).toBe(`feature/${feature.id}`);
 
-    const mutationTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(mutationTick.feature.senderoStep).toBe('mutation');
+    const mutationTick: any = cli([
+      'run',
+      'dispatch',
+      '--feature-id',
+      feature.id,
+      '--sendero-id',
+      firstDispatchItem.senderoId,
+      '--agent-id',
+      firstDispatchItem.agentId,
+      '--previous-run-id',
+      reviewTick.runId,
+      '--home',
+      home,
+    ]);
+    expect(mutationTick.runId).toBeTruthy();
 
-    const completionTick: any = cli(['run', 'advance', '--feature-id', feature.id, '--home', home]);
-    expect(completionTick.feature.senderoStep).toBe('done');
-    expect(completionTick.feature.status).toBe('completed');
+    const completionTick: any = cli([
+      'run',
+      'dispatch',
+      '--feature-id',
+      feature.id,
+      '--sendero-id',
+      firstDispatchItem.senderoId,
+      '--agent-id',
+      firstDispatchItem.agentId,
+      '--previous-run-id',
+      mutationTick.runId,
+      '--home',
+      home,
+    ]);
+    expect(completionTick.runId).toBeNull();
 
     const completedFeature: any = cli(['feature', 'show', feature.id, '--home', home]);
+    expect(completedFeature.senderoStep).toBe('done');
+    expect(completedFeature.status).toBe('completed');
     expect(completedFeature.currentRunId).toBeNull();
 
     const status: any = cli(['status', '--home', home]);
@@ -100,7 +153,7 @@ describe('integration: full lifecycle flow', () => {
     expect(status.activeSupervisions).toBe(0);
     expect(status.activeRuns).toBe(0);
     expect(status.activeSessionIds).toEqual([]);
-    expect(status.workspaceLocks).toBe(0);
+    expect(status.lockedWorkspaceIds).toEqual([]);
 
     expect(pathExists(implementationState.workspace.root_path)).toBe(false);
 
@@ -114,11 +167,7 @@ describe('integration: full lifecycle flow', () => {
       { phase: 'mutation', status: 'succeeded' },
     ]);
     const runExecutionRows = db.query('select status from run_executions order by created_at asc').all() as Array<{ status: string }>;
-    expect(runExecutionRows).toEqual([
-      { status: 'succeeded' },
-      { status: 'succeeded' },
-      { status: 'succeeded' },
-    ]);
+    expect(runExecutionRows).toEqual([{ status: 'succeeded' }, { status: 'succeeded' }, { status: 'succeeded' }]);
     const events = db.query('select event_type from events order by created_at asc').all() as Array<{ event_type: string }>;
     expect(events.map((row) => row.event_type)).toContain('feature.completed');
     expect(events.map((row) => row.event_type)).toContain('workspace.cleaned');
