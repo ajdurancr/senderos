@@ -73,6 +73,12 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     items: [
       { slug: 'getting-started/setup', title: 'Setup and First Run', section: 'Getting Started' }
     ]
+  },
+  {
+    section: 'Contributing',
+    items: [
+      { slug: 'contributing/engineering-guide', title: 'Engineering Guide', section: 'Contributing' }
+    ]
   }
 ];
 

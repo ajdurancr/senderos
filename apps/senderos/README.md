@@ -54,7 +54,7 @@ The strict path is now:
 1. user intent
 2. `spec_partner` refines the spec
 3. human approves the spec
-4. `gherkin_author` emits raw Gherkin + structured metadata
+4. `gherkin_author` emits canonical Gherkin + structured metadata
 5. Senderos creates the feature record from that approved contract
 6. human approves the executable contract for implementation
 7. Senderos plans the next dispatchable run
@@ -94,7 +94,7 @@ Current top-level workflow commands now include:
 
 ## First-run onboarding
 
-SenderOS supports both direct CLI use and agent-driven operation.
+Senderos supports both direct CLI use and agent-driven operation.
 
 Recommended first step:
 
@@ -104,7 +104,7 @@ senderos bootstrap-agent-skill
 
 That command scaffolds a workspace-local host-agent skill and prints two next-step paths:
 
-- an agent-driven prompt to use the skill for onboarding and ongoing SenderOS operation
+- an agent-driven prompt to use the skill for onboarding and ongoing Senderos operation
 - a direct CLI fallback using `senderos init ... --approve`
 
 `bootstrap-agent-skill` prepares the operating layer.

@@ -7,13 +7,15 @@ Senderos can be automated by a host agent, but it does not own the host schedule
 
 ## Current model
 
-The host agent typically loops like this:
+The host agent typically runs in this cycle:
 
 1. call `senderos status`
 2. call `senderos plan`
-3. dispatch each returned item separately with `senderos run dispatch ...`
+3. dispatch each returned item with `senderos run dispatch ...`
 4. execute the real work asynchronously in separate host sessions
-5. repeat later
+5. return later and repeat after a delay or trigger
+
+This keeps scheduling logic in the host environment while preserving a deterministic Senderos control plane.
 
 ## Manual operation
 
@@ -45,4 +47,4 @@ host scheduler
 ## Why scheduling stays outside Senderos
 
 Scheduling infrastructure belongs to the host environment.
-Senderos keeps orchestration portable by exposing plan/dispatch/state surfaces instead of directly taking ownership of the scheduler.
+Senderos keeps orchestration portable by exposing plan/dispatch/state surfaces instead of directly owning the scheduler.

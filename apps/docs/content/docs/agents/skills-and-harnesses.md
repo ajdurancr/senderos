@@ -23,7 +23,7 @@ A Senderos skill should know:
 
 - how to discover commands,
 - how to request JSON output,
-- how to run manual loop actions,
+- how to run manual planning-and-dispatch loops,
 - how to ask the user for confirmation when Senderos requires it,
 - how to schedule host-level jobs when Senderos emits scheduling instructions.
 
@@ -31,7 +31,7 @@ It should not know Senderos' internal operating logic.
 
 ## Harness support inside Senderos
 
-Senderos does include harness support, but only for communicating with host-agent environments.
+Senderos includes harness support, but only for communicating with host-agent environments.
 
 Examples:
 

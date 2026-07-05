@@ -11,15 +11,14 @@ The CLI invokes them as part of Senderos' operating layer.
 ## Why they exist
 
 Senderos has to do more than persist rows.
-It has to reason about:
+It has to enforce consistent operations:
 
 - feature state transitions,
-- loop advancement,
-- dispatch safety,
-- reconciliation,
+- sendero progression,
+- planning and dispatch safety,
 - workspace ownership,
 - configuration validity,
-- harness-specific execution instructions.
+- harness communication requirements.
 
 Those responsibilities are operational, not product-code implementation work.
 
@@ -31,17 +30,17 @@ Owns:
 
 - feature lifecycle transitions,
 - feature validation,
-- feature-to-loop conversion,
+- feature-to-sendero conversion,
 - feature readiness checks.
 
-### Loop operator
+### Execution operator
 
 Owns:
 
-- loop phase progression,
-- test-driven sequencing,
+- sendero step progression,
+- run state sequencing,
 - review and mutation gates,
-- deciding the next required execution step.
+- selecting the next required execution step.
 
 ### Dispatch operator
 
@@ -50,16 +49,16 @@ Owns:
 - workspace reservation,
 - run creation,
 - host-agent instruction generation,
-- harness invocation preparation.
+- run-execution record initialization.
 
-### Reconciliation operator
+### Recovery operator
 
 Owns:
 
 - stale session recovery,
 - abandoned workspace detection,
 - incomplete run repair,
-- derived-state correction.
+- derived-state reconciliation.
 
 ### Configuration operator
 
@@ -77,4 +76,4 @@ These responsibilities live in Senderos, not in the host agent.
 The host agent is told what to do.
 It is not the source of truth for how Senderos works.
 
-That separation is what keeps Senderos opinionated and consistent across harnesses.
+This separation is what keeps Senderos predictable and consistent across harnesses.

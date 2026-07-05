@@ -28,4 +28,4 @@ Use `doctor` when:
 - finishing installation,
 - changing configuration,
 - debugging a broken runtime,
-- validating a host before scheduling loop execution.
+- validating a host before scheduling dispatch cycles.
