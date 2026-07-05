@@ -3,7 +3,6 @@ import { openRuntimeDb } from '../../db/client';
 import { mapFeatureRow, mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
-import { cleanupWorkspace, ensurePhaseTask } from '../loop';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
 
 function requireProject(projectId: string, home?: string) {
@@ -34,7 +33,7 @@ export function createFeature(input: {
   const id = input.id ?? randomId('feature');
 
   db.prepare(
-    'insert into features (id,project_id,title,spec_text,source_request_text,gherkin_text,gherkin_meta_json,status,loop_phase,base_target_branch,feature_branch_name,pr_url,pr_number,current_workspace_id,current_run_id,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    'insert into features (id,project_id,title,spec_text,source_request_text,gherkin_text,gherkin_meta_json,status,sendero_step,base_target_branch,feature_branch_name,pr_url,pr_number,current_workspace_id,current_run_id,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
   ).run(
     id,
     input.projectId,
@@ -69,7 +68,6 @@ export function listFeatures(home?: string): FeatureRecord[] {
   const db = openRuntimeDb(home);
   const rows = db.query('select * from features order by created_at asc').all().map(mapFeatureRow) as FeatureRecord[];
   db.close();
-
   return rows;
 }
 
@@ -77,7 +75,6 @@ export function getFeature(id: string, home?: string): FeatureRecord | null {
   const db = openRuntimeDb(home);
   const row = mapFeatureRow(db.query('select * from features where id = ?').get(id));
   db.close();
-
   return row;
 }
 
@@ -94,7 +91,6 @@ export function updateFeature(input: {
   featureBranchName?: string | null;
 }) {
   const current = getFeature(input.id, input.home);
-
   if (!current) {
     throw new Error(`Feature not found: ${input.id}`);
   }
@@ -118,70 +114,40 @@ export function updateFeature(input: {
     now(),
     input.id
   );
-
   emitEvent(db, 'feature.updated', 'feature', input.id, input);
   db.close();
-
   return getFeature(input.id, input.home);
 }
 
 export function approveFeature(id: string, home?: string) {
   const current = getFeature(id, home);
-
   if (!current) {
     throw new Error(`Feature not found: ${id}`);
   }
 
   const db = openRuntimeDb(home);
-  db.prepare('update features set status=?, loop_phase=?, updated_at=? where id=?').run(
-    'active',
-    'idle',
-    now(),
-    id
-  );
-
-  emitEvent(db, 'feature.approved', 'feature', id, { approvedFor: 'implementation' });
+  db.prepare('update features set status=?, sendero_step=?, updated_at=? where id=?').run('active', 'idle', now(), id);
+  emitEvent(db, 'feature.approved', 'feature', id, { approvedFor: 'dispatch' });
   db.close();
-
-  ensurePhaseTask(getFeature(id, home)!, 'implementation', home);
   return getFeature(id, home);
 }
 
 export function cancelFeature(id: string, home?: string) {
   const current = getFeature(id, home);
-
   if (!current) {
     throw new Error(`Feature not found: ${id}`);
   }
 
   completeActiveSessionsForFeature(id, home);
-
   const db = openRuntimeDb(home);
-
-  db.prepare('update features set status=?, loop_phase=?, current_run_id=?, updated_at=? where id=?').run(
-    'canceled',
-    'blocked',
-    null,
-    now(),
-    id
-  );
-  db.prepare(
-    "update tasks set status='canceled', updated_at=? where feature_id=? and status not in ('completed','failed','canceled')"
-  ).run(now(), id);
-
+  db.prepare('update features set status=?, sendero_step=?, current_run_id=?, updated_at=? where id=?').run('canceled', 'blocked', null, now(), id);
   if (current.currentRunId) {
     db.prepare("update runs set status='canceled', updated_at=? where id=?").run(now(), current.currentRunId);
   }
-
   emitEvent(db, 'feature.canceled', 'feature', id, {
     closedPr: Boolean(current.prUrl),
     deletedFeatureBranch: Boolean(current.featureBranchName),
   });
   db.close();
-
-  if (current.currentWorkspaceId) {
-    cleanupWorkspace(current.currentWorkspaceId, home, 'feature_canceled');
-  }
-
   return getFeature(id, home);
 }

@@ -1,21 +1,23 @@
 # State Model
 
-SenderOS stores orchestration truth in SQLite.
+Senderos stores orchestration truth in SQLite.
 
 The core runtime entities are:
 
 - `projects`
 - `features`
 - `runs`
-- `run_attempts`
 - `tasks`
 - `sessions`
 - `workspaces`
+- `agents`
+- `senderos`
+- `run_executions`
 - `events`
 
 ## Projects
 
-A project is valid only when SenderOS knows both:
+A project is valid only when Senderos knows both:
 
 - the canonical local repository path
 - the canonical GitHub repository identity
@@ -45,6 +47,7 @@ The feature record stores:
 - parsed Gherkin metadata
 - base target branch snapshot
 - feature branch / PR linkage when execution begins
+- current `sendero_step`
 
 Feature statuses are intentionally small and strict:
 
@@ -55,17 +58,48 @@ Feature statuses are intentionally small and strict:
 - `canceled`
 - `completed`
 
+## Agents
+
+An agent is a first-class executor.
+
+Agent records store:
+
+- slug and display name
+- source markdown path
+- definition body
+- kind/status
+- default goal
+- bootstrap metadata
+
+Built-in agents are seeded from `apps/senderos/db-seeds/agents/*.json` during `senderos init`. Those JSON records are the runtime source of truth.
+The docs app pages under `apps/docs/content/docs/reference/system-agents/` are the human-readable examples of those roles.
+
+## Senderos
+
+A sendero is the persisted path a feature follows.
+
+A sendero record stores:
+
+- source agent id
+- optional target agent id
+- goal and goal mode
+- assignment metadata
+- status and timestamps
+
+Each built-in agent receives a seeded `default sendero` during runtime init.
+
 ## Runs
 
-A run is one execution request against one feature.
+A run is the primary execution request against one feature.
 
 Rules:
 
 - only one active run per feature at a time
 - a run can make up to three internal attempts
-- retries reuse the same logical run branch name but recreate the branch from a clean base
-- retries start from the latest accepted feature branch tip
-- successful runs merge into the feature branch automatically
+- retries reuse the same logical feature context while creating new run state
+- a run can be dispatched only from explicit planning payload ids
+- `senderos plan` returns the next dispatchable payloads
+- `senderos run dispatch` consumes one payload and persists the new run state
 
 Run lifecycle detail lives in the run status, not the feature status:
 
@@ -81,22 +115,36 @@ Run lifecycle detail lives in the run status, not the feature status:
 - `failed`
 - `canceled`
 
-## Attempts
+## Run executions
 
-Attempt details are stored separately from the run summary.
+Run execution records capture concrete execution context linked to a run.
 
-Each attempt can capture:
+Each record can store:
 
+- run id
 - attempt number
-- branch info
-- source feature SHA
-- failed step
+- agent id
+- sendero id
+- target agent id
+- feature id linkage
+- host environment name
+- host environment session id
+- harness
+- checkpoint
+- status snapshot
+- result metadata
 - failure summary
-- structured details
+- debug metadata
+- started / finished timestamps
+
+## Sessions
+
+Sessions are the persisted linkage to external host-agent execution instances.
+They are diagnostic/runtime records, distinct from runs and run executions.
 
 ## Event Log
 
-SenderOS keeps an append-only event stream for:
+Senderos keeps an append-only event stream for:
 
 - state transitions
 - user actions
@@ -105,4 +153,4 @@ SenderOS keeps an append-only event stream for:
 - PR operations
 
 Current state is the latest truth.
-The event log explains how SenderOS got there.
+The event log explains how Senderos got there.

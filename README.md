@@ -6,8 +6,9 @@ This repository contains the initial monorepo scaffold for Senderos.
 
 ## Monorepo apps
 
-- `apps/senderos` — SenderOS, the orchestration engine/runtime.
+- `apps/senderos` — Senderos, the orchestration engine/runtime.
 - `apps/studio` — Senderos Studio, the primary product UI built with React Router.
+- `apps/docs` — product and operator documentation.
 
 ## Technology decisions
 
@@ -30,22 +31,6 @@ The harder problem is coordination:
 
 Senderos exists to make that coordination visible, structured, and repeatable.
 
-## How Senderos can be used
-
-Senderos can be used as the operating layer around software delivery.
-
-A team defines an objective, clarifies what success looks like, gathers the relevant context, coordinates implementation, reviews outcomes, and keeps the feedback loop moving.
-
-In practice, that can mean helping teams:
-
-- shape work around outcomes instead of disconnected tasks
-- keep execution aligned across humans and AI systems
-- make validation and review part of the path, not an afterthought
-- turn decisions, progress, and results into usable organizational memory
-
-The goal is not just to produce software faster.
-The goal is to move from intent to verified outcome with more clarity and less coordination waste.
-
 ## Product thesis
 
 Software generation is no longer the main bottleneck.
@@ -54,6 +39,23 @@ Coordination is.
 Senderos exists to orchestrate the path from intent to verified delivery:
 
 Intent → Planning → Context → Execution → Validation → Feedback → Continuous Improvement
+
+## How Senderos currently works
+
+At the runtime level, Senderos acts as a control plane:
+
+- it stores orchestration state in SQLite
+- it plans the next dispatchable work with `senderos plan`
+- it accepts explicit dispatch requests with `senderos run dispatch ...`
+- it records runs, run executions, sessions, tasks, workspaces, and events
+- it does **not** perform the actual coding work itself
+
+The host agent is the execution plane:
+
+- asks Senderos what is dispatchable next
+- dispatches one run at a time
+- executes the real work in its own session/workspace
+- returns later for the next plan/dispatch cycle
 
 ## Getting started
 
@@ -85,5 +87,6 @@ bun run build
 ## Repository structure
 
 - Root: monorepo workspace, shared config, and top-level documentation only
-- `apps/senderos`: SenderOS app plus its local docs, agent roles, and templates
+- `apps/senderos`: Senderos app plus its local docs, agent roles, and templates
 - `apps/studio`: Studio web app
+- `apps/docs`: product/operator docs for Senderos

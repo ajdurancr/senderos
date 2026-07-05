@@ -11,6 +11,8 @@ import { requirePositional } from '../shared';
 const featureCreateHelp = {
   command: 'create',
   summary: 'Create a Senderos feature from an approved Gherkin contract.',
+  agentDescription:
+    'Use this only after the spec and Gherkin contract are ready. It creates the persisted feature state that later planning and run dispatches will operate on.',
   usage: [
     'senderos feature create --project-id <project-id> --title "Add billing portal" --gherkin "Feature: ..." [--spec-text ...] [--source-request ...]',
   ],
@@ -26,12 +28,16 @@ const featureCreateHelp = {
 const featureListHelp = {
   command: 'list',
   summary: 'List Senderos features.',
+  agentDescription:
+    'Use this to inspect persisted features across the runtime. This is useful for operator context, but it is not the same as asking Senderos what to dispatch next.',
   usage: ['senderos feature list'],
 };
 
 const featureShowHelp = {
   command: 'show',
   summary: 'Show a Senderos feature.',
+  agentDescription:
+    'Use this to inspect one feature record in detail, including its sendero step, linked run, and stored contract fields.',
   usage: ['senderos feature show <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
@@ -39,6 +45,8 @@ const featureShowHelp = {
 const featureUpdateHelp = {
   command: 'update',
   summary: 'Update a Senderos feature.',
+  agentDescription:
+    'Use this to mutate persisted feature details or contract fields when no active run is depending on that contract. Senderos will reject unsafe contract changes during active execution.',
   usage: ['senderos feature update <feature-id> [--title ...] [--spec-text ...] [--gherkin ...] [--source-request ...]'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
   options: [
@@ -51,14 +59,18 @@ const featureUpdateHelp = {
 
 const featureApproveHelp = {
   command: 'approve',
-  summary: 'Approve a feature for implementation runs.',
+  summary: 'Approve a feature for dispatchable runs.',
+  agentDescription:
+    'Use this when the feature contract is ready to enter Senderos orchestration. Approval moves the feature into an active state so planning can surface it as dispatchable work.',
   usage: ['senderos feature approve <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
 
 const featureCancelHelp = {
   command: 'cancel',
-  summary: 'Cancel a feature, its active run, and cleanup-related state.',
+  summary: 'Cancel a feature and its active execution state.',
+  agentDescription:
+    'Use this when you intentionally want to stop further orchestration for a feature. It mutates feature, run, task, session, and workspace-related state as needed for cancellation.',
   usage: ['senderos feature cancel <feature-id>'],
   arguments: [{ name: 'feature-id', description: 'Feature identifier.', required: true }],
 };
@@ -66,6 +78,8 @@ const featureCancelHelp = {
 export const featureCommandHelp = {
   command: 'feature',
   summary: 'Create and manage Senderos features.',
+  agentDescription:
+    'Use the feature command to manage the persisted work items that Senderos plans and dispatches. This is feature state management, not execution.',
   usage: ['senderos feature <create|list|show|update|approve|cancel> ...'],
   subcommands: [
     featureCreateHelp,
@@ -77,7 +91,7 @@ export const featureCommandHelp = {
   ],
 };
 
-function parseFeatureCreateOptions(home: string, options: Record<string, string | boolean>) {
+function parseFeatureCreateOptions(home: string, options: Record<string, string | boolean | string[]>) {
   return {
     home,
     projectId: String(options['project-id'] ?? ''),
@@ -91,7 +105,7 @@ function parseFeatureCreateOptions(home: string, options: Record<string, string 
 function parseFeatureUpdateOptions(
   home: string,
   id: string,
-  options: Record<string, string | boolean>
+  options: Record<string, string | boolean | string[]>
 ) {
   return {
     home,
@@ -106,7 +120,7 @@ function parseFeatureUpdateOptions(
 export function handleFeature(
   sub: string | undefined,
   positionals: string[],
-  options: Record<string, string | boolean>,
+  options: Record<string, string | boolean | string[]>,
   home: string
 ) {
   switch (sub) {

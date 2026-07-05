@@ -3,7 +3,9 @@ import { initializeRuntime, previewInit } from '../../config/runtime';
 
 export const initCommandHelp = {
   command: 'init',
-  summary: 'Preview or create the Senderos runtime.',
+  summary: 'Preview or create the Senderos runtime home.',
+  agentDescription:
+    'Use init to preview or create the Senderos home directory and database. This is a bootstrap/setup command and does not plan or dispatch any feature work.',
   usage: [
     'senderos init',
     'senderos init --home /path/to/.senderos --harness codex',
@@ -16,10 +18,10 @@ export const initCommandHelp = {
   ],
 };
 
-export async function handleInit(options: Record<string, string | boolean>) {
+export async function handleInit(options: Record<string, string | boolean | string[]>) {
   const preview = previewInit(
-    options.home as string | undefined,
-    options.harness as HarnessKind | undefined
+    (Array.isArray(options.home) ? options.home.at(-1) : options.home) as string | undefined,
+    (Array.isArray(options.harness) ? options.harness.at(-1) : options.harness) as HarnessKind | undefined
   );
 
   if (!options.approve) {

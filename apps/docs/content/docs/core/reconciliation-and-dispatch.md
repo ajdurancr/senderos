@@ -1,81 +1,64 @@
 ---
-title: Reconciliation and Dispatch
-description: "How Senderos decides what to run next, how it recovers drift, and how the loop stays coherent over time."
+title: Planning and Dispatch
+description: "How Senderos decides what is dispatchable next and how one dispatch is persisted."
 ---
 
-Reconciliation and dispatch are core operating behaviors in Senderos.
-They are not side topics.
+Planning and dispatch are core operating behaviors in Senderos.
+
+## Planning model
+
+Planning means selecting the next valid dispatchable work across features.
+
+Senderos plans work by:
+
+1. loading current feature state
+2. checking whether a feature is dispatchable now
+3. inspecting the current run when present
+4. checking whether an external session is still active
+5. deriving the next sendero/agent pair from persisted sendero and run-execution state
+6. returning a minimal planning payload
+
+The current planning payload is:
+
+- `featureId`
+- `senderoId`
+- `agentId`
+- `previousRunId`
+
+By default, planning returns only dispatchable items.
 
 ## Dispatch model
 
-Dispatch means selecting the next valid unit of loop work and preparing the host agent to execute it.
+Dispatch means consuming one planning item and persisting the state needed for one external execution session.
 
 Senderos dispatches work in this order:
 
-1. load the current Senderos feature state,
-2. confirm the feature is dispatchable,
-3. load the active loop state,
-4. confirm workspace ownership and lock state,
-5. identify the next loop phase,
-6. generate host-agent instructions,
-7. record a run,
-8. bind or create a session record,
-9. transition the feature and loop state.
+1. validate the provided ids
+2. load the current feature/run state
+3. allocate or reuse the correct sendero step state
+4. allocate a workspace when needed
+5. create the run record
+6. create the session record
+7. create the run-execution record
+8. transition the feature state
 
-### Dispatch rules
+## Dispatch rules
 
 Senderos never dispatches blindly.
 It checks:
 
-- feature state,
-- run state,
-- session state,
-- workspace lock state,
-- guardrail violations,
-- retry policy,
-- whether another active loop already owns the workspace.
+- feature state
+- current run state
+- session state
+- sendero linkage
+- retry conditions
+- workspace ownership
 
-If any of those checks fail, Senderos records the block instead of forcing execution.
+If those checks fail, Senderos rejects the dispatch instead of forcing execution.
 
-## Reconciliation model
+## Why Senderos owns this logic
 
-Reconciliation is how Senderos restores truth when the host-agent world drifts.
-
-Drift happens when:
-
-- a host session dies,
-- a shell closes,
-- a machine restarts,
-- a run ends without reporting back,
-- a workspace remains locked after failure,
-- the host agent completed work but Senderos has stale state.
-
-Senderos reconciles by:
-
-1. loading open features, runs, sessions, and workspaces,
-2. checking their expected invariants,
-3. querying harness state when available,
-4. comparing expected state vs observed state,
-5. repairing derived state,
-6. emitting reconciliation events,
-7. either resuming the loop or marking manual intervention required.
-
-## Reconciliation flow diagram
-
-```text
-open records
-  -> inspect feature/run/session/workspace invariants
-  -> query host-agent harness status
-  -> compare expected vs observed truth
-  -> repair derived state
-  -> unlock / retain / resume / fail
-  -> emit events
-  -> return updated system status
-```
-
-## Why Senderos must own this logic
-
-If reconciliation lives in the host agent, the system becomes session-dependent.
-If dispatch lives in the host agent, the orchestration rules fragment across harnesses.
+If planning lives in the host agent, orchestration rules fragment.
+If dispatch lives in the host agent, persisted runtime truth becomes inconsistent across harnesses.
 
 Both responsibilities belong in Senderos because they depend on Senderos' own model and state transitions.

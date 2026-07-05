@@ -1,9 +1,9 @@
 ---
 title: CLI Overview
-description: "The minimal command surface: small, consistent, machine-readable by default, and built for host-agent operation."
+description: "The minimal command surface: small, consistent, machine-readable by default, and built for host-agent planning/dispatch workflows."
 ---
 
-SenderOS keeps the CLI intentionally small.
+Senderos keeps the CLI intentionally small.
 
 The command surface is grouped around a few stable nouns instead of a huge list of tiny commands.
 
@@ -13,15 +13,15 @@ The command surface is grouped around a few stable nouns instead of a huge list 
 senderos init
 senderos help [command] [subcommand]
 senderos doctor
+senderos status
 senderos config ...
 senderos project ...
 senderos feature ...
-senderos loop ...
+senderos agent ...
+senderos sendero ...
+senderos plan ...
 senderos run ...
 senderos session ...
-senderos status
-senderos reconcile
-senderos schedule-plan
 ```
 
 ## Design rules
@@ -29,7 +29,7 @@ senderos schedule-plan
 ### Small surface area
 
 Every command group exists because it owns a real operational concept.
-There are no extra command families for responsibilities SenderOS does not own.
+There are no extra command families for responsibilities Senderos does not own.
 
 ### Consistent verbs
 
@@ -39,13 +39,13 @@ Subcommands use predictable verbs such as:
 - `list`
 - `show`
 - `update`
-- `start`
-- `resume`
+- `approve`
+- `dispatch`
 - `cancel`
 
 ### Machine-readable by default
 
-SenderOS is optimized for host-agent use.
+Senderos is optimized for host-agent use.
 The default output mode is machine-readable JSON.
 Human-readable rendering is the host agent's job when it needs to explain something to a user.
 
@@ -54,27 +54,29 @@ Human-readable rendering is the host agent's job when it needs to explain someth
 Each command and subcommand exposes its own help metadata.
 That metadata is the source of truth for:
 
-- command discovery,
-- usage patterns,
-- expected arguments,
-- available options.
+- command discovery
+- usage patterns
+- expected arguments
+- available options
+- agent-focused command guidance
 
 Use `senderos help`, `senderos help <command>`, or `senderos help <command> <subcommand>` to inspect it.
+Use `--omit-agent-description` to hide the agent-focused guidance when needed.
 
 ## Command map
 
-- `init` — preview or create the SenderOS runtime.
+- `init` — preview or create the Senderos runtime.
 - `help` — show machine-readable help for commands and subcommands.
 - `doctor` — validate the installation and runtime.
-- `config` — inspect or update SenderOS configuration.
+- `status` — show the current high-level system state and diagnostics.
+- `config` — inspect or update Senderos configuration.
 - `project` — create and manage canonical project records.
-- `feature` — manage SenderOS features.
-- `loop` — start, resume, tick, or inspect the engineering loop.
-- `run` — inspect execution attempts.
-- `session` — inspect host-agent execution handles recorded by SenderOS.
-- `status` — show the current high-level system state.
-- `reconcile` — repair derived truth when state drifts.
-- `schedule-plan` — print scheduling instructions for the host agent.
+- `feature` — manage Senderos features.
+- `agent` — inspect runtime agent records.
+- `sendero` — create and inspect sendero paths.
+- `plan` — return the next dispatchable work items.
+- `run` — dispatch, inspect, and cancel runs.
+- `session` — inspect host-agent execution handles recorded by Senderos.
 
 ## Testing surface
 

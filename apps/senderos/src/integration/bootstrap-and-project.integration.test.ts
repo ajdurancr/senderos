@@ -13,6 +13,13 @@ describe('integration: bootstrap and project cli', () => {
     const initResult: any = cli(['init', '--home', home, '--harness', 'codex', '--approve']);
     expect(initResult.home).toBe(home);
 
+    const seedDb = openDb(home);
+    const seededAgent = seedDb.query("select slug from agents where slug='spec-partner'").get() as
+      | { slug: string }
+      | null;
+    expect(seededAgent?.slug).toBe('spec-partner');
+    seedDb.close();
+
     const doctor: any = cli(['doctor', '--home', home]);
     expect(doctor.ok).toBe(true);
 

@@ -1,66 +1,48 @@
 ---
-title: Loop Execution and Scheduling
-description: "How Senderos starts the loop manually, how it emits scheduling instructions, and how host-driven automation fits in."
+title: Worker and Scheduling
+description: "How host-driven automation fits the current Senderos plan/dispatch model."
 ---
 
-Senderos can advance the factory loop in two ways:
+Senderos can be automated by a host agent, but it does not own the host scheduler.
 
-- manual invocation through the CLI,
-- host-driven scheduling created by the host agent from Senderos instructions.
+## Current model
 
-## Manual loop execution
+The host agent typically loops like this:
 
-Manual execution is always available.
+1. call `senderos status`
+2. call `senderos plan`
+3. dispatch each returned item separately with `senderos run dispatch ...`
+4. execute the real work asynchronously in separate host sessions
+5. repeat later
+
+## Manual operation
+
+Manual invocation is always available.
 
 Examples:
 
 ```bash
-senderos loop start <feature-id>
-senderos loop resume <feature-id>
-senderos loop tick <feature-id>
-senderos reconcile
+senderos status
+senderos plan
+senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id>
 ```
-
-This matters because not every host environment supports cron or scheduled jobs.
 
 ## Scheduling model
 
 Senderos does not create cron jobs itself.
 It does not own that host capability.
 
-Instead, Senderos emits the scheduling plan the host agent should install.
-The host agent creates the real scheduled job in its own environment.
-
-A scheduling plan contains:
-
-- the command to execute,
-- the cadence,
-- required environment variables,
-- guardrail notes,
-- expected outputs,
-- recovery instructions.
-
-## Scheduling flow
+If the host environment supports scheduling, the host agent can install its own job that periodically runs the Senderos CLI.
+A typical scheduled flow is simply:
 
 ```text
-senderos schedule plan
-  -> senderos emits host-job instructions
-  -> host agent installs the real job
-  -> scheduled job runs `senderos ...`
-  -> senderos advances or reconciles loop state
+host scheduler
+  -> senderos status
+  -> senderos plan
+  -> host dispatches returned items
 ```
 
 ## Why scheduling stays outside Senderos
 
 Scheduling infrastructure belongs to the host environment.
-Senderos keeps orchestration portable by describing what should be scheduled instead of directly taking ownership of the scheduler.
-
-## Safe loop automation
-
-Loop automation is still governed by Senderos state and guardrails.
-A scheduled invocation does not bypass:
-
-- workspace locks,
-- feature-state rules,
-- reconciliation checks,
-- failure boundaries.
+Senderos keeps orchestration portable by exposing plan/dispatch/state surfaces instead of directly taking ownership of the scheduler.

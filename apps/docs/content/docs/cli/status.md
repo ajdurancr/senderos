@@ -1,6 +1,6 @@
 ---
-title: status, reconcile, and schedule-plan
-description: "Operational visibility commands for current system truth, state repair, and host scheduling instructions."
+title: status and doctor
+description: "Operational visibility commands for current runtime truth and health validation."
 ---
 
 These commands expose the system-wide operating view.
@@ -9,14 +9,13 @@ These commands expose the system-wide operating view.
 
 Returns a high-level summary of:
 
-- open features,
-- active loops,
-- active runs,
-- pending tasks,
-- session health,
-- workspace locks,
-- pending reconciliation,
-- active feature/run/session/workspace identifiers.
+- open features
+- active features in flight
+- active runs
+- pending tasks
+- stale session ids
+- orphaned workspace ids
+- active feature/run/session/workspace identifiers
 
 ### Example
 
@@ -24,30 +23,23 @@ Returns a high-level summary of:
 senderos status
 ```
 
-## `senderos reconcile`
+`status` is report-only.
+It does not mutate runtime state.
 
-Repairs stale derived state by running Senderos' reconciliation process.
+## `senderos doctor`
 
-### Example
-
-```bash
-senderos reconcile
-```
-
-## `senderos schedule-plan`
-
-Prints the host-job instructions needed to automate loop execution.
+Validates the configured runtime and reports whether the home/database setup is healthy.
 
 ### Example
 
 ```bash
-senderos schedule-plan
+senderos doctor
 ```
 
 ## Typical use cases
 
 Use these commands when you need to:
 
-- understand what the system is doing now,
-- recover from session drift,
-- install or update host-level scheduling.
+- understand what the system is doing now
+- inspect stale sessions or orphaned workspaces
+- validate runtime health before relying on planning/dispatch output

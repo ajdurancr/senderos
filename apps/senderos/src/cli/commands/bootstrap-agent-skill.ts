@@ -4,6 +4,8 @@ import { dirname, resolve } from 'node:path';
 export const bootstrapAgentSkillCommandHelp = {
   command: 'bootstrap-agent-skill',
   summary: 'Create or print a host-agent skill scaffold for operating SenderOS.',
+  agentDescription:
+    'Use this to bootstrap a SenderOS operator skill scaffold. It helps initialize a stable operating agent before routing work through the SenderOS CLI.',
   usage: [
     'senderos bootstrap-agent-skill',
     'senderos bootstrap-agent-skill --print',
@@ -79,7 +81,9 @@ After initialization, help the human:
 `;
 }
 
-export async function handleBootstrapAgentSkill(options: Record<string, string | boolean>) {
+export async function handleBootstrapAgentSkill(
+  options: Record<string, string | boolean | string[]>
+) {
   const preferredHome = options.home as string | undefined;
   const preferredHarness = options.harness as string | undefined;
   const requestedPath = (options.path as string | undefined) ?? DEFAULT_SKILL_PATH;

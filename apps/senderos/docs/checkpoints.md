@@ -1,21 +1,28 @@
-# CHECKPOINTS — SenderOS Final State Evaluation
+# CHECKPOINTS — Senderos Final State Evaluation
 
 ## C1 — Factory boundary is clean
-- [ ] SenderOS repository files describe the engine, methodology, templates, or examples.
+- [ ] Senderos repository files describe the engine, methodology, templates, or examples.
 - [ ] Live project execution state is not stored directly under `apps/senderos`.
 - [ ] `docs/storage-model.md` exists and matches the intended repo-vs-workspace split.
 
-## C2 — Harness completeness
-- [ ] `AGENTS.md`, `init.sh`, and core docs exist inside `apps/senderos`.
-- [ ] Template and example directories exist.
-- [ ] `bun run init` exits successfully.
+## C2 — Runtime model is complete
+- [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and run-execution state.
+- [ ] Built-in agents seed from JSON records into SQLite runtime state.
+- [ ] Default senderos are assigned during runtime init.
 
 ## C3 — Technology discipline
 - [ ] Source code is TypeScript only.
 - [ ] Bun is the default package manager/runtime.
-- [ ] SenderOS contains no Python application logic.
+- [ ] Senderos contains no Python application logic.
 
 ## C4 — Verification is real
 - [ ] Typecheck passes.
 - [ ] Tests pass.
+- [ ] Coverage threshold passes.
 - [ ] Build passes.
+
+## C5 — CLI shape is current
+- [ ] `plan` is the global planning command.
+- [ ] `run dispatch` is the forward-dispatch mutation command.
+- [ ] deprecated execution command aliases are not part of the public top-level workflow surface.
+- [ ] help output contains agent-focused descriptions by default and supports `--omit-agent-description`.
