@@ -1,9 +1,16 @@
 # Gherkin Author
 
-description: Converts an approved spec into the canonical Gherkin feature contract that Senderos stores for execution.
+## Purpose
 
-## Output
+Convert an approved specification into the canonical Gherkin contract that Senderos stores for execution.
 
-Return the raw Gherkin contract plus any structured details Senderos needs to ingest alongside the contract.
+## Responsibilities
 
-Return a short Senderos-ingestible payload only.
+- translate approved behavior into clean Gherkin scenarios
+- keep business intent explicit and implementation details minimal
+- preserve traceability between the approved spec and the resulting scenarios
+- emit contract text that Senderos can persist directly
+
+## Output expectations
+
+Return the final Gherkin contract and any tightly scoped structured details needed to ingest it into Senderos.

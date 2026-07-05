@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { basename, extname, join, relative, resolve } from 'node:path';
+import { basename, extname, resolve } from 'node:path';
 import type { Database } from 'bun:sqlite';
 
 import { openRuntimeDb } from '../../db/client';
@@ -7,22 +7,14 @@ import { mapAgentRow, mapRunExecutionRow, mapSenderoRow } from '../../db/mappers
 import type {
   AgentKind,
   AgentRecord,
-  RunExecutionRecord,
   HarnessKind,
+  RunExecutionRecord,
   SeedAgentsOptions,
   SenderoGoalMode,
   SenderoRecord,
 } from '../../domain/types';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
-
-function titleFromSlug(slug: string) {
-  return slug
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part[0]!.toUpperCase() + part.slice(1))
-    .join(' ');
-}
 
 function defaultGoalFromSlug(slug: string) {
   return `Run ${slug} as a focused agent with a single explicit goal.`;
@@ -41,18 +33,19 @@ function ensureDefaultSendero(db: Database, agent: AgentRecord) {
     return existing;
   }
 
+  const ts = now();
   const record: SenderoRecord = {
     id: randomId('sendero'),
     sourceAgentId: agent.id,
     targetAgentId: null,
     name: 'default sendero',
-    description: `Default terminal sendero assigned to ${agent.slug}.`,
+    description: `Default sendero for ${agent.slug}.`,
     status: 'active',
     goal: agent.defaultGoal ?? defaultGoalFromSlug(agent.slug),
     goalMode: 'terminal',
-    assignmentMetaJson: JSON.stringify({ seeded: true, builtIn: true, default: true }),
-    createdAt: now(),
-    updatedAt: now(),
+    assignmentMetaJson: '{}',
+    createdAt: ts,
+    updatedAt: ts,
   };
 
   db.prepare(
@@ -76,45 +69,63 @@ function ensureDefaultSendero(db: Database, agent: AgentRecord) {
   emitEvent(db, 'sendero.seeded', 'sendero', record.id, {
     sourceAgentId: record.sourceAgentId,
     name: record.name,
-    goalMode: record.goalMode,
   });
 
   return record;
 }
 
-export function builtInAgentDefinitionsDir() {
-  return resolve(process.cwd(), 'agents');
+export function builtInAgentSeedDir() {
+  return resolve(process.cwd(), 'db-seeds', 'agents');
+}
+
+function normalizeSeedAgent(raw: any, fallbackSlug: string): AgentRecord {
+  return {
+    id: raw.id,
+    slug: raw.slug ?? fallbackSlug,
+    name: raw.name,
+    description: raw.description ?? '',
+    kind: raw.kind ?? inferAgentKind(raw.slug ?? fallbackSlug),
+    status: raw.status ?? 'active',
+    sourcePath: raw.sourcePath ?? null,
+    definitionFormat: raw.definitionFormat ?? 'markdown',
+    definitionBody: raw.definitionBody ?? '',
+    defaultGoal: raw.defaultGoal ?? defaultGoalFromSlug(raw.slug ?? fallbackSlug),
+    defaultMetaJson: raw.defaultMetaJson ?? '{}',
+    createdAt: raw.createdAt ?? now(),
+    updatedAt: raw.updatedAt ?? now(),
+  };
 }
 
 export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}) {
-  const definitionsDir = resolve(options.definitionsDir ?? builtInAgentDefinitionsDir());
+  const seedsDir = resolve(options.definitionsDir ?? builtInAgentSeedDir());
   const db = openRuntimeDb(home);
   const seeded: AgentRecord[] = [];
 
-  for (const entry of readdirSync(definitionsDir, { withFileTypes: true })) {
-    if (!entry.isFile() || extname(entry.name) !== '.md') {
+  for (const entry of readdirSync(seedsDir, { withFileTypes: true })) {
+    if (!entry.isFile() || extname(entry.name) !== '.json') {
       continue;
     }
 
-    const absolutePath = join(definitionsDir, entry.name);
-    const slug = basename(entry.name, '.md');
-    const body = readFileSync(absolutePath, 'utf8');
-    const existing = mapAgentRow(db.query('select * from agents where slug = ?').get(slug));
+    const slug = basename(entry.name, '.json');
+    const seed = normalizeSeedAgent(JSON.parse(readFileSync(resolve(seedsDir, entry.name), 'utf8')), slug);
+    const existing = mapAgentRow(db.query('select * from agents where slug = ?').get(seed.slug));
     const timestamp = now();
-    const relativeSourcePath = relative(process.cwd(), absolutePath);
 
     if (existing) {
       db.prepare(
         `update agents
-         set name=?, description=?, kind=?, status='active', source_path=?, definition_format='markdown', definition_body=?, default_goal=?, updated_at=?
+         set name=?, description=?, kind=?, status=?, source_path=?, definition_format=?, definition_body=?, default_goal=?, default_meta_json=?, updated_at=?
          where id=?`
       ).run(
-        titleFromSlug(slug),
-        `Seeded built-in agent from ${entry.name}`,
-        inferAgentKind(slug),
-        relativeSourcePath,
-        body,
-        defaultGoalFromSlug(slug),
+        seed.name,
+        seed.description,
+        seed.kind,
+        seed.status,
+        seed.sourcePath,
+        seed.definitionFormat,
+        seed.definitionBody,
+        seed.defaultGoal,
+        seed.defaultMetaJson,
         timestamp,
         existing.id
       );
@@ -122,28 +133,11 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
       const updated = mapAgentRow(db.query('select * from agents where id = ?').get(existing.id))!;
       seeded.push(updated);
       ensureDefaultSendero(db, updated);
-      emitEvent(db, 'agent.seeded', 'agent', updated.id, {
-        slug: updated.slug,
-        sourcePath: updated.sourcePath,
-      });
+      emitEvent(db, 'agent.seeded', 'agent', updated.id, { slug: updated.slug, sourcePath: updated.sourcePath });
       continue;
     }
 
-    const record: AgentRecord = {
-      id: randomId('agent'),
-      slug,
-      name: titleFromSlug(slug),
-      description: `Seeded built-in agent from ${entry.name}`,
-      kind: inferAgentKind(slug),
-      status: 'active',
-      sourcePath: relativeSourcePath,
-      definitionFormat: 'markdown',
-      definitionBody: body,
-      defaultGoal: defaultGoalFromSlug(slug),
-      defaultMetaJson: JSON.stringify({ seeded: true, builtIn: true }),
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
+    const record: AgentRecord = { ...seed, updatedAt: timestamp };
 
     db.prepare(
       `insert into agents

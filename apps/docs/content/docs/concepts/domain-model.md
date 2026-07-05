@@ -33,3 +33,4 @@ A session is Senderos' record of a host-agent execution handle.
 A workspace is a Senderos-managed execution directory.
 
 Artifacts such as logs, transcripts, reports, and generated outputs live in the Senderos home directory and are referenced from the database.
+Human-readable agent role files can live alongside the app, while the database is seeded from JSON agent records that match the agent entity shape.
