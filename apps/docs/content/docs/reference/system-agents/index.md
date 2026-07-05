@@ -1,21 +1,25 @@
 ---
 title: System agents
-description: Predefined Senderos system-agent examples and the shared structure they follow.
+description: Predefined Senderos system-agent examples and the runtime seed contract they follow.
 ---
 
 Senderos ships built-in system agents as runtime seed records under `apps/senderos/db-seeds/agents/*.json`.
 
-The pages in this section are human-readable examples of those built-in agents. They are documentation artifacts, not runtime inputs.
+These documentation pages are human-readable examples and should match the runtime seed content. They are organized around the same structure for every built-in agent:
 
-## Shared structure
+- **Name**
+- **Description**
+- **Protocol**
+- **Expected output**
+- **Output format**
+- **Hard rules**
+- **Preconditions**
 
-Each built-in agent definition follows the same high-level shape:
+## Agents
 
-- **Name** — the runtime-facing agent name
-- **Summary** — the role in one sentence
-- **Operating protocol** — how the agent should approach the work
-- **Expected output** — the response shape the runtime expects
-- **Hard rules** — boundaries that should not be violated
-- **Preconditions** — when the agent is appropriate
-
-If the runtime seed changes, the documentation example should stay aligned with it.
+- [Craftsman Lead](./craftsman-lead)
+- [Gherkin Author](./gherkin-author)
+- [Judge](./judge)
+- [Mutation Tester](./mutation-tester)
+- [Spec Partner](./spec-partner)
+- [TDD Craftsman](./tdd-craftsman)
