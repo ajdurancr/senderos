@@ -94,7 +94,6 @@ export function migrate(db: Database) {
       description text not null default '',
       kind text not null,
       status text not null,
-      source_path text,
       definition_format text not null default 'markdown',
       definition_body text not null,
       default_goal text,

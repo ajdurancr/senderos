@@ -71,8 +71,8 @@ Agent records store:
 - default goal
 - bootstrap metadata
 
-Built-in agents are seeded from `apps/senderos/db-seeds/agents/*.json` during `senderos init`.
-The paired Markdown files under `apps/senderos/agents/` are the human-readable versions of those roles.
+Built-in agents are seeded from `apps/senderos/db-seeds/agents/*.json` during `senderos init`. Those JSON records are the runtime source of truth.
+The docs app pages under `apps/docs/content/docs/reference/system-agents/` are the human-readable examples of those roles.
 
 ## Senderos
 

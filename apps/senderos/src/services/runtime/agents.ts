@@ -86,7 +86,6 @@ function normalizeSeedAgent(raw: any, fallbackSlug: string): AgentRecord {
     description: raw.description ?? '',
     kind: raw.kind ?? inferAgentKind(raw.slug ?? fallbackSlug),
     status: raw.status ?? 'active',
-    sourcePath: raw.sourcePath ?? null,
     definitionFormat: raw.definitionFormat ?? 'markdown',
     definitionBody: raw.definitionBody ?? '',
     defaultGoal: raw.defaultGoal ?? defaultGoalFromSlug(raw.slug ?? fallbackSlug),
@@ -114,14 +113,13 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
     if (existing) {
       db.prepare(
         `update agents
-         set name=?, description=?, kind=?, status=?, source_path=?, definition_format=?, definition_body=?, default_goal=?, default_meta_json=?, updated_at=?
+         set name=?, description=?, kind=?, status=?, definition_format=?, definition_body=?, default_goal=?, default_meta_json=?, updated_at=?
          where id=?`
       ).run(
         seed.name,
         seed.description,
         seed.kind,
         seed.status,
-        seed.sourcePath,
         seed.definitionFormat,
         seed.definitionBody,
         seed.defaultGoal,
@@ -133,7 +131,7 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
       const updated = mapAgentRow(db.query('select * from agents where id = ?').get(existing.id))!;
       seeded.push(updated);
       ensureDefaultSendero(db, updated);
-      emitEvent(db, 'agent.seeded', 'agent', updated.id, { slug: updated.slug, sourcePath: updated.sourcePath });
+      emitEvent(db, 'agent.seeded', 'agent', updated.id, { slug: updated.slug });
       continue;
     }
 
@@ -141,8 +139,8 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
 
     db.prepare(
       `insert into agents
-      (id,slug,name,description,kind,status,source_path,definition_format,definition_body,default_goal,default_meta_json,created_at,updated_at)
-      values (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      (id,slug,name,description,kind,status,definition_format,definition_body,default_goal,default_meta_json,created_at,updated_at)
+      values (?,?,?,?,?,?,?,?,?,?,?,?)`
     ).run(
       record.id,
       record.slug,
@@ -150,7 +148,6 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
       record.description,
       record.kind,
       record.status,
-      record.sourcePath,
       record.definitionFormat,
       record.definitionBody,
       record.defaultGoal,
@@ -161,7 +158,7 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
 
     seeded.push(record);
     ensureDefaultSendero(db, record);
-    emitEvent(db, 'agent.seeded', 'agent', record.id, { slug: record.slug, sourcePath: record.sourcePath });
+    emitEvent(db, 'agent.seeded', 'agent', record.id, { slug: record.slug });
   }
 
   db.close();

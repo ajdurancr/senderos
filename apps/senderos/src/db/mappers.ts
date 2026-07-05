@@ -85,7 +85,6 @@ export function mapAgentRow(row: any): AgentRecord | null {
     description: row.description,
     kind: row.kind,
     status: row.status,
-    sourcePath: row.source_path,
     definitionFormat: row.definition_format,
     definitionBody: row.definition_body,
     defaultGoal: row.default_goal,

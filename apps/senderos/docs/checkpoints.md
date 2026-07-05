@@ -7,7 +7,7 @@
 
 ## C2 — Runtime model is complete
 - [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and run-execution state.
-- [ ] Built-in agents seed from markdown into SQLite runtime state.
+- [ ] Built-in agents seed from JSON records into SQLite runtime state.
 - [ ] Default senderos are assigned during runtime init.
 
 ## C3 — Technology discipline

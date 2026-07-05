@@ -96,7 +96,7 @@ Current top-level workflow commands now include:
 - `src/` — Senderos runtime, CLI, services, and colocated tests
 - `tests/helpers/` — shared test helpers
 - `src/integration/` — integration test suite with flow-focused end-to-end coverage
-- `agents/` — canonical human-readable agent role docs
-- `db-seeds/agents/` — JSON seed records shaped like the agent entity and used during init seeding
+- Built-in system-agent examples live in `apps/docs/content/docs/reference/system-agents/`
+- `db-seeds/agents/` — the single runtime seed source for built-in agent records
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs

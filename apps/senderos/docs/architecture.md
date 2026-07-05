@@ -39,8 +39,8 @@ It stores approved spec context plus the canonical Gherkin contract and later ga
 
 ### Agent
 An agent is a first-class runtime executor.
-Built-in agents are seeded from JSON records under `db-seeds/agents/` at init time and then managed as runtime records.
-The paired Markdown files under `agents/` remain the human-readable role definitions.
+Built-in agents are seeded from JSON records under `db-seeds/agents/` at init time and then managed as runtime records. Human-readable examples of those built-in agents live in the docs app under `apps/docs/content/docs/reference/system-agents/`.
+The docs app pages under `apps/docs/content/docs/reference/system-agents/` remain the human-readable examples of those roles.
 
 ### Sendero
 A sendero is the persisted path a feature follows.
