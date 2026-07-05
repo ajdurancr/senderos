@@ -1,9 +1,9 @@
 ---
 title: feature
-description: "Create, inspect, update, approve, and manage SenderOS features."
+description: "Create, inspect, update, approve, and manage Senderos features."
 ---
 
-`senderos feature` is the main entry point for feature state.
+`senderos feature` manages the durable work items that Senderos plans and dispatches.
 
 ## Actions
 
@@ -14,46 +14,9 @@ description: "Create, inspect, update, approve, and manage SenderOS features."
 - `approve <feature-id>`
 - `cancel <feature-id>`
 
-## Examples
+## Why it matters
 
-```bash
-senderos feature create \
-  --project-id senderos-ab12cd34 \
-  --title "Add billing portal" \
-  --spec-text "Users need a self-serve billing entry point." \
-  --source-request "Please add a billing portal." \
-  --gherkin $'Feature: Billing portal\n  Scenario: Open billing portal\n    Given an authenticated user\n    When they open billing\n    Then they should reach the billing portal'
+A feature is the durable work item inside Senderos.
+A feature must belong to a Senderos project.
 
-senderos feature list
-senderos feature show feature-001
-senderos feature approve feature-001
-senderos help feature approve
-```
-
-## Important rules
-
-A feature must belong to a SenderOS project.
-
-A feature stores:
-
-- approved spec text
-- original request text
-- raw Gherkin contract text
-- parsed Gherkin metadata
-- lifecycle status
-- branch / PR linkage once execution starts
-
-## Typical use cases
-
-Use `feature` to:
-
-- register new work from an approved Gherkin contract
-- inspect current feature truth
-- update the feature contract when no active run exists
-- approve a feature for implementation
-- cancel a feature and cleanup its active execution state
-
-## Important distinction
-
-These are SenderOS features.
-They are not GitHub issues, Jira tickets, or Linear tasks.
+Features are where approved specs, Gherkin contracts, sendero-step progress, and current run linkage live.

@@ -1,21 +1,22 @@
 ---
 title: Setup and First Run
-description: "How SenderOS is installed, configured, and started in a real environment."
+description: "How Senderos is installed, configured, and started in a real environment."
 ---
 
-SenderOS is installed into the local environment and operated through the CLI.
+Senderos is installed into the local environment and operated through the CLI.
 
 ## First-run flow
 
-1. install the CLI,
-2. run `senderos init`,
-3. inspect the previewed configuration,
-4. rerun `senderos init --approve` once the configuration is acceptable,
-5. run `senderos doctor`,
-6. create the first project,
-7. create the first feature,
-8. approve the feature,
-9. start the loop.
+1. install the CLI
+2. run `senderos init`
+3. inspect the previewed configuration
+4. rerun `senderos init --approve` once the configuration is acceptable
+5. run `senderos doctor`
+6. create the first project
+7. create the first feature
+8. approve the feature
+9. call `senderos plan`
+10. dispatch one returned item with `senderos run dispatch ...`
 
 ## Example
 
@@ -34,32 +35,33 @@ senderos feature create \
   --title "Add billing portal" \
   --gherkin $'Feature: Billing portal\n  Scenario: Open billing portal\n    Given an authenticated user\n    When they open billing\n    Then they should reach the billing portal'
 senderos feature approve feature-001 --home ./.senderos
-senderos loop start feature-001 --home ./.senderos
+senderos plan --home ./.senderos
+senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id> --home ./.senderos
 senderos status --home ./.senderos
 ```
 
 ## What `senderos init` creates
 
-`senderos init` creates the SenderOS runtime only after approval. The resulting structure includes:
+`senderos init` creates the Senderos runtime only after approval. The resulting structure includes:
 
-- config file,
-- SQLite database or remote DB configuration,
-- artifact directories,
-- workspace root,
-- initial schema.
+- config file
+- SQLite database or remote DB configuration
+- artifact directories
+- workspace root
+- initial schema
 
 ## Required configuration
 
 The configuration file defines:
 
-- database driver and connection details,
-- workspace root,
-- artifact directories,
-- default harness,
-- output mode defaults,
-- guardrail settings.
+- database driver and connection details
+- workspace root
+- artifact directories
+- default harness
+- output mode defaults
+- guardrail settings
 
 ## Manual and scheduled operation
 
-SenderOS can always be run manually through the CLI.
-If the host environment supports scheduling, the host agent can install scheduled jobs from a scheduling plan emitted by SenderOS.
+Senderos can always be run manually through the CLI.
+If the host environment supports scheduling, the host agent can periodically call the planning/dispatch flow itself.

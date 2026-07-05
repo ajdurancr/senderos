@@ -11,12 +11,12 @@ Senderos never modifies anything outside the Senderos directory tree.
 
 That includes:
 
-- the database,
-- config,
-- logs,
-- artifacts,
-- session records,
-- Senderos-managed workspaces.
+- the database
+- config
+- logs
+- artifacts
+- session records
+- Senderos-managed workspaces
 
 If a workspace is used for host-agent coding work, that workspace must be allocated and tracked by Senderos first.
 
@@ -33,30 +33,28 @@ Senderos is designed for agent operation, so confirmations happen where they mat
 
 ### No confirmation required
 
-- read-only inspection,
-- status queries,
-- reports,
-- JSON output,
-- reconciliation checks,
-- schedule-plan generation.
+- read-only inspection
+- status queries
+- reports
+- JSON output
+- planning output
 
 ### Explicit Senderos confirmation required
 
-- feature cancellation,
-- workspace retirement,
-- forceful state repair,
-- loop restart after terminal failure,
-- configuration rewrite.
+- feature cancellation
+- workspace retirement
+- configuration rewrite
 
 ### Host-agent confirmation required
 
 If the host agent must do something outside Senderos' own responsibility, the host agent handles that confirmation in its own environment.
 Examples:
 
-- create a cron job,
-- push a branch,
-- open a pull request,
-- call an external API.
+- create a cron job
+- push a branch
+- open a pull request
+- call an external API
+- launch external execution work from a dispatched item
 
 ## Why the split matters
 

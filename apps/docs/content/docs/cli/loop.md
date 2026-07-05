@@ -1,56 +1,50 @@
 ---
-title: loop
-description: "Operate the engineering loop: start it, resume it, tick it manually, and inspect its state."
+title: plan
+description: "Return the next dispatchable work items across Senderos without mutating execution state."
 ---
 
-`senderos loop` is the operational command group for the engineering factory.
+`senderos plan` is the global planning command.
+
+It does **not** dispatch work.
+It returns only the next dispatchable items by default.
 
 ## Actions
 
-- `start <feature-id>`
-- `resume <feature-id>`
-- `tick <feature-id>`
-- `show <feature-id>`
+- top-level only: `senderos plan`
 
 ## Examples
 
 ```bash
-senderos loop start feature-001
-senderos loop show feature-001
-senderos loop tick feature-001
-senderos loop resume feature-001
-senderos help loop show
+senderos plan
+senderos plan --feature-status active
+senderos plan --feature-status active --feature-status failed
+senderos help plan
 ```
 
-## What happens on start
+## Output contract
 
-`loop start` does not just flip a flag.
-It currently:
+Each planning item currently returns only:
 
-- allocates a SenderOS workspace under the owning project path
-- creates the implementation task if needed
-- creates a run record
-- creates a session record
-- stores machine-readable execution instructions for the current phase
+- `featureId`
+- `senderoId`
+- `agentId`
+- `previousRunId`
 
-## Current manual use
+This is intentionally minimal.
+The host agent uses those ids to decide whether to call `senderos run dispatch ...`.
 
-`tick` is useful when:
+## Planning rules
 
-- the host has no scheduler yet
-- you want to advance the loop on demand
-- you are debugging a stuck feature
-- you are validating the runtime state machine locally
+By default, Senderos only returns dispatchable items.
+That means it omits work that is still running or otherwise not ready for dispatch.
 
-## Current phase model
+A feature can be dispatchable when:
 
-SenderOS currently advances features through:
+- it is active and has no current run
+- its previous run succeeded and the next sendero step can be dispatched
+- its previous run failed and a retry is valid
 
-```text
-implementation
--> review
--> mutation
--> done
-```
+## Why there is no per-feature plan command
 
-At completion, SenderOS marks the feature completed, closes the active session records, and cleans the workspace.
+Planning is intentionally global.
+The host agent asks Senderos what is dispatchable now, then dispatches each item separately.

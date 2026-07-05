@@ -1,9 +1,9 @@
 ---
 title: session
-description: "Inspect the host-agent execution handles SenderOS records for active or historical runs."
+description: "Inspect the host-agent execution handles Senderos records for active or historical runs."
 ---
 
-`senderos session` is how operators inspect host-agent execution handles tracked by SenderOS.
+`senderos session` is how operators inspect host-agent execution handles tracked by Senderos.
 
 ## Actions
 
@@ -24,13 +24,12 @@ senderos session resume session-009
 A session resume response currently includes:
 
 - the stored session record
-- the SenderOS-side `resumeCommand`
-- the harness kind
-- a `launchCommand` when SenderOS has enough information to propose one
+- the persisted resume command when available
+- the stored launch command when available
 
-For Codex-driven local flows, the launch metadata currently surfaces a proposed command shape such as `codex exec` inside the allocated workspace.
+These are diagnostic details, not the planning contract.
 
 ## Important distinction
 
-A SenderOS session record is not the host agent itself.
-It is SenderOS' durable reference to a host-agent execution context.
+A Senderos session record is not the host agent itself.
+It is Senderos' durable reference to a host-agent execution context.
