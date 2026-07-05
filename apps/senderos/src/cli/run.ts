@@ -1,13 +1,14 @@
 import { parseArgs } from './args';
 import { resolveHome } from './shared';
-import { handleAgent } from './commands/agent';
-import { handleSendero } from './commands/sendero';
+import { handleBootstrapAgentSkill } from './commands/bootstrap-agent-skill';
 import { handleConfig } from './commands/config';
 import { handleFeature } from './commands/feature';
 import { handleInit } from './commands/init';
+import { handleAgent } from './commands/agent';
 import { handlePlan } from './commands/plan';
 import { handleProject } from './commands/project';
 import { handleRun } from './commands/run';
+import { handleSendero } from './commands/sendero';
 import { handleSession } from './commands/session';
 import { handleSystemCommand } from './commands/system';
 import { resolveHelp } from './help';
@@ -34,6 +35,9 @@ export async function runCli(argv = process.argv.slice(2)) {
     switch (cmd) {
       case 'init':
         result = await handleInit(options);
+        break;
+      case 'bootstrap-agent-skill':
+        result = await handleBootstrapAgentSkill(options);
         break;
       case 'config':
         result = handleConfig(sub, positionals, home);

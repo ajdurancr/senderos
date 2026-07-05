@@ -82,6 +82,7 @@ senderos help run dispatch --omit-agent-description
 
 Current top-level workflow commands now include:
 
+- `bootstrap-agent-skill`
 - `project`
 - `feature`
 - `agent`
@@ -90,6 +91,24 @@ Current top-level workflow commands now include:
 - `run`
 - `session`
 - `status` / `doctor`
+
+## First-run onboarding
+
+SenderOS supports both direct CLI use and agent-driven operation.
+
+Recommended first step:
+
+```bash
+senderos bootstrap-agent-skill
+```
+
+That command scaffolds a workspace-local host-agent skill and prints two next-step paths:
+
+- an agent-driven prompt to use the skill for onboarding and ongoing SenderOS operation
+- a direct CLI fallback using `senderos init ... --approve`
+
+`bootstrap-agent-skill` prepares the operating layer.
+`init` remains the runtime bootstrap primitive.
 
 ## What lives here
 

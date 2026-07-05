@@ -1,7 +1,6 @@
 import type { CommandHelp } from '../domain/types';
 
-import { agentCommandHelp } from './commands/agent';
-import { senderoCommandHelp } from './commands/sendero';
+import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
 import { featureCommandHelp } from './commands/feature';
 import { initCommandHelp } from './commands/init';
@@ -10,6 +9,8 @@ import { projectCommandHelp } from './commands/project';
 import { runCommandHelp } from './commands/run';
 import { sessionCommandHelp } from './commands/session';
 import { systemCommandsHelp } from './commands/system';
+import { agentCommandHelp } from './commands/agent';
+import { senderoCommandHelp } from './commands/sendero';
 
 export const rootHelp: CommandHelp = {
   command: 'senderos',
@@ -27,6 +28,7 @@ export const rootHelp: CommandHelp = {
   ],
   subcommands: [
     initCommandHelp,
+    bootstrapAgentSkillCommandHelp,
     configCommandHelp,
     projectCommandHelp,
     agentCommandHelp,
