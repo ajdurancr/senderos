@@ -18,9 +18,14 @@ describe('system commands', () => {
     expect((handleSystemCommand('reconcile', home) as any).repairedSessions).toEqual([]);
   });
 
+  test('supervise-active orchestrates active features', () => {
+    const home = initHome();
+    expect((handleSystemCommand('supervise-active', home) as any).results).toBeTruthy();
+  });
+
   test('schedule-plan returns the maintenance job plan', () => {
     const home = initHome();
-    expect((handleSystemCommand('schedule-plan', home) as any).jobName).toBe('senderos-run-maintenance');
+    expect((handleSystemCommand('schedule-plan', home) as any).jobName).toBe('senderos-supervision-maintenance');
   });
 
   test('unknown commands throw', () => {

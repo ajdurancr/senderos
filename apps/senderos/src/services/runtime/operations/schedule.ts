@@ -4,8 +4,8 @@ export function schedulePlan(home?: string) {
   const { config } = resolveRuntime(home);
 
   return {
-    jobName: 'senderos-run-maintenance',
-    command: 'senderos reconcile && senderos status && senderos run advance <feature-id>',
+    jobName: 'senderos-supervision-maintenance',
+    command: 'senderos reconcile && senderos status && senderos supervise-active',
     cadence: '*/15 * * * *',
     env: {
       SENDEROS_HOME: defaultHomePath(),
@@ -19,12 +19,13 @@ export function schedulePlan(home?: string) {
     expectedOutputs: [
       'Reconciliation summary',
       'Current system status',
-      'Optional run advancement result',
+      'Active supervision orchestration result',
     ],
     recovery: [
       'Run senderos reconcile',
       'Inspect senderos status',
       'Inspect run state with senderos run state <feature-id>',
+      'Trigger orchestration with senderos supervise-active',
       'Resume progress with senderos run start --feature-id <feature-id>',
     ],
     hostAgentContract: {

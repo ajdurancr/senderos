@@ -135,12 +135,12 @@ Each record can store:
 
 ## Attempts
 
-Attempt details are stored separately from the run summary.
+Attempt details live inside `run_executions` instead of a separate attempts table.
 
-Each attempt can capture:
+Each run execution can capture:
 
 - attempt number
-- branch info
+- branch-adjacent debug context through run linkage
 - source feature SHA
 - failed step
 - failure summary
@@ -153,6 +153,12 @@ SenderOS keeps an append-only event stream for:
 - state transitions
 - user actions
 - agent decisions and failures
+- branch operations
+- PR operations
+
+Current state is the latest truth.
+The event log explains how SenderOS got there.
+s and failures
 - branch operations
 - PR operations
 

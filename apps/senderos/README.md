@@ -13,7 +13,6 @@ The primary runtime entities are:
 - projects
 - features
 - runs
-- run attempts
 - tasks
 - sessions
 - workspaces
@@ -99,3 +98,4 @@ Current top-level workflow commands now include:
 - `adapters/` — provider-specific execution adapters
 - `docs/` — methodology and architecture docs
 - `templates/` — historical references and examples, not live runtime truth
+nd examples, not live runtime truth

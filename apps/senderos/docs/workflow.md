@@ -38,7 +38,7 @@ raw user intent
 
 ## CLI shape
 
-The primary execution surface is now `run`.
+The primary execution surface is now `run`, while `supervise-active` is the host-facing orchestrator entrypoint for ephemeral Sendero Supervisor passes across active features.
 
 Examples:
 

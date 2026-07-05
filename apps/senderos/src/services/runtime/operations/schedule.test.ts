@@ -6,7 +6,7 @@ describe('runtime schedule operation', () => {
   test('emits schedule plan', () => {
     const home = initHome();
     expect(schedulePlan(home)).toEqual(
-      expect.objectContaining({ jobName: 'senderos-run-maintenance', cadence: '*/15 * * * *' })
+      expect.objectContaining({ jobName: 'senderos-supervision-maintenance', cadence: '*/15 * * * *' })
     );
   });
 });

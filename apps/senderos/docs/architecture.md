@@ -49,7 +49,12 @@ It may terminate locally or point toward a target agent as the next goal boundar
 A run is the primary execution request against one feature.
 Runs are retry-aware, branch-aware, richly stateful, and may be explicitly bound to an agent and sendero.
 
-### Agent run state
+### Sendero Supervisor
+A Sendero Supervisor is an ephemeral runtime concern, not a persisted model.
+It inspects active feature state, decides whether work is still running, advances to the next sendero step when a run succeeds, and no-ops or halts gracefully on other states.
+Host agents can trigger orchestration passes with `supervise-active`.
+
+### Run execution state
 Each run carries agent-execution context through linked run-execution records, including:
 
 - host environment name
