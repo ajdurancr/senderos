@@ -8,7 +8,7 @@ import {
   getWorkspace,
   listTasks,
   superviseFeature,
-} from '../../sendero-supervisor';
+} from '../../run-state';
 import { getRunExecutionByRunId, updateRunExecutionByRunId } from '../agents';
 import { cancelFeature, getFeature } from '../features';
 

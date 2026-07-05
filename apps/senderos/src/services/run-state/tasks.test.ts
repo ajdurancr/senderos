@@ -3,7 +3,7 @@ import { createFeature } from '../runtime';
 import { ensurePhaseTask, getTask, listTasks, updateTaskStatus } from './index';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('sendero supervisor task helpers', () => {
+describe('run state task helpers', () => {
   test('ensurePhaseTask creates a task for a new phase', () => {
     const home = initHome();
     const project = createProjectFixture(home);

@@ -1,4 +1,4 @@
-import { getRun } from '../../services/sendero-supervisor';
+import { getRun } from '../../services/run-state';
 import { cancelRun, dispatchRun, listRuns, showRunState } from '../../services/runtime';
 import { optionString, requirePositional } from '../shared';
 

@@ -3,7 +3,7 @@ import { openRuntimeDb } from '../../db/client';
 import { mapFeatureRow, mapProjectRow } from '../../db/mappers';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
-import { cleanupWorkspace, ensurePhaseTask } from '../sendero-supervisor';
+import { cleanupWorkspace, ensurePhaseTask } from '../run-state';
 import { completeActiveSessionsForFeature } from '../session-lifecycle';
 
 function requireProject(projectId: string, home?: string) {

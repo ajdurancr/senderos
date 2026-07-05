@@ -1,5 +1,5 @@
 import type { FeatureStatus, SenderoRecord } from '../../../domain/types';
-import { getRun } from '../../sendero-supervisor';
+import { getRun } from '../../run-state';
 import { getRunExecutionByRunId, listSenderos } from '../agents';
 import { listFeatures } from '../features';
 import { listSessions } from './runs';

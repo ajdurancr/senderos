@@ -7,7 +7,7 @@ export type NavItem = {
 export const SITE = {
   title: 'Senderos Docs',
   description:
-    'Senderos is the orchestration system for a loop-engineering software factory: SQLite state, internal operating agents, host-agent execution, and deployable outcomes.',
+    'Senderos is the orchestration system for a planning-and-dispatch software factory: SQLite state, internal operating agents, host-agent execution, and deployable outcomes.',
   repoUrl: 'https://github.com/ajdurancr/senderos'
 };
 
@@ -42,10 +42,10 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
       { slug: 'cli/doctor', title: 'doctor', section: 'CLI' },
       { slug: 'cli/config', title: 'config', section: 'CLI' },
       { slug: 'cli/feature', title: 'feature', section: 'CLI' },
-      { slug: 'cli/loop', title: 'loop', section: 'CLI' },
+      { slug: 'cli/plan', title: 'plan', section: 'CLI' },
       { slug: 'cli/run', title: 'run', section: 'CLI' },
       { slug: 'cli/session', title: 'session', section: 'CLI' },
-      { slug: 'cli/status', title: 'status, reconcile, and schedule-plan', section: 'CLI' }
+      { slug: 'cli/status', title: 'status', section: 'CLI' }
     ]
   },
   {
@@ -57,7 +57,7 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
   {
     section: 'Automation',
     items: [
-      { slug: 'automation/worker-and-scheduling', title: 'Loop Execution and Scheduling', section: 'Automation' }
+      { slug: 'automation/worker-and-scheduling', title: 'Planning, Dispatch, and Scheduling', section: 'Automation' }
     ]
   },
   {

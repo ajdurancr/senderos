@@ -2,8 +2,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 
 import { join, relative, resolve } from 'node:path';
 
 import { ensureDir, resolveRuntime } from '../../config/runtime';
-import { nextPhase, statusForPhase } from '../../domain/constants';
-import type { FeatureRecord, SenderoStep } from '../../domain/types';
+import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../domain/types';
 import { openRuntimeDb } from '../../db/client';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -15,6 +14,20 @@ import { ensurePhaseTask, updateTaskStatus } from './tasks';
 import { getProject } from '../runtime/projects';
 
 const COPY_EXCLUDES = new Set(['.git', '.senderos', 'node_modules', 'coverage', 'dist', 'build']);
+const SENDERO_STEP_SEQUENCE: SenderoStep[] = ['implementation', 'review', 'mutation'];
+
+function nextSenderoStep(current: SenderoStep): SenderoStep {
+  if (current === 'idle') return 'implementation';
+  const index = SENDERO_STEP_SEQUENCE.indexOf(current);
+  if (index === -1 || index === SENDERO_STEP_SEQUENCE.length - 1) return 'done';
+  return SENDERO_STEP_SEQUENCE[index + 1];
+}
+
+function featureStatusForStep(step: SenderoStep): FeatureStatus {
+  if (step === 'done') return 'completed';
+  if (step === 'blocked') return 'blocked';
+  return 'active';
+}
 
 function materializeProjectSnapshot(sourceRoot: string, targetRoot: string) {
   ensureDir(targetRoot);
@@ -275,7 +288,7 @@ export function dispatchSupervisorPhase(
   db.prepare(
     'update features set status=?, sendero_step=?, current_workspace_id=?, current_run_id=?, feature_branch_name=coalesce(feature_branch_name, ?), updated_at=? where id=?'
   ).run(
-    statusForPhase(phase),
+    featureStatusForStep(phase),
     phase,
     workspace.id,
     runRecord.id,

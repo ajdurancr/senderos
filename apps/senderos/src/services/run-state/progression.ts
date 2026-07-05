@@ -1,5 +1,4 @@
-import { nextPhase } from '../../domain/constants';
-import type { FeatureRecord } from '../../domain/types';
+import type { FeatureRecord, FeatureStatus, SenderoStep } from '../../domain/types';
 import { openRuntimeDb } from '../../db/client';
 import { now } from '../../utils/common';
 import { emitEvent } from '../events';
@@ -8,6 +7,15 @@ import { updateRunExecutionByRunId } from '../runtime/agents';
 import { cleanupWorkspace, dispatchSupervisorPhase } from './dispatch';
 import { listTasks } from './queries';
 import { ensurePhaseTask, updateTaskStatus } from './tasks';
+
+const SENDERO_STEP_SEQUENCE: SenderoStep[] = ['implementation', 'review', 'mutation'];
+
+function nextSenderoStep(current: SenderoStep): SenderoStep {
+  if (current === 'idle') return 'implementation';
+  const index = SENDERO_STEP_SEQUENCE.indexOf(current);
+  if (index === -1 || index === SENDERO_STEP_SEQUENCE.length - 1) return 'done';
+  return SENDERO_STEP_SEQUENCE[index + 1];
+}
 
 export function superviseFeature(
   feature: FeatureRecord,
@@ -52,7 +60,7 @@ export function advanceSupervision(feature: FeatureRecord, home?: string) {
 
   completeActiveSessionsForFeature(feature.id, home, `phase_${currentPhase}_completed`);
 
-  const next = nextPhase(currentPhase);
+  const next = nextSenderoStep(currentPhase);
 
   if (next === 'done') {
     const db = openRuntimeDb(home);

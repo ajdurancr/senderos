@@ -13,7 +13,7 @@ import { systemCommandsHelp } from './commands/system';
 
 export const rootHelp: CommandHelp = {
   command: 'senderos',
-  summary: 'SQLite-backed control plane for Senderos orchestration.',
+  summary: 'Plan, dispatch, and inspect Senderos orchestration state.',
   agentDescription:
     'Use Senderos as a pure state and orchestration surface. Ask it for plans, inspect state, or mutate orchestration records, but do not expect it to execute the real coding work for you.',
   usage: ['senderos <command> [subcommand] [arguments] [options]'],

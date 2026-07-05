@@ -5,7 +5,7 @@ import { dispatchSupervisorPhase, getRun, getSession, getWorkspace, superviseFea
 import { resolveRuntime } from '../../config/runtime';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('sendero supervisor progression', () => {
+describe('run state progression', () => {
   function setupFeature(home: string) {
     const project = createProjectFixture(home);
     return approveFeature(

@@ -12,7 +12,7 @@ import {
 } from './index';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('sendero supervisor queries', () => {
+describe('run state queries', () => {
   test('getTask returns a stored task by id', () => {
     const home = initHome();
     const project = createProjectFixture(home);
