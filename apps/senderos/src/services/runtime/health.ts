@@ -11,7 +11,13 @@ import {
 } from '../../config/runtime';
 import { describeCurrentDb, healthcheckCurrentDb } from '../../db/client';
 
-export { defaultHomePath, initializeRuntime, loadConfig, previewInit, resolveRuntime };
+export {
+  defaultHomePath,
+  initializeRuntime,
+  loadConfig,
+  previewInit,
+  resolveRuntime,
+};
 
 export function doctor(home = defaultHomePath()) {
   const issues: string[] = [];

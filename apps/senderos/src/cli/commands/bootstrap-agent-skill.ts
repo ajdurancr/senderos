@@ -3,7 +3,8 @@ import { dirname, resolve } from 'node:path';
 
 export const bootstrapAgentSkillCommandHelp = {
   command: 'bootstrap-agent-skill',
-  summary: 'Create or print a host-agent skill scaffold for operating SenderOS.',
+  summary:
+    'Create or print a host-agent skill scaffold for operating SenderOS.',
   agentDescription:
     'Use this to bootstrap a SenderOS operator skill scaffold. It helps initialize a stable operating agent before routing work through the SenderOS CLI.',
   usage: [
@@ -13,11 +14,26 @@ export const bootstrapAgentSkillCommandHelp = {
     'senderos bootstrap-agent-skill --path ./skills/senderos-operator/SKILL.md --home /path/to/.senderos --harness codex',
   ],
   options: [
-    { name: '--print', description: 'Print the generated skill content instead of writing it to disk.' },
-    { name: '--path', description: 'Where to write the skill scaffold. Defaults to ./skills/senderos-operator/SKILL.md.' },
+    {
+      name: '--print',
+      description:
+        'Print the generated skill content instead of writing it to disk.',
+    },
+    {
+      name: '--path',
+      description:
+        'Where to write the skill scaffold. Defaults to ./skills/senderos-operator/SKILL.md.',
+    },
     { name: '--force', description: 'Overwrite an existing skill file.' },
-    { name: '--home', description: 'Preferred SenderOS home to reference in next-step commands.' },
-    { name: '--harness', description: 'Preferred harness to reference in next-step commands.' },
+    {
+      name: '--home',
+      description:
+        'Preferred SenderOS home to reference in next-step commands.',
+    },
+    {
+      name: '--harness',
+      description: 'Preferred harness to reference in next-step commands.',
+    },
   ],
 };
 
@@ -82,11 +98,12 @@ After initialization, help the human:
 }
 
 export async function handleBootstrapAgentSkill(
-  options: Record<string, string | boolean | string[]>
+  options: Record<string, string | boolean | string[]>,
 ) {
   const preferredHome = options.home as string | undefined;
   const preferredHarness = options.harness as string | undefined;
-  const requestedPath = (options.path as string | undefined) ?? DEFAULT_SKILL_PATH;
+  const requestedPath =
+    (options.path as string | undefined) ?? DEFAULT_SKILL_PATH;
   const skillPath = resolve(requestedPath);
   const initCommand = buildInitCommand(preferredHome, preferredHarness);
   const content = buildSkillContent(initCommand);
@@ -96,7 +113,9 @@ export async function handleBootstrapAgentSkill(
 
   if (!printOnly) {
     if (exists && !force) {
-      throw new Error(`Skill already exists at ${skillPath}. Re-run with --force to overwrite or --print to inspect the content.`);
+      throw new Error(
+        `Skill already exists at ${skillPath}. Re-run with --force to overwrite or --print to inspect the content.`,
+      );
     }
 
     mkdirSync(dirname(skillPath), { recursive: true });

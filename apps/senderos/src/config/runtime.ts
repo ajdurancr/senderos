@@ -2,7 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { Database } from 'bun:sqlite';
 
-import type { InitPreview, SeedAgentsOptions, SenderosConfig } from '../domain/types';
+import type {
+  InitPreview,
+  SeedAgentsOptions,
+  SenderosConfig,
+} from '../domain/types';
 import { migrate } from '../db/schema';
 import { seedBuiltInAgents } from '../services/runtime/agents';
 import { inferHarnessFromEnvironment } from '../utils/harness';
@@ -18,7 +22,9 @@ export function configPathForHome(home: string) {
 export function ensureWithinHome(home: string, target: string) {
   const rel = relative(home, target);
   if (rel.startsWith('..') || (!rel && resolve(target) !== resolve(home))) {
-    throw new Error(`Guardrail violation: path outside Senderos home: ${target}`);
+    throw new Error(
+      `Guardrail violation: path outside Senderos home: ${target}`,
+    );
   }
 }
 
@@ -31,10 +37,15 @@ export function runtimeExists(home = defaultHomePath()) {
 }
 
 export function loadConfig(home = defaultHomePath()): SenderosConfig {
-  return JSON.parse(readFileSync(configPathForHome(home), 'utf8')) as SenderosConfig;
+  return JSON.parse(
+    readFileSync(configPathForHome(home), 'utf8'),
+  ) as SenderosConfig;
 }
 
-export function defaultConfigForHome(home: string, harness: SenderosConfig['defaultHarness']): SenderosConfig {
+export function defaultConfigForHome(
+  home: string,
+  harness: SenderosConfig['defaultHarness'],
+): SenderosConfig {
   return {
     database: { kind: 'local', path: join(home, 'senderos.db') },
     artifactRoot: join(home, 'artifacts'),
@@ -46,12 +57,15 @@ export function defaultConfigForHome(home: string, harness: SenderosConfig['defa
   };
 }
 
-export function previewInit(home?: string, harness?: SenderosConfig['defaultHarness']): InitPreview {
+export function previewInit(
+  home?: string,
+  harness?: SenderosConfig['defaultHarness'],
+): InitPreview {
   const inferredHarness = harness ?? inferHarnessFromEnvironment();
   const resolvedHome = resolve(home ?? defaultHomePath());
   const config = defaultConfigForHome(
     resolvedHome,
-    inferredHarness === 'unknown' ? 'unknown' : inferredHarness
+    inferredHarness === 'unknown' ? 'unknown' : inferredHarness,
   );
 
   return {
@@ -60,8 +74,12 @@ export function previewInit(home?: string, harness?: SenderosConfig['defaultHarn
     config,
     inferredHarness,
     assumptions: [
-      home ? `Using provided home: ${resolvedHome}` : `No home provided; proposed home is ${resolvedHome}`,
-      harness ? `Using provided harness: ${harness}` : `Harness inferred as ${inferredHarness}`,
+      home
+        ? `Using provided home: ${resolvedHome}`
+        : `No home provided; proposed home is ${resolvedHome}`,
+      harness
+        ? `Using provided harness: ${harness}`
+        : `Harness inferred as ${inferredHarness}`,
       `Database adapter: ${config.database.kind}`,
     ],
     requiresApproval: true,
@@ -71,7 +89,7 @@ export function previewInit(home?: string, harness?: SenderosConfig['defaultHarn
 export function initializeRuntime(
   home: string,
   config?: SenderosConfig,
-  seedOptions?: SeedAgentsOptions
+  seedOptions?: SeedAgentsOptions,
 ) {
   const resolvedHome = resolve(home);
   const inferredHarness = inferHarnessFromEnvironment();
@@ -79,7 +97,7 @@ export function initializeRuntime(
     config ??
     defaultConfigForHome(
       resolvedHome,
-      inferredHarness === 'unknown' ? 'unknown' : inferredHarness
+      inferredHarness === 'unknown' ? 'unknown' : inferredHarness,
     );
 
   ensureDir(resolvedHome);
@@ -101,10 +119,14 @@ export function initializeRuntime(
     ensureDir(dir);
   }
 
-  writeFileSync(configPathForHome(resolvedHome), JSON.stringify(runtimeConfig, null, 2));
+  writeFileSync(
+    configPathForHome(resolvedHome),
+    JSON.stringify(runtimeConfig, null, 2),
+  );
 
   if (runtimeConfig.database.kind === 'local') {
-    const dbPath = runtimeConfig.database.path ?? join(resolvedHome, 'senderos.db');
+    const dbPath =
+      runtimeConfig.database.path ?? join(resolvedHome, 'senderos.db');
 
     if (runtimeConfig.guardrails.restrictToHome) {
       ensureWithinHome(resolvedHome, dbPath);

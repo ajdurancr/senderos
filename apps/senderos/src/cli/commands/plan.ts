@@ -12,10 +12,20 @@ export const planCommandHelp = {
     'senderos plan --goal-status active --goal-status failed',
   ],
   options: [
-    { name: '--goal-status', description: 'Repeatable goal status filter used to scope planning input.' },
+    {
+      name: '--goal-status',
+      description:
+        'Repeatable goal status filter used to scope planning input.',
+    },
   ],
 };
 
-export function handlePlan(options: Record<string, string | boolean | string[]>, home: string) {
-  return plan({ home, goalStatuses: optionStrings(options['goal-status']) as any[] });
+export function handlePlan(
+  options: Record<string, string | boolean | string[]>,
+  home: string,
+) {
+  return plan({
+    home,
+    goalStatuses: optionStrings(options['goal-status']) as any[],
+  });
 }
