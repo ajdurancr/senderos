@@ -1,19 +1,19 @@
-# CHECKPOINTS — Senderos Final State Evaluation
+# CHECKPOINTS — Agent transitions Final State Evaluation
 
 ## C1 — Factory boundary is clean
 - [ ] Senderos repository files describe the engine, methodology, templates, or examples.
-- [ ] Live project execution state is not stored directly under `apps/senderos`.
-- [ ] `docs/storage-model.md` exists and matches the intended repo-vs-workspace split.
+- [ ] Live project execution state is not stored directly under `apps/agent transitions`.
+- [ ] `docs/storage-model.md` exists and matches the intended repo-vs-checkout split.
 
 ## C2 — Runtime model is complete
-- [ ] Core docs reflect the runtime entities: projects, features, runs, sessions, workspaces, agents, senderos, and run-execution state.
+- [ ] Core docs reflect the runtime entities: projects, goals, runs, run attempts, checkouts, agents, agent transitions, and run-execution state.
 - [ ] Built-in agents seed from JSON records into SQLite runtime state.
-- [ ] Default senderos are assigned during runtime init.
+- [ ] Default agent transitions are assigned during runtime init.
 
 ## C3 — Technology discipline
 - [ ] Source code is TypeScript only.
 - [ ] Bun is the default package manager/runtime.
-- [ ] Senderos contains no Python application logic.
+- [ ] Agent transitions contains no Python application logic.
 
 ## C4 — Verification is real
 - [ ] Typecheck passes.

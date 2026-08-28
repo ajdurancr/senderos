@@ -5,7 +5,7 @@ export const initCommandHelp = {
   command: 'init',
   summary: 'Preview or create the Senderos runtime home.',
   agentDescription:
-    'Use init to preview or create the Senderos home directory and database. This is a bootstrap/setup command and does not plan or dispatch any feature work.',
+    'Use init to preview or create the Senderos home directory and database. This is a bootstrap/setup command and does not plan or dispatch any goal work.',
   usage: [
     'senderos init',
     'senderos init --home /path/to/.senderos --harness codex',

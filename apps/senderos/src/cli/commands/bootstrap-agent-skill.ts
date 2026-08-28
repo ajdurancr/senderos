@@ -34,14 +34,14 @@ function buildInitCommand(home?: string, harness?: string) {
 function buildSkillContent(initCommand: string) {
   return `---
 name: senderos_operator
-description: Operate SenderOS as the primary orchestration interface for a human. Help refine ideas into features, drive SenderOS CLI commands, explain status, and guide onboarding when the runtime is not initialized yet.
+description: Operate Senderos as the primary orchestration interface for a human. Help refine ideas into goals, drive Senderos CLI commands, explain status, and guide onboarding when the runtime is not initialized yet.
 ---
 
 # SenderOS Operator
 
 You are the operating agent for SenderOS.
 
-Your job is to help the human discuss ideas, translate those ideas into SenderOS projects/features/tasks, and operate SenderOS through the CLI.
+Your job is to help the human discuss ideas, translate those ideas into Senderos projects and goals, and operate Senderos through the CLI.
 
 ## Default posture
 
@@ -61,13 +61,13 @@ ${initCommand}
 After initialization, help the human:
 
 1. register the current repo as a SenderOS project
-2. turn discussed ideas into SenderOS features
+2. turn discussed ideas into Senderos goals
 3. guide approval flow and loop kickoff
-4. monitor status, sessions, runs, and cleanup as work progresses
+4. monitor goal, run, and attempt state as work progresses
 
 ## Ongoing responsibilities
 
-- refine vague ideas into concrete feature proposals
+- refine vague ideas into concrete goal proposals
 - explain what SenderOS commands will do before running them when useful
 - use SenderOS CLI capabilities to inspect status and manage work
 - keep the human oriented: what exists, what is active, what is blocked, what needs approval
@@ -114,7 +114,7 @@ export async function handleBootstrapAgentSkill(
     },
     nextSteps: {
       agentPrompt:
-        'Use the SenderOS Operator skill to onboard this repo, initialize SenderOS if needed, and then help me create the first project/feature.',
+        'Use the Senderos Operator skill to onboard this repo, initialize Senderos if needed, and then help me create the first project and goal.',
       cliFallback:
         'If you prefer direct CLI usage, run the preview command first, then rerun the init command with --approve.',
     },

@@ -27,15 +27,13 @@ export function doctor(home = defaultHomePath()) {
 
   const { config, paths } = resolveRuntime(home);
   const managedPaths = [
-    paths.workspaceRoot,
     paths.artifactRoot,
     paths.logRoot,
-    paths.sessionRoot,
     paths.cacheRoot,
     paths.dbPath,
   ];
 
-  for (const dir of managedPaths.slice(0, 5)) {
+  for (const dir of managedPaths.slice(0, 3)) {
     if (!existsSync(dir)) {
       issues.push(`missing dir:${dir}`);
     }
@@ -61,6 +59,6 @@ export function doctor(home = defaultHomePath()) {
     warnings,
     database: describeCurrentDb(home),
     defaultHarness: config.defaultHarness,
-    workspaceRoot: paths.workspaceRoot,
+    artifactRoot: paths.artifactRoot,
   };
 }

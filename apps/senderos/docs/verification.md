@@ -8,7 +8,7 @@ The agent does not claim success. It proves it.
 2. `bun run test`
 3. `bun run build`
 4. `bun run coverage`
-5. Scenario-to-test traceability for SDD features
+5. Scenario-to-test traceability for SDD goals
 6. Mutation results for touched lines when mutation workflows are in scope
 
 ## Coverage gate

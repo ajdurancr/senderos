@@ -5,7 +5,7 @@ const projectCreateHelp = {
   command: 'create',
   summary: 'Create a Senderos project.',
   agentDescription:
-    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later features and runs depend on.',
+    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later goals and runs depend on.',
   usage: [
     'senderos project create --canonical-path /repo --github-owner owner --github-repo repo [--id senderos-ab12cd34] [--name senderos] [--target-branch main] [--integration-mode github_pr]',
   ],
@@ -55,7 +55,7 @@ export const projectCommandHelp = {
   command: 'project',
   summary: 'Create and manage Senderos projects.',
   agentDescription:
-    'Use the project command to manage the repository records that Senderos attaches features and runs to. This surface is for project state only.',
+    'Use the project command to manage the repository records that Senderos attaches goals and runs to. This surface is for project state only.',
   usage: ['senderos project <create|list|show|update> ...'],
   subcommands: [projectCreateHelp, projectListHelp, projectShowHelp, projectUpdateHelp],
 };

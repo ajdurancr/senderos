@@ -37,10 +37,8 @@ export function loadConfig(home = defaultHomePath()): SenderosConfig {
 export function defaultConfigForHome(home: string, harness: SenderosConfig['defaultHarness']): SenderosConfig {
   return {
     database: { kind: 'local', path: join(home, 'senderos.db') },
-    workspaceRoot: join(home, 'workspaces'),
     artifactRoot: join(home, 'artifacts'),
     logRoot: join(home, 'logs'),
-    sessionRoot: join(home, 'sessions'),
     cacheRoot: join(home, 'cache'),
     defaultHarness: harness,
     output: { format: 'json' },
@@ -86,10 +84,8 @@ export function initializeRuntime(
 
   ensureDir(resolvedHome);
   const dirs = [
-    runtimeConfig.workspaceRoot,
     runtimeConfig.artifactRoot,
     runtimeConfig.logRoot,
-    runtimeConfig.sessionRoot,
     runtimeConfig.cacheRoot,
   ];
 
@@ -131,10 +127,8 @@ export function resolveRuntime(home = defaultHomePath()) {
       home,
       configPath: configPathForHome(home),
       dbPath: config.database.path ?? join(home, 'senderos.db'),
-      workspaceRoot: config.workspaceRoot,
       artifactRoot: config.artifactRoot,
       logRoot: config.logRoot,
-      sessionRoot: config.sessionRoot,
       cacheRoot: config.cacheRoot,
     },
   };

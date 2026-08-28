@@ -2,15 +2,15 @@ import type { CommandHelp } from '../domain/types';
 
 import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
-import { featureCommandHelp } from './commands/feature';
+import { goalCommandHelp } from './commands/goal';
 import { initCommandHelp } from './commands/init';
 import { planCommandHelp } from './commands/plan';
 import { projectCommandHelp } from './commands/project';
 import { runCommandHelp } from './commands/run';
-import { sessionCommandHelp } from './commands/session';
+import { attemptCommandHelp } from './commands/attempt';
 import { systemCommandsHelp } from './commands/system';
 import { agentCommandHelp } from './commands/agent';
-import { senderoCommandHelp } from './commands/sendero';
+import { transitionCommandHelp } from './commands/transition';
 
 export const rootHelp: CommandHelp = {
   command: 'senderos',
@@ -32,11 +32,11 @@ export const rootHelp: CommandHelp = {
     configCommandHelp,
     projectCommandHelp,
     agentCommandHelp,
-    senderoCommandHelp,
-    featureCommandHelp,
+    transitionCommandHelp,
+    goalCommandHelp,
     planCommandHelp,
     runCommandHelp,
-    sessionCommandHelp,
+    attemptCommandHelp,
     ...systemCommandsHelp,
   ],
 };

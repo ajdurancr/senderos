@@ -13,7 +13,7 @@ describe('local-sqlite adapter', () => {
   test('opens a command connection', () => {
     const home = initHome();
     const db = localSqliteAdapter.openCommandConnection!(home) as any;
-    expect(db.query("select name from sqlite_master where type='table' and name='features'").get()).toBeTruthy();
+    expect(db.query("select name from sqlite_master where type='table' and name='goals'").get()).toBeTruthy();
     db.close();
   });
 });

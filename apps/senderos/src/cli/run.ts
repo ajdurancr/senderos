@@ -2,14 +2,14 @@ import { parseArgs } from './args';
 import { resolveHome } from './shared';
 import { handleBootstrapAgentSkill } from './commands/bootstrap-agent-skill';
 import { handleConfig } from './commands/config';
-import { handleFeature } from './commands/feature';
+import { handleGoal } from './commands/goal';
 import { handleInit } from './commands/init';
 import { handleAgent } from './commands/agent';
 import { handlePlan } from './commands/plan';
 import { handleProject } from './commands/project';
 import { handleRun } from './commands/run';
-import { handleSendero } from './commands/sendero';
-import { handleSession } from './commands/session';
+import { handleTransition } from './commands/transition';
+import { handleAttempt } from './commands/attempt';
 import { handleSystemCommand } from './commands/system';
 import { resolveHelp } from './help';
 
@@ -48,11 +48,11 @@ export async function runCli(argv = process.argv.slice(2)) {
       case 'agent':
         result = handleAgent(sub, positionals, home);
         break;
-      case 'sendero':
-        result = handleSendero(sub, positionals, options, home);
+      case 'transition':
+        result = handleTransition(sub, positionals, options, home);
         break;
-      case 'feature':
-        result = handleFeature(sub, positionals, options, home);
+      case 'goal':
+        result = handleGoal(sub, positionals, options, home);
         break;
       case 'plan':
         result = handlePlan(options, home);
@@ -60,8 +60,8 @@ export async function runCli(argv = process.argv.slice(2)) {
       case 'run':
         result = handleRun(sub, positionals, options, home);
         break;
-      case 'session':
-        result = handleSession(sub, positionals, home);
+      case 'attempt':
+        result = handleAttempt(sub, positionals, options, home);
         break;
       case 'doctor':
       case 'status':

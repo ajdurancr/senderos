@@ -5,17 +5,17 @@ export const planCommandHelp = {
   command: 'plan',
   summary: 'Plan the next dispatchable runs across Senderos.',
   agentDescription:
-    'Call this first when you need actionable work. By default it returns only dispatchable items. Use repeated --feature-status filters only when you intentionally want planning scoped to specific feature statuses.',
+    'Call this first when you need actionable work. By default it returns only dispatchable goals. Use repeated --goal-status filters only when you intentionally want planning scoped to specific goal statuses.',
   usage: [
     'senderos plan',
-    'senderos plan --feature-status active',
-    'senderos plan --feature-status active --feature-status failed',
+    'senderos plan --goal-status active',
+    'senderos plan --goal-status active --goal-status failed',
   ],
   options: [
-    { name: '--feature-status', description: 'Repeatable feature status filter used to scope planning input.' },
+    { name: '--goal-status', description: 'Repeatable goal status filter used to scope planning input.' },
   ],
 };
 
 export function handlePlan(options: Record<string, string | boolean | string[]>, home: string) {
-  return plan({ home, featureStatuses: optionStrings(options['feature-status']) as any[] });
+  return plan({ home, goalStatuses: optionStrings(options['goal-status']) as any[] });
 }

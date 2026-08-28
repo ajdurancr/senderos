@@ -12,7 +12,7 @@ const statusHelp = {
   command: 'status',
   summary: 'Show current Senderos runtime status.',
   agentDescription:
-    'Use this for diagnostic visibility only. It reports aggregate counts plus stale sessions and orphaned workspaces, but it does not mutate state or create dispatches.',
+    'Use this for diagnostic visibility only. It reports aggregate project, goal, run, and attempt state without mutating anything.',
   usage: ['senderos status'],
 };
 
