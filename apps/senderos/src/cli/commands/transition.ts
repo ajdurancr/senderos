@@ -11,27 +11,30 @@ export const transitionCommandHelp = {
   usage: ['senderos transition <create|list|show> ...'],
 };
 export function handleTransition(
-  sub: string | undefined,
-  p: string[],
-  o: Record<string, string | boolean | string[]>,
+  subcommand: string | undefined,
+  positionals: string[],
+  options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
-  switch (sub) {
+  switch (subcommand) {
     case 'create':
       return createAgentTransition({
         home,
-        sourceAgentId: String(o['source-agent-id'] ?? ''),
-        targetAgentId: o['target-agent-id'] as string | undefined,
-        name: String(o.name ?? ''),
-        description: o.description as string | undefined,
-        transitionObjective: String(o.objective ?? ''),
+        sourceAgentId: String(options['source-agent-id'] ?? ''),
+        targetAgentId: options['target-agent-id'] as string | undefined,
+        name: String(options.name ?? ''),
+        description: options.description as string | undefined,
+        transitionObjective: String(options.objective ?? ''),
       });
     case 'list':
-      return o['agent-id']
-        ? listAgentTransitionsForAgent(String(o['agent-id']), home)
+      return options['agent-id']
+        ? listAgentTransitionsForAgent(String(options['agent-id']), home)
         : listAgentTransitions(home);
     case 'show':
-      return getAgentTransition(requirePositional(p[2], 'transition id'), home);
+      return getAgentTransition(
+        requirePositional(positionals[2], 'transition id'),
+        home,
+      );
     default:
       throw new Error('Unknown transition action');
   }

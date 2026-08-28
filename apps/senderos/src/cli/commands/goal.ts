@@ -13,33 +13,33 @@ export const goalCommandHelp = {
   usage: ['senderos goal <create|list|show|update|activate|cancel> ...'],
 };
 export function handleGoal(
-  sub: string | undefined,
-  p: string[],
-  o: Record<string, string | boolean | string[]>,
+  subcommand: string | undefined,
+  positionals: string[],
+  options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
-  const id = () => requirePositional(p[2], 'goal id');
-  const data = {
+  const goalId = () => requirePositional(positionals[2], 'goal id');
+  const goalInput = {
     home,
-    projectId: String(o['project-id'] ?? ''),
-    title: String(o.title ?? ''),
-    kind: o.kind as any,
-    specText: o['spec-text'] as string | undefined,
-    intakeText: o['intake-text'] as string | undefined,
+    projectId: String(options['project-id'] ?? ''),
+    title: String(options.title ?? ''),
+    kind: options.kind as any,
+    specText: options['spec-text'] as string | undefined,
+    intakeText: options['intake-text'] as string | undefined,
   };
-  switch (sub) {
+  switch (subcommand) {
     case 'create':
-      return createGoal(data);
+      return createGoal(goalInput);
     case 'list':
       return listGoals(home);
     case 'show':
-      return getGoal(id(), home);
+      return getGoal(goalId(), home);
     case 'update':
-      return updateGoal({ ...data, id: id() });
+      return updateGoal({ ...goalInput, id: goalId() });
     case 'activate':
-      return activateGoal(id(), home);
+      return activateGoal(goalId(), home);
     case 'cancel':
-      return cancelGoal(id(), home);
+      return cancelGoal(goalId(), home);
     default:
       throw new Error('Unknown goal action');
   }
