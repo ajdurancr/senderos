@@ -7,7 +7,8 @@ import { tempHome } from '../../../tests/helpers/runtime';
 describe('init command', () => {
   test('returns a non-mutating preview without approval', async () => {
     const home = tempHome();
-    expect((await handleInit({ home, harness: 'codex' })).requiresApproval).toBe(true);
+    const preview: any = await handleInit({ home, harness: 'codex' });
+    expect(preview.requiresApproval).toBe(true);
     expect(existsSync(join(home, 'config.json'))).toBe(false);
   });
 
