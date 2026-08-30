@@ -28,8 +28,13 @@ managed runtime paths.
 adapter is fully operational. Turso can be described and health-checked, but
 its command-execution connection is not implemented yet. The three `*Root`
 paths are created and checked by `init` and `doctor`; `restrictToHome` rejects
-managed paths outside the Senderos home. `defaultHarness` records the selected
-host environment for runtime metadata.
+managed paths outside the Senderos home.
+
+`defaultHarness` is currently stored during initialization and reported by
+`doctor`, but dispatch still records `unknown` for a new attempt's harness.
+Likewise, the CLI currently emits JSON directly and does not consult
+`output.format`. These fields are configuration surface reserved for future
+runtime wiring, not active behavior today.
 
 ## Actions
 
