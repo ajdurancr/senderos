@@ -16,8 +16,8 @@ It returns only the next dispatchable items by default.
 
 ```bash
 senderos plan
-senderos plan --feature-status active
-senderos plan --feature-status active --feature-status failed
+senderos plan --goal-status active
+senderos plan --goal-status active --goal-status failed
 senderos help plan
 ```
 
@@ -25,8 +25,8 @@ senderos help plan
 
 Each planning item currently returns only:
 
-- `featureId`
-- `senderoId`
+- `goalId`
+- `transitionId`
 - `agentId`
 - `previousRunId`
 
@@ -38,13 +38,13 @@ The host agent uses those ids to decide whether to call `senderos run dispatch .
 By default, Senderos only returns dispatchable items.
 That means it omits work that is still running or otherwise not ready for dispatch.
 
-A feature can be dispatchable when:
+A goal can be dispatchable when:
 
 - it is active and has no current run
-- its previous run succeeded and the next sendero step can be dispatched
+- its previous run succeeded and the next agent transition can be dispatched
 - its previous run failed and a retry is valid
 
-## Why there is no per-feature plan command
+## Why there is no per-goal plan command
 
 Planning is intentionally global.
 The host agent asks Senderos what is dispatchable now, then dispatches each item separately.

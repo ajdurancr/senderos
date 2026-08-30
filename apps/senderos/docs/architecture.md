@@ -42,7 +42,7 @@ Built-in agents are seeded from JSON records under `db-seeds/agents/` at init ti
 The docs app pages under `apps/docs/content/docs/reference/system-agents/` remain the human-readable examples of those roles.
 
 ### Agent transition
-A agent transition is a persisted handoff a goal follows.
+An agent transition is a persisted handoff a goal follows.
 It is assigned to a source agent and may point toward a target agent as the next goal boundary.
 
 ### Run

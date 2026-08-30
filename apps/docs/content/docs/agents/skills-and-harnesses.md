@@ -7,8 +7,7 @@ Senderos expects to be operated by a host agent through the CLI.
 
 ## The host-agent contract
 
-The host agent does not know Senderos' internal operating agents.
-It knows the CLI.
+The host agent operates Senderos through the CLI.
 
 A host-agent skill exists to teach the host agent how to operate Senderos correctly:
 
@@ -25,13 +24,14 @@ A Senderos skill should know:
 - how to request JSON output,
 - how to run manual planning-and-dispatch loops,
 - how to ask the user for confirmation when Senderos requires it,
-- how to schedule host-level jobs when Senderos emits scheduling instructions.
+- how to schedule host-level jobs when its environment needs them.
 
 It should not know Senderos' internal operating logic.
 
-## Harness support inside Senderos
+## Harness boundary
 
-Senderos includes harness support, but only for communicating with host-agent environments.
+Senderos records the selected harness and optional external-session details on a
+run attempt. It does not launch, query, or resume a host-agent session itself.
 
 Examples:
 
@@ -39,12 +39,8 @@ Examples:
 - Codex,
 - Claude Code.
 
-That support exists so Senderos can:
-
-- attach runs to host sessions,
-- query session status,
-- resume known sessions,
-- format execution instructions correctly for the harness.
+Those details make attempts auditable without turning a host environment into
+Senderos-owned state.
 
 ## Why Senderos does not build broad service adapters in v1
 
@@ -59,10 +55,3 @@ Senderos does not own integrations for:
 
 When those things are needed, Senderos tells the host agent what to do.
 The host agent executes that instruction using its own capabilities.
-
-## Adapter maintenance policy
-
-Harness behavior changes over time.
-Because of that, Senderos' harness support must be maintained against the real current behavior of each supported host environment.
-
-That means harness support is a product boundary with explicit ownership, not a pile of hand-wavy assumptions.

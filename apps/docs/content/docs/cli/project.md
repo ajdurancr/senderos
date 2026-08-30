@@ -3,7 +3,7 @@ title: project
 description: "Create, inspect, and update Senderos project records."
 ---
 
-`senderos project` manages the canonical project records that Senderos uses as the root of all feature and run state.
+`senderos project` manages the canonical project records that Senderos uses as the root of all goal and run state.
 
 A Senderos project combines:
 
@@ -15,4 +15,4 @@ A Senderos project combines:
 
 If an explicit `--id` is not provided, Senderos derives a default project id from `package.json.name` when available.
 
-Senderos needs a durable project record first so it can attach features, runs, workspaces, and planning state to a known repository boundary.
+Senderos needs a durable project record first so it can attach goals, runs, and planning state to a known repository boundary.

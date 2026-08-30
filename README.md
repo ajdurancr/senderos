@@ -2,7 +2,7 @@
 
 Senderos is an engineering orchestration platform that transforms objectives into verified software outcomes by coordinating humans, AI systems, development tools, organizational knowledge, and continuous feedback loops.
 
-This repository contains the initial monorepo scaffold for Senderos.
+This repository contains the Senderos monorepo.
 
 ## Monorepo apps
 
@@ -47,14 +47,14 @@ At the runtime level, Senderos acts as a control plane:
 - it stores orchestration state in SQLite
 - it plans the next dispatchable work with `senderos plan`
 - it accepts explicit dispatch requests with `senderos run dispatch ...`
-- it records runs, run executions, sessions, tasks, workspaces, and events
+- it records projects, goals, agent transitions, runs, run attempts, and events
 - it does **not** perform the actual coding work itself
 
 The host agent is the execution plane:
 
 - asks Senderos what is dispatchable next
 - dispatches one run at a time
-- executes the real work in its own session/workspace
+- executes the real work in its own environment and working path
 - returns later for the next plan/dispatch cycle
 
 ## Getting started
@@ -83,6 +83,9 @@ bun run typecheck
 bun run test
 bun run build
 ```
+
+For the current runtime model and operator workflow, see `apps/docs` or run
+`bun run dev:docs`.
 
 ## Repository structure
 

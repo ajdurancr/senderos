@@ -16,12 +16,12 @@ senderos doctor
 senderos status
 senderos config ...
 senderos project ...
-senderos feature ...
 senderos agent ...
-senderos sendero ...
+senderos transition ...
+senderos goal ...
 senderos plan ...
 senderos run ...
-senderos session ...
+senderos attempt ...
 ```
 
 ## Design rules
@@ -39,7 +39,7 @@ Subcommands use predictable verbs such as:
 - `list`
 - `show`
 - `update`
-- `approve`
+- `activate`
 - `dispatch`
 - `cancel`
 
@@ -71,12 +71,12 @@ Use `--omit-agent-description` to hide the agent-focused guidance when needed.
 - `status` — show the current high-level system state and diagnostics.
 - `config` — inspect or update Senderos configuration.
 - `project` — create and manage canonical project records.
-- `feature` — manage Senderos features.
+- `goal` — create and manage requested outcomes.
 - `agent` — inspect runtime agent records.
-- `sendero` — create and inspect sendero paths.
+- `transition` — create and inspect agent handoffs.
 - `plan` — return the next dispatchable work items.
 - `run` — dispatch, inspect, and cancel runs.
-- `session` — inspect host-agent execution handles recorded by Senderos.
+- `attempt` — inspect concrete run attempts and recorded resume details.
 
 ## Testing surface
 

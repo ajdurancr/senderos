@@ -8,29 +8,25 @@ Every operational state transition belongs to a Senderos entity.
 
 Senderos entities are not the same thing as external-system entities.
 
-A Senderos feature is not a GitHub issue.
-A Senderos task is not a Jira ticket.
-A Senderos session is not the host-agent's entire memory.
+A Senderos goal is not a GitHub issue.
+A run attempt is not the host-agent's entire memory.
 
 Senderos may reference outside systems later, but its own model stays separate.
 
 ## Core entities
 
 - project
-- feature
+- goal
 - run
-- run execution
-- session
-- workspace
-- sendero
+- run attempt
 - agent
-- task
+- agent transition
 - event
 
-A feature is the durable work item inside Senderos.
-A task is a Senderos-owned operational unit under a feature.
-A session is Senderos' record of a host-agent execution handle.
-A workspace is a Senderos-managed execution directory.
+A goal is the durable requested outcome inside Senderos. A run is one logical
+execution of a goal; a run attempt records a concrete execution and optional
+host-session details. A working path belongs to the attempt, but is selected by
+the external host rather than managed by Senderos.
 
 Artifacts such as logs, transcripts, reports, and generated outputs live in the Senderos home directory and are referenced from the database.
-Human-readable agent role files can live alongside the app, while the database is seeded from JSON agent records that match the agent entity shape.
+The database is seeded from JSON agent records that match the agent entity shape.

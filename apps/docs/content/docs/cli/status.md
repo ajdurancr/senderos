@@ -9,13 +9,11 @@ These commands expose the system-wide operating view.
 
 Returns a high-level summary of:
 
-- open features
-- active features in flight
+- open goals
+- active goals in flight
 - active runs
-- pending tasks
-- stale session ids
-- orphaned workspace ids
-- active feature/run/session/workspace identifiers
+- active attempt ids
+- active goal and run identifiers
 
 ### Example
 
@@ -41,5 +39,5 @@ senderos doctor
 Use these commands when you need to:
 
 - understand what the system is doing now
-- inspect stale sessions or orphaned workspaces
+- inspect active goals, runs, and attempts
 - validate runtime health before relying on planning/dispatch output
