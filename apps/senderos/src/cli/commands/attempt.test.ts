@@ -30,4 +30,12 @@ test('attempt command lists, shows, and resumes attempts', () => {
       home,
     ).resumeCommand,
   ).toContain('resume');
+  expect(
+    (handleAttempt as any)(
+      'update',
+      ['attempt', 'update', attempt.id],
+      { status: 'failed', 'failure-summary': 'Verification failed' },
+      home,
+    ).status,
+  ).toBe('failed');
 });

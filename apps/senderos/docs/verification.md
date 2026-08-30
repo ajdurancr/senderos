@@ -13,7 +13,7 @@ The agent does not claim success. It proves it.
 
 ## Coverage gate
 
-The repository enforces a **90% minimum** for both:
+The repository enforces a **97% minimum** for both:
 
 - line coverage
 - function coverage
@@ -24,4 +24,4 @@ The current coverage script is:
 bun run coverage
 ```
 
-That command emits LCOV, prints a JSON summary, and fails if either threshold drops below 90%.
+That command emits LCOV, prints a JSON summary, and fails if either threshold drops below 97%.

@@ -388,6 +388,20 @@ export function updateRunAttempt(
     now(),
     id,
   );
+  if (input.status && ['succeeded', 'failed', 'canceled'].includes(input.status)) {
+    const runStatus = input.status === 'succeeded' ? 'succeeded' : input.status;
+    db.prepare('update runs set status=?,updated_at=? where id=?').run(
+      runStatus,
+      now(),
+      current.runId,
+    );
+    if (input.status === 'failed') {
+      db.prepare("update goals set status='failed',updated_at=? where id=(select goal_id from runs where id=?)").run(
+        now(),
+        current.runId,
+      );
+    }
+  }
   db.close();
   return getRunAttempt(id, home);
 }
