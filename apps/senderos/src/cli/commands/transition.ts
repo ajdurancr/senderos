@@ -9,6 +9,11 @@ export const transitionCommandHelp = {
   command: 'transition',
   summary: 'Create and inspect agent transitions.',
   usage: ['senderos transition <create|list|show> ...'],
+  subcommands: [
+    { command: 'create', summary: 'Create an agent transition.', usage: ['senderos transition create --source-agent-id <agent-id> --name <name> --objective <objective>'] },
+    { command: 'list', summary: 'List agent transitions.', usage: ['senderos transition list [--agent-id <agent-id>]'] },
+    { command: 'show', summary: 'Show an agent transition.', usage: ['senderos transition show <transition-id>'] },
+  ],
 };
 export function handleTransition(
   subcommand: string | undefined,

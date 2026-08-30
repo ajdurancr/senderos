@@ -9,6 +9,12 @@ export const attemptCommandHelp = {
   command: 'attempt',
   summary: 'Inspect concrete run attempts.',
   usage: ['senderos attempt <list|show|update|resume> ...'],
+  subcommands: [
+    { command: 'list', summary: 'List run attempts.', usage: ['senderos attempt list [--run-id <run-id>]'] },
+    { command: 'show', summary: 'Show a run attempt.', usage: ['senderos attempt show <attempt-id>'] },
+    { command: 'update', summary: 'Record attempt state and outcome.', usage: ['senderos attempt update <attempt-id> --status <status>'] },
+    { command: 'resume', summary: 'Show attempt resume information.', usage: ['senderos attempt resume <attempt-id>'] },
+  ],
 };
 export function handleAttempt(
   subcommand: string | undefined,

@@ -11,6 +11,14 @@ export const goalCommandHelp = {
   command: 'goal',
   summary: 'Create and manage Senderos goals.',
   usage: ['senderos goal <create|list|show|update|activate|cancel> ...'],
+  subcommands: [
+    { command: 'create', summary: 'Create a goal.', usage: ['senderos goal create --project-id <project-id> --title <title>'] },
+    { command: 'list', summary: 'List goals.', usage: ['senderos goal list'] },
+    { command: 'show', summary: 'Show a goal.', usage: ['senderos goal show <goal-id>'] },
+    { command: 'update', summary: 'Update a goal.', usage: ['senderos goal update <goal-id>'] },
+    { command: 'activate', summary: 'Activate a goal.', usage: ['senderos goal activate <goal-id>'] },
+    { command: 'cancel', summary: 'Cancel a goal.', usage: ['senderos goal cancel <goal-id>'] },
+  ],
 };
 export function handleGoal(
   subcommand: string | undefined,
