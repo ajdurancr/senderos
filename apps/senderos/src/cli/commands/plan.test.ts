@@ -1,23 +1,18 @@
-import { describe, expect, test } from 'bun:test';
+import { expect, test } from 'bun:test';
 import { handlePlan } from './plan';
-import { approveFeature, createFeature } from '../../services/runtime';
+import { activateGoal, createGoal } from '../../services/runtime';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('plan command', () => {
-  test('returns dispatchable planning items', () => {
-    const home = initHome();
-    const project = createProjectFixture(home);
-    approveFeature(createFeature({ home, projectId: project.id, title: 'Plan target', gherkinText: 'Feature: Plan target' }).id, home);
-    const items: any[] = handlePlan({}, home) as any[];
-    expect(items.length).toBeGreaterThan(0);
-    expect(Object.keys(items[0]!).sort()).toEqual(['agentId', 'featureId', 'previousRunId', 'senderoId']);
-  });
-
-  test('accepts repeated feature-status filters', () => {
-    const home = initHome();
-    const project = createProjectFixture(home);
-    approveFeature(createFeature({ home, projectId: project.id, title: 'Plan target', gherkinText: 'Feature: Plan target' }).id, home);
-    const items: any[] = handlePlan({ 'feature-status': ['active', 'failed'] }, home) as any[];
-    expect(Array.isArray(items)).toBe(true);
-  });
+test('plan command returns active goals as dispatchable work', () => {
+  const home = initHome();
+  const project = createProjectFixture(home);
+  const goal = activateGoal(
+    createGoal({ home, projectId: project.id, title: 'Plan me' }).id,
+    home,
+  )!;
+  expect(
+    (handlePlan({ 'goal-status': 'active' }, home) as any[]).some(
+      (item) => item.goalId === goal.id,
+    ),
+  ).toBe(true);
 });

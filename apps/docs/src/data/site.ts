@@ -20,12 +20,11 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     ]
   },
   {
-    section: 'Core',
+    section: 'Operating model',
     items: [
-      { slug: 'core/how-senderos-works', title: 'How Senderos Works', section: 'Core' },
-      { slug: 'core/architecture', title: 'Architecture', section: 'Core' },
-      { slug: 'core/reconciliation-and-dispatch', title: 'Reconciliation and Dispatch', section: 'Core' },
-      { slug: 'core/senderos-os-agents', title: 'Senderos Operating Agents', section: 'Core' }
+      { slug: 'core/how-senderos-works', title: 'How Senderos Works', section: 'Operating model' },
+      { slug: 'core/reconciliation-and-dispatch', title: 'Planning and Dispatch', section: 'Operating model' },
+      { slug: 'core/architecture', title: 'Runtime Boundaries', section: 'Operating model' }
     ]
   },
   {
@@ -41,10 +40,12 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
       { slug: 'cli/init', title: 'init', section: 'CLI' },
       { slug: 'cli/doctor', title: 'doctor', section: 'CLI' },
       { slug: 'cli/config', title: 'config', section: 'CLI' },
-      { slug: 'cli/feature', title: 'feature', section: 'CLI' },
+      { slug: 'cli/goal', title: 'goal', section: 'CLI' },
+      { slug: 'cli/agent', title: 'agent', section: 'CLI' },
+      { slug: 'cli/transition', title: 'transition', section: 'CLI' },
       { slug: 'cli/plan', title: 'plan', section: 'CLI' },
       { slug: 'cli/run', title: 'run', section: 'CLI' },
-      { slug: 'cli/session', title: 'session', section: 'CLI' },
+      { slug: 'cli/attempt', title: 'attempt', section: 'CLI' },
       { slug: 'cli/status', title: 'status', section: 'CLI' }
     ]
   },
@@ -64,7 +65,7 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     section: 'Operations',
     items: [
       { slug: 'operations/persistence-and-state', title: 'Persistence and State', section: 'Operations' },
-      { slug: 'operations/workspaces-and-guardrails', title: 'Workspaces and Guardrails', section: 'Operations' },
+      { slug: 'operations/working-paths-and-guardrails', title: 'Working Paths and Guardrails', section: 'Operations' },
       { slug: 'operations/safety-and-confirmations', title: 'Safety and Guardrails', section: 'Operations' }
     ]
   },

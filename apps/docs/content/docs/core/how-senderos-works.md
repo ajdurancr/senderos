@@ -1,61 +1,32 @@
 ---
 title: How Senderos Works
-description: "The end-to-end path from approved Gherkin contract to planned dispatch and recorded execution outcome."
+description: "The end-to-end path from a requested goal to a recorded execution attempt."
 ---
 
-Senderos follows a planning-and-dispatch execution model.
+Senderos is a planning-and-dispatch control plane. It stores orchestration
+truth; an external host agent performs the product-code work.
 
 ## End-to-end path
 
 ```text
-intent
-  -> approved spec
-  -> approved Gherkin contract
-  -> project-linked feature record
-  -> plan next dispatchable work
-  -> dispatch one run
-  -> external agent execution
-  -> review / mutation / next dispatch
-  -> completed outcome or explicit failure state
+intent -> project -> draft goal -> active goal -> plan -> run -> run attempt
+                                                     -> host execution -> recorded outcome
 ```
 
 ## Detailed flow
 
-1. A user or host agent creates or selects a Senderos project.
-2. Senderos stores the project identity and target branch.
-3. Senderos creates a feature from an approved Gherkin contract.
-4. The feature is explicitly approved for implementation.
-5. Senderos plans the next dispatchable work item.
-6. The host agent calls `senderos run dispatch ...` for one planning item.
-7. Senderos allocates a project-aware workspace and creates run/session/run-execution state.
-8. The host agent performs the actual work in the assigned workspace/session.
-9. Senderos records the resulting run, session, and workspace state.
-10. Later planning/dispatch cycles move the feature through the next sendero step.
-11. When the path finishes, Senderos closes the active session records and cleans the workspace.
+1. Create or select a Senderos project.
+2. Create a goal with its kind and specification.
+3. Activate the goal when it is ready to be planned.
+4. Run `senderos plan` to obtain a goal, transition, and agent.
+5. Dispatch exactly one item with `senderos run dispatch`.
+6. Senderos records the logical run and its first concrete attempt.
+7. The host agent executes the work in its own environment and may supply a working path.
+8. Later planning and dispatch cycles advance the goal or retry a failed run.
 
-## Control plane and execution plane
+## Responsibility boundary
 
-Senderos is the control plane.
-The host agent is the execution plane.
-
-### Senderos decides:
-
-- what project and feature are active
-- what the next dispatchable work item is
-- which workspace is reserved
-- what state transition is allowed
-- whether a retry or next dispatch is valid
-
-### The host agent does:
-
-- read Senderos planning output
-- dispatch one item at a time
-- enter the assigned workspace
-- perform the coding task
-- run the requested checks
-- return later for the next planning/dispatch cycle
-
-## Current implementation note
-
-The current runtime and tests fully exercise the Senderos state model, CLI flow, workspace lifecycle, and planning/dispatch behavior.
-Harness-specific execution is still represented as recorded session state rather than Senderos directly launching the external agent.
+Senderos decides which goal is dispatchable and validates persisted state. The
+host agent decides how to execute the work, manage its checkout, and interact
+with external systems. A working path is recorded for auditability, not managed
+as a Senderos workspace.

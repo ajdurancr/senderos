@@ -1,6 +1,6 @@
 export * from './agents';
 export * from './config';
-export * from './features';
+export * from './goals';
 export * from './health';
 export * from './plan';
 export * from './projects';

@@ -3,7 +3,8 @@ import { dirname, resolve } from 'node:path';
 
 export const bootstrapAgentSkillCommandHelp = {
   command: 'bootstrap-agent-skill',
-  summary: 'Create or print a host-agent skill scaffold for operating SenderOS.',
+  summary:
+    'Create or print a host-agent skill scaffold for operating SenderOS.',
   agentDescription:
     'Use this to bootstrap a SenderOS operator skill scaffold. It helps initialize a stable operating agent before routing work through the SenderOS CLI.',
   usage: [
@@ -13,11 +14,26 @@ export const bootstrapAgentSkillCommandHelp = {
     'senderos bootstrap-agent-skill --path ./skills/senderos-operator/SKILL.md --home /path/to/.senderos --harness codex',
   ],
   options: [
-    { name: '--print', description: 'Print the generated skill content instead of writing it to disk.' },
-    { name: '--path', description: 'Where to write the skill scaffold. Defaults to ./skills/senderos-operator/SKILL.md.' },
+    {
+      name: '--print',
+      description:
+        'Print the generated skill content instead of writing it to disk.',
+    },
+    {
+      name: '--path',
+      description:
+        'Where to write the skill scaffold. Defaults to ./skills/senderos-operator/SKILL.md.',
+    },
     { name: '--force', description: 'Overwrite an existing skill file.' },
-    { name: '--home', description: 'Preferred SenderOS home to reference in next-step commands.' },
-    { name: '--harness', description: 'Preferred harness to reference in next-step commands.' },
+    {
+      name: '--home',
+      description:
+        'Preferred SenderOS home to reference in next-step commands.',
+    },
+    {
+      name: '--harness',
+      description: 'Preferred harness to reference in next-step commands.',
+    },
   ],
 };
 
@@ -34,14 +50,14 @@ function buildInitCommand(home?: string, harness?: string) {
 function buildSkillContent(initCommand: string) {
   return `---
 name: senderos_operator
-description: Operate SenderOS as the primary orchestration interface for a human. Help refine ideas into features, drive SenderOS CLI commands, explain status, and guide onboarding when the runtime is not initialized yet.
+description: Operate Senderos as the primary orchestration interface for a human. Help refine ideas into goals, drive Senderos CLI commands, explain status, and guide onboarding when the runtime is not initialized yet.
 ---
 
 # SenderOS Operator
 
 You are the operating agent for SenderOS.
 
-Your job is to help the human discuss ideas, translate those ideas into SenderOS projects/features/tasks, and operate SenderOS through the CLI.
+Your job is to help the human discuss ideas, translate those ideas into Senderos projects and goals, and operate Senderos through the CLI.
 
 ## Default posture
 
@@ -61,13 +77,13 @@ ${initCommand}
 After initialization, help the human:
 
 1. register the current repo as a SenderOS project
-2. turn discussed ideas into SenderOS features
+2. turn discussed ideas into Senderos goals
 3. guide approval flow and loop kickoff
-4. monitor status, sessions, runs, and cleanup as work progresses
+4. monitor goal, run, and attempt state as work progresses
 
 ## Ongoing responsibilities
 
-- refine vague ideas into concrete feature proposals
+- refine vague ideas into concrete goal proposals
 - explain what SenderOS commands will do before running them when useful
 - use SenderOS CLI capabilities to inspect status and manage work
 - keep the human oriented: what exists, what is active, what is blocked, what needs approval
@@ -82,11 +98,12 @@ After initialization, help the human:
 }
 
 export async function handleBootstrapAgentSkill(
-  options: Record<string, string | boolean | string[]>
+  options: Record<string, string | boolean | string[]>,
 ) {
   const preferredHome = options.home as string | undefined;
   const preferredHarness = options.harness as string | undefined;
-  const requestedPath = (options.path as string | undefined) ?? DEFAULT_SKILL_PATH;
+  const requestedPath =
+    (options.path as string | undefined) ?? DEFAULT_SKILL_PATH;
   const skillPath = resolve(requestedPath);
   const initCommand = buildInitCommand(preferredHome, preferredHarness);
   const content = buildSkillContent(initCommand);
@@ -96,7 +113,9 @@ export async function handleBootstrapAgentSkill(
 
   if (!printOnly) {
     if (exists && !force) {
-      throw new Error(`Skill already exists at ${skillPath}. Re-run with --force to overwrite or --print to inspect the content.`);
+      throw new Error(
+        `Skill already exists at ${skillPath}. Re-run with --force to overwrite or --print to inspect the content.`,
+      );
     }
 
     mkdirSync(dirname(skillPath), { recursive: true });
@@ -114,7 +133,7 @@ export async function handleBootstrapAgentSkill(
     },
     nextSteps: {
       agentPrompt:
-        'Use the SenderOS Operator skill to onboard this repo, initialize SenderOS if needed, and then help me create the first project/feature.',
+        'Use the Senderos Operator skill to onboard this repo, initialize Senderos if needed, and then help me create the first project and goal.',
       cliFallback:
         'If you prefer direct CLI usage, run the preview command first, then rerun the init command with --approve.',
     },

@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { describeCurrentDb, healthcheckCurrentDb, openRuntimeDb, resolveConfiguredDbAdapter, resolveDbAdapter } from './client';
 import { localSqliteAdapter } from '../adapters/db/local-sqlite';
+import { tursoAdapter } from '../adapters/db/turso';
 import { initHome } from '../../tests/helpers/runtime';
 
 describe('db client', () => {
   test('resolveDbAdapter returns the local sqlite adapter for local databases', () => {
     expect(resolveDbAdapter('local')).toBe(localSqliteAdapter);
+    expect(resolveDbAdapter('turso')).toBe(tursoAdapter);
   });
 
   test('resolveConfiguredDbAdapter returns the configured adapter for the runtime', () => {

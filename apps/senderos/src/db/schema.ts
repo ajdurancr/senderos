@@ -17,73 +17,28 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-    create table if not exists features (
+    create table if not exists goals (
       id text primary key,
       project_id text not null,
       title text not null,
+      kind text not null,
+      intake_text text not null default '',
       spec_text text not null default '',
-      source_request_text text not null default '',
-      gherkin_text text not null default '',
-      gherkin_meta_json text not null default '{}',
       status text not null,
-      sendero_step text not null,
       base_target_branch text not null,
-      feature_branch_name text,
+      branch_name text,
       pr_url text,
       pr_number integer,
-      current_workspace_id text,
-      current_run_id text,
-      created_at text not null,
-      updated_at text not null
-    );
-    create table if not exists tasks (
-      id text primary key,
-      feature_id text not null,
-      name text not null,
-      phase text not null,
-      status text not null,
-      instruction_json text not null,
-      result_json text not null default '{}',
       created_at text not null,
       updated_at text not null
     );
     create table if not exists runs (
       id text primary key,
-      feature_id text not null,
-      task_id text,
-      phase text not null,
+      goal_id text not null,
       status text not null,
       branch_name text,
       base_branch text,
       max_attempts integer not null default 3,
-      attempt_count integer not null default 0,
-      current_attempt integer not null default 0,
-      instruction_json text not null,
-      result_json text not null default '{}',
-      created_at text not null,
-      updated_at text not null
-    );
-    create table if not exists sessions (
-      id text primary key,
-      run_id text,
-      harness text not null,
-      external_session_id text,
-      status text not null,
-      status_snapshot_json text not null default '{}',
-      heartbeat_at text,
-      resume_command text,
-      created_at text not null,
-      updated_at text not null
-    );
-    create table if not exists workspaces (
-      id text primary key,
-      feature_id text,
-      run_id text,
-      session_id text,
-      root_path text not null,
-      status text not null,
-      branch_name text,
-      retention_reason text,
       created_at text not null,
       updated_at text not null
     );
@@ -101,34 +56,36 @@ export function migrate(db: Database) {
       created_at text not null,
       updated_at text not null
     );
-    create table if not exists senderos (
+    create table if not exists agent_transitions (
       id text primary key,
       source_agent_id text not null,
       target_agent_id text,
       name text not null,
       description text not null default '',
       status text not null,
-      goal text not null,
-      goal_mode text not null,
+      transition_objective text not null,
       assignment_meta_json text not null default '{}',
       created_at text not null,
       updated_at text not null
     );
-    create table if not exists run_executions (
+    create table if not exists run_attempts (
       id text primary key,
       run_id text not null,
-      feature_id text,
-      attempt_number integer not null default 1,
+      attempt_number integer not null,
       agent_id text not null,
-      sendero_id text,
-      target_agent_id text,
+      transition_id text,
       status text not null,
-      goal text not null,
-      host_environment_name text,
-      host_environment_session_id text,
+      execution_objective text not null,
       harness text not null,
+      external_session_id text,
+      resume_command text,
+      heartbeat_at text,
+      host_environment_name text,
+      working_path text,
+      working_path_mode text,
+      retry_from_attempt_id text,
       checkpoint text,
-      source_feature_sha text,
+      source_goal_sha text,
       failure_step text,
       status_snapshot_json text not null default '{}',
       result_json text not null default '{}',
@@ -148,10 +105,10 @@ export function migrate(db: Database) {
       created_at text not null
     );
     create index if not exists idx_agents_slug on agents(slug);
-    create index if not exists idx_senderos_source_agent on senderos(source_agent_id);
-    create index if not exists idx_senderos_target_agent on senderos(target_agent_id);
-    create index if not exists idx_run_executions_run on run_executions(run_id);
-    create index if not exists idx_run_executions_agent on run_executions(agent_id);
-    create index if not exists idx_run_executions_sendero on run_executions(sendero_id);
+    create index if not exists idx_agent_transitions_source_agent on agent_transitions(source_agent_id);
+    create index if not exists idx_agent_transitions_target_agent on agent_transitions(target_agent_id);
+    create index if not exists idx_run_attempts_run on run_attempts(run_id);
+    create index if not exists idx_run_attempts_agent on run_attempts(agent_id);
+    create index if not exists idx_run_attempts_transition on run_attempts(transition_id);
   `);
 }

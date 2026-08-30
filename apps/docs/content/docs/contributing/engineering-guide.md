@@ -51,7 +51,7 @@ Checklist before merging:
 - Are command outputs explicitly documented in docs?
 - Are error messages actionable?
 - Are IDs and state transitions still deterministic?
-- Does the host-agent handoff still preserve `featureId`, `senderoId`, `agentId`, and `previousRunId` where relevant?
+- Does the host-agent handoff still preserve `goalId`, `transitionId`, `agentId`, and `previousRunId` where relevant?
 
 ## 5. Safe workflow for ongoing codebase improvements
 
@@ -71,16 +71,16 @@ When adding new behavior:
 - Update at least one relevant CLI doc page.
 - Update architecture/concepts pages when model boundaries shift.
 - Add or update operation docs if guardrails change.
-- Keep terminology consistent (`sendero`, `run`, `run execution`, `dispatch`).
+- Keep terminology consistent (`goal`, `agent transition`, `run`, `run attempt`, `dispatch`).
 
 ## 7. Current high-value improvements to document explicitly
 
 A few areas that are repeatedly useful for active developers:
 
-- feature-to-sendero conversion rules,
+- goal lifecycle and transition-selection rules,
 - run retry semantics and expected states,
-- workspace contention and lock behavior,
-- adapter extension strategy,
+- working-path recording and reuse behavior,
+- harness-boundary behavior,
 - failure diagnostics for dispatch and planning gates.
 
 If these move, include examples and one-to-one command mapping in docs.

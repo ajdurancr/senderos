@@ -1,81 +1,40 @@
-import { describe, expect, test } from 'bun:test';
-import { openRuntimeDb } from '../../db/client';
-import { approveFeature, createFeature, createSendero, listAgents } from './index';
-import { dispatchRun } from './run/run';
+import { expect, test } from 'bun:test';
+import { createGoal, activateGoal } from './goals';
 import { plan } from './plan';
+import { createAgentTransition, getAgentBySlug, listAgentTransitions, updateRunAttempt } from './agents';
+import { dispatchRun } from './run/run';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-function setupFeature(home: string) {
+test('planner skips draft goals and selects active goals', () => {
+  const home = initHome();
   const project = createProjectFixture(home);
-  return approveFeature(
-    createFeature({ home, projectId: project.id, title: 'Feature target', gherkinText: 'Feature: target' }).id,
-    home
+  createGoal({ home, projectId: project.id, title: 'Draft' });
+  const active = activateGoal(
+    createGoal({ home, projectId: project.id, title: 'Active' }).id,
+    home,
   )!;
-}
+  const items = plan({ home });
+  expect(items).toHaveLength(1);
+  expect(items[0]?.goalId).toBe(active.id);
+});
 
-describe('runtime planning operation', () => {
-  test('returns only dispatchable items by default', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const items = plan({ home }) as any[];
-    expect(items.some((item) => item.featureId === feature.id)).toBe(true);
-    expect(items.every((item) => Object.keys(item).sort().join(',') === 'agentId,featureId,previousRunId,senderoId')).toBe(true);
+test('planner advances from a succeeded transition to its target agent transition', () => {
+  const home = initHome();
+  const project = createProjectFixture(home);
+  const source = getAgentBySlug('spec-partner', home)!;
+  const target = getAgentBySlug('tdd-craftsman', home)!;
+  const handoff = createAgentTransition({
+    home,
+    sourceAgentId: source.id,
+    targetAgentId: target.id,
+    name: 'handoff to implementation',
+    transitionObjective: 'Hand off to implementation.',
   });
+  const goal = activateGoal(createGoal({ home, projectId: project.id, title: 'Advance' }).id, home)!;
+  const dispatched = dispatchRun({ goalId: goal.id, transitionId: handoff.id, agentId: source.id }, home);
+  updateRunAttempt(dispatched.attemptId, { status: 'succeeded' }, home);
 
-  test('uses the previous failed run execution as a retry candidate', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const agent = listAgents(home)[0]!;
-    const sendero = createSendero({ home, sourceAgentId: agent.id, name: 'Retry path', goal: 'Retry failed work.' });
-    const first = dispatchRun({ featureId: feature.id, senderoId: sendero.id, agentId: agent.id }, home) as any;
-
-    const conn = openRuntimeDb(home);
-    conn.prepare("update runs set status='failed', updated_at=datetime('now') where id=?").run(first.runId);
-    conn.prepare("update run_executions set status='failed', updated_at=datetime('now') where run_id=?").run(first.runId);
-    conn.prepare("update sessions set status='failed', updated_at=datetime('now') where run_id=?").run(first.runId);
-    conn.prepare("update features set status='failed', updated_at=datetime('now') where id=?").run(feature.id);
-    conn.close();
-
-    const items = plan({ home }) as any[];
-    expect(items.some((item) => item.featureId === feature.id && item.previousRunId === first.runId && item.senderoId === sendero.id)).toBe(true);
-  });
-
-  test('uses the next sendero when a previous run succeeded with a target agent', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const [sourceAgent, targetAgent] = listAgents(home) as any[];
-    const sourceSendero = createSendero({ home, sourceAgentId: sourceAgent.id, targetAgentId: targetAgent.id, name: 'Forward path', goal: 'Go forward.' });
-    const targetSendero = createSendero({ home, sourceAgentId: targetAgent.id, name: 'Next path', goal: 'Do next.' });
-    const first = dispatchRun({ featureId: feature.id, senderoId: sourceSendero.id, agentId: sourceAgent.id }, home) as any;
-
-    const conn = openRuntimeDb(home);
-    conn.prepare("update runs set status='succeeded', updated_at=datetime('now') where id=?").run(first.runId);
-    conn.prepare("update run_executions set status='succeeded', updated_at=datetime('now') where run_id=?").run(first.runId);
-    conn.prepare("update sessions set status='completed', updated_at=datetime('now') where run_id=?").run(first.runId);
-    conn.close();
-
-    const items = plan({ home }) as any[];
-    expect(items.some((item) => item.featureId === feature.id && item.previousRunId === first.runId && item.senderoId === targetSendero.id && item.agentId === targetAgent.id)).toBe(true);
-  });
-
-  test('skips runs that are still active and falls back when a current run record is missing', () => {
-    const home = initHome();
-    const feature = setupFeature(home);
-    const agent = listAgents(home)[0]!;
-    const sendero = createSendero({ home, sourceAgentId: agent.id, name: 'Running path', goal: 'Still running.' });
-    const started = dispatchRun({ featureId: feature.id, senderoId: sendero.id, agentId: agent.id }, home) as any;
-    expect((plan({ home }) as any[]).some((item) => item.featureId === feature.id)).toBe(false);
-
-    const conn = openRuntimeDb(home);
-    conn.prepare('delete from runs where id=?').run(started.runId);
-    conn.close();
-    expect((plan({ home }) as any[]).some((item) => item.featureId === feature.id)).toBe(false);
-  });
-
-  test('scopes planning by repeated feature statuses', () => {
-    const home = initHome();
-    setupFeature(home);
-    const items = plan({ home, featureStatuses: ['active'] as any }) as any[];
-    expect(Array.isArray(items)).toBe(true);
-  });
+  const next = plan({ home }).find((item) => item.goalId === goal.id);
+  expect(next?.agentId).toBe(target.id);
+  expect(next?.transitionId).toBe(listAgentTransitions(home).find((item) => item.sourceAgentId === target.id)?.id);
 });

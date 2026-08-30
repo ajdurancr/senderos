@@ -7,22 +7,19 @@ Senderos stores orchestration state in SQLite.
 
 By default, Senderos creates and uses a local SQLite database inside the Senderos home directory.
 
-Senderos also supports a SQLite-compatible remote service, with Turso as the supported option.
-Turso is integrated as a built-in Senderos database adapter. The rest of Senderos resolves a database adapter from configuration instead of hard-coding database behavior into higher-level orchestration code.
+The configuration has a database-adapter shape, but the current operational
+implementation initializes and uses the local SQLite adapter.
 
 ## What lives in SQLite
 
 All durable Senderos entity state lives in SQLite:
 
 - projects
-- features
+- goals
 - runs
-- run executions
-- tasks
-- sessions
-- workspaces
 - agents
-- senderos
+- agent transitions
+- run attempts
 - events
 
 ## What stays on disk
@@ -33,7 +30,6 @@ Large artifacts stay on disk inside the Senderos home directory and are referenc
 - transcripts
 - reports
 - cached payloads
-- temporary workspace files
 
 ## Senderos home directory
 

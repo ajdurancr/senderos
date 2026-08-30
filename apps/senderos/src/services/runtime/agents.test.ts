@@ -1,93 +1,40 @@
-import { describe, expect, test } from 'bun:test';
-
-import { initHome } from '../../../tests/helpers/runtime';
+import { expect, test } from 'bun:test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
-  createRunExecution,
-  createSendero,
-  listRunExecutions,
+  createAgentTransition,
+  getAgentBySlug,
+  listAgentTransitions,
   listAgents,
-  listSenderosForAgent,
 } from './agents';
+import { seedBuiltInAgents } from './agents';
+import { initHome, tempHome } from '../../../tests/helpers/runtime';
 
-describe('runtime agents', () => {
-  test('initialization seeds built-in agents into the database', () => {
-    const home = initHome();
-    const agents = listAgents(home);
-
-    expect(agents.length).toBeGreaterThan(0);
-    expect(agents.some((agent) => agent.slug === 'spec-partner')).toBe(true);
-    expect(agents.every((agent) => agent.definitionFormat === 'markdown')).toBe(true);
-    expect(agents.every((agent) => agent.kind === 'system')).toBe(true);
+test('agent service seeds executors and supports explicit transitions', () => {
+  const home = initHome();
+  const agent = getAgentBySlug('spec-partner', home)!;
+  const transition = createAgentTransition({
+    home,
+    sourceAgentId: agent.id,
+    name: 'Implementation handoff',
+    transitionObjective: 'Implement the approved goal.',
   });
+  expect(listAgents(home).length).toBeGreaterThan(0);
+  expect(
+    listAgentTransitions(home).some((item) => item.id === transition.id),
+  ).toBe(true);
+  expect(seedBuiltInAgents(home)).toHaveLength(listAgents(home).length);
+});
 
-  test('initialization seeds a default sendero for each built-in agent', () => {
-    const home = initHome();
-    const agents = listAgents(home);
+test('agent seeding supplies a default objective when a definition omits one', () => {
+  const home = initHome();
+  const definitionsDir = join(tempHome(), 'agents');
+  mkdirSync(definitionsDir);
+  writeFileSync(
+    join(definitionsDir, 'focused.json'),
+    JSON.stringify({ id: 'focused-agent', slug: 'focused', name: 'Focused agent' }),
+  );
 
-    for (const agent of agents) {
-      const senderos = listSenderosForAgent(agent.id, home);
-      expect(senderos.some((sendero) => sendero.name === 'default sendero')).toBe(true);
-    }
-  });
-
-  test('creates senderos assigned to an agent and captures directed goal state', () => {
-    const home = initHome();
-    const agents = listAgents(home);
-    const sourceAgent = agents[0]!;
-    const targetAgent = agents[1]!;
-
-    const sendero = createSendero({
-      home,
-      sourceAgentId: sourceAgent.id,
-      targetAgentId: targetAgent.id,
-      name: 'Spec handoff',
-      description: 'Move refined spec work toward the implementation specialist.',
-      goal: 'Hand off an approved implementation-ready contract.',
-      assignmentMeta: { lane: 'spec', priority: 'high' },
-    });
-
-    expect(sendero.goalMode).toBe('toward_agent');
-    expect(sendero.targetAgentId).toBe(targetAgent.id);
-
-    const senderos = listSenderosForAgent(sourceAgent.id, home);
-    expect(senderos.length).toBeGreaterThanOrEqual(2);
-    expect(senderos.some((record) => record.name === 'Spec handoff')).toBe(true);
-  });
-
-  test('creates run executions with debugging metadata', () => {
-    const home = initHome();
-    const [sourceAgent, targetAgent] = listAgents(home);
-    const sendero = createSendero({
-      home,
-      sourceAgentId: sourceAgent!.id,
-      targetAgentId: targetAgent!.id,
-      name: 'Implementation relay',
-      goal: 'Advance work from planning to implementation.',
-    });
-
-    const runExecution = createRunExecution({
-      home,
-      runId: 'run-manual',
-      agentId: sourceAgent!.id,
-      senderoId: sendero.id,
-      targetAgentId: targetAgent!.id,
-      goal: 'Advance work from planning to implementation.',
-      harness: 'codex',
-      status: 'running',
-      hostEnvironmentName: 'openclaw-main',
-      hostEnvironmentSessionId: 'session-123',
-      checkpoint: 'contract-approved',
-      statusSnapshot: { progress: 0.5 },
-      debugMeta: { thread: 'slack-dm', trigger: 'human' },
-      startedAt: '2026-07-04T20:00:00.000Z',
-    });
-
-    expect(runExecution.hostEnvironmentSessionId).toBe('session-123');
-    expect(runExecution.checkpoint).toBe('contract-approved');
-
-    const runs = listRunExecutions(sourceAgent!.id, home);
-    expect(runs).toHaveLength(1);
-    expect(runs[0]?.senderoId).toBe(sendero.id);
-    expect(runs[0]?.debugMetaJson).toContain('slack-dm');
-  });
+  seedBuiltInAgents(home, { definitionsDir });
+  expect(getAgentBySlug('focused', home)?.defaultGoal).toContain('Run focused');
 });

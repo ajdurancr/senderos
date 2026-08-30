@@ -10,7 +10,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 - configuration validity,
 - selected database adapter health,
 - directory integrity,
-- workspace root accessibility,
+- managed home-directory accessibility,
 - harness readiness,
 - schema availability.
 

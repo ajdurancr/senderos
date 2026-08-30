@@ -15,16 +15,16 @@ That includes:
 - config
 - logs
 - artifacts
-- session records
-- Senderos-managed workspaces
+- attempt records
 
-If a workspace is used for host-agent coding work, that workspace must be allocated and tracked by Senderos first.
+The host agent owns its execution directory. Senderos may record the supplied
+working path on a run attempt, but does not create, lock, clean, or retire it.
 
-## Session guardrail
+## Host-session guardrail
 
 A host-agent session is not Senderos state.
 
-Senderos may record a host-agent session handle, but it does not trust the live session as the source of truth.
+Senderos may record host-session details on an attempt, but it does not trust the live session as the source of truth.
 All meaningful state must be persisted back into Senderos.
 
 ## Confirmation policy
@@ -41,8 +41,7 @@ Senderos is designed for agent operation, so confirmations happen where they mat
 
 ### Explicit Senderos confirmation required
 
-- feature cancellation
-- workspace retirement
+- goal cancellation
 - configuration rewrite
 
 ### Host-agent confirmation required

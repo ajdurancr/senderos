@@ -26,7 +26,7 @@ Examples:
 ```bash
 senderos status
 senderos plan
-senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id>
+senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --working-path /repo/path
 ```
 
 ## Scheduling model

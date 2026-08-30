@@ -1,57 +1,52 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, extname, resolve } from 'node:path';
-import type { Database } from 'bun:sqlite';
-
 import { openRuntimeDb } from '../../db/client';
-import { mapAgentRow, mapRunExecutionRow, mapSenderoRow } from '../../db/mappers';
+import {
+  mapAgentRow,
+  mapAgentTransitionRow,
+  mapRunAttemptRow,
+} from '../../db/mappers';
 import type {
   AgentKind,
   AgentRecord,
+  AgentTransitionRecord,
   HarnessKind,
-  RunExecutionRecord,
+  RunAttemptRecord,
   SeedAgentsOptions,
-  SenderoGoalMode,
-  SenderoRecord,
 } from '../../domain/types';
 import { now, randomId } from '../../utils/common';
 import { emitEvent } from '../events';
 
-function defaultGoalFromSlug(slug: string) {
-  return `Run ${slug} as a focused agent with a single explicit goal.`;
+const defaultObjective = (slug: string) =>
+  `Run ${slug} as a focused agent with one explicit objective.`;
+const transitionName = 'default transition';
+export function builtInAgentSeedDir() {
+  return resolve(process.cwd(), 'db-seeds', 'agents');
 }
-
-function inferAgentKind(_slug: string): AgentKind {
-  return 'system';
-}
-
-function ensureDefaultSendero(db: Database, agent: AgentRecord) {
-  const existing = mapSenderoRow(
-    db.query("select * from senderos where source_agent_id=? and name='default sendero' limit 1").get(agent.id)
+function ensureDefaultTransition(db: any, agent: AgentRecord) {
+  const existing = mapAgentTransitionRow(
+    db
+      .query(
+        'select * from agent_transitions where source_agent_id=? and name=?',
+      )
+      .get(agent.id, transitionName),
   );
-
-  if (existing) {
-    return existing;
-  }
-
+  if (existing) return existing;
   const ts = now();
-  const record: SenderoRecord = {
-    id: randomId('sendero'),
+  const record: AgentTransitionRecord = {
+    id: randomId('transition'),
     sourceAgentId: agent.id,
     targetAgentId: null,
-    name: 'default sendero',
-    description: `Default sendero for ${agent.slug}.`,
+    name: transitionName,
+    description: `Default transition for ${agent.slug}.`,
     status: 'active',
-    goal: agent.defaultGoal ?? defaultGoalFromSlug(agent.slug),
-    goalMode: 'terminal',
+    transitionObjective: agent.defaultGoal ?? defaultObjective(agent.slug),
     assignmentMetaJson: '{}',
     createdAt: ts,
     updatedAt: ts,
   };
-
   db.prepare(
-    `insert into senderos
-    (id,source_agent_id,target_agent_id,name,description,status,goal,goal_mode,assignment_meta_json,created_at,updated_at)
-    values (?,?,?,?,?,?,?,?,?,?,?)`
+    'insert into agent_transitions (id,source_agent_id,target_agent_id,name,description,status,transition_objective,assignment_meta_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)',
   ).run(
     record.id,
     record.sourceAgentId,
@@ -59,62 +54,56 @@ function ensureDefaultSendero(db: Database, agent: AgentRecord) {
     record.name,
     record.description,
     record.status,
-    record.goal,
-    record.goalMode,
+    record.transitionObjective,
     record.assignmentMetaJson,
-    record.createdAt,
-    record.updatedAt
+    ts,
+    ts,
   );
-
-  emitEvent(db, 'sendero.seeded', 'sendero', record.id, {
-    sourceAgentId: record.sourceAgentId,
-    name: record.name,
+  emitEvent(db, 'agent-transition.seeded', 'agent-transition', record.id, {
+    sourceAgentId: agent.id,
   });
-
   return record;
 }
-
-export function builtInAgentSeedDir() {
-  return resolve(process.cwd(), 'db-seeds', 'agents');
-}
-
-function normalizeSeedAgent(raw: any, fallbackSlug: string): AgentRecord {
-  return {
-    id: raw.id,
-    slug: raw.slug ?? fallbackSlug,
-    name: raw.name,
-    description: raw.description ?? '',
-    kind: raw.kind ?? inferAgentKind(raw.slug ?? fallbackSlug),
-    status: raw.status ?? 'active',
-    definitionFormat: raw.definitionFormat ?? 'markdown',
-    definitionBody: raw.definitionBody ?? '',
-    defaultGoal: raw.defaultGoal ?? defaultGoalFromSlug(raw.slug ?? fallbackSlug),
-    defaultMetaJson: raw.defaultMetaJson ?? '{}',
-    createdAt: raw.createdAt ?? now(),
-    updatedAt: raw.updatedAt ?? now(),
-  };
-}
-
-export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}) {
-  const seedsDir = resolve(options.definitionsDir ?? builtInAgentSeedDir());
+export function seedBuiltInAgents(
+  home?: string,
+  options: SeedAgentsOptions = {},
+) {
   const db = openRuntimeDb(home);
   const seeded: AgentRecord[] = [];
-
-  for (const entry of readdirSync(seedsDir, { withFileTypes: true })) {
-    if (!entry.isFile() || extname(entry.name) !== '.json') {
-      continue;
-    }
-
-    const slug = basename(entry.name, '.json');
-    const seed = normalizeSeedAgent(JSON.parse(readFileSync(resolve(seedsDir, entry.name), 'utf8')), slug);
-    const existing = mapAgentRow(db.query('select * from agents where slug = ?').get(seed.slug));
-    const timestamp = now();
-
-    if (existing) {
+  for (const entry of readdirSync(
+    options.definitionsDir ?? builtInAgentSeedDir(),
+    { withFileTypes: true },
+  )) {
+    if (!entry.isFile() || extname(entry.name) !== '.json') continue;
+    const raw = JSON.parse(
+      readFileSync(
+        resolve(options.definitionsDir ?? builtInAgentSeedDir(), entry.name),
+        'utf8',
+      ),
+    );
+    const ts = now();
+    const seed = {
+      id: raw.id,
+      slug: raw.slug ?? basename(entry.name, '.json'),
+      name: raw.name,
+      description: raw.description ?? '',
+      kind: (raw.kind ?? 'system') as AgentKind,
+      status: raw.status ?? 'active',
+      definitionFormat: raw.definitionFormat ?? 'markdown',
+      definitionBody: raw.definitionBody ?? '',
+      defaultGoal:
+        raw.defaultGoal ??
+        defaultObjective(raw.slug ?? basename(entry.name, '.json')),
+      defaultMetaJson: raw.defaultMetaJson ?? '{}',
+      createdAt: raw.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    const existing = mapAgentRow(
+      db.query('select * from agents where slug=?').get(seed.slug),
+    );
+    if (existing)
       db.prepare(
-        `update agents
-         set name=?, description=?, kind=?, status=?, definition_format=?, definition_body=?, default_goal=?, default_meta_json=?, updated_at=?
-         where id=?`
+        'update agents set name=?,description=?,kind=?,status=?,definition_format=?,definition_body=?,default_goal=?,default_meta_json=?,updated_at=? where id=?',
       ).run(
         seed.name,
         seed.description,
@@ -124,99 +113,85 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
         seed.definitionBody,
         seed.defaultGoal,
         seed.defaultMetaJson,
-        timestamp,
-        existing.id
+        ts,
+        existing.id,
       );
-
-      const updated = mapAgentRow(db.query('select * from agents where id = ?').get(existing.id))!;
-      seeded.push(updated);
-      ensureDefaultSendero(db, updated);
-      emitEvent(db, 'agent.seeded', 'agent', updated.id, { slug: updated.slug });
-      continue;
-    }
-
-    const record: AgentRecord = { ...seed, updatedAt: timestamp };
-
-    db.prepare(
-      `insert into agents
-      (id,slug,name,description,kind,status,definition_format,definition_body,default_goal,default_meta_json,created_at,updated_at)
-      values (?,?,?,?,?,?,?,?,?,?,?,?)`
-    ).run(
-      record.id,
-      record.slug,
-      record.name,
-      record.description,
-      record.kind,
-      record.status,
-      record.definitionFormat,
-      record.definitionBody,
-      record.defaultGoal,
-      record.defaultMetaJson,
-      record.createdAt,
-      record.updatedAt
-    );
-
-    seeded.push(record);
-    ensureDefaultSendero(db, record);
-    emitEvent(db, 'agent.seeded', 'agent', record.id, { slug: record.slug });
+    else
+      db.prepare(
+        'insert into agents (id,slug,name,description,kind,status,definition_format,definition_body,default_goal,default_meta_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?)',
+      ).run(
+        seed.id,
+        seed.slug,
+        seed.name,
+        seed.description,
+        seed.kind,
+        seed.status,
+        seed.definitionFormat,
+        seed.definitionBody,
+        seed.defaultGoal,
+        seed.defaultMetaJson,
+        seed.createdAt,
+        ts,
+      );
+    const agent = mapAgentRow(
+      db.query('select * from agents where slug=?').get(seed.slug),
+    )!;
+    ensureDefaultTransition(db, agent);
+    seeded.push(agent);
+    emitEvent(db, 'agent.seeded', 'agent', agent.id, { slug: agent.slug });
   }
-
   db.close();
   return seeded;
 }
-
 export function listAgents(home?: string) {
   const db = openRuntimeDb(home);
-  const rows = db.query('select * from agents order by created_at asc').all().map(mapAgentRow) as AgentRecord[];
+  const rows = db
+    .query('select * from agents order by created_at asc')
+    .all()
+    .map(mapAgentRow) as AgentRecord[];
   db.close();
   return rows;
 }
-
 export function getAgent(id: string, home?: string) {
   const db = openRuntimeDb(home);
   const row = mapAgentRow(db.query('select * from agents where id=?').get(id));
   db.close();
   return row;
 }
-
 export function getAgentBySlug(slug: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapAgentRow(db.query('select * from agents where slug=?').get(slug));
+  const row = mapAgentRow(
+    db.query('select * from agents where slug=?').get(slug),
+  );
   db.close();
   return row;
 }
-
-export function createSendero(input: {
+export function createAgentTransition(input: {
+  home?: string;
   sourceAgentId: string;
   targetAgentId?: string | null;
   name: string;
   description?: string;
-  goal: string;
-  goalMode?: SenderoGoalMode;
-  status?: SenderoRecord['status'];
+  transitionObjective: string;
+  status?: AgentTransitionRecord['status'];
   assignmentMeta?: Record<string, unknown>;
-  home?: string;
 }) {
   const db = openRuntimeDb(input.home);
-  const timestamp = now();
-  const record: SenderoRecord = {
-    id: randomId('sendero'),
+  const ts = now();
+  const record: AgentTransitionRecord = {
+    id: randomId('transition'),
     sourceAgentId: input.sourceAgentId,
     targetAgentId: input.targetAgentId ?? null,
     name: input.name,
     description: input.description ?? '',
     status: input.status ?? 'active',
-    goal: input.goal,
-    goalMode: input.goalMode ?? (input.targetAgentId ? 'toward_agent' : 'terminal'),
+    transitionObjective: input.transitionObjective,
     assignmentMetaJson: JSON.stringify(input.assignmentMeta ?? {}),
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    createdAt: ts,
+    updatedAt: ts,
   };
-
   db.prepare(
-    `insert into senderos
-    (id,source_agent_id,target_agent_id,name,description,status,goal,goal_mode,assignment_meta_json,created_at,updated_at)
-    values (?,?,?,?,?,?,?,?,?,?,?)`
+    'insert into agent_transitions (id,source_agent_id,target_agent_id,name,description,status,transition_objective,assignment_meta_json,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?)',
   ).run(
     record.id,
     record.sourceAgentId,
@@ -224,126 +199,111 @@ export function createSendero(input: {
     record.name,
     record.description,
     record.status,
-    record.goal,
-    record.goalMode,
+    record.transitionObjective,
     record.assignmentMetaJson,
-    record.createdAt,
-    record.updatedAt
+    ts,
+    ts,
   );
-
-  emitEvent(db, 'sendero.created', 'sendero', record.id, {
+  emitEvent(db, 'agent-transition.created', 'agent-transition', record.id, {
     sourceAgentId: record.sourceAgentId,
     targetAgentId: record.targetAgentId,
-    goalMode: record.goalMode,
   });
-
   db.close();
   return record;
 }
-
-export function listSenderos(home?: string) {
+export function listAgentTransitions(home?: string) {
   const db = openRuntimeDb(home);
-  const rows = db.query('select * from senderos order by created_at asc').all().map(mapSenderoRow) as SenderoRecord[];
+  const rows = db
+    .query('select * from agent_transitions order by created_at asc')
+    .all()
+    .map(mapAgentTransitionRow) as AgentTransitionRecord[];
   db.close();
   return rows;
 }
-
-export function getSendero(id: string, home?: string) {
+export function getAgentTransition(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapSenderoRow(db.query('select * from senderos where id=?').get(id));
-  db.close();
-  return row;
-}
-
-export function getDefaultSenderoForAgent(agentId: string, home?: string) {
-  const db = openRuntimeDb(home);
-  const row = mapSenderoRow(
-    db.query("select * from senderos where source_agent_id=? and name='default sendero' order by created_at asc limit 1").get(agentId)
+  const row = mapAgentTransitionRow(
+    db.query('select * from agent_transitions where id=?').get(id),
   );
   db.close();
   return row;
 }
-
-export function listSenderosForAgent(agentId: string, home?: string) {
-  const db = openRuntimeDb(home);
-  const rows = db
-    .query('select * from senderos where source_agent_id=? order by created_at asc')
-    .all(agentId)
-    .map(mapSenderoRow) as SenderoRecord[];
-  db.close();
-  return rows;
+export function listAgentTransitionsForAgent(agentId: string, home?: string) {
+  return listAgentTransitions(home).filter(
+    (item) => item.sourceAgentId === agentId,
+  );
 }
-
-export function createRunExecution(input: {
+export function createRunAttempt(input: {
+  home?: string;
+  runId: string;
+  attemptNumber: number;
   agentId: string;
-  senderoId?: string | null;
-  targetAgentId?: string | null;
-  featureId?: string | null;
-  runId?: string | null;
-  goal: string;
-  status?: RunExecutionRecord['status'];
-  attemptNumber?: number;
+  transitionId?: string | null;
+  executionObjective: string;
   harness: HarnessKind;
+  externalSessionId?: string | null;
+  resumeCommand?: string | null;
+  heartbeatAt?: string | null;
   hostEnvironmentName?: string | null;
-  hostEnvironmentSessionId?: string | null;
+  workingPath?: string | null;
+  workingPathMode?: string | null;
+  retryFromAttemptId?: string | null;
   checkpoint?: string | null;
-  sourceFeatureSha?: string | null;
-  failureStep?: string | null;
-  statusSnapshot?: Record<string, unknown>;
-  result?: Record<string, unknown>;
-  failureSummary?: string | null;
+  sourceGoalSha?: string | null;
+  status?: RunAttemptRecord['status'];
   debugMeta?: Record<string, unknown>;
   startedAt?: string | null;
-  finishedAt?: string | null;
-  home?: string;
 }) {
   const db = openRuntimeDb(input.home);
-  const timestamp = now();
-  const record: RunExecutionRecord = {
-    id: randomId('run-execution'),
-    runId: input.runId ?? null,
-    featureId: input.featureId ?? null,
-    attemptNumber: input.attemptNumber ?? 1,
+  const ts = now();
+  const record: RunAttemptRecord = {
+    id: randomId('attempt'),
+    runId: input.runId,
+    attemptNumber: input.attemptNumber,
     agentId: input.agentId,
-    senderoId: input.senderoId ?? null,
-    targetAgentId: input.targetAgentId ?? null,
+    transitionId: input.transitionId ?? null,
     status: input.status ?? 'queued',
-    goal: input.goal,
-    hostEnvironmentName: input.hostEnvironmentName ?? null,
-    hostEnvironmentSessionId: input.hostEnvironmentSessionId ?? null,
+    executionObjective: input.executionObjective,
     harness: input.harness,
+    externalSessionId: input.externalSessionId ?? null,
+    resumeCommand: input.resumeCommand ?? null,
+    heartbeatAt: input.heartbeatAt ?? null,
+    hostEnvironmentName: input.hostEnvironmentName ?? null,
+    workingPath: input.workingPath ?? null,
+    workingPathMode: input.workingPathMode ?? null,
+    retryFromAttemptId: input.retryFromAttemptId ?? null,
     checkpoint: input.checkpoint ?? null,
-    sourceFeatureSha: input.sourceFeatureSha ?? null,
-    failureStep: input.failureStep ?? null,
-    statusSnapshotJson: JSON.stringify(input.statusSnapshot ?? {}),
-    resultJson: JSON.stringify(input.result ?? {}),
-    failureSummary: input.failureSummary ?? null,
+    sourceGoalSha: input.sourceGoalSha ?? null,
+    failureStep: null,
+    statusSnapshotJson: '{}',
+    resultJson: '{}',
+    failureSummary: null,
     debugMetaJson: JSON.stringify(input.debugMeta ?? {}),
     startedAt: input.startedAt ?? null,
-    finishedAt: input.finishedAt ?? null,
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    finishedAt: null,
+    createdAt: ts,
+    updatedAt: ts,
   };
-
   db.prepare(
-    `insert into run_executions
-    (id,run_id,feature_id,attempt_number,agent_id,sendero_id,target_agent_id,status,goal,host_environment_name,host_environment_session_id,harness,checkpoint,source_feature_sha,failure_step,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at)
-    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    'insert into run_attempts (id,run_id,attempt_number,agent_id,transition_id,status,execution_objective,harness,external_session_id,resume_command,heartbeat_at,host_environment_name,working_path,working_path_mode,retry_from_attempt_id,checkpoint,source_goal_sha,failure_step,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
   ).run(
     record.id,
     record.runId,
-    record.featureId,
     record.attemptNumber,
     record.agentId,
-    record.senderoId,
-    record.targetAgentId,
+    record.transitionId,
     record.status,
-    record.goal,
-    record.hostEnvironmentName,
-    record.hostEnvironmentSessionId,
+    record.executionObjective,
     record.harness,
+    record.externalSessionId,
+    record.resumeCommand,
+    record.heartbeatAt,
+    record.hostEnvironmentName,
+    record.workingPath,
+    record.workingPathMode,
+    record.retryFromAttemptId,
     record.checkpoint,
-    record.sourceFeatureSha,
+    record.sourceGoalSha,
     record.failureStep,
     record.statusSnapshotJson,
     record.resultJson,
@@ -351,120 +311,97 @@ export function createRunExecution(input: {
     record.debugMetaJson,
     record.startedAt,
     record.finishedAt,
-    record.createdAt,
-    record.updatedAt
+    ts,
+    ts,
   );
-
-  emitEvent(db, 'run-execution.created', 'run-execution', record.id, {
-    agentId: record.agentId,
-    senderoId: record.senderoId,
-    targetAgentId: record.targetAgentId,
-    status: record.status,
+  emitEvent(db, 'run-attempt.created', 'run-attempt', record.id, {
+    runId: record.runId,
+    attemptNumber: record.attemptNumber,
   });
-
   db.close();
   return record;
 }
-
-export function updateRunExecution(
-  id: string,
-  input: {
-    status?: RunExecutionRecord['status'];
-    checkpoint?: string | null;
-    statusSnapshot?: Record<string, unknown>;
-    result?: Record<string, unknown>;
-    failureSummary?: string | null;
-    debugMeta?: Record<string, unknown>;
-    hostEnvironmentName?: string | null;
-    hostEnvironmentSessionId?: string | null;
-    startedAt?: string | null;
-    finishedAt?: string | null;
-  },
-  home?: string
-) {
-  const current = getRunExecution(id, home);
-
-  if (!current) {
-    throw new Error(`Run execution not found: ${id}`);
-  }
-
+export function getRunAttempt(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  db.prepare(
-    `update run_executions
-     set status=?, checkpoint=?, status_snapshot_json=?, result_json=?, failure_summary=?, debug_meta_json=?,
-         host_environment_name=?, host_environment_session_id=?, started_at=?, finished_at=?, updated_at=?
-     where id=?`
-  ).run(
-    input.status ?? current.status,
-    input.checkpoint ?? current.checkpoint,
-    JSON.stringify(input.statusSnapshot ?? JSON.parse(current.statusSnapshotJson ?? '{}')),
-    JSON.stringify(input.result ?? JSON.parse(current.resultJson ?? '{}')),
-    input.failureSummary ?? current.failureSummary,
-    JSON.stringify(input.debugMeta ?? JSON.parse(current.debugMetaJson ?? '{}')),
-    input.hostEnvironmentName ?? current.hostEnvironmentName,
-    input.hostEnvironmentSessionId ?? current.hostEnvironmentSessionId,
-    input.startedAt ?? current.startedAt,
-    input.finishedAt ?? current.finishedAt,
-    now(),
-    id
-  );
-
-  emitEvent(db, 'run-execution.updated', 'run-execution', id, {
-    status: input.status ?? current.status,
-    checkpoint: input.checkpoint ?? current.checkpoint,
-  });
-
-  db.close();
-  return getRunExecution(id, home);
-}
-
-export function getRunExecutionByRunId(runId: string, home?: string) {
-  const db = openRuntimeDb(home);
-  const row = mapRunExecutionRow(
-    db.query('select * from run_executions where run_id=? order by created_at desc limit 1').get(runId)
+  const row = mapRunAttemptRow(
+    db.query('select * from run_attempts where id=?').get(id),
   );
   db.close();
   return row;
 }
-
-export function updateRunExecutionByRunId(
-  runId: string,
-  input: {
-    status?: RunExecutionRecord['status'];
-    checkpoint?: string | null;
-    statusSnapshot?: Record<string, unknown>;
-    result?: Record<string, unknown>;
-    failureSummary?: string | null;
-    debugMeta?: Record<string, unknown>;
-    hostEnvironmentName?: string | null;
-    hostEnvironmentSessionId?: string | null;
-    startedAt?: string | null;
-    finishedAt?: string | null;
-  },
-  home?: string
-) {
-  const row = getRunExecutionByRunId(runId, home);
-
-  if (!row) {
-    return null;
-  }
-
-  return updateRunExecution(row.id, input, home);
-}
-
-export function listRunExecutions(agentId?: string, home?: string) {
+export function listRunAttempts(runId?: string, home?: string) {
   const db = openRuntimeDb(home);
-  const query = agentId
-    ? db.query('select * from run_executions where agent_id=? order by created_at asc')
-    : db.query('select * from run_executions order by created_at asc');
-  const rows = (agentId ? query.all(agentId) : query.all()).map(mapRunExecutionRow) as RunExecutionRecord[];
+  const rows = (
+    runId
+      ? db
+          .query(
+            'select * from run_attempts where run_id=? order by attempt_number asc',
+          )
+          .all(runId)
+      : db.query('select * from run_attempts order by created_at asc').all()
+  ).map(mapRunAttemptRow) as RunAttemptRecord[];
   db.close();
   return rows;
 }
-
-export function getRunExecution(id: string, home?: string) {
+export function updateRunAttempt(
+  id: string,
+  input: Partial<
+    Pick<
+      RunAttemptRecord,
+      | 'status'
+      | 'checkpoint'
+      | 'workingPath'
+      | 'workingPathMode'
+      | 'externalSessionId'
+      | 'resumeCommand'
+      | 'heartbeatAt'
+      | 'failureStep'
+      | 'failureSummary'
+      | 'finishedAt'
+    >
+  > & {
+    result?: Record<string, unknown>;
+    statusSnapshot?: Record<string, unknown>;
+  },
+  home?: string,
+) {
+  const current = getRunAttempt(id, home);
+  if (!current) throw new Error(`Run attempt not found: ${id}`);
   const db = openRuntimeDb(home);
-  const row = mapRunExecutionRow(db.query('select * from run_executions where id=?').get(id));
+  db.prepare(
+    'update run_attempts set status=?,checkpoint=?,working_path=?,working_path_mode=?,external_session_id=?,resume_command=?,heartbeat_at=?,failure_step=?,failure_summary=?,result_json=?,status_snapshot_json=?,finished_at=?,updated_at=? where id=?',
+  ).run(
+    input.status ?? current.status,
+    input.checkpoint ?? current.checkpoint,
+    input.workingPath ?? current.workingPath,
+    input.workingPathMode ?? current.workingPathMode,
+    input.externalSessionId ?? current.externalSessionId,
+    input.resumeCommand ?? current.resumeCommand,
+    input.heartbeatAt ?? current.heartbeatAt,
+    input.failureStep ?? current.failureStep,
+    input.failureSummary ?? current.failureSummary,
+    JSON.stringify(input.result ?? JSON.parse(current.resultJson)),
+    JSON.stringify(
+      input.statusSnapshot ?? JSON.parse(current.statusSnapshotJson),
+    ),
+    input.finishedAt ?? current.finishedAt,
+    now(),
+    id,
+  );
+  if (input.status && ['succeeded', 'failed', 'canceled'].includes(input.status)) {
+    const runStatus = input.status === 'succeeded' ? 'succeeded' : input.status;
+    db.prepare('update runs set status=?,updated_at=? where id=?').run(
+      runStatus,
+      now(),
+      current.runId,
+    );
+    if (input.status === 'failed') {
+      db.prepare("update goals set status='failed',updated_at=? where id=(select goal_id from runs where id=?)").run(
+        now(),
+        current.runId,
+      );
+    }
+  }
   db.close();
-  return row;
+  return getRunAttempt(id, home);
 }

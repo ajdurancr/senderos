@@ -1,27 +1,65 @@
-import { createProject, getProject, listProjects, updateProject } from '../../services/runtime';
+import {
+  createProject,
+  getProject,
+  listProjects,
+  updateProject,
+} from '../../services/runtime';
 import { requirePositional } from '../shared';
 
 const projectCreateHelp = {
   command: 'create',
   summary: 'Create a Senderos project.',
   agentDescription:
-    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later features and runs depend on.',
+    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later goals and runs depend on.',
   usage: [
     'senderos project create --canonical-path /repo --github-owner owner --github-repo repo [--id senderos-ab12cd34] [--name senderos] [--target-branch main] [--integration-mode github_pr]',
   ],
   options: [
-    { name: '--canonical-path', description: 'Canonical local repository path.', required: true },
-    { name: '--github-owner', description: 'GitHub owner or organization.', required: true },
-    { name: '--github-repo', description: 'GitHub repository name.', required: true },
+    {
+      name: '--canonical-path',
+      description: 'Canonical local repository path.',
+      required: true,
+    },
+    {
+      name: '--github-owner',
+      description: 'GitHub owner or organization.',
+      required: true,
+    },
+    {
+      name: '--github-repo',
+      description: 'GitHub repository name.',
+      required: true,
+    },
     { name: '--id', description: 'Optional explicit project id.' },
     { name: '--name', description: 'Optional project display name.' },
-    { name: '--github-remote', description: 'Optional explicit GitHub remote URL.' },
-    { name: '--target-branch', description: 'Canonical target branch. Defaults to main.' },
-    { name: '--integration-mode', description: 'Integration mode. Defaults to github_pr.' },
-    { name: '--install-command', description: 'Inferred or overridden install command.' },
-    { name: '--build-command', description: 'Inferred or overridden build command.' },
-    { name: '--test-command', description: 'Inferred or overridden test command.' },
-    { name: '--lint-command', description: 'Inferred or overridden lint command.' },
+    {
+      name: '--github-remote',
+      description: 'Optional explicit GitHub remote URL.',
+    },
+    {
+      name: '--target-branch',
+      description: 'Canonical target branch. Defaults to main.',
+    },
+    {
+      name: '--integration-mode',
+      description: 'Integration mode. Defaults to github_pr.',
+    },
+    {
+      name: '--install-command',
+      description: 'Inferred or overridden install command.',
+    },
+    {
+      name: '--build-command',
+      description: 'Inferred or overridden build command.',
+    },
+    {
+      name: '--test-command',
+      description: 'Inferred or overridden test command.',
+    },
+    {
+      name: '--lint-command',
+      description: 'Inferred or overridden lint command.',
+    },
   ],
 };
 
@@ -39,7 +77,9 @@ const projectShowHelp = {
   agentDescription:
     'Use this to inspect one project record and its persisted repository details.',
   usage: ['senderos project show <project-id>'],
-  arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
+  arguments: [
+    { name: 'project-id', description: 'Project identifier.', required: true },
+  ],
 };
 
 const projectUpdateHelp = {
@@ -47,17 +87,26 @@ const projectUpdateHelp = {
   summary: 'Update a Senderos project.',
   agentDescription:
     'Use this to mutate persisted project details when the repository, branch, or inferred commands need to change.',
-  usage: ['senderos project update <project-id> [--name ...] [--target-branch ...] [--integration-mode ...]'],
-  arguments: [{ name: 'project-id', description: 'Project identifier.', required: true }],
+  usage: [
+    'senderos project update <project-id> [--name ...] [--target-branch ...] [--integration-mode ...]',
+  ],
+  arguments: [
+    { name: 'project-id', description: 'Project identifier.', required: true },
+  ],
 };
 
 export const projectCommandHelp = {
   command: 'project',
   summary: 'Create and manage Senderos projects.',
   agentDescription:
-    'Use the project command to manage the repository records that Senderos attaches features and runs to. This surface is for project state only.',
+    'Use the project command to manage the repository records that Senderos attaches goals and runs to. This surface is for project state only.',
   usage: ['senderos project <create|list|show|update> ...'],
-  subcommands: [projectCreateHelp, projectListHelp, projectShowHelp, projectUpdateHelp],
+  subcommands: [
+    projectCreateHelp,
+    projectListHelp,
+    projectShowHelp,
+    projectUpdateHelp,
+  ],
 };
 
 function commandMap(options: Record<string, string | boolean | string[]>) {
@@ -69,7 +118,10 @@ function commandMap(options: Record<string, string | boolean | string[]>) {
   };
 }
 
-function parseProjectCreateOptions(home: string, options: Record<string, string | boolean | string[]>) {
+function parseProjectCreateOptions(
+  home: string,
+  options: Record<string, string | boolean | string[]>,
+) {
   return {
     home,
     id: options.id as string | undefined,
@@ -81,7 +133,9 @@ function parseProjectCreateOptions(home: string, options: Record<string, string 
     targetBranch: options['target-branch'] as string | undefined,
     integrationMode: options['integration-mode'] as any,
     inferredCommands: Object.fromEntries(
-      Object.entries(commandMap(options)).filter(([, value]) => typeof value === 'string' && value)
+      Object.entries(commandMap(options)).filter(
+        ([, value]) => typeof value === 'string' && value,
+      ),
     ),
   };
 }
@@ -89,10 +143,12 @@ function parseProjectCreateOptions(home: string, options: Record<string, string 
 function parseProjectUpdateOptions(
   home: string,
   id: string,
-  options: Record<string, string | boolean | string[]>
+  options: Record<string, string | boolean | string[]>,
 ) {
   const commands = Object.fromEntries(
-    Object.entries(commandMap(options)).filter(([, value]) => typeof value === 'string' && value)
+    Object.entries(commandMap(options)).filter(
+      ([, value]) => typeof value === 'string' && value,
+    ),
   );
 
   return {
@@ -113,7 +169,7 @@ export function handleProject(
   sub: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
-  home: string
+  home: string,
 ) {
   switch (sub) {
     case 'create':
@@ -124,7 +180,11 @@ export function handleProject(
       return getProject(requirePositional(positionals[2], 'project id'), home);
     case 'update':
       return updateProject(
-        parseProjectUpdateOptions(home, requirePositional(positionals[2], 'project id'), options)
+        parseProjectUpdateOptions(
+          home,
+          requirePositional(positionals[2], 'project id'),
+          options,
+        ),
       );
     default:
       throw new Error('Unknown project action');

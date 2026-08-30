@@ -13,8 +13,8 @@ Senderos is installed into the local environment and operated through the CLI.
 4. rerun `senderos init --approve` once the configuration is acceptable
 5. run `senderos doctor`
 6. create the first project
-7. create the first feature
-8. approve the feature
+7. create the first goal
+8. activate the goal
 9. call `senderos plan`
 10. dispatch one returned item with `senderos run dispatch ...`
 
@@ -29,14 +29,15 @@ senderos project create \
   --canonical-path /repo/path \
   --github-owner ajdurancr \
   --github-repo senderos
-senderos feature create \
+senderos goal create \
   --home ./.senderos \
   --project-id senderos-ab12cd34 \
   --title "Add billing portal" \
-  --gherkin $'Feature: Billing portal\n  Scenario: Open billing portal\n    Given an authenticated user\n    When they open billing\n    Then they should reach the billing portal'
-senderos feature approve feature-001 --home ./.senderos
+  --kind feature \
+  --spec-text "Authenticated users can open the billing portal."
+senderos goal activate <goal-id> --home ./.senderos
 senderos plan --home ./.senderos
-senderos run dispatch --feature-id <feature-id> --sendero-id <sendero-id> --agent-id <agent-id> --home ./.senderos
+senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --working-path /repo/path --home ./.senderos
 senderos status --home ./.senderos
 ```
 
@@ -47,7 +48,6 @@ senderos status --home ./.senderos
 - config file
 - SQLite database or remote DB configuration
 - artifact directories
-- workspace root
 - initial schema
 
 ## Required configuration
@@ -55,7 +55,6 @@ senderos status --home ./.senderos
 The configuration file defines:
 
 - database driver and connection details
-- workspace root
 - artifact directories
 - default harness
 - output mode defaults

@@ -1,22 +1,16 @@
-import { describe, expect, test } from 'bun:test';
-import { approveFeature, createFeature, createSendero, listAgents } from './index';
-import { dispatchRun } from './run/run';
+import { expect, test } from 'bun:test';
 import { status } from './status';
+import { activateGoal, createGoal } from './goals';
 import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
-describe('runtime status operation', () => {
-  test('reports current runtime status', () => {
-    const home = initHome();
-    const project = createProjectFixture(home);
-    const feature = approveFeature(createFeature({ home, projectId: project.id, title: 'Status target', gherkinText: 'Feature: Status target' }).id, home)!;
-    const agent = listAgents(home)[0]!;
-    const sendero = createSendero({ home, sourceAgentId: agent.id, name: 'Status path', goal: 'Status work.' });
-    const started: any = dispatchRun({ featureId: feature.id, senderoId: sendero.id, agentId: agent.id }, home);
-    const snapshot = status(home);
-    expect(snapshot.projects.total).toBe(1);
-    expect(snapshot.openFeatures).toBeGreaterThan(0);
-    expect(snapshot.activeFeatureIds).toContain(feature.id);
-    expect(snapshot.runningRunIds).toContain(started.runId);
-    expect(snapshot.activeSessionIds).toContain(started.sessionId);
-  });
+test('status aggregates current project and goal state', () => {
+  const home = initHome();
+  const project = createProjectFixture(home);
+  const goal = activateGoal(
+    createGoal({ home, projectId: project.id, title: 'Visible goal' }).id,
+    home,
+  )!;
+  const result = status(home);
+  expect(result.projects.total).toBe(1);
+  expect(result.activeGoalIds).toContain(goal.id);
 });
