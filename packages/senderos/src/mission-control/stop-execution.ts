@@ -1,5 +1,5 @@
-import { getRun } from '../commands/runs';
-import { cancelRun } from '../commands/runs/execution';
+import { getRun } from '../commands/runs/get';
+import { cancelRun } from '../commands/runs/cancel';
 import { missionControlGoal } from './goal';
 
 export function missionControlStopExecution(input: { runId: string; home?: string }) {

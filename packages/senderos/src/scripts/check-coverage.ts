@@ -6,7 +6,7 @@ const threshold = Number(process.argv[2] ?? '90');
 const coverageDir = process.argv[3] ?? 'coverage';
 const perFileThreshold = Number(process.argv[4] ?? String(threshold));
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const packageRoot = resolve(scriptDir, '..');
+const packageRoot = resolve(scriptDir, '..', '..');
 const lcovPath = join(packageRoot, coverageDir, 'lcov.info');
 const lcov = readFileSync(lcovPath, 'utf8');
 

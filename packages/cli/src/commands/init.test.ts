@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { handleInit } from './init';
-import { tempHome } from '../../../senderos/tests/helpers/runtime';
+import { tempHome } from '../../../senderos/src/test-support/runtime';
 
 describe('init command', () => {
   test('returns a non-mutating preview without approval', async () => {

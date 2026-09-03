@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { handleProject } from './project';
-import { initHome, tempProjectDir } from '../../../senderos/tests/helpers/runtime';
+import { initHome, tempProjectDir } from '../../../senderos/src/test-support/runtime';
 
 describe('project command', () => {
   test('create generates a project id from package.json name by default', () => {

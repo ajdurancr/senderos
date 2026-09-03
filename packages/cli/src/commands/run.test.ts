@@ -5,7 +5,7 @@ import {
   createGoal,
   listAgentTransitions,
 } from '@senderos/senderos';
-import { createProjectFixture, initHome } from '../../../senderos/tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../senderos/src/test-support/runtime';
 
 test('run command dispatches a planned goal', () => {
   const home = initHome();

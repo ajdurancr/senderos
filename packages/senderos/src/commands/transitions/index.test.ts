@@ -4,7 +4,7 @@ import {
   createAgentTransition,
   getAgentTransition,
   listAgentTransitionsForAgent,
-} from '.';
+} from './index';
 import { initHome } from '../../test-support/runtime';
 
 test('transition commands create, read, and filter agent handoffs', () => {

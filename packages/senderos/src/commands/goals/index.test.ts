@@ -5,7 +5,7 @@ import {
   getGoal,
   listGoals,
   updateGoal,
-} from '.';
+} from './index';
 import { createProjectFixture, initHome } from '../../test-support/runtime';
 
 test('goal service persists, updates, activates, and lists goals', () => {

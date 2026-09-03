@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { runCli } from '../run';
-import { tempHome, tempProjectDir } from '../../../senderos/tests/helpers/runtime';
+import { tempHome, tempProjectDir } from '../../../senderos/src/test-support/runtime';
 
 async function invokeCli(argv: string[]) {
   const output: string[] = [];

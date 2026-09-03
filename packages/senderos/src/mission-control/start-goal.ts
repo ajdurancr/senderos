@@ -1,6 +1,6 @@
-import { activateGoal } from '../commands/goals';
-import { plan } from '../commands/plan';
-import { dispatchRun } from '../commands/runs/execution';
+import { activateGoal } from '../commands/goals/activate';
+import { plan } from '../commands/planning/plan';
+import { dispatchRun } from '../commands/runs/dispatch';
 import { missionControlGoal } from './goal';
 
 export function missionControlStartGoal(input: { goalId: string; workingPath?: string; home?: string }) {

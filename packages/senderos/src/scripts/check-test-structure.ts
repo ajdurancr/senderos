@@ -1,14 +1,19 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-const sourceRoot = resolve(import.meta.dir, '..', 'src');
+const sourceRoot = resolve(import.meta.dir, '..');
 const sourceFiles: string[] = [];
 
 function collect(directory: string) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) collect(path);
-    else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) sourceFiles.push(path);
+    else if (
+      entry.name.endsWith('.ts') &&
+      !entry.name.endsWith('.test.ts') &&
+      !path.includes('/scripts/') &&
+      !path.includes('/test-support/')
+    ) sourceFiles.push(path);
   }
 }
 

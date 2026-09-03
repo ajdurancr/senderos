@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { handleAttempt } from './attempt';
 import { createRunAttempt, getAgentBySlug } from '@senderos/senderos';
-import { initHome } from '../../../senderos/tests/helpers/runtime';
+import { initHome } from '../../../senderos/src/test-support/runtime';
 
 function createAttemptFixture() {
   const home = initHome();

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { handleSystemCommand } from './system';
-import { initHome } from '../../../senderos/tests/helpers/runtime';
+import { initHome } from '../../../senderos/src/test-support/runtime';
 
 test('system commands report status and health', () => {
   const home = initHome();

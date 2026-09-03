@@ -1,6 +1,6 @@
-import { getGoal } from '../commands/goals';
-import { plan } from '../commands/plan';
-import { dispatchRun } from '../commands/runs/execution';
+import { getGoal } from '../commands/goals/get';
+import { plan } from '../commands/planning/plan';
+import { dispatchRun } from '../commands/runs/dispatch';
 import { missionControlGoal } from './goal';
 
 export function missionControlRetryExecution(input: { goalId: string; workingPath?: string; home?: string }) {

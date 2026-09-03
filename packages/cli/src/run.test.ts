@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { loadConfig } from '@senderos/senderos';
-import { tempHome } from '../../senderos/tests/helpers/runtime';
+import { tempHome } from '../../senderos/src/test-support/runtime';
 import { runCli } from './run';
 
 describe('runCli', () => {

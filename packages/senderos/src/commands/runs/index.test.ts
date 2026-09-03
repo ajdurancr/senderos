@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test';
-import { createRunRecord, getRun, latestRunForGoal } from '.';
+import { createRunRecord } from './create';
+import { getRun } from './get';
+import { latestRunForGoal } from './latest-for-goal';
 import { activateGoal, createGoal } from '../../index';
 import { createProjectFixture, initHome } from '../../test-support/runtime';
 

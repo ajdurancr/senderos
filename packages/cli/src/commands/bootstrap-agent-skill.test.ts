@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { handleBootstrapAgentSkill } from './bootstrap-agent-skill';
-import { tempHome } from '../../../senderos/tests/helpers/runtime';
+import { tempHome } from '../../../senderos/src/test-support/runtime';
 
 describe('bootstrap-agent-skill command', () => {
   test('prints without writing when requested', async () => {

@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
-import { createProject, defaultProjectIdForPath, getProject, listProjects, updateProject } from '.';
+import { createProject } from './create';
+import { defaultProjectIdForPath } from './default-id-for-path';
+import { getProject } from './get';
+import { listProjects } from './list';
+import { updateProject } from './update';
 import { initHome, tempProjectDir } from '../../test-support/runtime';
 
 describe('project services', () => {

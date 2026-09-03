@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { handleConfig } from './config';
-import { initHome } from '../../../senderos/tests/helpers/runtime';
+import { initHome } from '../../../senderos/src/test-support/runtime';
 
 describe('config command', () => {
   test('show returns the complete persisted config', () => {

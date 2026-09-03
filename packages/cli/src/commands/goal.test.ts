@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { handleGoal } from './goal';
-import { createProjectFixture, initHome } from '../../../senderos/tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../../senderos/src/test-support/runtime';
 
 test('goal command manages a goal lifecycle', () => {
   const home = initHome();
