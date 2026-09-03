@@ -1,7 +1,10 @@
 import { expect, test } from 'bun:test';
 import { handlePlan } from './plan';
 import { activateGoal, createGoal } from '@senderos/senderos';
-import { createProjectFixture, initHome } from '../../../senderos/src/test-support/runtime';
+import {
+  createProjectFixture,
+  initHome,
+} from '../../../senderos/src/test-support/runtime';
 
 test('plan command returns active goals as dispatchable work', () => {
   const home = initHome();

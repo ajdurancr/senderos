@@ -7,9 +7,16 @@ import { tempHome } from '../../../senderos/src/test-support/runtime';
 describe('bootstrap-agent-skill command', () => {
   test('prints without writing when requested', async () => {
     const path = join(tempHome(), 'SKILL.md');
-    const result = await handleBootstrapAgentSkill({ path, print: true, home: '/repo', harness: 'codex' });
+    const result = await handleBootstrapAgentSkill({
+      path,
+      print: true,
+      home: '/repo',
+      harness: 'codex',
+    });
     expect(result.mode).toBe('print');
-    expect(result.content).toContain('senderos init --home /repo --harness codex --approve');
+    expect(result.content).toContain(
+      'senderos init --home /repo --harness codex --approve',
+    );
     expect(existsSync(path)).toBe(false);
   });
 
@@ -17,7 +24,11 @@ describe('bootstrap-agent-skill command', () => {
     const path = join(tempHome(), 'SKILL.md');
     expect((await handleBootstrapAgentSkill({ path })).created).toBe(true);
     expect(readFileSync(path, 'utf8')).toContain('SenderOS Operator');
-    await expect(handleBootstrapAgentSkill({ path })).rejects.toThrow('Skill already exists');
-    expect((await handleBootstrapAgentSkill({ path, force: true })).overwritten).toBe(true);
+    await expect(handleBootstrapAgentSkill({ path })).rejects.toThrow(
+      'Skill already exists',
+    );
+    expect(
+      (await handleBootstrapAgentSkill({ path, force: true })).overwritten,
+    ).toBe(true);
   });
 });

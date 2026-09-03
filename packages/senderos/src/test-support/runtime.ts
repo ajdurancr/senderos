@@ -3,7 +3,10 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { defaultConfigForHome, initializeRuntime } from '../../src/shared/config';
+import {
+  defaultConfigForHome,
+  initializeRuntime,
+} from '../../src/shared/config';
 import type { SenderosConfig } from '../../src/shared/types';
 import { createProject } from '../../src/commands';
 
@@ -16,7 +19,10 @@ export function tempHome() {
   return home;
 }
 
-export function tempProjectDir(dirPrefix = 'senderos-demo', packageName = dirPrefix) {
+export function tempProjectDir(
+  dirPrefix = 'senderos-demo',
+  packageName = dirPrefix,
+) {
   const projectRoot = mkdtempSync(join(tmpdir(), `${dirPrefix}-`));
   projects.push(projectRoot);
   writeFileSync(
@@ -32,11 +38,14 @@ export function tempProjectDir(dirPrefix = 'senderos-demo', packageName = dirPre
         },
       },
       null,
-      2
-    )
+      2,
+    ),
   );
   mkdirSync(join(projectRoot, 'src'), { recursive: true });
-  writeFileSync(join(projectRoot, 'src', 'index.ts'), 'export const smoke = true;\n');
+  writeFileSync(
+    join(projectRoot, 'src', 'index.ts'),
+    'export const smoke = true;\n',
+  );
   return projectRoot;
 }
 
@@ -48,7 +57,7 @@ export function initHome(config?: SenderosConfig) {
 
 export function createProjectFixture(
   home: string,
-  overrides: Partial<Parameters<typeof createProject>[0]> = {}
+  overrides: Partial<Parameters<typeof createProject>[0]> = {},
 ) {
   return createProject({
     home,

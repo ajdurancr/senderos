@@ -1,12 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 
 import { handleProject } from './project';
-import { initHome, tempProjectDir } from '../../../senderos/src/test-support/runtime';
+import {
+  initHome,
+  tempProjectDir,
+} from '../../../senderos/src/test-support/runtime';
 
 describe('project command', () => {
   test('create generates a project id from package.json name by default', () => {
     const home = initHome();
-    const canonicalPath = tempProjectDir('senderos-cli-project', '@acme/senderos-cli-project');
+    const canonicalPath = tempProjectDir(
+      'senderos-cli-project',
+      '@acme/senderos-cli-project',
+    );
 
     const created: any = handleProject(
       'create',
@@ -17,7 +23,7 @@ describe('project command', () => {
         'github-repo': 'senderos',
         'target-branch': 'main',
       },
-      home
+      home,
     );
 
     expect(created.id).toContain('acme-senderos-cli-project-');
@@ -37,7 +43,7 @@ describe('project command', () => {
         'github-owner': 'ajdurancr',
         'github-repo': 'senderos',
       },
-      home
+      home,
     );
 
     expect(created.id).toBe('senderos-custom-id');
@@ -54,7 +60,7 @@ describe('project command', () => {
         'github-owner': 'ajdurancr',
         'github-repo': 'senderos',
       },
-      home
+      home,
     );
 
     expect((handleProject('list', [], {}, home) as any[]).length).toBe(1);
@@ -71,10 +77,13 @@ describe('project command', () => {
         'github-owner': 'ajdurancr',
         'github-repo': 'senderos',
       },
-      home
+      home,
     );
 
-    expect((handleProject('show', ['project', 'show', created.id], {}, home) as any).id).toBe(created.id);
+    expect(
+      (handleProject('show', ['project', 'show', created.id], {}, home) as any)
+        .id,
+    ).toBe(created.id);
   });
 
   test('update changes stored project fields', () => {
@@ -88,14 +97,14 @@ describe('project command', () => {
         'github-owner': 'ajdurancr',
         'github-repo': 'senderos',
       },
-      home
+      home,
     );
 
     const updated: any = handleProject(
       'update',
       ['project', 'update', created.id],
       { name: 'Updated project', 'target-branch': 'develop' },
-      home
+      home,
     );
 
     expect(updated.name).toBe('Updated project');
@@ -104,6 +113,8 @@ describe('project command', () => {
 
   test('unknown subcommands throw', () => {
     const home = initHome();
-    expect(() => handleProject('wat', [], {}, home)).toThrow('Unknown project action');
+    expect(() => handleProject('wat', [], {}, home)).toThrow(
+      'Unknown project action',
+    );
   });
 });

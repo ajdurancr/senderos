@@ -9,7 +9,8 @@ export function parseArgs(argv: string[]) {
     if (arg.startsWith('--')) {
       const key = arg.slice(2);
       const next = argv[i + 1];
-      const value: CliOptionValue = !next || next.startsWith('--') ? true : next;
+      const value: CliOptionValue =
+        !next || next.startsWith('--') ? true : next;
       if (value !== true) {
         i++;
       }

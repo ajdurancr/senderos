@@ -1,12 +1,19 @@
 import { Database } from 'bun:sqlite';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
 const tempRoot = join(process.cwd(), '.tmp');
 const integrationArtifactsRoot = join(tempRoot, 'integration-tests');
 const integrationRunRoot = join(
   integrationArtifactsRoot,
-  `run-${process.pid}-${Math.random().toString(36).slice(2, 8)}`
+  `run-${process.pid}-${Math.random().toString(36).slice(2, 8)}`,
 );
 const tempPaths: string[] = [];
 
@@ -40,8 +47,8 @@ export function createTempProject(options?: {
         },
       },
       null,
-      2
-    )
+      2,
+    ),
   );
   mkdirSync(join(root, 'src'), { recursive: true });
   writeFileSync(join(root, 'src', 'index.ts'), 'export const smoke = true;\n');
@@ -69,7 +76,7 @@ export function cli(args: string[], cwd = process.cwd()) {
 
   if (result.exitCode !== 0) {
     throw new Error(
-      `Command failed: bun src/index.ts ${args.join(' ')}\nstdout: ${stdout}\nstderr: ${stderr}`
+      `Command failed: bun src/index.ts ${args.join(' ')}\nstdout: ${stdout}\nstderr: ${stderr}`,
     );
   }
 
@@ -94,7 +101,10 @@ export function cleanupIntegrationRunRoot() {
   rmSync(integrationRunRoot, { recursive: true, force: true });
 
   try {
-    if (existsSync(integrationArtifactsRoot) && readdirSync(integrationArtifactsRoot).length === 0) {
+    if (
+      existsSync(integrationArtifactsRoot) &&
+      readdirSync(integrationArtifactsRoot).length === 0
+    ) {
       rmSync(integrationArtifactsRoot, { recursive: true, force: true });
     }
     if (existsSync(tempRoot) && readdirSync(tempRoot).length === 0) {

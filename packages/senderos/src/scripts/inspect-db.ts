@@ -9,5 +9,7 @@ const tables = db
   .all()
   .map((row: unknown) => (row as { name: string }).name);
 
-console.log(JSON.stringify({ home: paths.home, database: paths.dbPath, tables }, null, 2));
+console.log(
+  JSON.stringify({ home: paths.home, database: paths.dbPath, tables }, null, 2),
+);
 db.close();

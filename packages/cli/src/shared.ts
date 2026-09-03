@@ -1,8 +1,16 @@
 import { resolve } from 'node:path';
 import { defaultHomePath } from '@senderos/senderos';
 
-export function resolveHome(optionHome: string | boolean | string[] | undefined) {
-  return resolve(String(Array.isArray(optionHome) ? optionHome.at(-1) : optionHome ?? defaultHomePath()));
+export function resolveHome(
+  optionHome: string | boolean | string[] | undefined,
+) {
+  return resolve(
+    String(
+      Array.isArray(optionHome)
+        ? optionHome.at(-1)
+        : (optionHome ?? defaultHomePath()),
+    ),
+  );
 }
 
 export function requirePositional(value: string | undefined, name: string) {

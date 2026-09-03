@@ -3,9 +3,19 @@ export type HarnessKind = 'openclaw' | 'codex' | 'claude-code' | 'unknown';
 export type ProjectStatus = 'healthy' | 'setup_failed' | 'broken' | 'archived';
 export type IntegrationMode = 'github_pr' | 'local_merge';
 export type GoalKind =
-  'feature' | 'bugfix' | 'refactor' | 'maintenance' | 'security' | 'migration';
+  | 'feature'
+  | 'bugfix'
+  | 'refactor'
+  | 'maintenance'
+  | 'security'
+  | 'migration';
 export type GoalStatus =
-  'draft' | 'active' | 'failed' | 'blocked' | 'canceled' | 'completed';
+  | 'draft'
+  | 'active'
+  | 'failed'
+  | 'blocked'
+  | 'canceled'
+  | 'completed';
 export type RunStatus =
   | 'queued'
   | 'preparing'
@@ -21,9 +31,17 @@ export type RunStatus =
 export type AgentKind = 'system' | 'default' | 'custom';
 export type AgentStatus = 'active' | 'disabled' | 'archived';
 export type AgentTransitionStatus =
-  'draft' | 'active' | 'disabled' | 'archived';
+  | 'draft'
+  | 'active'
+  | 'disabled'
+  | 'archived';
 export type RunAttemptStatus =
-  'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'canceled';
+  | 'queued'
+  | 'running'
+  | 'paused'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled';
 
 export interface SenderosConfig {
   database: {

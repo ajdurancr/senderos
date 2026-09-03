@@ -108,8 +108,8 @@ describe('attempt command', () => {
     expect(() => (handleAttempt as any)('unknown', [], {}, home)).toThrow(
       'Unknown attempt action',
     );
-    expect(() => (handleAttempt as any)('show', ['attempt', 'show'], {}, home)).toThrow(
-      'Missing required argument: attempt id',
-    );
+    expect(() =>
+      (handleAttempt as any)('show', ['attempt', 'show'], {}, home),
+    ).toThrow('Missing required argument: attempt id');
   });
 });

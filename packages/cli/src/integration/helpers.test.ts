@@ -1,12 +1,25 @@
 import { expect, test } from 'bun:test';
 import { afterEach } from 'bun:test';
-import { cleanupIntegrationRunRoot, cleanupIntegrationTemps, cli, createTempProject, openDb, pathExists, tempDir } from './helpers';
+import {
+  cleanupIntegrationRunRoot,
+  cleanupIntegrationTemps,
+  cli,
+  createTempProject,
+  openDb,
+  pathExists,
+  tempDir,
+} from './helpers';
 
-afterEach(() => { cleanupIntegrationTemps(); cleanupIntegrationRunRoot(); });
+afterEach(() => {
+  cleanupIntegrationTemps();
+  cleanupIntegrationRunRoot();
+});
 
 test('integration helpers create projects, directories, and database handles', () => {
   const directory = tempDir('helpers');
-  const project = createTempProject({ extraFiles: [{ path: 'notes.txt', content: 'ready' }] });
+  const project = createTempProject({
+    extraFiles: [{ path: 'notes.txt', content: 'ready' }],
+  });
   expect(pathExists(directory)).toBe(true);
   expect(pathExists(project)).toBe(true);
   const db = openDb(directory);

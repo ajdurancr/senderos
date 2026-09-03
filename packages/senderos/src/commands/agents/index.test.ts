@@ -29,7 +29,11 @@ test('agent seeding supplies a default objective when a definition omits one', (
   mkdirSync(definitionsDir);
   writeFileSync(
     join(definitionsDir, 'focused.json'),
-    JSON.stringify({ id: 'focused-agent', slug: 'focused', name: 'Focused agent' }),
+    JSON.stringify({
+      id: 'focused-agent',
+      slug: 'focused',
+      name: 'Focused agent',
+    }),
   );
 
   seedBuiltInAgents(home, { definitionsDir });

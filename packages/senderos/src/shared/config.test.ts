@@ -31,9 +31,9 @@ describe('runtime configuration', () => {
     initializeRuntime(home);
 
     const db = new Database(resolveRuntime(home).paths.dbPath);
-    const row = db.query("select slug from agents where slug='spec-partner'").get() as
-      | { slug: string }
-      | null;
+    const row = db
+      .query("select slug from agents where slug='spec-partner'")
+      .get() as { slug: string } | null;
     db.close();
 
     expect(row?.slug).toBe('spec-partner');

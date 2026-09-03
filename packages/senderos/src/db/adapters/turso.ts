@@ -21,14 +21,17 @@ export const tursoAdapter: DbAdapter = {
     const warnings: string[] = [];
 
     if (!config.database.turso?.url) issues.push('missing turso url');
-    if (!config.database.turso?.authTokenEnv) issues.push('missing turso authTokenEnv');
+    if (!config.database.turso?.authTokenEnv)
+      issues.push('missing turso authTokenEnv');
 
     const token = config.database.turso?.authTokenEnv
       ? process.env[config.database.turso.authTokenEnv]
       : undefined;
 
     if (!token) {
-      warnings.push(`env:${config.database.turso?.authTokenEnv ?? 'unset'} is not set in this shell`);
+      warnings.push(
+        `env:${config.database.turso?.authTokenEnv ?? 'unset'} is not set in this shell`,
+      );
     }
 
     if (!issues.length && token) {
@@ -44,7 +47,7 @@ export const tursoAdapter: DbAdapter = {
 
   openCommandConnection() {
     throw new Error(
-      'Turso is configured through the built-in adapter layer, but command execution has not been migrated to the async libsql execution path yet.'
+      'Turso is configured through the built-in adapter layer, but command execution has not been migrated to the async libsql execution path yet.',
     );
   },
 };

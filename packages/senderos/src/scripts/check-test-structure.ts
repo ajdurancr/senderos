@@ -13,7 +13,8 @@ function collect(directory: string) {
       !entry.name.endsWith('.test.ts') &&
       !path.includes('/scripts/') &&
       !path.includes('/test-support/')
-    ) sourceFiles.push(path);
+    )
+      sourceFiles.push(path);
   }
 }
 
@@ -21,16 +22,32 @@ collect(sourceRoot);
 
 const missingSiblingTests = sourceFiles.filter((sourceFile) => {
   const source = readFileSync(sourceFile, 'utf8');
-  const hasFunctions = /\b(?:export\s+)?(?:async\s+)?function\s+\w+|\bexport\s+const\s+\w+\s*=\s*(?:async\s*)?\(/.test(source);
+  const hasFunctions =
+    /\b(?:export\s+)?(?:async\s+)?function\s+\w+|\bexport\s+const\s+\w+\s*=\s*(?:async\s*)?\(/.test(
+      source,
+    );
   if (!hasFunctions) return false;
   const siblingTest = sourceFile.replace(/\.ts$/, '.test.ts');
   const directoryTest = join(resolve(sourceFile, '..'), 'index.test.ts');
   return !existsSync(siblingTest) && !existsSync(directoryTest);
 });
 
-const relativeMissingTests = missingSiblingTests.map((file) => relative(sourceRoot, file));
-console.log(JSON.stringify({ sourceFiles: sourceFiles.length, missingSiblingTests: relativeMissingTests }, null, 2));
+const relativeMissingTests = missingSiblingTests.map((file) =>
+  relative(sourceRoot, file),
+);
+console.log(
+  JSON.stringify(
+    {
+      sourceFiles: sourceFiles.length,
+      missingSiblingTests: relativeMissingTests,
+    },
+    null,
+    2,
+  ),
+);
 
 if (relativeMissingTests.length) {
-  throw new Error(`Implementation files with functions require sibling tests: ${relativeMissingTests.join(', ')}`);
+  throw new Error(
+    `Implementation files with functions require sibling tests: ${relativeMissingTests.join(', ')}`,
+  );
 }

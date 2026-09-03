@@ -150,5 +150,4 @@ describe('goal orchestration runtime model', () => {
       ),
     ).toThrow('Goal not found');
   });
-
 });

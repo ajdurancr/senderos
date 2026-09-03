@@ -18,5 +18,7 @@ test('transition commands create, read, and filter agent handoffs', () => {
   });
 
   expect(getAgentTransition(transition.id, home)?.id).toBe(transition.id);
-  expect(listAgentTransitionsForAgent(agent.id, home)).toContainEqual(transition);
+  expect(listAgentTransitionsForAgent(agent.id, home)).toContainEqual(
+    transition,
+  );
 });

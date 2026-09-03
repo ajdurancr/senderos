@@ -15,7 +15,9 @@ const agentShowHelp = {
   agentDescription:
     'Use this to inspect one agent definition in detail, including its current persisted runtime fields.',
   usage: ['senderos agent show <agent-id>'],
-  arguments: [{ name: 'agent-id', description: 'Agent identifier.', required: true }],
+  arguments: [
+    { name: 'agent-id', description: 'Agent identifier.', required: true },
+  ],
 };
 
 export const agentCommandHelp = {
@@ -27,7 +29,11 @@ export const agentCommandHelp = {
   subcommands: [agentListHelp, agentShowHelp],
 };
 
-export function handleAgent(sub: string | undefined, positionals: string[], home: string) {
+export function handleAgent(
+  sub: string | undefined,
+  positionals: string[],
+  home: string,
+) {
   switch (sub) {
     case 'list':
       return listAgents(home);

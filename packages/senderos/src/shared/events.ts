@@ -8,17 +8,17 @@ export function emitEvent(
   eventType: string,
   entityType: string,
   entityId: string,
-  payload: unknown
+  payload: unknown,
 ) {
   db.prepare(
-    'insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (?,?,?,?,?,?)'
+    'insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (?,?,?,?,?,?)',
   ).run(
     randomId('event'),
     eventType,
     entityType,
     entityId,
     JSON.stringify(payload ?? {}),
-    now()
+    now(),
   );
 }
 

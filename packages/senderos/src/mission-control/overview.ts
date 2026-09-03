@@ -4,5 +4,10 @@ import { listRuns } from '../commands/runs/list';
 import { status } from '../commands/system/status';
 
 export function missionControlOverview(home?: string) {
-  return { status: status(home), projects: listProjects(home), goals: listGoals(home), runs: listRuns(home) };
+  return {
+    status: status(home),
+    projects: listProjects(home),
+    goals: listGoals(home),
+    runs: listRuns(home),
+  };
 }

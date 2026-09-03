@@ -29,7 +29,8 @@ export async function handleInit(
 ) {
   const preview = previewInit(
     (Array.isArray(options.home) ? options.home.at(-1) : options.home) as
-      string | undefined,
+      | string
+      | undefined,
     (Array.isArray(options.harness)
       ? options.harness.at(-1)
       : options.harness) as HarnessKind | undefined,
