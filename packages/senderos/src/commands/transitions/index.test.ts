@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test';
-import { getAgentBySlug } from '../agents';
+import { getAgentBySlug } from '../agents/get-by-slug';
 import {
   createAgentTransition,
   getAgentTransition,
   listAgentTransitionsForAgent,
 } from '.';
-import { initHome } from '../../../tests/helpers/runtime';
+import { initHome } from '../../test-support/runtime';
 
 test('transition commands create, read, and filter agent handoffs', () => {
   const home = initHome();

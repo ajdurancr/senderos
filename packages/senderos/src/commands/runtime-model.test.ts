@@ -23,7 +23,7 @@ import {
   updateRunAttempt,
 } from '@senderos/senderos';
 import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/senderos';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../test-support/runtime';
 
 describe('goal orchestration runtime model', () => {
   test('manages goals, transitions, runs, attempts, planning, and status', () => {

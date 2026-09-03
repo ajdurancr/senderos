@@ -1,4 +1,4 @@
-import { listAgents } from '../commands/agents';
+import { listAgents } from '../commands/agents/list';
 import { listAgentTransitions } from '../commands/transitions';
 import { showRunState } from '../commands/runs/execution';
 import { listEvents } from '../shared/events';

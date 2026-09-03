@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { status } from './status';
 import { activateGoal, createGoal } from './goals';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../test-support/runtime';
 
 test('status aggregates current project and goal state', () => {
   const home = initHome();

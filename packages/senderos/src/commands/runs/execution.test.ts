@@ -9,7 +9,7 @@ import { cancelRun, dispatchRun, showRunState } from './execution';
 import {
   createProjectFixture,
   initHome,
-} from '../../../tests/helpers/runtime';
+} from '../../test-support/runtime';
 
 test('run service dispatches and cancels a concrete attempt', () => {
   const home = initHome();

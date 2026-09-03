@@ -3,7 +3,7 @@ import { Database } from 'bun:sqlite';
 import { openRuntimeDb } from '../db/client';
 import { migrate } from '../db/migrations';
 import { emitEvent, listEvents } from './events';
-import { initHome } from '../../tests/helpers/runtime';
+import { initHome } from '../test-support/runtime';
 
 describe('emitEvent', () => {
   test('writes an event record', () => {

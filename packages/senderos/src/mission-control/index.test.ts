@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 
 import { createSenderos } from '../index';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../test-support/runtime';
 
 test('Mission Control returns an overview and starts a goal through the shared façade', () => {
   const home = initHome();

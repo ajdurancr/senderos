@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { localSqliteAdapter } from './local-sqlite';
-import { initHome, tempHome } from '../../../tests/helpers/runtime';
+import { initHome, tempHome } from '../../test-support/runtime';
 
 describe('local-sqlite adapter', () => {
   test('describes healthy local runtimes and reports missing config', () => {

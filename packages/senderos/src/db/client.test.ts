@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { describeCurrentDb, healthcheckCurrentDb, openRuntimeDb, resolveConfiguredDbAdapter, resolveDbAdapter } from './client';
 import { localSqliteAdapter } from './adapters/local-sqlite';
 import { tursoAdapter } from './adapters/turso';
-import { initHome } from '../../tests/helpers/runtime';
+import { initHome } from '../test-support/runtime';
 
 describe('db client', () => {
   test('resolveDbAdapter returns the local sqlite adapter for local databases', () => {

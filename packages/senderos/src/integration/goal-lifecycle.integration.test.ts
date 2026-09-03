@@ -7,7 +7,7 @@ import {
   listAgentTransitions,
   updateRunAttempt,
 } from '../commands';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../test-support/runtime';
 
 test('a goal moves from approved intent to a persisted execution attempt', () => {
   const home = initHome();

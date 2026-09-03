@@ -1,4 +1,6 @@
-export * from './agents';
+export * from './agents/list';
+export * from './agents/get';
+export * from './agents/get-by-slug';
 export * from './attempts';
 export * from './config';
 export * from './goals';

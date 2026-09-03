@@ -3,7 +3,7 @@ const createClient = mock(() => ({ closed: false }));
 mock.module('@libsql/client', () => ({ createClient }));
 import { tursoAdapter } from './turso';
 import { initializeRuntime } from '../../shared/config';
-import { tempHome, tursoConfigForHome } from '../../../tests/helpers/runtime';
+import { tempHome, tursoConfigForHome } from '../../test-support/runtime';
 
 afterEach(() => { createClient.mockClear(); delete process.env.SENDEROS_TURSO_TOKEN; });
 

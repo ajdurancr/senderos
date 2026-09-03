@@ -1,17 +1,17 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openRuntimeDb } from '../../db/client';
-import { mapAgentRow, mapAgentTransitionRow } from '../../db/mappers';
-import type { AgentKind, AgentRecord, AgentTransitionRecord, SeedAgentsOptions } from '../../shared/types';
-import { now, randomId } from '../../shared/ids';
-import { emitEvent } from '../../shared/events';
+import { openRuntimeDb } from '../db/client';
+import { mapAgentRow, mapAgentTransitionRow } from '../db/mappers';
+import type { AgentKind, AgentRecord, AgentTransitionRecord, SeedAgentsOptions } from '../shared/types';
+import { now, randomId } from '../shared/ids';
+import { emitEvent } from '../shared/events';
 
 const defaultObjective = (slug: string) => `Run ${slug} as a focused agent with one explicit objective.`;
 const transitionName = 'default transition';
 
 export function builtInAgentSeedDir() {
-  return resolve(dirname(fileURLToPath(import.meta.url)), '../../../db-seeds/agents');
+  return resolve(dirname(fileURLToPath(import.meta.url)), './agents');
 }
 
 function ensureDefaultTransition(db: any, agent: AgentRecord) {
@@ -64,25 +64,4 @@ export function seedBuiltInAgents(home?: string, options: SeedAgentsOptions = {}
   }
   db.close();
   return seeded;
-}
-
-export function listAgents(home?: string) {
-  const db = openRuntimeDb(home);
-  const rows = db.query('select * from agents order by created_at asc').all().map(mapAgentRow) as AgentRecord[];
-  db.close();
-  return rows;
-}
-
-export function getAgent(id: string, home?: string) {
-  const db = openRuntimeDb(home);
-  const row = mapAgentRow(db.query('select * from agents where id=?').get(id));
-  db.close();
-  return row;
-}
-
-export function getAgentBySlug(slug: string, home?: string) {
-  const db = openRuntimeDb(home);
-  const row = mapAgentRow(db.query('select * from agents where slug=?').get(slug));
-  db.close();
-  return row;
 }

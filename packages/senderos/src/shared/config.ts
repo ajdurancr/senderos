@@ -8,7 +8,7 @@ import type {
   SenderosConfig,
 } from '../shared/types';
 import { migrate } from '../db/migrations';
-import { seedBuiltInAgents } from '../commands/agents';
+import { seedBuiltInAgents } from '../bootstrap/seed-agents';
 import { inferHarnessFromEnvironment } from './harness';
 
 export function defaultHomePath() {

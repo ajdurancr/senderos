@@ -3,7 +3,7 @@ import { activateGoal, createGoal } from '../../index';
 import { dispatchRun } from '../runs/execution';
 import { listAgentTransitions } from '../transitions';
 import { getRunAttempt, listRunAttempts, updateRunAttempt } from '.';
-import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../test-support/runtime';
 
 test('attempt commands read and update a dispatched attempt', () => {
   const home = initHome();

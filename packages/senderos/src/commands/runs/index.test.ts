@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { createRunRecord, getRun, latestRunForGoal } from '.';
 import { activateGoal, createGoal } from '../../index';
-import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../../test-support/runtime';
 
 test('run dispatch persistence creates and retrieves a run for a goal', () => {
   const home = initHome();

@@ -8,7 +8,7 @@ import {
   resolveRuntime,
   runtimeExists,
 } from './config';
-import { tempHome } from '../../tests/helpers/runtime';
+import { tempHome } from '../test-support/runtime';
 
 describe('runtime configuration', () => {
   test('defaultHomePath ends in .senderos', () => {

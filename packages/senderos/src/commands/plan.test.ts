@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test';
 import { createGoal, activateGoal } from './goals';
 import { plan } from './plan';
-import { getAgentBySlug } from './agents';
+import { getAgentBySlug } from './agents/get-by-slug';
 import { updateRunAttempt } from './attempts';
 import { createAgentTransition, listAgentTransitions } from './transitions';
 import { dispatchRun } from './runs/execution';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+import { createProjectFixture, initHome } from '../test-support/runtime';
 
 test('planner skips draft goals and selects active goals', () => {
   const home = initHome();

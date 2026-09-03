@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getConfigPath, updateConfigPath } from './config';
-import { initHome } from '../../tests/helpers/runtime';
+import { initHome } from '../test-support/runtime';
 
 describe('runtime config operations', () => {
   test('reads and updates nested config paths', () => {
