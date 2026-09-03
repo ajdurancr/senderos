@@ -1,6 +1,7 @@
 import type { GoalStatus, AgentTransitionRecord } from '../shared/types';
 import { getRun, latestRunForGoal } from './runs';
-import { listAgentTransitions, listRunAttempts } from './agents';
+import { listRunAttempts } from './attempts';
+import { listAgentTransitions } from './transitions';
 import { listGoals } from './goals';
 
 const DEFAULT_GOAL_STATUSES: GoalStatus[] = ['active', 'failed'];

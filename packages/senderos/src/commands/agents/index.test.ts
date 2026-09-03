@@ -1,14 +1,10 @@
 import { expect, test } from 'bun:test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  createAgentTransition,
-  getAgentBySlug,
-  listAgentTransitions,
-  listAgents,
-} from './agents';
-import { seedBuiltInAgents } from './agents';
-import { initHome, tempHome } from '../../tests/helpers/runtime';
+import { getAgentBySlug, listAgents } from '.';
+import { seedBuiltInAgents } from '.';
+import { createAgentTransition, listAgentTransitions } from '../transitions';
+import { initHome, tempHome } from '../../../tests/helpers/runtime';
 
 test('agent service seeds executors and supports explicit transitions', () => {
   const home = initHome();

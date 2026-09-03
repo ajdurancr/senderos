@@ -4,12 +4,12 @@ import {
   createGoal,
   getAgentTransition,
   listAgentTransitions,
-} from '../index';
-import { cancelRun, dispatchRun, showRunState } from './executions';
+} from '../../index';
+import { cancelRun, dispatchRun, showRunState } from './execution';
 import {
   createProjectFixture,
   initHome,
-} from '../../tests/helpers/runtime';
+} from '../../../tests/helpers/runtime';
 
 test('run service dispatches and cancels a concrete attempt', () => {
   const home = initHome();

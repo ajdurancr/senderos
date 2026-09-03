@@ -1,7 +1,7 @@
-import { openRuntimeDb } from '../db/client';
-import type { GoalRecord, RunRecord } from '../shared/types';
-import { now, randomId } from '../shared/ids';
-import { emitEvent } from '../shared/events';
+import { openRuntimeDb } from '../../db/client';
+import type { GoalRecord, RunRecord } from '../../shared/types';
+import { now, randomId } from '../../shared/ids';
+import { emitEvent } from '../../shared/events';
 
 export function createRunRecord(goal: GoalRecord, home?: string) {
   const db = openRuntimeDb(home);

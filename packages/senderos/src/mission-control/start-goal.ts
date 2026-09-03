@@ -1,6 +1,6 @@
 import { activateGoal } from '../commands/goals';
 import { plan } from '../commands/plan';
-import { dispatchRun } from '../commands/executions';
+import { dispatchRun } from '../commands/runs/execution';
 import { missionControlGoal } from './goal';
 
 export function missionControlStartGoal(input: { goalId: string; workingPath?: string; home?: string }) {

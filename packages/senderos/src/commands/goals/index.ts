@@ -1,8 +1,8 @@
-import type { GoalKind, GoalRecord } from '../shared/types';
-import { openRuntimeDb } from '../db/client';
-import { mapGoalRow, mapProjectRow } from '../db/mappers';
-import { now, randomId } from '../shared/ids';
-import { emitEvent } from '../shared/events';
+import type { GoalKind, GoalRecord } from '../../shared/types';
+import { openRuntimeDb } from '../../db/client';
+import { mapGoalRow, mapProjectRow } from '../../db/mappers';
+import { now, randomId } from '../../shared/ids';
+import { emitEvent } from '../../shared/events';
 function requireProject(projectId: string, home?: string) {
   const db = openRuntimeDb(home);
   const p = mapProjectRow(

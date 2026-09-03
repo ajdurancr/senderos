@@ -1,5 +1,6 @@
-import { listAgents, listAgentTransitions } from '../commands/agents';
-import { showRunState } from '../commands/executions';
+import { listAgents } from '../commands/agents';
+import { listAgentTransitions } from '../commands/transitions';
+import { showRunState } from '../commands/runs/execution';
 import { listEvents } from '../shared/events';
 
 export function missionControlGoal(input: { goalId: string; home?: string }) {

@@ -1,6 +1,6 @@
 import { listGoals } from '../commands/goals';
 import { listProjects } from '../commands/projects';
-import { listRuns } from '../commands/executions';
+import { listRuns } from '../commands/runs/execution';
 import { status } from '../commands/status';
 
 export function missionControlOverview(home?: string) {

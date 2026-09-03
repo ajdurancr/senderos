@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
-import { createProject, defaultProjectIdForPath, getProject, listProjects, updateProject } from './projects';
-import { initHome, tempProjectDir } from '../../tests/helpers/runtime';
+import { createProject, defaultProjectIdForPath, getProject, listProjects, updateProject } from '.';
+import { initHome, tempProjectDir } from '../../../tests/helpers/runtime';
 
 describe('project services', () => {
   test('derives project ids from package names when no explicit id is provided', () => {

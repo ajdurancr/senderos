@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import type { IntegrationMode, ProjectRecord, ProjectStatus } from '../shared/types';
-import { openRuntimeDb } from '../db/client';
-import { mapProjectRow } from '../db/mappers';
-import { now, randomId } from '../shared/ids';
-import { emitEvent } from '../shared/events';
+import type { IntegrationMode, ProjectRecord, ProjectStatus } from '../../shared/types';
+import { openRuntimeDb } from '../../db/client';
+import { mapProjectRow } from '../../db/mappers';
+import { now, randomId } from '../../shared/ids';
+import { emitEvent } from '../../shared/events';
 
 function safeProjectPrefix(name: string) {
   return name

@@ -5,8 +5,8 @@ import {
   getGoal,
   listGoals,
   updateGoal,
-} from './goals';
-import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
+} from '.';
+import { createProjectFixture, initHome } from '../../../tests/helpers/runtime';
 
 test('goal service persists, updates, activates, and lists goals', () => {
   const home = initHome();
