@@ -1,0 +1,24 @@
+{
+  "name": "@senderos/senderos",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test --isolate",
+    "test:unit": "find ./src -path './src/integration' -prune -o -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
+    "test:integration": "find ./src/integration -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
+    "db:inspect": "bun src/scripts/inspect-db.ts",
+    "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run src/scripts/check-coverage.ts 97 coverage 95 && bun run src/scripts/check-test-structure.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.4"
+  }
+}

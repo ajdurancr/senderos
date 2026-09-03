@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     paths:
-      - 'apps/senderos/**'
+      - 'packages/senderos/**'
       - '.github/workflows/senderos-ci.yml'
       - 'package.json'
       - 'bun.lock'
@@ -34,7 +34,7 @@ jobs:
         run: bun run build:senderos
 
       - name: Unit tests
-        run: bun run --cwd apps/senderos test:unit
+        run: bun run --cwd packages/senderos test:unit
 
   senderos-integration:
     name: SenderOS integration tests
@@ -52,7 +52,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Integration tests
-        run: bun run --cwd apps/senderos test:integration
+        run: bun run --cwd packages/senderos test:integration
 
       - name: Coverage
-        run: bun run --cwd apps/senderos coverage
+        run: bun run --cwd packages/senderos coverage

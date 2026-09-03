@@ -1,0 +1,59 @@
+import { openRuntimeDb } from '../../db/client';
+const ACTIVE_RUN_STATUSES = [
+  'queued',
+  'preparing',
+  'executing',
+  'validating',
+  'repairing',
+  'merging',
+  'updating_pr',
+  'cleaning_up',
+];
+export function status(home?: string) {
+  const db = openRuntimeDb(home);
+  const activeAttempts = db
+    .query(
+      "select id from run_attempts where status in ('queued','running','paused') order by created_at asc",
+    )
+    .all()
+    .map((row: any) => row.id);
+  const summary = {
+    projects: {
+      total: (db.query('select count(*) as c from projects').get() as any).c,
+      unhealthy: (
+        db
+          .query("select count(*) as c from projects where status != 'healthy'")
+          .get() as any
+      ).c,
+    },
+    openGoals: (
+      db
+        .query(
+          "select count(*) as c from goals where status not in ('completed','canceled')",
+        )
+        .get() as any
+    ).c,
+    activeRuns: (
+      db
+        .query(
+          `select count(*) as c from runs where status in (${ACTIVE_RUN_STATUSES.map((status) => `'${status}'`).join(',')})`,
+        )
+        .get() as any
+    ).c,
+    activeAttemptIds: activeAttempts,
+    activeGoalIds: db
+      .query(
+        "select id from goals where status not in ('completed','canceled') order by created_at asc",
+      )
+      .all()
+      .map((row: any) => row.id),
+    runningRunIds: db
+      .query(
+        `select id from runs where status in (${ACTIVE_RUN_STATUSES.map((status) => `'${status}'`).join(',')}) order by created_at asc`,
+      )
+      .all()
+      .map((row: any) => row.id),
+  };
+  db.close();
+  return summary;
+}

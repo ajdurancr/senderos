@@ -1,0 +1,14 @@
+import { describe, expect, test } from 'bun:test';
+import { getConfigPath } from './get-path';
+import { updateConfigPath } from './update-path';
+import { initHome } from '../../test-support/runtime';
+describe('runtime config operations', () => {
+  test('reads and updates nested config paths', () => {
+    const home = initHome();
+    expect(getConfigPath('output.format', home)).toBe('json');
+    expect(updateConfigPath('output.format', 'text', home).output.format).toBe(
+      'text',
+    );
+    expect(getConfigPath('output.format', home)).toBe('text');
+  });
+});
