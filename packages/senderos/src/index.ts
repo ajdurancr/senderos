@@ -1,0 +1,65 @@
+export * from './domain/types';
+export * from './config/runtime';
+export * from './services/runtime';
+export * from './utils/harness';
+export {
+  missionControlGoal,
+  missionControlOverview,
+  missionControlRetryExecution,
+  missionControlStartGoal,
+  missionControlStopExecution,
+} from './mission-control';
+
+import {
+  activateGoal,
+  cancelGoal,
+  cancelRun,
+  createGoal,
+  createProject,
+  dispatchRun,
+  getAttempt,
+  getGoal,
+  getProject,
+  getRun,
+  listAgentTransitions,
+  listAgents,
+  listGoals,
+  listProjects,
+  listRunAttempts,
+  listRuns,
+  plan,
+  resumeAttempt,
+  status,
+  updateGoal,
+  updateProject,
+  updateRunAttempt,
+} from './services/runtime';
+import {
+  missionControlGoal,
+  missionControlOverview,
+  missionControlRetryExecution,
+  missionControlStartGoal,
+  missionControlStopExecution,
+} from './mission-control';
+
+export function createSenderos(input: { home?: string } = {}) {
+  const home = input.home;
+  return {
+    commands: {
+      projects: { create: (value: Parameters<typeof createProject>[0]) => createProject({ ...value, home }), get: (id: string) => getProject(id, home), list: () => listProjects(home), update: (value: Parameters<typeof updateProject>[0]) => updateProject({ ...value, home }) },
+      goals: { create: (value: Parameters<typeof createGoal>[0]) => createGoal({ ...value, home }), get: (id: string) => getGoal(id, home), list: () => listGoals(home), activate: (id: string) => activateGoal(id, home), cancel: (id: string) => cancelGoal(id, home), update: (value: Parameters<typeof updateGoal>[0]) => updateGoal({ ...value, home }) },
+      runs: { dispatch: (value: Parameters<typeof dispatchRun>[0]) => dispatchRun(value, home), get: (id: string) => getRun(id, home), list: () => listRuns(home), cancel: (id: string) => cancelRun(id, home) },
+      attempts: { get: (id: string) => getAttempt(id, home), list: (runId?: string) => listRunAttempts(runId, home), update: (id: string, value: Parameters<typeof updateRunAttempt>[1]) => updateRunAttempt(id, value, home), resume: (id: string) => resumeAttempt(id, home) },
+      agents: { list: () => listAgents(home), transitions: () => listAgentTransitions(home) },
+      plan: () => plan({ home }),
+      status: () => status(home),
+    },
+    missionControl: {
+      overview: () => missionControlOverview(home),
+      goal: (value: { goalId: string }) => missionControlGoal({ ...value, home }),
+      startGoal: (value: { goalId: string; workingPath?: string }) => missionControlStartGoal({ ...value, home }),
+      stopExecution: (value: { runId: string }) => missionControlStopExecution({ ...value, home }),
+      retryExecution: (value: { goalId: string; workingPath?: string }) => missionControlRetryExecution({ ...value, home }),
+    },
+  };
+}

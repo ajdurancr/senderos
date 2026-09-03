@@ -8,18 +8,21 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:senderos": "bun run --cwd apps/senderos dev",
+    "dev:senderos": "bun run --cwd packages/cli dev",
     "dev:studio": "bun run --cwd apps/studio dev",
     "dev:docs": "bun run --cwd apps/docs dev",
-    "build": "bun run build:senderos && bun run build:studio && bun run build:docs",
-    "build:senderos": "bun run --cwd apps/senderos build",
+    "build": "bun run build:senderos && bun run build:cli && bun run build:studio && bun run build:docs",
+    "build:senderos": "bun run --cwd packages/senderos build",
+    "build:cli": "bun run --cwd packages/cli build",
     "build:studio": "bun run --cwd apps/studio build",
     "build:docs": "bun run --cwd apps/docs build",
-    "typecheck": "bun run typecheck:senderos && bun run typecheck:studio && bun run typecheck:docs",
-    "typecheck:senderos": "bun run --cwd apps/senderos typecheck",
+    "typecheck": "bun run typecheck:senderos && bun run typecheck:cli && bun run typecheck:studio && bun run typecheck:docs",
+    "typecheck:senderos": "bun run --cwd packages/senderos typecheck",
+    "typecheck:cli": "bun run --cwd packages/cli typecheck",
     "typecheck:studio": "bun run --cwd apps/studio typecheck",
     "typecheck:docs": "bun run --cwd apps/docs typecheck",
-    "test": "bun run test:senderos",
-    "test:senderos": "bun run --cwd apps/senderos test"
+    "test": "bun run test:senderos && bun run test:cli",
+    "test:senderos": "bun run --cwd packages/senderos test",
+    "test:cli": "bun run --cwd packages/cli test"
   }
 }
