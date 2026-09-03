@@ -1,7 +1,7 @@
-export * from './domain/types';
-export * from './config/runtime';
-export * from './services/runtime';
-export * from './utils/harness';
+export * from './shared/types';
+export * from './shared/config';
+export * from './commands';
+export * from './shared/harness';
 export {
   missionControlGoal,
   missionControlOverview,
@@ -33,7 +33,7 @@ import {
   updateGoal,
   updateProject,
   updateRunAttempt,
-} from './services/runtime';
+} from './commands';
 import {
   missionControlGoal,
   missionControlOverview,

@@ -1,8 +1,8 @@
 import type { Database } from 'bun:sqlite';
-import type { DbAdapter, SenderosConfig } from '../domain/types';
-import { resolveRuntime } from '../config/runtime';
-import { localSqliteAdapter } from '../adapters/db/local-sqlite';
-import { tursoAdapter } from '../adapters/db/turso';
+import type { DbAdapter, SenderosConfig } from '../shared/types';
+import { resolveRuntime } from '../shared/config';
+import { localSqliteAdapter } from './adapters/local-sqlite';
+import { tursoAdapter } from './adapters/turso';
 
 export function resolveDbAdapter(kind: SenderosConfig['database']['kind']): DbAdapter {
   switch (kind) {

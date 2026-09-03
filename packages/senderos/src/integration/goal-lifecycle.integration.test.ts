@@ -6,7 +6,7 @@ import {
   getAttempt,
   listAgentTransitions,
   updateRunAttempt,
-} from '../services/runtime';
+} from '../commands';
 import { createProjectFixture, initHome } from '../../tests/helpers/runtime';
 
 test('a goal moves from approved intent to a persisted execution attempt', () => {

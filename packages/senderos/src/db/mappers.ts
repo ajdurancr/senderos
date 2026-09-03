@@ -4,7 +4,7 @@ import type {
   GoalRecord,
   ProjectRecord,
   RunAttemptRecord,
-} from '../domain/types';
+} from '../shared/types';
 
 export function mapProjectRow(row: any): ProjectRecord | null {
   return row

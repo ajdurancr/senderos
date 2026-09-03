@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { initializeRuntime } from '../config/runtime';
+import { initializeRuntime } from '../shared/config';
 import {
   createGoal,
   activateGoal,
@@ -10,7 +10,7 @@ import {
   listAgentTransitions,
   dispatchRun,
   getAttempt,
-} from '../services/runtime';
+} from '../commands';
 
 describe('goal orchestration', () => {
   test('creates a goal and records its working path on the concrete attempt', () => {

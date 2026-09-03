@@ -18,7 +18,9 @@ const missingSiblingTests = sourceFiles.filter((sourceFile) => {
   const source = readFileSync(sourceFile, 'utf8');
   const hasFunctions = /\b(?:export\s+)?(?:async\s+)?function\s+\w+|\bexport\s+const\s+\w+\s*=\s*(?:async\s*)?\(/.test(source);
   if (!hasFunctions) return false;
-  return !existsSync(sourceFile.replace(/\.ts$/, '.test.ts'));
+  const siblingTest = sourceFile.replace(/\.ts$/, '.test.ts');
+  const directoryTest = join(resolve(sourceFile, '..'), 'index.test.ts');
+  return !existsSync(siblingTest) && !existsSync(directoryTest);
 });
 
 const relativeMissingTests = missingSiblingTests.map((file) => relative(sourceRoot, file));

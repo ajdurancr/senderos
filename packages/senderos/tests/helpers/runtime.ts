@@ -3,9 +3,9 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { defaultConfigForHome, initializeRuntime } from '../../src/config/runtime';
-import type { SenderosConfig } from '../../src/domain/types';
-import { createProject } from '../../src/services/runtime';
+import { defaultConfigForHome, initializeRuntime } from '../../src/shared/config';
+import type { SenderosConfig } from '../../src/shared/types';
+import { createProject } from '../../src/commands';
 
 const homes: string[] = [];
 const projects: string[] = [];
