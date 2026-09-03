@@ -22,8 +22,8 @@ Classify before coding. Wrong layer edits are the most common source of regressi
 Follow this order:
 
 1. Update docs that describe the contract first.
-2. Update runtime domain/types and mappers.
-3. Update service behavior.
+2. Update runtime domain types, mappers, and migrations.
+3. Update the focused command action that owns the behavior.
 4. Update CLI surface and tests.
 5. Add/adjust integration tests for end-to-end behavior.
 6. Re-run full verification.
@@ -35,7 +35,7 @@ Keep PRs focused: avoid changing tests and behavior for unrelated reasons.
 - `bun run typecheck`
 - `bun run test`
 - `bun run build`
-- `bun run coverage`
+- `bun run --cwd packages/senderos coverage`
 - targeted integration test(s) for the changed pathway
 
 For CLI changes, run the relevant CLI-focused suites before and after.
@@ -53,7 +53,14 @@ Checklist before merging:
 - Are IDs and state transitions still deterministic?
 - Does the host-agent handoff still preserve `goalId`, `transitionId`, `agentId`, and `previousRunId` where relevant?
 
-## 5. Safe workflow for ongoing codebase improvements
+## 5. Code and test conventions
+
+- Use TypeScript and Bun.
+- Prefer explicit names and focused modules.
+- Keep CLI output contracts predictable and machine-readable.
+- Add a colocated test for every implementation module with exported behavior.
+
+## 6. Safe workflow for ongoing codebase improvements
 
 When a feature request is large, split work into
 
@@ -64,7 +71,7 @@ When a feature request is large, split work into
 
 Track each phase independently so rollback remains possible.
 
-## 6. Quality gates for contributor-facing docs
+## 7. Quality gates for contributor-facing docs
 
 When adding new behavior:
 
@@ -73,7 +80,7 @@ When adding new behavior:
 - Add or update operation docs if guardrails change.
 - Keep terminology consistent (`goal`, `agent transition`, `run`, `run attempt`, `dispatch`).
 
-## 7. Current high-value improvements to document explicitly
+## 8. Current high-value improvements to document explicitly
 
 A few areas that are repeatedly useful for active developers:
 
@@ -85,7 +92,7 @@ A few areas that are repeatedly useful for active developers:
 
 If these move, include examples and one-to-one command mapping in docs.
 
-## 8. Release and merge discipline
+## 9. Release and merge discipline
 
 For non-trivial changes:
 

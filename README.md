@@ -4,9 +4,10 @@ Senderos is an engineering orchestration platform that transforms objectives int
 
 This repository contains the Senderos monorepo.
 
-## Monorepo apps
+## Monorepo packages and apps
 
-- `apps/senderos` — Senderos, the orchestration engine/runtime.
+- `packages/senderos` — Senderos, the orchestration engine and public API.
+- `packages/cli` — the `senderos` command-line interface.
 - `apps/studio` — Senderos Studio, the primary product UI built with React Router.
 - `apps/docs` — product and operator documentation.
 
@@ -90,6 +91,7 @@ For the current runtime model and operator workflow, see `apps/docs` or run
 ## Repository structure
 
 - Root: monorepo workspace, shared config, and top-level documentation only
-- `apps/senderos`: Senderos app plus its local docs, agent roles, and templates
+- `packages/senderos`: Senderos runtime, bootstrap definitions, and test support
+- `packages/cli`: Senderos CLI
 - `apps/studio`: Studio web app
 - `apps/docs`: product/operator docs for Senderos
