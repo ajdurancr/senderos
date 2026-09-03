@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test --isolate",
-    "test:unit": "find ./src -name '*.test.ts' -print0 | xargs -0 bun test --isolate",
+    "test:unit": "find ./src -path './src/integration' -prune -o -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
+    "test:integration": "find ./src/integration -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
     "db:inspect": "bun src/scripts/inspect-db.ts",
     "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run src/scripts/check-coverage.ts 97 coverage 95 && bun run src/scripts/check-test-structure.ts"
   },
