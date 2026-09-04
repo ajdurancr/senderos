@@ -1,23 +1,33 @@
 ---
-title: Runtime Boundaries
-description: "The CLI, persistence, planning, and host-execution boundaries in Senderos."
+title: Runtime Architecture
+description: "How the Senderos runtime, CLI, Studio, persistence, and host agents fit together."
 ---
 
-Senderos has four explicit boundaries:
+Senderos is a TypeScript and Bun monorepo with three runtime-facing pieces:
 
-- The CLI is the public, machine-readable control surface.
-- Runtime services own projects, goals, agents, transitions, runs, attempts, and events.
-- SQLite is the durable source of orchestration state.
-- The host agent executes product-code work outside Senderos.
+- `packages/senderos` is the orchestration runtime and public API.
+- `packages/cli` provides the `senderos` command-line interface.
+- `apps/studio` consumes the runtime through a server-side facade.
 
 ```text
 human or automation
-  -> Senderos CLI
-  -> SQLite-backed planning and dispatch services
-  -> planned goal / transition / agent
-  -> host agent executes externally
+  -> Senderos CLI or Studio
+  -> @senderos/senderos
+  -> SQLite runtime state
+  -> planning and dispatch output
+  -> host agent executes work externally
 ```
 
-Senderos does not allocate workspaces, launch coding agents, or implement broad
-GitHub, issue-tracker, notification, or scheduler integrations. It records the
-state needed to make host-driven execution auditable and repeatable.
+The runtime is the source of truth for projects, goals, agent definitions,
+transitions, runs, attempts, and events. The CLI is the machine-readable control
+surface. Studio uses `createSenderos({ home })`, with `SENDEROS_HOME` when set.
+
+The host agent performs product-code work. Senderos records harness, session,
+and working-path metadata on attempts, but does not launch or manage that work.
+
+## Runtime layout
+
+Focused actions live under `src/commands/<entity>/<action>.ts`. Projects, goals,
+runs, attempts, agents, and transitions have explicit actions; generic actions
+live under `config`, `planning`, and `system`. Bootstrap definitions live under
+`src/bootstrap`, while scripts and test support remain under `src`.

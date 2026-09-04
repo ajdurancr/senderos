@@ -38,7 +38,12 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
       },
       {
         slug: 'core/architecture',
-        title: 'Runtime Boundaries',
+        title: 'Runtime Architecture',
+        section: 'Operating model',
+      },
+      {
+        slug: 'core/verification',
+        title: 'Verification',
         section: 'Operating model',
       },
     ],

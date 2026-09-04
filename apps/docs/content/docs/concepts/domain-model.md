@@ -1,32 +1,26 @@
 ---
 title: Domain Model
-description: "The durable entities Senderos stores in SQLite and how they differ from external systems and host-agent sessions."
+description: "The durable Senderos entities, their lifecycles, and their relationship to host-agent execution."
 ---
 
 Senderos stores its orchestration model in SQLite.
-Every operational state transition belongs to a Senderos entity.
 
-Senderos entities are not the same thing as external-system entities.
+```text
+Project -> Goal -> Run -> Run Attempt
+```
 
-A Senderos goal is not a GitHub issue.
-A run attempt is not the host-agent's entire memory.
+- A **project** identifies a repository through its path, GitHub identity,
+  target branch, integration metadata, inferred commands, and health.
+- A **goal** is a durable requested outcome with intake, specification, kind,
+  lifecycle state, and optional branch and pull-request linkage.
+- A **run** is one logical execution of a goal.
+- A **run attempt** records one concrete execution: agent, transition, harness,
+  session metadata, working path, checkpoints, results, failures, and retries.
+- An **agent** is a persisted executor definition. An **agent transition** is
+  an allowed handoff with a source agent, optional target, and objective.
+- An **event** is an append-only audit record for significant state changes.
 
-Senderos may reference outside systems later, but its own model stays separate.
-
-## Core entities
-
-- project
-- goal
-- run
-- run attempt
-- agent
-- agent transition
-- event
-
-A goal is the durable requested outcome inside Senderos. A run is one logical
-execution of a goal; a run attempt records a concrete execution and optional
-host-session details. A working path belongs to the attempt, but is selected by
-the external host rather than managed by Senderos.
-
-Artifacts such as logs, transcripts, reports, and generated outputs live in the Senderos home directory and are referenced from the database.
-The database is seeded from JSON agent records that match the agent entity shape.
+Goals begin as `draft`, become `active` when ready for planning, and can end as
+`completed`, `failed`, `blocked`, or `canceled`. A goal can have many runs, and
+a run can have many attempts. Retries retain their previous-attempt link and may
+reuse or replace the prior working path.

@@ -49,6 +49,7 @@ senderos status --home ./.senderos
 - SQLite database or remote DB configuration
 - artifact directories
 - initial schema
+- built-in agent definitions and their default transitions
 
 ## Required configuration
 

@@ -1,36 +1,25 @@
 ---
 title: Persistence and State
-description: "How Senderos stores durable state in SQLite, when Turso is used, and what still lives in the Senderos home directory."
+description: "Where Senderos keeps runtime configuration, structured state, and large artifacts."
 ---
 
-Senderos stores orchestration state in SQLite.
+SQLite is the authority for Senderos' structured state: projects, goals, agents,
+transitions, runs, attempts, pull-request linkage, and append-only events.
 
-By default, Senderos creates and uses a local SQLite database inside the Senderos home directory.
+By default, Senderos uses local SQLite in its home directory. Turso
+configuration can be described and health-checked; local SQLite is the
+command-execution backend.
 
-The configuration has a database-adapter shape, but the current operational
-implementation initializes and uses the local SQLite adapter.
+Large artifacts remain under the configured home:
 
-## What lives in SQLite
+```text
+~/.senderos/
+  config.json
+  senderos.db
+  artifacts/
+  logs/
+  cache/
+```
 
-All durable Senderos entity state lives in SQLite:
-
-- projects
-- goals
-- runs
-- agents
-- agent transitions
-- run attempts
-- events
-
-## What stays on disk
-
-Large artifacts stay on disk inside the Senderos home directory and are referenced from SQLite:
-
-- logs
-- transcripts
-- reports
-- cached payloads
-
-## Senderos home directory
-
-Senderos uses a single `config.json` file with the minimum required runtime configuration.
+An attempt's `working_path` records the checkout selected by the host agent. It
+is audit metadata, not a Senderos-managed workspace.
