@@ -43,6 +43,25 @@ export type RunAttemptStatus =
   | 'failed'
   | 'canceled';
 
+export type EvidenceKind = 'test' | 'ci' | 'pull_request' | 'artifact' | 'manual';
+export type ReviewStatus = 'pending' | 'approved' | 'changes_requested' | 'rejected';
+
+export interface AttemptEvidence {
+  id: string;
+  kind: EvidenceKind;
+  label: string;
+  url?: string;
+  summary?: string;
+  createdAt: string;
+}
+
+export interface AttemptReview {
+  status: ReviewStatus;
+  reviewer?: string;
+  rationale?: string;
+  reviewedAt?: string;
+}
+
 export interface SenderosConfig {
   database: {
     kind: DatabaseKind;
