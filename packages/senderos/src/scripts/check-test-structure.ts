@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, relative, resolve } from 'node:path';
 
 const sourceRoot = resolve(import.meta.dir, '..');
@@ -20,6 +21,16 @@ function collect(directory: string) {
 
 collect(sourceRoot);
 
+const addedSourceFiles = new Set(
+  execFileSync('git', ['diff', '--name-only', '--diff-filter=A', 'origin/main...HEAD'], {
+    cwd: resolve(sourceRoot, '../..'),
+    encoding: 'utf8',
+  })
+    .split('\n')
+    .filter(Boolean)
+    .map((path) => resolve(sourceRoot, '../../..', path)),
+);
+
 const missingSiblingTests = sourceFiles.filter((sourceFile) => {
   const source = readFileSync(sourceFile, 'utf8');
   const hasFunctions =
@@ -29,7 +40,9 @@ const missingSiblingTests = sourceFiles.filter((sourceFile) => {
   if (!hasFunctions) return false;
   const siblingTest = sourceFile.replace(/\.ts$/, '.test.ts');
   const directoryTest = join(resolve(sourceFile, '..'), 'index.test.ts');
-  return !existsSync(siblingTest) && !existsSync(directoryTest);
+  return addedSourceFiles.has(sourceFile)
+    ? !existsSync(siblingTest)
+    : !existsSync(siblingTest) && !existsSync(directoryTest);
 });
 
 const relativeMissingTests = missingSiblingTests.map((file) =>
