@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { loadConfig } from '@senderos/senderos';
-import { tempHome } from '../../senderos/src/test-support/runtime';
+import { loadConfig } from '@senderos/core';
+import { tempHome } from '../../core/src/test-support/runtime';
 import { runCli } from './run';
 
 describe('runCli', () => {

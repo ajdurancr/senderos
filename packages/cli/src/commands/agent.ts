@@ -1,4 +1,4 @@
-import { getAgent, listAgents } from '@senderos/senderos';
+import { getAgent, listAgents } from '@senderos/core';
 import { requirePositional } from '../shared';
 
 const agentListHelp = {

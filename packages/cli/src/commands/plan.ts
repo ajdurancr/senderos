@@ -1,4 +1,4 @@
-import { plan } from '@senderos/senderos';
+import { plan } from '@senderos/core';
 import { optionStrings } from '../shared';
 
 export const planCommandHelp = {

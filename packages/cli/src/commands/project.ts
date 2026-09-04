@@ -3,7 +3,7 @@ import {
   getProject,
   listProjects,
   updateProject,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import { requirePositional } from '../shared';
 
 const projectCreateHelp = {

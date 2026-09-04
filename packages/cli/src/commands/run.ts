@@ -1,10 +1,10 @@
-import { getRun } from '@senderos/senderos';
+import { getRun } from '@senderos/core';
 import {
   cancelRun,
   dispatchRun,
   listRuns,
   showRunState,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import { optionString, requirePositional } from '../shared';
 export const runCommandHelp = {
   command: 'run',

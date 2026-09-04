@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { handleAgent } from './agent';
-import { initHome } from '../../../senderos/src/test-support/runtime';
+import { initHome } from '../../../core/src/test-support/runtime';
 
 test('agent command lists seeded agents and shows one by id', () => {
   const home = initHome();

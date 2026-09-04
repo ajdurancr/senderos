@@ -1,5 +1,5 @@
 {
-  "name": "@senderos/cli",
+  "name": "senderos",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -15,7 +15,7 @@
     "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage"
   },
   "dependencies": {
-    "@senderos/senderos": "workspace:*"
+    "@senderos/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

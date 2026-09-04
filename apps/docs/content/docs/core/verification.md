@@ -9,7 +9,7 @@ Run the full repository checks before merging substantial work:
 bun run typecheck
 bun run test
 bun run build
-bun run --cwd packages/senderos coverage
+bun run --cwd packages/core coverage
 ```
 
 Senderos coverage requires at least 97% overall line and function coverage and
@@ -19,6 +19,6 @@ modules with functions have colocated tests.
 For targeted work, run:
 
 ```bash
-bun run --cwd packages/senderos test:unit
-bun run --cwd packages/senderos test:integration
+bun run --cwd packages/core test:unit
+bun run --cwd packages/core test:integration
 ```

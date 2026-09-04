@@ -21,8 +21,8 @@ import {
   status,
   updateGoal,
   updateRunAttempt,
-} from '@senderos/senderos';
-import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/senderos';
+} from '@senderos/core';
+import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/core';
 import { createProjectFixture, initHome } from '../test-support/runtime';
 
 describe('goal orchestration runtime model', () => {

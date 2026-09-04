@@ -1,5 +1,5 @@
-import { loadConfig } from '@senderos/senderos';
-import { getConfigPath, updateConfigPath } from '@senderos/senderos';
+import { loadConfig } from '@senderos/core';
+import { getConfigPath, updateConfigPath } from '@senderos/core';
 import { requirePositional } from '../shared';
 
 const configShowHelp = {

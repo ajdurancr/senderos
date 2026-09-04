@@ -1,4 +1,4 @@
-import type { CommandHelp } from '@senderos/senderos';
+import type { CommandHelp } from '@senderos/core';
 
 import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
