@@ -1,10 +1,4 @@
-import {
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -39,8 +33,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
       <div className="mx-auto max-w-3xl rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-rose-300">Studio error</p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">The route failed to render.</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-rose-300">
+          Studio error
+        </p>
+        <h1 className="mt-4 text-3xl font-semibold text-white">
+          The route failed to render.
+        </h1>
         <p className="mt-4 text-sm leading-7 text-slate-200">{message}</p>
       </div>
     </main>
