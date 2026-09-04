@@ -3,7 +3,7 @@ import {
   listRunAttempts,
   resumeAttempt,
   updateRunAttempt,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import { requirePositional } from '../shared';
 export const attemptCommandHelp = {
   command: 'attempt',

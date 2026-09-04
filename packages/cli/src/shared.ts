@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { defaultHomePath } from '@senderos/senderos';
+import { defaultHomePath } from '@senderos/core';
 
 export function resolveHome(
   optionHome: string | boolean | string[] | undefined,

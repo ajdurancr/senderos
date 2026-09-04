@@ -35,7 +35,7 @@ Keep PRs focused: avoid changing tests and behavior for unrelated reasons.
 - `bun run typecheck`
 - `bun run test`
 - `bun run build`
-- `bun run --cwd packages/senderos coverage`
+- `bun run --cwd packages/core coverage`
 - targeted integration test(s) for the changed pathway
 
 For CLI changes, run the relevant CLI-focused suites before and after.

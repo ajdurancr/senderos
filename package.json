@@ -1,5 +1,5 @@
 {
-  "name": "senderos",
+  "name": "@senderos/workspace",
   "private": true,
   "version": "0.1.0",
   "packageManager": "bun@1.3.14",
@@ -8,21 +8,21 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:senderos": "bun run --cwd packages/cli dev",
+    "dev:cli": "bun run --cwd packages/cli dev",
     "dev:studio": "bun run --cwd apps/studio dev",
     "dev:docs": "bun run --cwd apps/docs dev",
-    "build": "bun run build:senderos && bun run build:cli && bun run build:studio && bun run build:docs",
-    "build:senderos": "bun run --cwd packages/senderos build",
+    "build": "bun run build:core && bun run build:cli && bun run build:studio && bun run build:docs",
+    "build:core": "bun run --cwd packages/core build",
     "build:cli": "bun run --cwd packages/cli build",
     "build:studio": "bun run --cwd apps/studio build",
     "build:docs": "bun run --cwd apps/docs build",
-    "typecheck": "bun run typecheck:senderos && bun run typecheck:cli && bun run typecheck:studio && bun run typecheck:docs",
-    "typecheck:senderos": "bun run --cwd packages/senderos typecheck",
+    "typecheck": "bun run typecheck:core && bun run typecheck:cli && bun run typecheck:studio && bun run typecheck:docs",
+    "typecheck:core": "bun run --cwd packages/core typecheck",
     "typecheck:cli": "bun run --cwd packages/cli typecheck",
     "typecheck:studio": "bun run --cwd apps/studio typecheck",
     "typecheck:docs": "bun run --cwd apps/docs typecheck",
-    "test": "bun run test:senderos && bun run test:cli",
-    "test:senderos": "bun run --cwd packages/senderos test",
+    "test": "bun run test:core && bun run test:cli",
+    "test:core": "bun run --cwd packages/core test",
     "test:cli": "bun run --cwd packages/cli test"
   }
 }

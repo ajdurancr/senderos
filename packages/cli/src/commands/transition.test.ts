@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { handleTransition } from './transition';
-import { getAgentBySlug } from '@senderos/senderos';
-import { initHome } from '../../../senderos/src/test-support/runtime';
+import { getAgentBySlug } from '@senderos/core';
+import { initHome } from '../../../core/src/test-support/runtime';
 
 test('transition command creates and retrieves a handoff', () => {
   const home = initHome();

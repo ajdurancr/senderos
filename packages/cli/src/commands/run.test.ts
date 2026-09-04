@@ -4,11 +4,11 @@ import {
   activateGoal,
   createGoal,
   listAgentTransitions,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import {
   createProjectFixture,
   initHome,
-} from '../../../senderos/src/test-support/runtime';
+} from '../../../core/src/test-support/runtime';
 
 test('run command dispatches a planned goal', () => {
   const home = initHome();

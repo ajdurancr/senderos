@@ -5,14 +5,14 @@ description: "How the Senderos runtime, CLI, Studio, persistence, and host agent
 
 Senderos is a TypeScript and Bun monorepo with three runtime-facing pieces:
 
-- `packages/senderos` is the orchestration runtime and public API.
+- `packages/core` is the orchestration runtime and public API.
 - `packages/cli` provides the `senderos` command-line interface.
 - `apps/studio` consumes the runtime through a server-side facade.
 
 ```text
 human or automation
   -> Senderos CLI or Studio
-  -> @senderos/senderos
+  -> @senderos/core
   -> SQLite runtime state
   -> planning and dispatch output
   -> host agent executes work externally

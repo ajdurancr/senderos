@@ -1,4 +1,4 @@
-import { doctor, status } from '@senderos/senderos';
+import { doctor, status } from '@senderos/core';
 
 const doctorHelp = {
   command: 'doctor',
