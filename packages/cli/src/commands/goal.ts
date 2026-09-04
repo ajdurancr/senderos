@@ -5,7 +5,7 @@ import {
   getGoal,
   listGoals,
   updateGoal,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import { requirePositional } from '../shared';
 export const goalCommandHelp = {
   command: 'goal',

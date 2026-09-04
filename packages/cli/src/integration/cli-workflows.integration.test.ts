@@ -6,7 +6,7 @@ import { runCli } from '../run';
 import {
   tempHome,
   tempProjectDir,
-} from '../../../senderos/src/test-support/runtime';
+} from '../../../core/src/test-support/runtime';
 
 async function invokeCli(argv: string[]) {
   const output: string[] = [];

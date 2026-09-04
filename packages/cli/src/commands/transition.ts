@@ -3,7 +3,7 @@ import {
   getAgentTransition,
   listAgentTransitions,
   listAgentTransitionsForAgent,
-} from '@senderos/senderos';
+} from '@senderos/core';
 import { requirePositional } from '../shared';
 export const transitionCommandHelp = {
   command: 'transition',

@@ -1,5 +1,5 @@
-import type { HarnessKind } from '@senderos/senderos';
-import { initializeRuntime, previewInit } from '@senderos/senderos';
+import type { HarnessKind } from '@senderos/core';
+import { initializeRuntime, previewInit } from '@senderos/core';
 
 export const initCommandHelp = {
   command: 'init',

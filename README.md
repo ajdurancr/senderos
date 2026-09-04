@@ -6,7 +6,7 @@ This repository contains the Senderos monorepo.
 
 ## Monorepo packages and apps
 
-- `packages/senderos` — Senderos, the orchestration engine and public API.
+- `packages/core` — Senderos, the orchestration engine and public API.
 - `packages/cli` — the `senderos` command-line interface.
 - `apps/studio` — Senderos Studio, the primary product UI built with React Router.
 - `apps/docs` — product and operator documentation.
@@ -73,7 +73,7 @@ bun install
 ### Run the apps
 
 ```bash
-bun run dev:senderos
+bun run dev:cli
 bun run dev:studio
 ```
 
@@ -91,7 +91,7 @@ For the current runtime model and operator workflow, see `apps/docs` or run
 ## Repository structure
 
 - Root: monorepo workspace, shared config, and top-level documentation only
-- `packages/senderos`: Senderos runtime, bootstrap definitions, and test support
+- `packages/core`: Senderos runtime, bootstrap definitions, and test support
 - `packages/cli`: Senderos CLI
 - `apps/studio`: Studio web app
 - `apps/docs`: product/operator docs for Senderos
