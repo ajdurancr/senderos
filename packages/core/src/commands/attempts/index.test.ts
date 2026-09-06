@@ -5,6 +5,8 @@ import { listAgentTransitions } from '../transitions/list';
 import { getRunAttempt } from './get';
 import { listRunAttempts } from './list';
 import { updateRunAttempt } from './update';
+import { recordAttemptEvidence } from './evidence';
+import { reviewRunAttempt } from './review';
 import { createProjectFixture, initHome } from '../../test-support/runtime';
 
 test('attempt commands read and update a dispatched attempt', () => {
@@ -32,4 +34,25 @@ test('attempt commands read and update a dispatched attempt', () => {
     updateRunAttempt(dispatched.attemptId, { checkpoint: 'verified' }, home)
       ?.checkpoint,
   ).toBe('verified');
+  const evidence = recordAttemptEvidence({
+    attemptId: dispatched.attemptId,
+    kind: 'test',
+    label: 'Unit suite passed',
+    home,
+  });
+  expect(evidence.kind).toBe('test');
+  expect(
+    reviewRunAttempt({
+      attemptId: dispatched.attemptId,
+      status: 'approved',
+      reviewer: 'Tony',
+      home,
+    }).status,
+  ).toBe('approved');
+  const snapshot = JSON.parse(
+    getRunAttempt(dispatched.attemptId, home)!.statusSnapshotJson,
+  );
+  expect(snapshot.evidence[0].id).toBe(evidence.id);
+  expect(snapshot.review.status).toBe('approved');
+  expect(snapshot.review.reviewer).toBe('Tony');
 });

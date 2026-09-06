@@ -55,6 +55,13 @@ Examples:
 - call an external API
 - launch external execution work from a dispatched item
 
+### Studio review record
+
+Studio can record evidence and an operator review decision on a run attempt. A
+review is an audit record, not proof that a host action has occurred. The host
+agent remains responsible for confirmations outside Senderos, including pushes,
+pull requests, deployments, and external API calls.
+
 ## Why the split matters
 
 This keeps Senderos strict about its own boundaries while still letting the host agent act in the outside world when instructed.

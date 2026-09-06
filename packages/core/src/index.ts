@@ -33,6 +33,8 @@ import {
   updateGoal,
   updateProject,
   updateRunAttempt,
+  recordAttemptEvidence,
+  reviewRunAttempt,
 } from './commands';
 import {
   missionControlGoal,
@@ -76,6 +78,10 @@ export function createSenderos(input: { home?: string } = {}) {
         list: (runId?: string) => listRunAttempts(runId, home),
         update: (id: string, value: Parameters<typeof updateRunAttempt>[1]) =>
           updateRunAttempt(id, value, home),
+        recordEvidence: (value: Omit<Parameters<typeof recordAttemptEvidence>[0], 'home'>) =>
+          recordAttemptEvidence({ ...value, home }),
+        review: (value: Omit<Parameters<typeof reviewRunAttempt>[0], 'home'>) =>
+          reviewRunAttempt({ ...value, home }),
         resume: (id: string) => resumeAttempt(id, home),
       },
       agents: {

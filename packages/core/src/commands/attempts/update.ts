@@ -1,5 +1,6 @@
 import { openRuntimeDb } from '../../db/client';
 import { now } from '../../shared/ids';
+import { emitEvent } from '../../shared/events';
 import type { RunAttemptRecord } from '../../shared/types';
 import { getRunAttempt } from './get';
 
@@ -48,6 +49,10 @@ export function updateRunAttempt(
     now(),
     id,
   );
+  emitEvent(db, 'run-attempt.updated', 'run-attempt', id, {
+    status: input.status, checkpoint: input.checkpoint, failureStep: input.failureStep,
+    hasResult: input.result !== undefined, hasStatusSnapshot: input.statusSnapshot !== undefined,
+  });
   if (
     input.status &&
     ['succeeded', 'failed', 'canceled'].includes(input.status)

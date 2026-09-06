@@ -26,6 +26,9 @@ test('Mission Control returns an overview and starts a goal through the shared f
   const overview = senderos.missionControl.overview();
   expect(overview.goals.map((item) => item.id)).toContain(goal.id);
   expect(overview.status.activeAttemptIds).toContain(started.attempts[0]?.id);
+  expect(overview.queue.activeRuns.map((run) => run.id)).toContain(
+    started.run?.id,
+  );
 });
 
 test('Mission Control retries a failed execution and stops the new execution', () => {
@@ -106,6 +109,20 @@ test('the shared façade exposes every generic command family', () => {
   senderos.commands.attempts.update(dispatched.attemptId, {
     checkpoint: 'checked',
   });
+  expect(
+    senderos.commands.attempts.recordEvidence({
+      attemptId: dispatched.attemptId,
+      kind: 'ci',
+      label: 'CI passed',
+    }).label,
+  ).toBe('CI passed');
+  expect(
+    senderos.commands.attempts.review({
+      attemptId: dispatched.attemptId,
+      status: 'approved',
+      reviewer: 'Studio operator',
+    }).status,
+  ).toBe('approved');
   expect(senderos.commands.status().activeRuns).toBe(1);
   expect(senderos.commands.runs.cancel(dispatched.runId)?.status).toBe(
     'canceled',
