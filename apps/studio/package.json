@@ -7,8 +7,8 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "test": "NODE_ENV=test vitest run --config vitest.config.ts",
+    "coverage": "NODE_ENV=test vitest run --config vitest.config.ts --coverage"
   },
   "dependencies": {
     "@senderos/core": "workspace:*",
