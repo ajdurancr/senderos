@@ -1,8 +1,8 @@
-import { openRuntimeDb } from '../../db/client';
-import { emitEvent } from '../../shared/events';
-import { now, randomId } from '../../shared/ids';
-import type { HarnessKind, RunAttemptRecord } from '../../shared/types';
-import { runAttempts } from '../../db/schema';
+import { openRuntimeDb } from "../../db/client";
+import { emitEvent } from "../../shared/events";
+import { now, randomId } from "../../shared/ids";
+import type { HarnessKind, RunAttemptRecord } from "../../shared/types";
+import { runAttempts } from "../../db/schema";
 
 export async function createRunAttempt(input: {
   home?: string;
@@ -21,19 +21,19 @@ export async function createRunAttempt(input: {
   retryFromAttemptId?: string | null;
   checkpoint?: string | null;
   sourceGoalSha?: string | null;
-  status?: RunAttemptRecord['status'];
+  status?: RunAttemptRecord["status"];
   debugMeta?: Record<string, unknown>;
   startedAt?: string | null;
 }) {
   const db = openRuntimeDb(input.home);
   const ts = now();
   const record: RunAttemptRecord = {
-    id: randomId('attempt'),
+    id: randomId("attempt"),
     runId: input.runId,
     attemptNumber: input.attemptNumber,
     agentId: input.agentId,
     transitionId: input.transitionId ?? null,
-    status: input.status ?? 'queued',
+    status: input.status ?? "queued",
     executionObjective: input.executionObjective,
     harness: input.harness,
     externalSessionId: input.externalSessionId ?? null,
@@ -46,8 +46,8 @@ export async function createRunAttempt(input: {
     checkpoint: input.checkpoint ?? null,
     sourceGoalSha: input.sourceGoalSha ?? null,
     failureStep: null,
-    statusSnapshotJson: '{}',
-    resultJson: '{}',
+    statusSnapshotJson: "{}",
+    resultJson: "{}",
     failureSummary: null,
     debugMetaJson: JSON.stringify(input.debugMeta ?? {}),
     startedAt: input.startedAt ?? null,
@@ -56,7 +56,7 @@ export async function createRunAttempt(input: {
     updatedAt: ts,
   };
   await db.insert(runAttempts).values(record);
-  await emitEvent(db, 'run-attempt.created', 'run-attempt', record.id, {
+  await emitEvent(db, "run-attempt.created", "run-attempt", record.id, {
     runId: record.runId,
     attemptNumber: record.attemptNumber,
   });

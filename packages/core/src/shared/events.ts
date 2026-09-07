@@ -1,8 +1,8 @@
-import { asc, eq, and } from 'drizzle-orm';
+import { asc, eq, and } from "drizzle-orm";
 
-import { openRuntimeDb } from '../db/client';
-import { events } from '../db/schema';
-import { now, randomId } from './ids';
+import { openRuntimeDb } from "../db/client";
+import { events } from "../db/schema";
+import { now, randomId } from "./ids";
 
 export async function emitEvent(
   db: ReturnType<typeof openRuntimeDb>,
@@ -11,7 +11,16 @@ export async function emitEvent(
   entityId: string,
   payload: unknown,
 ) {
-  await db.insert(events).values({ id: randomId('event'), eventType, entityType, entityId, payloadJson: JSON.stringify(payload ?? {}), createdAt: now() });
+  await db
+    .insert(events)
+    .values({
+      id: randomId("event"),
+      eventType,
+      entityType,
+      entityId,
+      payloadJson: JSON.stringify(payload ?? {}),
+      createdAt: now(),
+    });
 }
 
 export async function listEvents(input: {
@@ -22,11 +31,22 @@ export async function listEvents(input: {
   const db = openRuntimeDb(input.home);
   const query = db.select().from(events);
   const rows = await (input.entityType && input.entityId
-    ? query.where(and(eq(events.entityType, input.entityType), eq(events.entityId, input.entityId))).orderBy(asc(events.createdAt))
+    ? query
+        .where(
+          and(
+            eq(events.entityType, input.entityType),
+            eq(events.entityId, input.entityId),
+          ),
+        )
+        .orderBy(asc(events.createdAt))
     : input.entityType
-      ? query.where(eq(events.entityType, input.entityType)).orderBy(asc(events.createdAt))
+      ? query
+          .where(eq(events.entityType, input.entityType))
+          .orderBy(asc(events.createdAt))
       : input.entityId
-        ? query.where(eq(events.entityId, input.entityId)).orderBy(asc(events.createdAt))
+        ? query
+            .where(eq(events.entityId, input.entityId))
+            .orderBy(asc(events.createdAt))
         : query.orderBy(asc(events.createdAt)));
   return rows.map((row: any) => ({
     id: row.id,

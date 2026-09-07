@@ -1,8 +1,8 @@
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 
-import { resolveRuntime } from '../shared/config';
-import * as schema from './schema';
+import { resolveRuntime } from "../shared/config";
+import * as schema from "./schema";
 
 /** Opens a local or remote libSQL connection from environment-only config. */
 export function openRuntimeDb(home?: string) {
