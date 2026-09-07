@@ -7,14 +7,14 @@ import {
 } from '../../../core/src/test-support/runtime';
 
 describe('project command', () => {
-  test('create generates a project id from package.json name by default', () => {
-    const home = initHome();
+  test('create generates a project id from package.json name by default', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir(
       'senderos-cli-project',
       '@acme/senderos-cli-project',
     );
 
-    const created: any = handleProject(
+    const created: any = await handleProject(
       'create',
       [],
       {
@@ -30,11 +30,11 @@ describe('project command', () => {
     expect(created.targetBranch).toBe('main');
   });
 
-  test('create accepts an explicit project id override', () => {
-    const home = initHome();
+  test('create accepts an explicit project id override', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir('senderos-cli-explicit');
 
-    const created: any = handleProject(
+    const created: any = await handleProject(
       'create',
       [],
       {
@@ -49,10 +49,10 @@ describe('project command', () => {
     expect(created.id).toBe('senderos-custom-id');
   });
 
-  test('list returns created projects', () => {
-    const home = initHome();
+  test('list returns created projects', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir('senderos-cli-list');
-    handleProject(
+    await handleProject(
       'create',
       [],
       {
@@ -63,13 +63,13 @@ describe('project command', () => {
       home,
     );
 
-    expect((handleProject('list', [], {}, home) as any[]).length).toBe(1);
+    expect((await handleProject('list', [], {}, home) as any[]).length).toBe(1);
   });
 
-  test('show returns a stored project by id', () => {
-    const home = initHome();
+  test('show returns a stored project by id', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir('senderos-cli-show');
-    const created: any = handleProject(
+    const created: any = await handleProject(
       'create',
       [],
       {
@@ -81,15 +81,15 @@ describe('project command', () => {
     );
 
     expect(
-      (handleProject('show', ['project', 'show', created.id], {}, home) as any)
+      (await handleProject('show', ['project', 'show', created.id], {}, home) as any)
         .id,
     ).toBe(created.id);
   });
 
-  test('update changes stored project fields', () => {
-    const home = initHome();
+  test('update changes stored project fields', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir('senderos-cli-update');
-    const created: any = handleProject(
+    const created: any = await handleProject(
       'create',
       [],
       {
@@ -100,7 +100,7 @@ describe('project command', () => {
       home,
     );
 
-    const updated: any = handleProject(
+    const updated: any = await handleProject(
       'update',
       ['project', 'update', created.id],
       { name: 'Updated project', 'target-branch': 'develop' },
@@ -111,9 +111,9 @@ describe('project command', () => {
     expect(updated.targetBranch).toBe('develop');
   });
 
-  test('unknown subcommands throw', () => {
-    const home = initHome();
-    expect(() => handleProject('wat', [], {}, home)).toThrow(
+  test('unknown subcommands throw', async () => {
+    const home = await initHome();
+    await expect(handleProject('wat', [], {}, home)).rejects.toThrow(
       'Unknown project action',
     );
   });

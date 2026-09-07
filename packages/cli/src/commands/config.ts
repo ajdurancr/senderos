@@ -54,7 +54,7 @@ export const configCommandHelp = {
   subcommands: [configShowHelp, configGetHelp, configSetHelp],
 };
 
-export function handleConfig(
+export async function handleConfig(
   sub: string | undefined,
   positionals: string[],
   home: string,
@@ -64,12 +64,12 @@ export function handleConfig(
       return loadConfig(home);
     case 'get': {
       const path = requirePositional(positionals[2], 'config path');
-      return { path, value: getConfigPath(path, home) };
+      return { path, value: await getConfigPath(path, home) };
     }
     case 'set': {
       const path = requirePositional(positionals[2], 'config path');
       const value = requirePositional(positionals[3], 'config value');
-      return updateConfigPath(path, value, home);
+      return await updateConfigPath(path, value, home);
     }
     default:
       throw new Error('Unknown config action');

@@ -6,15 +6,15 @@ import {
   initHome,
 } from '../../../core/src/test-support/runtime';
 
-test('plan command returns active goals as dispatchable work', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = activateGoal(
-    createGoal({ home, projectId: project.id, title: 'Plan me' }).id,
+test('plan command returns active goals as dispatchable work', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: 'Plan me' })).id,
     home,
-  )!;
+  ))!;
   expect(
-    (handlePlan({ 'goal-status': 'active' }, home) as any[]).some(
+    (await handlePlan({ 'goal-status': 'active' }, home) as any[]).some(
       (item) => item.goalId === goal.id,
     ),
   ).toBe(true);

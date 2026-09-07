@@ -165,7 +165,7 @@ function parseProjectUpdateOptions(
   };
 }
 
-export function handleProject(
+export async function handleProject(
   sub: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
@@ -173,13 +173,13 @@ export function handleProject(
 ) {
   switch (sub) {
     case 'create':
-      return createProject(parseProjectCreateOptions(home, options));
+      return await createProject(parseProjectCreateOptions(home, options));
     case 'list':
-      return listProjects(home);
+      return await listProjects(home);
     case 'show':
-      return getProject(requirePositional(positionals[2], 'project id'), home);
+      return await getProject(requirePositional(positionals[2], 'project id'), home);
     case 'update':
-      return updateProject(
+      return await updateProject(
         parseProjectUpdateOptions(
           home,
           requirePositional(positionals[2], 'project id'),

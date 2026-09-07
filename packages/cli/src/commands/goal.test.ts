@@ -5,20 +5,20 @@ import {
   initHome,
 } from '../../../core/src/test-support/runtime';
 
-test('goal command manages a goal lifecycle', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = (handleGoal as any)(
+test('goal command manages a goal lifecycle', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = await (handleGoal as any)(
     'create',
     [],
     { 'project-id': project.id, title: 'CLI goal', kind: 'maintenance' },
     home,
   );
   expect(
-    (handleGoal as any)('show', ['goal', 'show', goal.id], {}, home).title,
+    (await (handleGoal as any)('show', ['goal', 'show', goal.id], {}, home)).title,
   ).toBe('CLI goal');
   expect(
-    (handleGoal as any)('activate', ['goal', 'activate', goal.id], {}, home)
+    (await (handleGoal as any)('activate', ['goal', 'activate', goal.id], {}, home))
       .status,
   ).toBe('active');
 });

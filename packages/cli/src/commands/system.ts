@@ -18,12 +18,12 @@ const statusHelp = {
 
 export const systemCommandsHelp = [doctorHelp, statusHelp];
 
-export function handleSystemCommand(cmd: string | undefined, home: string) {
+export async function handleSystemCommand(cmd: string | undefined, home: string) {
   switch (cmd) {
     case 'doctor':
-      return doctor(home);
+      return await doctor(home);
     case 'status':
-      return status(home);
+      return await status(home);
     default:
       throw new Error(`Unknown command: ${cmd}`);
   }

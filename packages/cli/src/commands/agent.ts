@@ -29,16 +29,16 @@ export const agentCommandHelp = {
   subcommands: [agentListHelp, agentShowHelp],
 };
 
-export function handleAgent(
+export async function handleAgent(
   sub: string | undefined,
   positionals: string[],
   home: string,
 ) {
   switch (sub) {
     case 'list':
-      return listAgents(home);
+      return await listAgents(home);
     case 'show':
-      return getAgent(requirePositional(positionals[2], 'agent id'), home);
+      return await getAgent(requirePositional(positionals[2], 'agent id'), home);
     default:
       throw new Error('Unknown agent action');
   }

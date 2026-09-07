@@ -9,22 +9,22 @@ import {
 } from '../commands';
 import { createProjectFixture, initHome } from '../test-support/runtime';
 
-test('a goal moves from approved intent to a persisted execution attempt', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = activateGoal(
-    createGoal({
+test('a goal moves from approved intent to a persisted execution attempt', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({
       home,
       projectId: project.id,
       title: 'End-to-end goal',
       kind: 'refactor',
       intakeText: 'Simplify the runtime.',
       specText: 'The new model is coherent.',
-    }).id,
+    })).id,
     home,
-  )!;
-  const transition = listAgentTransitions(home)[0]!;
-  const dispatched = dispatchRun(
+  ))!;
+  const transition = (await listAgentTransitions(home))[0]!;
+  const dispatched = await dispatchRun(
     {
       goalId: goal.id,
       transitionId: transition.id,
@@ -34,13 +34,13 @@ test('a goal moves from approved intent to a persisted execution attempt', () =>
     home,
   );
   expect(
-    updateRunAttempt(
+    (await updateRunAttempt(
       dispatched.attemptId,
       { status: 'succeeded', result: { validated: true } },
       home,
-    )?.status,
+    ))?.status,
   ).toBe('succeeded');
-  expect(getAttempt(dispatched.attemptId, home)?.workingPath).toBe(
+  expect((await getAttempt(dispatched.attemptId, home))?.workingPath).toBe(
     '/tmp/goal-lifecycle',
   );
 }, 15_000);

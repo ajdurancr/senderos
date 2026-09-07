@@ -8,23 +8,23 @@ import {
 } from './index';
 import { createProjectFixture, initHome } from '../../test-support/runtime';
 
-test('goal service persists, updates, activates, and lists goals', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = createGoal({
+test('goal service persists, updates, activates, and lists goals', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = await createGoal({
     home,
     projectId: project.id,
     title: 'Improve search',
     kind: 'feature',
   });
-  expect(listGoals(home)).toHaveLength(1);
+  expect(await listGoals(home)).toHaveLength(1);
   expect(
-    updateGoal({
+    (await updateGoal({
       home,
       id: goal.id,
       specText: 'Search ranks relevant results.',
-    })?.specText,
+    }))?.specText,
   ).toContain('ranks');
-  expect(activateGoal(goal.id, home)?.status).toBe('active');
-  expect(getGoal(goal.id, home)?.id).toBe(goal.id);
+  expect((await activateGoal(goal.id, home))?.status).toBe('active');
+  expect((await getGoal(goal.id, home))?.id).toBe(goal.id);
 });

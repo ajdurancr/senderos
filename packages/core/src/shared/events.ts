@@ -1,49 +1,25 @@
-import type { Database } from 'bun:sqlite';
+import { sql } from 'drizzle-orm';
 
 import { openRuntimeDb } from '../db/client';
 import { now, randomId } from './ids';
 
-export function emitEvent(
-  db: Database,
+export async function emitEvent(
+  db: ReturnType<typeof openRuntimeDb>,
   eventType: string,
   entityType: string,
   entityId: string,
   payload: unknown,
 ) {
-  db.prepare(
-    'insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (?,?,?,?,?,?)',
-  ).run(
-    randomId('event'),
-    eventType,
-    entityType,
-    entityId,
-    JSON.stringify(payload ?? {}),
-    now(),
-  );
+  await db.run(sql`insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (${randomId('event')},${eventType},${entityType},${entityId},${JSON.stringify(payload ?? {})},${now()})`);
 }
 
-export function listEvents(input: {
+export async function listEvents(input: {
   entityType?: string;
   entityId?: string;
   home?: string;
 }) {
   const db = openRuntimeDb(input.home);
-  const where: string[] = [];
-  const values: string[] = [];
-  if (input.entityType) {
-    where.push('entity_type=?');
-    values.push(input.entityType);
-  }
-  if (input.entityId) {
-    where.push('entity_id=?');
-    values.push(input.entityId);
-  }
-  const rows = db
-    .query(
-      `select * from events${where.length ? ` where ${where.join(' and ')}` : ''} order by created_at asc`,
-    )
-    .all(...values);
-  db.close();
+  const rows = await db.all(input.entityType && input.entityId ? sql`select * from events where entity_type=${input.entityType} and entity_id=${input.entityId} order by created_at asc` : input.entityType ? sql`select * from events where entity_type=${input.entityType} order by created_at asc` : input.entityId ? sql`select * from events where entity_id=${input.entityId} order by created_at asc` : sql`select * from events order by created_at asc`);
   return rows.map((row: any) => ({
     id: row.id,
     eventType: row.event_type,

@@ -7,18 +7,18 @@ import {
 } from './index';
 import { initHome } from '../../test-support/runtime';
 
-test('transition commands create, read, and filter agent handoffs', () => {
-  const home = initHome();
-  const agent = getAgentBySlug('spec-partner', home)!;
-  const transition = createAgentTransition({
+test('transition commands create, read, and filter agent handoffs', async () => {
+  const home = await initHome();
+  const agent = (await getAgentBySlug('spec-partner', home))!;
+  const transition = await createAgentTransition({
     home,
     sourceAgentId: agent.id,
     name: 'Implement handoff',
     transitionObjective: 'Implement the approved work.',
   });
 
-  expect(getAgentTransition(transition.id, home)?.id).toBe(transition.id);
-  expect(listAgentTransitionsForAgent(agent.id, home)).toContainEqual(
+  expect((await getAgentTransition(transition.id, home))?.id).toBe(transition.id);
+  expect(await listAgentTransitionsForAgent(agent.id, home)).toContainEqual(
     transition,
   );
 });

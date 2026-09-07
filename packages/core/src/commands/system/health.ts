@@ -16,7 +16,7 @@ export {
   previewInit,
   resolveRuntime,
 };
-export function doctor(home = defaultHomePath()) {
+export async function doctor(home = defaultHomePath()) {
   const issues: string[] = [];
   const warnings: string[] = [];
   if (!runtimeExists(home)) issues.push('missing config');
@@ -26,7 +26,6 @@ export function doctor(home = defaultHomePath()) {
     paths.artifactRoot,
     paths.logRoot,
     paths.cacheRoot,
-    paths.dbPath,
   ];
   for (const dir of managedPaths.slice(0, 3))
     if (!existsSync(dir)) issues.push(`missing dir:${dir}`);
@@ -37,7 +36,7 @@ export function doctor(home = defaultHomePath()) {
       } catch (error) {
         issues.push((error as Error).message);
       }
-  const dbHealth = healthcheckCurrentDb(home);
+  const dbHealth = await healthcheckCurrentDb(home);
   issues.push(...dbHealth.issues);
   warnings.push(...(dbHealth.warnings ?? []));
   return {

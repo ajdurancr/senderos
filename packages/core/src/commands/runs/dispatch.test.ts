@@ -10,16 +10,16 @@ import { cancelRun } from './cancel';
 import { dispatchRun } from './dispatch';
 import { showRunState } from './show-state';
 
-test('run service dispatches and cancels a concrete attempt', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = activateGoal(
-    createGoal({ home, projectId: project.id, title: 'Run goal' }).id,
+test('run service dispatches and cancels a concrete attempt', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: 'Run goal' })).id,
     home,
-  )!;
-  const transition = listAgentTransitions(home)[0]!;
-  expect(getAgentTransition(transition.id, home)?.id).toBe(transition.id);
-  const dispatched = dispatchRun(
+  ))!;
+  const transition = (await listAgentTransitions(home))[0]!;
+  expect((await getAgentTransition(transition.id, home))?.id).toBe(transition.id);
+  const dispatched = await dispatchRun(
     {
       goalId: goal.id,
       transitionId: transition.id,
@@ -28,14 +28,14 @@ test('run service dispatches and cancels a concrete attempt', () => {
     },
     home,
   );
-  expect(showRunState(goal.id, home).attempts).toHaveLength(1);
-  expect((cancelRun(dispatched.runId, home) as any).status).toBe('canceled');
+  expect((await showRunState(goal.id, home)).attempts).toHaveLength(1);
+  expect((await cancelRun(dispatched.runId, home) as any).status).toBe('canceled');
 });
 
-test('cancelRun rejects an unknown run', () => {
-  const home = initHome();
+test('cancelRun rejects an unknown run', async () => {
+  const home = await initHome();
 
-  expect(() => cancelRun('run-missing', home)).toThrow(
+  await expect(cancelRun('run-missing', home)).rejects.toThrow(
     'Run not found: run-missing',
   );
 });

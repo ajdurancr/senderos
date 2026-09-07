@@ -40,7 +40,7 @@ export const runCommandHelp = {
     },
   ],
 };
-export function handleRun(
+export async function handleRun(
   sub: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
@@ -48,7 +48,7 @@ export function handleRun(
 ) {
   switch (sub) {
     case 'dispatch':
-      return dispatchRun(
+      return await dispatchRun(
         {
           goalId: requirePositional(
             optionString(options['goal-id']),
@@ -68,7 +68,7 @@ export function handleRun(
         home,
       );
     case 'state':
-      return showRunState(
+      return await showRunState(
         requirePositional(
           optionString(options['goal-id']) ?? positionals[2],
           'goal id',
@@ -76,11 +76,11 @@ export function handleRun(
         home,
       );
     case 'list':
-      return listRuns(home);
+      return await listRuns(home);
     case 'show':
-      return getRun(requirePositional(positionals[2], 'run id'), home);
+      return await getRun(requirePositional(positionals[2], 'run id'), home);
     case 'cancel':
-      return cancelRun(requirePositional(positionals[2], 'run id'), home);
+      return await cancelRun(requirePositional(positionals[2], 'run id'), home);
     default:
       throw new Error('Unknown run action');
   }

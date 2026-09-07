@@ -20,11 +20,11 @@ export const planCommandHelp = {
   ],
 };
 
-export function handlePlan(
+export async function handlePlan(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
-  return plan({
+  return await plan({
     home,
     goalStatuses: optionStrings(options['goal-status']) as any[],
   });

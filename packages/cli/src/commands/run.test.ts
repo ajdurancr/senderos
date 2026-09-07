@@ -10,15 +10,15 @@ import {
   initHome,
 } from '../../../core/src/test-support/runtime';
 
-test('run command dispatches a planned goal', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const goal = activateGoal(
-    createGoal({ home, projectId: project.id, title: 'CLI run' }).id,
+test('run command dispatches a planned goal', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: 'CLI run' })).id,
     home,
-  )!;
-  const transition = listAgentTransitions(home)[0]!;
-  const dispatched = (handleRun as any)(
+  ))!;
+  const transition = (await listAgentTransitions(home))[0]!;
+  const dispatched = await (handleRun as any)(
     'dispatch',
     [],
     {
@@ -29,6 +29,6 @@ test('run command dispatches a planned goal', () => {
     home,
   );
   expect(
-    (handleRun as any)('show', ['run', 'show', dispatched.runId], {}, home).id,
+    (await (handleRun as any)('show', ['run', 'show', dispatched.runId], {}, home)).id,
   ).toBe(dispatched.runId);
 });

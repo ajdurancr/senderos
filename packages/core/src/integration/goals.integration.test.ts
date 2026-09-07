@@ -1,8 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { initializeRuntime } from '../shared/config';
 import {
   createGoal,
   activateGoal,
@@ -11,29 +7,29 @@ import {
   dispatchRun,
   getAttempt,
 } from '../commands';
+import { initHome } from '../test-support/runtime';
 
 describe('goal orchestration', () => {
-  test('creates a goal and records its working path on the concrete attempt', () => {
-    const home = mkdtempSync(join(tmpdir(), 'senderos-goal-'));
-    initializeRuntime(home);
-    const project = createProject({
+  test('creates a goal and records its working path on the concrete attempt', async () => {
+    const home = await initHome();
+    const project = await createProject({
       home,
       canonicalPath: '/tmp/project',
       githubOwner: 'acme',
       githubRepo: 'app',
     });
-    const goal = activateGoal(
-      createGoal({
+    const goal = (await activateGoal(
+      (await createGoal({
         home,
         projectId: project.id,
         title: 'Fix login',
         kind: 'bugfix',
         specText: 'Users can sign in.',
-      }).id,
+      })).id,
       home,
-    )!;
-    const transition = listAgentTransitions(home)[0]!;
-    const dispatched = dispatchRun(
+    ))!;
+    const transition = (await listAgentTransitions(home))[0]!;
+    const dispatched = await dispatchRun(
       {
         goalId: goal.id,
         transitionId: transition.id,
@@ -42,7 +38,7 @@ describe('goal orchestration', () => {
       },
       home,
     );
-    expect(getAttempt(dispatched.attemptId, home)?.workingPath).toBe(
+    expect((await getAttempt(dispatched.attemptId, home))?.workingPath).toBe(
       '/tmp/project',
     );
   }, 15_000);

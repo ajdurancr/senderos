@@ -2,8 +2,9 @@ import { openRuntimeDb } from '../../db/client';
 import { emitEvent } from '../../shared/events';
 import { now, randomId } from '../../shared/ids';
 import type { HarnessKind, RunAttemptRecord } from '../../shared/types';
+import { sql } from 'drizzle-orm';
 
-export function createRunAttempt(input: {
+export async function createRunAttempt(input: {
   home?: string;
   runId: string;
   attemptNumber: number;
@@ -54,40 +55,10 @@ export function createRunAttempt(input: {
     createdAt: ts,
     updatedAt: ts,
   };
-  db.prepare(
-    'insert into run_attempts (id,run_id,attempt_number,agent_id,transition_id,status,execution_objective,harness,external_session_id,resume_command,heartbeat_at,host_environment_name,working_path,working_path_mode,retry_from_attempt_id,checkpoint,source_goal_sha,failure_step,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-  ).run(
-    record.id,
-    record.runId,
-    record.attemptNumber,
-    record.agentId,
-    record.transitionId,
-    record.status,
-    record.executionObjective,
-    record.harness,
-    record.externalSessionId,
-    record.resumeCommand,
-    record.heartbeatAt,
-    record.hostEnvironmentName,
-    record.workingPath,
-    record.workingPathMode,
-    record.retryFromAttemptId,
-    record.checkpoint,
-    record.sourceGoalSha,
-    record.failureStep,
-    record.statusSnapshotJson,
-    record.resultJson,
-    record.failureSummary,
-    record.debugMetaJson,
-    record.startedAt,
-    record.finishedAt,
-    ts,
-    ts,
-  );
-  emitEvent(db, 'run-attempt.created', 'run-attempt', record.id, {
+  await db.run(sql`insert into run_attempts (id,run_id,attempt_number,agent_id,transition_id,status,execution_objective,harness,external_session_id,resume_command,heartbeat_at,host_environment_name,working_path,working_path_mode,retry_from_attempt_id,checkpoint,source_goal_sha,failure_step,status_snapshot_json,result_json,failure_summary,debug_meta_json,started_at,finished_at,created_at,updated_at) values (${record.id},${record.runId},${record.attemptNumber},${record.agentId},${record.transitionId},${record.status},${record.executionObjective},${record.harness},${record.externalSessionId},${record.resumeCommand},${record.heartbeatAt},${record.hostEnvironmentName},${record.workingPath},${record.workingPathMode},${record.retryFromAttemptId},${record.checkpoint},${record.sourceGoalSha},${record.failureStep},${record.statusSnapshotJson},${record.resultJson},${record.failureSummary},${record.debugMetaJson},${record.startedAt},${record.finishedAt},${ts},${ts})`);
+  await emitEvent(db, 'run-attempt.created', 'run-attempt', record.id, {
     runId: record.runId,
     attemptNumber: record.attemptNumber,
   });
-  db.close();
   return record;
 }

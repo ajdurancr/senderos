@@ -1,9 +1,9 @@
 import { openRuntimeDb } from '../../db/client';
 import { mapGoalRow } from '../../db/mappers';
+import { sql } from 'drizzle-orm';
 
-export function getGoal(id: string, home?: string) {
+export async function getGoal(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapGoalRow(db.query('select * from goals where id=?').get(id));
-  db.close();
+  const row = mapGoalRow((await db.all(sql`select * from goals where id=${id}`))[0]);
   return row;
 }

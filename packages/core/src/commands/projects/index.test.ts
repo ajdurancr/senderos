@@ -29,10 +29,10 @@ describe('project services', () => {
     );
   });
 
-  test('creates and reads a project record', () => {
-    const home = initHome();
+  test('creates and reads a project record', async () => {
+    const home = await initHome();
     const canonicalPath = tempProjectDir('senderos-project-create');
-    const created = createProject({
+    const created = await createProject({
       home,
       canonicalPath,
       githubOwner: 'ajdurancr',
@@ -40,39 +40,40 @@ describe('project services', () => {
     });
 
     expect(created.name).toBe('senderos-project-create');
-    expect(getProject(created.id, home)?.id).toBe(created.id);
+    expect((await getProject(created.id, home))?.id).toBe(created.id);
   });
 
-  test('lists stored projects in creation order', () => {
-    const home = initHome();
-    createProject({
+  test('lists stored projects in creation order', async () => {
+    const home = await initHome();
+    await createProject({
       home,
       canonicalPath: tempProjectDir('senderos-project-a'),
       githubOwner: 'ajdurancr',
       githubRepo: 'senderos',
     });
-    createProject({
+    await createProject({
       home,
       canonicalPath: tempProjectDir('senderos-project-b'),
       githubOwner: 'ajdurancr',
       githubRepo: 'senderos',
     });
 
-    expect(listProjects(home)).toHaveLength(2);
-    expect(listProjects(home)[0]?.name).toBe('senderos-project-a');
-    expect(listProjects(home)[1]?.name).toBe('senderos-project-b');
+    const projects = await listProjects(home);
+    expect(projects).toHaveLength(2);
+    expect(projects[0]?.name).toBe('senderos-project-a');
+    expect(projects[1]?.name).toBe('senderos-project-b');
   });
 
-  test('updates stored project fields', () => {
-    const home = initHome();
-    const created = createProject({
+  test('updates stored project fields', async () => {
+    const home = await initHome();
+    const created = await createProject({
       home,
       canonicalPath: tempProjectDir('senderos-project-update'),
       githubOwner: 'ajdurancr',
       githubRepo: 'senderos',
     });
 
-    const updated = updateProject({
+    const updated = await updateProject({
       home,
       id: created.id,
       targetBranch: 'develop',
@@ -82,10 +83,10 @@ describe('project services', () => {
     expect(updated?.name).toBe('Updated project');
   });
 
-  test('throws when updating a missing project', () => {
-    const home = initHome();
-    expect(() =>
+  test('rejects when updating a missing project', async () => {
+    const home = await initHome();
+    await expect(
       updateProject({ home, id: 'project-missing', name: 'Missing' }),
-    ).toThrow();
+    ).rejects.toThrow();
   });
 });

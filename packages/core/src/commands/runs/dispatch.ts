@@ -5,7 +5,7 @@ import { getAgentTransition } from '../transitions/get';
 import { now } from '../../shared/ids';
 import { createRunRecord } from './create';
 import { getRun } from './get';
-export function dispatchRun(
+export async function dispatchRun(
   input: {
     goalId: string;
     transitionId: string;
@@ -15,17 +15,17 @@ export function dispatchRun(
   },
   home?: string,
 ) {
-  const goal = getGoal(input.goalId, home);
+  const goal = await getGoal(input.goalId, home);
   if (!goal) throw new Error(`Goal not found: ${input.goalId}`);
   if (!['active', 'failed'].includes(goal.status))
     throw new Error(`Goal is not dispatchable from status ${goal.status}`);
-  const transition = getAgentTransition(input.transitionId, home);
+  const transition = await getAgentTransition(input.transitionId, home);
   if (!transition || transition.status !== 'active')
     throw new Error(`Active agent transition not found: ${input.transitionId}`);
   if (transition.sourceAgentId !== input.agentId)
     throw new Error('Agent must match the transition source agent');
   const previous = input.previousRunId
-    ? getRun(input.previousRunId, home)
+    ? await getRun(input.previousRunId, home)
     : null;
   if (
     input.previousRunId &&
@@ -36,11 +36,11 @@ export function dispatchRun(
     throw new Error(
       'previous-run-id must reference a completed run for this goal',
     );
-  const run = createRunRecord(goal, home)!;
+  const run = (await createRunRecord(goal, home))!;
   const priorAttempt = previous
-    ? listRunAttempts(previous.id, home).at(-1)
+    ? (await listRunAttempts(previous.id, home)).at(-1)
     : null;
-  const attempt = createRunAttempt({
+  const attempt = await createRunAttempt({
     home,
     runId: run.id,
     attemptNumber: 1,

@@ -45,8 +45,8 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
   const config = await invokeCli(['config', 'show', '--home', home]);
   expect(config.defaultHarness).toBe('codex');
   expect(
-    (await invokeCli(['config', 'get', 'database.kind', '--home', home])).value,
-  ).toBe('local');
+    (await invokeCli(['config', 'get', 'database.urlEnv', '--home', home])).value,
+  ).toBe('SENDEROS_DATABASE_URL');
   expect(
     (
       await invokeCli([

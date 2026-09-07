@@ -1,43 +1,41 @@
-import type { Database } from 'bun:sqlite';
-import type { DbAdapter, SenderosConfig } from '../shared/types';
+import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
+
 import { resolveRuntime } from '../shared/config';
-import { localSqliteAdapter } from './adapters/local-sqlite';
-import { tursoAdapter } from './adapters/turso';
+import * as schema from './schema';
 
-export function resolveDbAdapter(
-  kind: SenderosConfig['database']['kind'],
-): DbAdapter {
-  switch (kind) {
-    case 'turso':
-      return tursoAdapter;
-    case 'local':
-    default:
-      return localSqliteAdapter;
-  }
-}
-
-export function resolveConfiguredDbAdapter(home?: string) {
+/** Opens a local or remote libSQL connection from environment-only config. */
+export function openRuntimeDb(home?: string) {
   const { config } = resolveRuntime(home);
-  return resolveDbAdapter(config.database.kind);
+  const url = process.env[config.database.urlEnv];
+  if (!url) throw new Error(`Missing env:${config.database.urlEnv}`);
+  const authToken = config.database.authTokenEnv
+    ? process.env[config.database.authTokenEnv]
+    : undefined;
+  return drizzle({
+    client: createClient({ url, ...(authToken ? { authToken } : {}) }),
+    schema,
+  });
 }
 
 export function describeCurrentDb(home?: string) {
-  return resolveConfiguredDbAdapter(home).describe(home);
+  const { config } = resolveRuntime(home);
+  return {
+    urlEnv: config.database.urlEnv,
+    url: process.env[config.database.urlEnv] ?? null,
+    authTokenEnv: config.database.authTokenEnv ?? null,
+  };
 }
 
-export function healthcheckCurrentDb(home?: string) {
-  return resolveConfiguredDbAdapter(home).healthcheck(home);
-}
-
-export function openRuntimeDb(home?: string): Database {
-  const adapter = resolveConfiguredDbAdapter(home);
-
-  /* c8 ignore next 4 -- exercised branch is not attributed by Bun's coverage output. */
-  if (!adapter.openCommandConnection) {
-    throw new Error(
-      `Database adapter ${adapter.kind} does not expose a command execution connection.`,
-    );
+export async function healthcheckCurrentDb(home?: string) {
+  try {
+    await openRuntimeDb(home).run('select 1');
+    return { ok: true, issues: [] as string[], warnings: [] as string[] };
+  } catch (error) {
+    return {
+      ok: false,
+      issues: [(error as Error).message],
+      warnings: [] as string[],
+    };
   }
-
-  return adapter.openCommandConnection(home) as Database;
 }

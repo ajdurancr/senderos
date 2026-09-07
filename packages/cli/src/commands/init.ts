@@ -46,5 +46,5 @@ export async function handleInit(
     );
   }
 
-  return initializeRuntime(preview.home, preview.config);
+  return await initializeRuntime(preview.home, preview.config);
 }

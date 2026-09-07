@@ -1,8 +1,8 @@
 import { openRuntimeDb } from '../../db/client';
 import type { RunRecord } from '../../shared/types';
-export function getRun(id: string, home?: string): RunRecord | null {
+import { sql } from 'drizzle-orm';
+export async function getRun(id: string, home?: string): Promise<RunRecord | null> {
   const db = openRuntimeDb(home);
-  const row = db.query('select * from runs where id=?').get(id);
-  db.close();
+  const row = (await db.all(sql`select * from runs where id=${id}`))[0];
   return (row as RunRecord | null) ?? null;
 }

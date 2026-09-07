@@ -4,15 +4,15 @@ import { listGoals } from '../goals/list';
 import { latestRunForGoal } from '../runs/latest-for-goal';
 import { listAgentTransitions } from '../transitions/list';
 const DEFAULT_GOAL_STATUSES: GoalStatus[] = ['active', 'failed'];
-function nextTransition(
+async function nextTransition(
   previousRunId: string | undefined,
   home?: string,
-): AgentTransitionRecord | null {
-  const transitions = listAgentTransitions(home).filter(
+): Promise<AgentTransitionRecord | null> {
+  const transitions = (await listAgentTransitions(home)).filter(
     (item) => item.status === 'active',
   );
   if (!previousRunId) return transitions[0] ?? null;
-  const previous = listRunAttempts(previousRunId, home).at(-1);
+  const previous = (await listRunAttempts(previousRunId, home)).at(-1);
   if (!previous) return transitions[0] ?? null;
   if (previous.status === 'failed')
     return (
@@ -28,7 +28,7 @@ function nextTransition(
       ) ?? null)
     : null;
 }
-export function plan(input: { home?: string; goalStatuses?: GoalStatus[] }) {
+export async function plan(input: { home?: string; goalStatuses?: GoalStatus[] }) {
   const statuses = input.goalStatuses?.length
     ? input.goalStatuses
     : DEFAULT_GOAL_STATUSES;
@@ -38,16 +38,16 @@ export function plan(input: { home?: string; goalStatuses?: GoalStatus[] }) {
     agentId: string;
     previousRunId: string | null;
   }> = [];
-  for (const goal of listGoals(input.home).filter((goal) =>
+  for (const goal of (await listGoals(input.home)).filter((goal) =>
     statuses.includes(goal.status),
   )) {
-    const previous: any = latestRunForGoal(goal.id, input.home);
+    const previous: any = await latestRunForGoal(goal.id, input.home);
     if (
       previous &&
       !['succeeded', 'failed', 'canceled'].includes(previous.status)
     )
       continue;
-    const transition = nextTransition(previous?.id, input.home);
+    const transition = await nextTransition(previous?.id, input.home);
     if (transition)
       items.push({
         goalId: goal.id,

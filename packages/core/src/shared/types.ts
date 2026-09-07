@@ -1,4 +1,3 @@
-export type DatabaseKind = 'local' | 'turso';
 export type HarnessKind = 'openclaw' | 'codex' | 'claude-code' | 'unknown';
 export type ProjectStatus = 'healthy' | 'setup_failed' | 'broken' | 'archived';
 export type IntegrationMode = 'github_pr' | 'local_merge';
@@ -64,9 +63,10 @@ export interface AttemptReview {
 
 export interface SenderosConfig {
   database: {
-    kind: DatabaseKind;
-    path?: string;
-    turso?: { url: string; authTokenEnv: string };
+    /** Environment variable containing a file: or remote libSQL URL. */
+    urlEnv: string;
+    /** Optional environment variable containing a libSQL auth token. */
+    authTokenEnv?: string;
   };
   artifactRoot: string;
   logRoot: string;
@@ -78,7 +78,7 @@ export interface SenderosConfig {
 export interface RuntimePaths {
   home: string;
   configPath: string;
-  dbPath: string;
+  dbPath?: string;
   artifactRoot: string;
   logRoot: string;
   cacheRoot: string;
@@ -187,16 +187,6 @@ export interface InitPreview {
   inferredHarness: HarnessKind;
   assumptions: string[];
   requiresApproval: true;
-}
-export interface DbAdapter {
-  kind: DatabaseKind;
-  describe(home?: string): Record<string, unknown>;
-  healthcheck(home?: string): {
-    ok: boolean;
-    issues: string[];
-    warnings?: string[];
-  };
-  openCommandConnection?(home?: string): unknown;
 }
 export interface CommandHelp {
   command: string;
