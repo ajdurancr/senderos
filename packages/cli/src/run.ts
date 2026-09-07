@@ -40,32 +40,32 @@ export async function runCli(argv = process.argv.slice(2)) {
         result = await handleBootstrapAgentSkill(options);
         break;
       case 'config':
-        result = handleConfig(sub, positionals, home);
+        result = await handleConfig(sub, positionals, home);
         break;
       case 'project':
-        result = handleProject(sub, positionals, options, home);
+        result = await handleProject(sub, positionals, options, home);
         break;
       case 'agent':
-        result = handleAgent(sub, positionals, home);
+        result = await handleAgent(sub, positionals, home);
         break;
       case 'transition':
-        result = handleTransition(sub, positionals, options, home);
+        result = await handleTransition(sub, positionals, options, home);
         break;
       case 'goal':
-        result = handleGoal(sub, positionals, options, home);
+        result = await handleGoal(sub, positionals, options, home);
         break;
       case 'plan':
-        result = handlePlan(options, home);
+        result = await handlePlan(options, home);
         break;
       case 'run':
-        result = handleRun(sub, positionals, options, home);
+        result = await handleRun(sub, positionals, options, home);
         break;
       case 'attempt':
-        result = handleAttempt(sub, positionals, options, home);
+        result = await handleAttempt(sub, positionals, options, home);
         break;
       case 'doctor':
       case 'status':
-        result = handleSystemCommand(cmd, home);
+        result = await handleSystemCommand(cmd, home);
         break;
       default:
         throw new Error(`Unknown command: ${cmd}`);

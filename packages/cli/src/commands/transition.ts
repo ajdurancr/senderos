@@ -29,7 +29,7 @@ export const transitionCommandHelp = {
     },
   ],
 };
-export function handleTransition(
+export async function handleTransition(
   subcommand: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
@@ -37,7 +37,7 @@ export function handleTransition(
 ) {
   switch (subcommand) {
     case 'create':
-      return createAgentTransition({
+      return await createAgentTransition({
         home,
         sourceAgentId: String(options['source-agent-id'] ?? ''),
         targetAgentId: options['target-agent-id'] as string | undefined,
@@ -47,10 +47,10 @@ export function handleTransition(
       });
     case 'list':
       return options['agent-id']
-        ? listAgentTransitionsForAgent(String(options['agent-id']), home)
-        : listAgentTransitions(home);
+        ? await listAgentTransitionsForAgent(String(options['agent-id']), home)
+        : await listAgentTransitions(home);
     case 'show':
-      return getAgentTransition(
+      return await getAgentTransition(
         requirePositional(positionals[2], 'transition id'),
         home,
       );

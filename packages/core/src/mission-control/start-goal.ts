@@ -3,19 +3,19 @@ import { plan } from '../commands/planning/plan';
 import { dispatchRun } from '../commands/runs/dispatch';
 import { missionControlGoal } from './goal';
 
-export function missionControlStartGoal(input: {
+export async function missionControlStartGoal(input: {
   goalId: string;
   workingPath?: string;
   home?: string;
 }) {
-  const goal = activateGoal(input.goalId, input.home);
+  const goal = await activateGoal(input.goalId, input.home);
   if (!goal) throw new Error(`Goal not found: ${input.goalId}`);
-  const item = plan({ home: input.home, goalStatuses: ['active'] }).find(
+  const item = (await plan({ home: input.home, goalStatuses: ['active'] })).find(
     (candidate) => candidate.goalId === goal.id,
   );
   if (!item)
     throw new Error(`No dispatchable transition found for goal: ${goal.id}`);
-  dispatchRun(
+  await dispatchRun(
     {
       ...item,
       previousRunId: item.previousRunId ?? undefined,

@@ -1,55 +1,59 @@
-import type { Database } from 'bun:sqlite';
+import { asc, eq, and } from "drizzle-orm";
 
-import { openRuntimeDb } from '../db/client';
-import { now, randomId } from './ids';
+import { openRuntimeDb } from "../db/client";
+import { events } from "../db/schema";
+import { now, randomId } from "./ids";
 
-export function emitEvent(
-  db: Database,
+export async function emitEvent(
+  db: ReturnType<typeof openRuntimeDb>,
   eventType: string,
   entityType: string,
   entityId: string,
   payload: unknown,
 ) {
-  db.prepare(
-    'insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (?,?,?,?,?,?)',
-  ).run(
-    randomId('event'),
-    eventType,
-    entityType,
-    entityId,
-    JSON.stringify(payload ?? {}),
-    now(),
-  );
+  await db
+    .insert(events)
+    .values({
+      id: randomId("event"),
+      eventType,
+      entityType,
+      entityId,
+      payloadJson: JSON.stringify(payload ?? {}),
+      createdAt: now(),
+    });
 }
 
-export function listEvents(input: {
+export async function listEvents(input: {
   entityType?: string;
   entityId?: string;
   home?: string;
 }) {
   const db = openRuntimeDb(input.home);
-  const where: string[] = [];
-  const values: string[] = [];
-  if (input.entityType) {
-    where.push('entity_type=?');
-    values.push(input.entityType);
-  }
-  if (input.entityId) {
-    where.push('entity_id=?');
-    values.push(input.entityId);
-  }
-  const rows = db
-    .query(
-      `select * from events${where.length ? ` where ${where.join(' and ')}` : ''} order by created_at asc`,
-    )
-    .all(...values);
-  db.close();
+  const query = db.select().from(events);
+  const rows = await (input.entityType && input.entityId
+    ? query
+        .where(
+          and(
+            eq(events.entityType, input.entityType),
+            eq(events.entityId, input.entityId),
+          ),
+        )
+        .orderBy(asc(events.createdAt))
+    : input.entityType
+      ? query
+          .where(eq(events.entityType, input.entityType))
+          .orderBy(asc(events.createdAt))
+      : input.entityId
+        ? query
+            .where(eq(events.entityId, input.entityId))
+            .orderBy(asc(events.createdAt))
+        : query.orderBy(asc(events.createdAt)));
   return rows.map((row: any) => ({
     id: row.id,
-    eventType: row.event_type,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    payload: JSON.parse(row.payload_json),
-    createdAt: row.created_at,
+    eventType: row.eventType,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    payload: JSON.parse(row.payloadJson),
+    createdAt: row.createdAt,
   }));
 }

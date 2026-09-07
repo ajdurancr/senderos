@@ -1,13 +1,12 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapGoalRow } from '../../db/mappers';
-import type { GoalRecord } from '../../shared/types';
+import { openRuntimeDb } from "../../db/client";
+import { goals } from "../../db/schema";
+import type { GoalRecord } from "../../shared/types";
+import { asc } from "drizzle-orm";
 
-export function listGoals(home?: string): GoalRecord[] {
+export async function listGoals(home?: string): Promise<GoalRecord[]> {
   const db = openRuntimeDb(home);
-  const rows = db
-    .query('select * from goals order by created_at asc')
-    .all()
-    .map(mapGoalRow) as GoalRecord[];
-  db.close();
-  return rows;
+  return (await db
+    .select()
+    .from(goals)
+    .orderBy(asc(goals.createdAt))) as GoalRecord[];
 }

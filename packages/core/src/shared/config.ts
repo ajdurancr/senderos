@@ -1,13 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import { Database } from 'bun:sqlite';
 
 import type {
   InitPreview,
   SeedAgentsOptions,
   SenderosConfig,
 } from '../shared/types';
-import { migrate } from '../db/migrations';
+import { migrateRuntimeDb } from '../db/migrate';
 import { seedBuiltInAgents } from '../bootstrap/seed-agents';
 import { inferHarnessFromEnvironment } from './harness';
 
@@ -47,7 +46,10 @@ export function defaultConfigForHome(
   harness: SenderosConfig['defaultHarness'],
 ): SenderosConfig {
   return {
-    database: { kind: 'local', path: join(home, 'senderos.db') },
+    database: {
+      urlEnv: 'SENDEROS_DATABASE_URL',
+      authTokenEnv: 'SENDEROS_DATABASE_AUTH_TOKEN',
+    },
     artifactRoot: join(home, 'artifacts'),
     logRoot: join(home, 'logs'),
     cacheRoot: join(home, 'cache'),
@@ -80,13 +82,13 @@ export function previewInit(
       harness
         ? `Using provided harness: ${harness}`
         : `Harness inferred as ${inferredHarness}`,
-      `Database adapter: ${config.database.kind}`,
+      `Database URL environment variable: ${config.database.urlEnv}`,
     ],
     requiresApproval: true,
   };
 }
 
-export function initializeRuntime(
+export async function initializeRuntime(
   home: string,
   config?: SenderosConfig,
   seedOptions?: SeedAgentsOptions,
@@ -124,19 +126,15 @@ export function initializeRuntime(
     JSON.stringify(runtimeConfig, null, 2),
   );
 
-  if (runtimeConfig.database.kind === 'local') {
-    const dbPath =
-      runtimeConfig.database.path ?? join(resolvedHome, 'senderos.db');
+  const databaseUrl =
+    process.env[runtimeConfig.database.urlEnv] ??
+    `file:${join(resolvedHome, 'senderos.db')}`;
+  process.env[runtimeConfig.database.urlEnv] = databaseUrl;
+  if (databaseUrl.startsWith('file:') && runtimeConfig.guardrails.restrictToHome)
+    ensureWithinHome(resolvedHome, databaseUrl.slice('file:'.length));
 
-    if (runtimeConfig.guardrails.restrictToHome) {
-      ensureWithinHome(resolvedHome, dbPath);
-    }
-
-    const db = new Database(dbPath);
-    migrate(db);
-    db.close();
-    seedBuiltInAgents(resolvedHome, seedOptions);
-  }
+  await migrateRuntimeDb(resolvedHome);
+  await seedBuiltInAgents(resolvedHome, seedOptions);
 
   return { home: resolvedHome, configPath: configPathForHome(resolvedHome) };
 }
@@ -148,7 +146,7 @@ export function resolveRuntime(home = defaultHomePath()) {
     paths: {
       home,
       configPath: configPathForHome(home),
-      dbPath: config.database.path ?? join(home, 'senderos.db'),
+      dbPath: undefined,
       artifactRoot: config.artifactRoot,
       logRoot: config.logRoot,
       cacheRoot: config.cacheRoot,

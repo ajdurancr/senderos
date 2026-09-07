@@ -18,7 +18,7 @@ export function GoalList({ goals, runs }: Props) {
       </header>
       <div className="divide-y divide-white/5">
         {goals.map((goal) => {
-          const run = runs.find((item) => item.goal_id === goal.id);
+          const run = runs.find((item) => item.goalId === goal.id);
           const intent =
             goal.status === "draft"
               ? "start"

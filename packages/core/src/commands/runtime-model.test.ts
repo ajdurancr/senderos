@@ -26,15 +26,15 @@ import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/core';
 import { createProjectFixture, initHome } from '../test-support/runtime';
 
 describe('goal orchestration runtime model', () => {
-  test('manages goals, transitions, runs, attempts, planning, and status', () => {
-    const home = initHome();
-    const project = createProjectFixture(home);
-    const agent = getAgentBySlug('spec-partner', home)!;
+  test('manages goals, transitions, runs, attempts, planning, and status', async () => {
+    const home = await initHome();
+    const project = await createProjectFixture(home);
+    const agent = (await getAgentBySlug('spec-partner', home))!;
 
-    expect(getAgent(agent.id, home)?.slug).toBe('spec-partner');
-    expect(getAgentBySlug('missing', home)).toBeNull();
+    expect((await getAgent(agent.id, home))?.slug).toBe('spec-partner');
+    expect(await getAgentBySlug('missing', home)).toBeNull();
 
-    const goal = createGoal({
+    const goal = await createGoal({
       home,
       projectId: project.id,
       title: 'Repair login flow',
@@ -42,23 +42,23 @@ describe('goal orchestration runtime model', () => {
       intakeText: 'Login is broken.',
       specText: 'Users can sign in.',
     });
-    expect(listGoals(home)).toHaveLength(1);
-    expect(getGoal(goal.id, home)?.kind).toBe('bugfix');
+    expect(await listGoals(home)).toHaveLength(1);
+    expect((await getGoal(goal.id, home))?.kind).toBe('bugfix');
 
-    const updated = updateGoal({
+    const updated = (await updateGoal({
       home,
       id: goal.id,
       title: 'Repair sign-in flow',
       prUrl: 'https://example.test/pr/1',
       prNumber: 1,
       branchName: 'fix/sign-in',
-    })!;
+    }))!;
     expect(updated.title).toBe('Repair sign-in flow');
-    expect(() => updateGoal({ home, id: 'missing' })).toThrow('Goal not found');
+    await expect(updateGoal({ home, id: 'missing' })).rejects.toThrow('Goal not found');
 
-    activateGoal(goal.id, home);
-    const defaultTransition = listAgentTransitions(home)[0]!;
-    const handoff = createAgentTransition({
+    await activateGoal(goal.id, home);
+    const defaultTransition = (await listAgentTransitions(home))[0]!;
+    const handoff = await createAgentTransition({
       home,
       sourceAgentId: agent.id,
       targetAgentId: defaultTransition.sourceAgentId,
@@ -67,17 +67,17 @@ describe('goal orchestration runtime model', () => {
       transitionObjective: 'Review the delivered work.',
       assignmentMeta: { priority: 'high' },
     });
-    expect(getAgentTransition(handoff.id, home)?.transitionObjective).toContain(
+    expect((await getAgentTransition(handoff.id, home))?.transitionObjective).toContain(
       'Review',
     );
-    expect(listAgentTransitionsForAgent(agent.id, home).length).toBeGreaterThan(
+    expect((await listAgentTransitionsForAgent(agent.id, home)).length).toBeGreaterThan(
       0,
     );
-    expect(getAgentTransition('missing', home)).toBeNull();
+    expect(await getAgentTransition('missing', home)).toBeNull();
 
-    const items = plan({ home });
+    const items = await plan({ home });
     expect(items.some((item) => item.goalId === goal.id)).toBe(true);
-    const dispatched = dispatchRun(
+    const dispatched = await dispatchRun(
       {
         goalId: goal.id,
         transitionId: defaultTransition.id,
@@ -86,16 +86,16 @@ describe('goal orchestration runtime model', () => {
       },
       home,
     );
-    expect(listRuns(home)).toHaveLength(1);
-    expect(showRunState(goal.id, home).attempts).toHaveLength(1);
+    expect(await listRuns(home)).toHaveLength(1);
+    expect((await showRunState(goal.id, home)).attempts).toHaveLength(1);
 
-    const attempt = getAttempt(dispatched.attemptId, home)!;
-    expect(resumeAttempt(attempt.id, home).attempt.id).toBe(attempt.id);
-    expect(() => resumeAttempt('missing', home)).toThrow(
+    const attempt = (await getAttempt(dispatched.attemptId, home))!;
+    expect((await resumeAttempt(attempt.id, home)).attempt.id).toBe(attempt.id);
+    await expect(resumeAttempt('missing', home)).rejects.toThrow(
       'Run attempt not found',
     );
     expect(
-      updateRunAttempt(
+      (await updateRunAttempt(
         attempt.id,
         {
           status: 'failed',
@@ -106,19 +106,19 @@ describe('goal orchestration runtime model', () => {
           statusSnapshot: { state: 'failed' },
         },
         home,
-      )?.failureStep,
+      ))?.failureStep,
     ).toBe('test');
-    expect(() => updateRunAttempt('missing', {}, home)).toThrow(
+    await expect(updateRunAttempt('missing', {}, home)).rejects.toThrow(
       'Run attempt not found',
     );
-    expect(listRunAttempts(dispatched.runId, home)).toHaveLength(1);
-    expect(status(home).activeGoalIds).toContain(goal.id);
+    expect(await listRunAttempts(dispatched.runId, home)).toHaveLength(1);
+    expect((await status(home)).activeGoalIds).toContain(goal.id);
 
     expect(
-      plan({ home }).some((item) => item.previousRunId === dispatched.runId),
+      (await plan({ home })).some((item) => item.previousRunId === dispatched.runId),
     ).toBe(true);
 
-    const directAttempt = createRunAttempt({
+    const directAttempt = await createRunAttempt({
       home,
       runId: dispatched.runId,
       attemptNumber: 2,
@@ -136,18 +136,18 @@ describe('goal orchestration runtime model', () => {
       debugMeta: { source: 'test' },
       startedAt: '2026-08-28T00:00:00.000Z',
     });
-    expect(getAttempt(directAttempt.id, home)?.externalSessionId).toBe(
+    expect((await getAttempt(directAttempt.id, home))?.externalSessionId).toBe(
       'external-1',
     );
 
-    expect((cancelRun(dispatched.runId, home) as any)?.status).toBe('canceled');
-    expect(cancelGoal(goal.id, home)?.status).toBe('canceled');
-    expect(() => cancelGoal('missing', home)).toThrow('Goal not found');
-    expect(() =>
+    expect((await cancelRun(dispatched.runId, home) as any)?.status).toBe('canceled');
+    expect((await cancelGoal(goal.id, home))?.status).toBe('canceled');
+    await expect(cancelGoal('missing', home)).rejects.toThrow('Goal not found');
+    await expect(
       dispatchRun(
         { goalId: 'missing', transitionId: handoff.id, agentId: agent.id },
         home,
       ),
-    ).toThrow('Goal not found');
+    ).rejects.toThrow('Goal not found');
   });
 });

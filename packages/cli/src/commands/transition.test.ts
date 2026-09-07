@@ -3,10 +3,10 @@ import { handleTransition } from './transition';
 import { getAgentBySlug } from '@senderos/core';
 import { initHome } from '../../../core/src/test-support/runtime';
 
-test('transition command creates and retrieves a handoff', () => {
-  const home = initHome();
-  const agent = getAgentBySlug('spec-partner', home)!;
-  const transition = (handleTransition as any)(
+test('transition command creates and retrieves a handoff', async () => {
+  const home = await initHome();
+  const agent = (await getAgentBySlug('spec-partner', home))!;
+  const transition = await (handleTransition as any)(
     'create',
     [],
     {
@@ -17,15 +17,15 @@ test('transition command creates and retrieves a handoff', () => {
     home,
   );
   expect(
-    (handleTransition as any)(
+    (await (handleTransition as any)(
       'show',
       ['transition', 'show', transition.id],
       {},
       home,
-    ).id,
+    )).id,
   ).toBe(transition.id);
   expect(
-    (handleTransition as any)('list', [], { 'agent-id': agent.id }, home)
+    (await (handleTransition as any)('list', [], { 'agent-id': agent.id }, home))
       .length,
   ).toBeGreaterThan(0);
 });

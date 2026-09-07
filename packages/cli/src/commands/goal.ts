@@ -40,7 +40,7 @@ export const goalCommandHelp = {
     },
   ],
 };
-export function handleGoal(
+export async function handleGoal(
   subcommand: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
@@ -57,17 +57,17 @@ export function handleGoal(
   };
   switch (subcommand) {
     case 'create':
-      return createGoal(goalInput);
+      return await createGoal(goalInput);
     case 'list':
-      return listGoals(home);
+      return await listGoals(home);
     case 'show':
-      return getGoal(goalId(), home);
+      return await getGoal(goalId(), home);
     case 'update':
-      return updateGoal({ ...goalInput, id: goalId() });
+      return await updateGoal({ ...goalInput, id: goalId() });
     case 'activate':
-      return activateGoal(goalId(), home);
+      return await activateGoal(goalId(), home);
     case 'cancel':
-      return cancelGoal(goalId(), home);
+      return await cancelGoal(goalId(), home);
     default:
       throw new Error('Unknown goal action');
   }

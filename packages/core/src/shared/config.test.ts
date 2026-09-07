@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { Database } from 'bun:sqlite';
 
 import {
   defaultHomePath,
@@ -8,7 +7,7 @@ import {
   resolveRuntime,
   runtimeExists,
 } from './config';
-import { tempHome } from '../test-support/runtime';
+import { initHome, tempHome } from '../test-support/runtime';
 
 describe('runtime configuration', () => {
   test('defaultHomePath ends in .senderos', () => {
@@ -20,30 +19,22 @@ describe('runtime configuration', () => {
     expect(preview.requiresApproval).toBe(true);
   });
 
-  test('initializeRuntime creates a local runtime on disk', () => {
-    const home = tempHome();
-    initializeRuntime(home);
+  test('initializeRuntime creates a local runtime on disk', async () => {
+    const home = await initHome();
     expect(runtimeExists(home)).toBe(true);
   });
 
-  test('initializeRuntime seeds built-in agents into the runtime database', () => {
+  test('initializeRuntime defaults a local database URL when none is configured', async () => {
     const home = tempHome();
-    initializeRuntime(home);
-
-    const db = new Database(resolveRuntime(home).paths.dbPath);
-    const row = db
-      .query("select slug from agents where slug='spec-partner'")
-      .get() as { slug: string } | null;
-    db.close();
-
-    expect(row?.slug).toBe('spec-partner');
+    delete process.env.SENDEROS_DATABASE_URL;
+    await expect(initializeRuntime(home)).resolves.toMatchObject({ home });
+    expect(String(process.env.SENDEROS_DATABASE_URL)).toBe(`file:${home}/senderos.db`);
   });
 
-  test('resolveRuntime returns persisted configuration and paths', () => {
-    const home = tempHome();
-    initializeRuntime(home);
+  test('resolveRuntime returns persisted configuration and paths', async () => {
+    const home = await initHome();
     const resolved = resolveRuntime(home);
     expect(resolved.paths.home).toBe(home);
-    expect(resolved.config.database.kind).toBe('local');
+    expect(resolved.config.database.urlEnv).toBe('SENDEROS_DATABASE_URL');
   });
 });

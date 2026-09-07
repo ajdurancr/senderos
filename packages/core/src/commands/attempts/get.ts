@@ -1,11 +1,13 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapRunAttemptRow } from '../../db/mappers';
+import { openRuntimeDb } from "../../db/client";
+import type { RunAttemptRecord } from "../../shared/types";
+import { runAttempts } from "../../db/schema";
+import { eq } from "drizzle-orm";
 
-export function getRunAttempt(id: string, home?: string) {
+export async function getRunAttempt(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapRunAttemptRow(
-    db.query('select * from run_attempts where id=?').get(id),
+  return (
+    ((await db.select().from(runAttempts).where(eq(runAttempts.id, id)))[0] as
+      | RunAttemptRecord
+      | undefined) ?? null
   );
-  db.close();
-  return row;
 }

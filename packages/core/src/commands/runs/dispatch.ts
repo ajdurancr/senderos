@@ -1,11 +1,11 @@
-import { createRunAttempt } from '../attempts/create';
-import { listRunAttempts } from '../attempts/list';
-import { getGoal } from '../goals/get';
-import { getAgentTransition } from '../transitions/get';
-import { now } from '../../shared/ids';
-import { createRunRecord } from './create';
-import { getRun } from './get';
-export function dispatchRun(
+import { createRunAttempt } from "../attempts/create";
+import { listRunAttempts } from "../attempts/list";
+import { getGoal } from "../goals/get";
+import { getAgentTransition } from "../transitions/get";
+import { now } from "../../shared/ids";
+import { createRunRecord } from "./create";
+import { getRun } from "./get";
+export async function dispatchRun(
   input: {
     goalId: string;
     transitionId: string;
@@ -15,52 +15,52 @@ export function dispatchRun(
   },
   home?: string,
 ) {
-  const goal = getGoal(input.goalId, home);
+  const goal = await getGoal(input.goalId, home);
   if (!goal) throw new Error(`Goal not found: ${input.goalId}`);
-  if (!['active', 'failed'].includes(goal.status))
+  if (!["active", "failed"].includes(goal.status))
     throw new Error(`Goal is not dispatchable from status ${goal.status}`);
-  const transition = getAgentTransition(input.transitionId, home);
-  if (!transition || transition.status !== 'active')
+  const transition = await getAgentTransition(input.transitionId, home);
+  if (!transition || transition.status !== "active")
     throw new Error(`Active agent transition not found: ${input.transitionId}`);
   if (transition.sourceAgentId !== input.agentId)
-    throw new Error('Agent must match the transition source agent');
+    throw new Error("Agent must match the transition source agent");
   const previous = input.previousRunId
-    ? getRun(input.previousRunId, home)
+    ? await getRun(input.previousRunId, home)
     : null;
   if (
     input.previousRunId &&
     (!previous ||
-      previous.goal_id !== goal.id ||
-      !['failed', 'succeeded'].includes(previous.status))
+      previous.goalId !== goal.id ||
+      !["failed", "succeeded"].includes(previous.status))
   )
     throw new Error(
-      'previous-run-id must reference a completed run for this goal',
+      "previous-run-id must reference a completed run for this goal",
     );
-  const run = createRunRecord(goal, home)!;
+  const run = (await createRunRecord(goal, home))!;
   const priorAttempt = previous
-    ? listRunAttempts(previous.id, home).at(-1)
+    ? (await listRunAttempts(previous.id, home)).at(-1)
     : null;
-  const attempt = createRunAttempt({
+  const attempt = await createRunAttempt({
     home,
     runId: run.id,
     attemptNumber: 1,
     agentId: input.agentId,
     transitionId: transition.id,
     executionObjective: transition.transitionObjective,
-    harness: 'unknown',
+    harness: "unknown",
     externalSessionId: null,
     resumeCommand: null,
     heartbeatAt: now(),
-    hostEnvironmentName: 'external-host-agent',
+    hostEnvironmentName: "external-host-agent",
     workingPath: input.workingPath ?? priorAttempt?.workingPath ?? null,
     workingPathMode: input.workingPath
-      ? 'new'
+      ? "new"
       : priorAttempt?.workingPath
-        ? 'reused'
+        ? "reused"
         : null,
     retryFromAttemptId: priorAttempt?.id ?? null,
-    checkpoint: 'dispatched',
-    status: 'running',
+    checkpoint: "dispatched",
+    status: "running",
     startedAt: now(),
     debugMeta: { previousRunId: input.previousRunId ?? null },
   });

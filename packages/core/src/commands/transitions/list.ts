@@ -1,12 +1,13 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapAgentTransitionRow } from '../../db/mappers';
-import type { AgentTransitionRecord } from '../../shared/types';
-export function listAgentTransitions(home?: string): AgentTransitionRecord[] {
+import { openRuntimeDb } from "../../db/client";
+import { agentTransitions } from "../../db/schema";
+import type { AgentTransitionRecord } from "../../shared/types";
+import { asc } from "drizzle-orm";
+export async function listAgentTransitions(
+  home?: string,
+): Promise<AgentTransitionRecord[]> {
   const db = openRuntimeDb(home);
-  const rows = db
-    .query('select * from agent_transitions order by created_at asc')
-    .all()
-    .map(mapAgentTransitionRow) as AgentTransitionRecord[];
-  db.close();
-  return rows;
+  return (await db
+    .select()
+    .from(agentTransitions)
+    .orderBy(asc(agentTransitions.createdAt))) as AgentTransitionRecord[];
 }

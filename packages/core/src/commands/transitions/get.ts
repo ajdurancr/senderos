@@ -1,10 +1,15 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapAgentTransitionRow } from '../../db/mappers';
-export function getAgentTransition(id: string, home?: string) {
+import { openRuntimeDb } from "../../db/client";
+import type { AgentTransitionRecord } from "../../shared/types";
+import { agentTransitions } from "../../db/schema";
+import { eq } from "drizzle-orm";
+export async function getAgentTransition(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapAgentTransitionRow(
-    db.query('select * from agent_transitions where id=?').get(id),
+  return (
+    ((
+      await db
+        .select()
+        .from(agentTransitions)
+        .where(eq(agentTransitions.id, id))
+    )[0] as AgentTransitionRecord | undefined) ?? null
   );
-  db.close();
-  return row;
 }

@@ -1,21 +1,17 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapRunAttemptRow } from '../../db/mappers';
-import type { RunAttemptRecord } from '../../shared/types';
+import { openRuntimeDb } from "../../db/client";
+import { runAttempts } from "../../db/schema";
+import type { RunAttemptRecord } from "../../shared/types";
+import { asc, eq } from "drizzle-orm";
 
-export function listRunAttempts(
+export async function listRunAttempts(
   runId?: string,
   home?: string,
-): RunAttemptRecord[] {
+): Promise<RunAttemptRecord[]> {
   const db = openRuntimeDb(home);
-  const rows = (
-    runId
-      ? db
-          .query(
-            'select * from run_attempts where run_id=? order by attempt_number asc',
-          )
-          .all(runId)
-      : db.query('select * from run_attempts order by created_at asc').all()
-  ).map(mapRunAttemptRow) as RunAttemptRecord[];
-  db.close();
-  return rows;
+  const query = db.select().from(runAttempts);
+  return (await (runId
+    ? query
+        .where(eq(runAttempts.runId, runId))
+        .orderBy(asc(runAttempts.attemptNumber))
+    : query.orderBy(asc(runAttempts.createdAt)))) as RunAttemptRecord[];
 }

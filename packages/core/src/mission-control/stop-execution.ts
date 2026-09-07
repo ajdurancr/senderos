@@ -1,13 +1,13 @@
-import { getRun } from '../commands/runs/get';
-import { cancelRun } from '../commands/runs/cancel';
-import { missionControlGoal } from './goal';
+import { getRun } from "../commands/runs/get";
+import { cancelRun } from "../commands/runs/cancel";
+import { missionControlGoal } from "./goal";
 
-export function missionControlStopExecution(input: {
+export async function missionControlStopExecution(input: {
   runId: string;
   home?: string;
 }) {
-  const run = getRun(input.runId, input.home);
+  const run = await getRun(input.runId, input.home);
   if (!run) throw new Error(`Run not found: ${input.runId}`);
-  cancelRun(input.runId, input.home);
-  return missionControlGoal({ goalId: run.goal_id, home: input.home });
+  await cancelRun(input.runId, input.home);
+  return missionControlGoal({ goalId: run.goalId, home: input.home });
 }

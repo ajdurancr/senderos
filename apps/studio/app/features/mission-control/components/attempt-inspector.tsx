@@ -12,7 +12,7 @@ export function AttemptInspector({ attempts, goals, runs }: Props) {
   const goal = attempt
     ? goals.find(
         (item) =>
-          item.id === runs.find((run) => run.id === attempt.runId)?.goal_id,
+          item.id === runs.find((run) => run.id === attempt.runId)?.goalId,
       )
     : undefined;
   if (!attempt)

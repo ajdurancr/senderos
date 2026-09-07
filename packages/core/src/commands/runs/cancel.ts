@@ -1,38 +1,36 @@
-import { openRuntimeDb } from '../../db/client';
-import { emitEvent } from '../../shared/events';
-import { now } from '../../shared/ids';
-import { listRunAttempts } from '../attempts/list';
-import { updateRunAttempt } from '../attempts/update';
-import { cancelGoal } from '../goals/cancel';
-import { getRun } from './get';
-export function cancelRun(id: string, home?: string) {
+import { openRuntimeDb } from "../../db/client";
+import { emitEvent } from "../../shared/events";
+import { now } from "../../shared/ids";
+import { listRunAttempts } from "../attempts/list";
+import { updateRunAttempt } from "../attempts/update";
+import { cancelGoal } from "../goals/cancel";
+import { getRun } from "./get";
+import { runs } from "../../db/schema";
+import { eq } from "drizzle-orm";
+export async function cancelRun(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const run: any = db.query('select * from runs where id=?').get(id);
+  const run = (await db.select().from(runs).where(eq(runs.id, id)))[0];
   /* c8 ignore next 3 -- exercised branch is not attributed by Bun's coverage output. */
   if (!run) {
-    db.close();
     throw new Error(`Run not found: ${id}`);
   }
-  db.prepare("update runs set status='canceled',updated_at=? where id=?").run(
-    now(),
-    id,
-  );
-  db.close();
-  for (const attempt of listRunAttempts(id, home).filter((item) =>
-    ['queued', 'running', 'paused'].includes(item.status),
+  await db
+    .update(runs)
+    .set({ status: "canceled", updatedAt: now() })
+    .where(eq(runs.id, id));
+  for (const attempt of (await listRunAttempts(id, home)).filter((item) =>
+    ["queued", "running", "paused"].includes(item.status),
   ))
-    updateRunAttempt(
+    await updateRunAttempt(
       attempt.id,
       {
-        status: 'canceled',
+        status: "canceled",
         finishedAt: now(),
-        failureSummary: 'Run canceled by Senderos.',
+        failureSummary: "Run canceled by Senderos.",
       },
       home,
     );
-  const eventDb = openRuntimeDb(home);
-  emitEvent(eventDb, 'run.canceled', 'run', id, {});
-  eventDb.close();
-  cancelGoal(run.goal_id, home);
+  await emitEvent(db, "run.canceled", "run", id, {});
+  await cancelGoal(run.goalId, home);
   return getRun(id, home);
 }

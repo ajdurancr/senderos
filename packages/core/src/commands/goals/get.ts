@@ -1,9 +1,13 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapGoalRow } from '../../db/mappers';
+import { openRuntimeDb } from "../../db/client";
+import type { GoalRecord } from "../../shared/types";
+import { goals } from "../../db/schema";
+import { eq } from "drizzle-orm";
 
-export function getGoal(id: string, home?: string) {
+export async function getGoal(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapGoalRow(db.query('select * from goals where id=?').get(id));
-  db.close();
-  return row;
+  return (
+    ((await db.select().from(goals).where(eq(goals.id, id)))[0] as
+      | GoalRecord
+      | undefined) ?? null
+  );
 }

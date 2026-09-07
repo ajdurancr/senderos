@@ -1,13 +1,12 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapAgentRow } from '../../db/mappers';
-import type { AgentRecord } from '../../shared/types';
+import { openRuntimeDb } from "../../db/client";
+import { agents } from "../../db/schema";
+import type { AgentRecord } from "../../shared/types";
+import { asc } from "drizzle-orm";
 
-export function listAgents(home?: string): AgentRecord[] {
+export async function listAgents(home?: string): Promise<AgentRecord[]> {
   const db = openRuntimeDb(home);
-  const agents = db
-    .query('select * from agents order by created_at asc')
-    .all()
-    .map(mapAgentRow) as AgentRecord[];
-  db.close();
-  return agents;
+  return (await db
+    .select()
+    .from(agents)
+    .orderBy(asc(agents.createdAt))) as AgentRecord[];
 }

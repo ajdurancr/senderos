@@ -1,11 +1,13 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapAgentRow } from '../../db/mappers';
+import { openRuntimeDb } from "../../db/client";
+import type { AgentRecord } from "../../shared/types";
+import { agents } from "../../db/schema";
+import { eq } from "drizzle-orm";
 
-export function getAgentBySlug(slug: string, home?: string) {
+export async function getAgentBySlug(slug: string, home?: string) {
   const db = openRuntimeDb(home);
-  const agent = mapAgentRow(
-    db.query('select * from agents where slug=?').get(slug),
+  return (
+    ((await db.select().from(agents).where(eq(agents.slug, slug)))[0] as
+      | AgentRecord
+      | undefined) ?? null
   );
-  db.close();
-  return agent;
 }

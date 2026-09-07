@@ -32,7 +32,7 @@ export const attemptCommandHelp = {
     },
   ],
 };
-export function handleAttempt(
+export async function handleAttempt(
   subcommand: string | undefined,
   positionals: string[],
   options: Record<string, string | boolean | string[]>,
@@ -40,11 +40,11 @@ export function handleAttempt(
 ) {
   switch (subcommand) {
     case 'list':
-      return listRunAttempts(options['run-id'] as string | undefined, home);
+      return await listRunAttempts(options['run-id'] as string | undefined, home);
     case 'show':
-      return getAttempt(requirePositional(positionals[2], 'attempt id'), home);
+      return await getAttempt(requirePositional(positionals[2], 'attempt id'), home);
     case 'update':
-      return updateRunAttempt(
+      return await updateRunAttempt(
         requirePositional(positionals[2], 'attempt id'),
         {
           status: options.status as any,
@@ -63,7 +63,7 @@ export function handleAttempt(
         home,
       );
     case 'resume':
-      return resumeAttempt(
+      return await resumeAttempt(
         requirePositional(positionals[2], 'attempt id'),
         home,
       );

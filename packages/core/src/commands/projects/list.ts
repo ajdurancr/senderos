@@ -1,12 +1,11 @@
-import { openRuntimeDb } from '../../db/client';
-import { mapProjectRow } from '../../db/mappers';
-import type { ProjectRecord } from '../../shared/types';
-export function listProjects(home?: string): ProjectRecord[] {
+import { openRuntimeDb } from "../../db/client";
+import { projects } from "../../db/schema";
+import type { ProjectRecord } from "../../shared/types";
+import { asc } from "drizzle-orm";
+export async function listProjects(home?: string): Promise<ProjectRecord[]> {
   const db = openRuntimeDb(home);
-  const rows = db
-    .query('select * from projects order by created_at asc')
-    .all()
-    .map(mapProjectRow) as ProjectRecord[];
-  db.close();
-  return rows;
+  return (await db
+    .select()
+    .from(projects)
+    .orderBy(asc(projects.createdAt))) as ProjectRecord[];
 }

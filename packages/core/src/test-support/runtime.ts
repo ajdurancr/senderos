@@ -49,17 +49,20 @@ export function tempProjectDir(
   return projectRoot;
 }
 
-export function initHome(config?: SenderosConfig) {
+export async function initHome(config?: SenderosConfig) {
   const home = tempHome();
-  initializeRuntime(home, config);
+  const runtimeConfig = config ?? defaultConfigForHome(home, 'codex');
+  const databaseUrl = `file:${join(home, 'senderos.db')}`;
+  process.env[runtimeConfig.database.urlEnv] = databaseUrl;
+  await initializeRuntime(home, runtimeConfig);
   return home;
 }
 
-export function createProjectFixture(
+export async function createProjectFixture(
   home: string,
   overrides: Partial<Parameters<typeof createProject>[0]> = {},
 ) {
-  return createProject({
+  return await createProject({
     home,
     name: 'Senderos Demo',
     canonicalPath: tempProjectDir('senderos-demo'),
@@ -80,11 +83,8 @@ export function tursoConfigForHome(home: string): SenderosConfig {
   return {
     ...config,
     database: {
-      kind: 'turso',
-      turso: {
-        url: 'libsql://senderos.example.turso.io',
-        authTokenEnv: 'SENDEROS_TURSO_TOKEN',
-      },
+      urlEnv: 'SENDEROS_DATABASE_URL',
+      authTokenEnv: 'SENDEROS_TURSO_TOKEN',
     },
   };
 }
@@ -99,4 +99,5 @@ afterEach(() => {
   }
 
   delete process.env.SENDEROS_TURSO_TOKEN;
+  delete process.env.SENDEROS_DATABASE_URL;
 });

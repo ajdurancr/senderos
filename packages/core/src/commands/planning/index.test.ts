@@ -6,43 +6,43 @@ import { createAgentTransition, listAgentTransitions } from '../transitions';
 import { dispatchRun } from '../runs/dispatch';
 import { createProjectFixture, initHome } from '../../test-support/runtime';
 import { plan } from './plan';
-test('planner skips draft goals and selects active goals', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  createGoal({ home, projectId: project.id, title: 'Draft' });
-  const active = activateGoal(
-    createGoal({ home, projectId: project.id, title: 'Active' }).id,
+test('planner skips draft goals and selects active goals', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  await createGoal({ home, projectId: project.id, title: 'Draft' });
+  const active = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: 'Active' })).id,
     home,
-  )!;
-  const items = plan({ home });
+  ))!;
+  const items = await plan({ home });
   expect(items).toHaveLength(1);
   expect(items[0]?.goalId).toBe(active.id);
 });
-test('planner advances from a succeeded transition to its target agent transition', () => {
-  const home = initHome();
-  const project = createProjectFixture(home);
-  const source = getAgentBySlug('spec-partner', home)!;
-  const target = getAgentBySlug('tdd-craftsman', home)!;
-  const handoff = createAgentTransition({
+test('planner advances from a succeeded transition to its target agent transition', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const source = (await getAgentBySlug('spec-partner', home))!;
+  const target = (await getAgentBySlug('tdd-craftsman', home))!;
+  const handoff = await createAgentTransition({
     home,
     sourceAgentId: source.id,
     targetAgentId: target.id,
     name: 'handoff to implementation',
     transitionObjective: 'Hand off to implementation.',
   });
-  const goal = activateGoal(
-    createGoal({ home, projectId: project.id, title: 'Advance' }).id,
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: 'Advance' })).id,
     home,
-  )!;
-  const dispatched = dispatchRun(
+  ))!;
+  const dispatched = await dispatchRun(
     { goalId: goal.id, transitionId: handoff.id, agentId: source.id },
     home,
   );
-  updateRunAttempt(dispatched.attemptId, { status: 'succeeded' }, home);
-  const next = plan({ home }).find((item) => item.goalId === goal.id);
+  await updateRunAttempt(dispatched.attemptId, { status: 'succeeded' }, home);
+  const next = (await plan({ home })).find((item) => item.goalId === goal.id);
   expect(next?.agentId).toBe(target.id);
   expect(next?.transitionId).toBe(
-    listAgentTransitions(home).find((item) => item.sourceAgentId === target.id)
+    (await listAgentTransitions(home)).find((item) => item.sourceAgentId === target.id)
       ?.id,
   );
 });
