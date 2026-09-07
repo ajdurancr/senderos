@@ -22,7 +22,7 @@ Classify before coding. Wrong layer edits are the most common source of regressi
 Follow this order:
 
 1. Update docs that describe the contract first.
-2. Update runtime domain types, mappers, and migrations.
+2. Update the Drizzle schema, inferred runtime types, and migrations.
 3. Update the focused command action that owns the behavior.
 4. Update CLI surface and tests.
 5. Add/adjust integration tests for end-to-end behavior.
@@ -66,7 +66,7 @@ When a feature request is large, split work into
 
 - **Phase A** — schema/domain foundation,
 - **Phase B** — service orchestration,
-- **Phase C** — CLI and adapters,
+- **Phase C** — CLI and Studio consumers,
 - **Phase D** — tests and docs.
 
 Track each phase independently so rollback remains possible.

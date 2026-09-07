@@ -8,7 +8,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 ## What it checks
 
 - configuration validity,
-- selected database adapter health,
+- configured libSQL connection health,
 - directory integrity,
 - managed home-directory accessibility,
 - harness readiness,

@@ -3,7 +3,9 @@ title: Domain Model
 description: "The durable Senderos entities, their lifecycles, and their relationship to host-agent execution."
 ---
 
-Senderos stores its orchestration model in SQLite.
+Senderos stores its orchestration model through Drizzle on a libSQL connection.
+The default local runtime uses a `file:` URL; the same model also supports a
+remote libSQL URL when configured through environment variables.
 
 ```text
 Project -> Goal -> Run -> Run Attempt

@@ -9,13 +9,13 @@ On first run, it previews the exact configuration Senderos will use and requires
 
 ## What it does
 
-- previews the proposed Senderos home, database adapter, harness, and runtime paths,
+- previews the proposed Senderos home, libSQL environment-variable configuration, harness, and runtime paths,
 - requires explicit approval before writing files,
 - creates the Senderos home directory,
 - writes the configuration file,
 - creates artifact directories,
-- creates the local SQLite database or stores remote DB configuration,
-- initializes the schema.
+- defaults `SENDEROS_DATABASE_URL` to a local `file:` database when no URL is set,
+- runs the Drizzle migrations and seeds built-in agents.
 
 ## Examples
 

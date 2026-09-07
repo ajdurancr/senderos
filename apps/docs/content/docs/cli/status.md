@@ -26,7 +26,7 @@ It does not mutate runtime state.
 
 ## `senderos doctor`
 
-Validates the configured runtime and reports whether the home/database setup is healthy.
+Validates the configured runtime and reports whether the home/libSQL setup is healthy.
 
 ### Example
 
