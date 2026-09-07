@@ -1,9 +1,10 @@
 import { openRuntimeDb } from '../../db/client';
 import { mapRunAttemptRow } from '../../db/mappers';
-import { sql } from 'drizzle-orm';
+import { runAttempts } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function getRunAttempt(id: string, home?: string) {
   const db = openRuntimeDb(home);
-  const row = mapRunAttemptRow((await db.all(sql`select * from run_attempts where id=${id}`))[0]);
+  const row = mapRunAttemptRow((await db.select().from(runAttempts).where(eq(runAttempts.id, id)))[0]);
   return row;
 }

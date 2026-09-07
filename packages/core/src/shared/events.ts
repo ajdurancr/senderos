@@ -1,6 +1,7 @@
-import { sql } from 'drizzle-orm';
+import { asc, eq, and } from 'drizzle-orm';
 
 import { openRuntimeDb } from '../db/client';
+import { events } from '../db/schema';
 import { now, randomId } from './ids';
 
 export async function emitEvent(
@@ -10,7 +11,7 @@ export async function emitEvent(
   entityId: string,
   payload: unknown,
 ) {
-  await db.run(sql`insert into events (id,event_type,entity_type,entity_id,payload_json,created_at) values (${randomId('event')},${eventType},${entityType},${entityId},${JSON.stringify(payload ?? {})},${now()})`);
+  await db.insert(events).values({ id: randomId('event'), eventType, entityType, entityId, payloadJson: JSON.stringify(payload ?? {}), createdAt: now() });
 }
 
 export async function listEvents(input: {
@@ -19,13 +20,20 @@ export async function listEvents(input: {
   home?: string;
 }) {
   const db = openRuntimeDb(input.home);
-  const rows = await db.all(input.entityType && input.entityId ? sql`select * from events where entity_type=${input.entityType} and entity_id=${input.entityId} order by created_at asc` : input.entityType ? sql`select * from events where entity_type=${input.entityType} order by created_at asc` : input.entityId ? sql`select * from events where entity_id=${input.entityId} order by created_at asc` : sql`select * from events order by created_at asc`);
+  const query = db.select().from(events);
+  const rows = await (input.entityType && input.entityId
+    ? query.where(and(eq(events.entityType, input.entityType), eq(events.entityId, input.entityId))).orderBy(asc(events.createdAt))
+    : input.entityType
+      ? query.where(eq(events.entityType, input.entityType)).orderBy(asc(events.createdAt))
+      : input.entityId
+        ? query.where(eq(events.entityId, input.entityId)).orderBy(asc(events.createdAt))
+        : query.orderBy(asc(events.createdAt)));
   return rows.map((row: any) => ({
     id: row.id,
-    eventType: row.event_type,
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    payload: JSON.parse(row.payload_json),
-    createdAt: row.created_at,
+    eventType: row.eventType,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    payload: JSON.parse(row.payloadJson),
+    createdAt: row.createdAt,
   }));
 }

@@ -29,7 +29,7 @@ export function describeCurrentDb(home?: string) {
 
 export async function healthcheckCurrentDb(home?: string) {
   try {
-    await openRuntimeDb(home).run('select 1');
+    await openRuntimeDb(home).select().from(schema.projects).limit(1);
     return { ok: true, issues: [] as string[], warnings: [] as string[] };
   } catch (error) {
     return {

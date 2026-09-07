@@ -1,9 +1,10 @@
 import { openRuntimeDb } from '../../db/client';
 import { mapProjectRow } from '../../db/mappers';
+import { projects } from '../../db/schema';
 import type { ProjectRecord } from '../../shared/types';
-import { sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 export async function getProject(id: string, home?: string): Promise<ProjectRecord | null> {
   const db = openRuntimeDb(home);
-  const row = mapProjectRow((await db.all(sql`select * from projects where id=${id}`))[0]);
+  const row = mapProjectRow((await db.select().from(projects).where(eq(projects.id, id)))[0]);
   return row;
 }

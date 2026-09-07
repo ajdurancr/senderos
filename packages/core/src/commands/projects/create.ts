@@ -5,7 +5,7 @@ import type { IntegrationMode, ProjectStatus } from '../../shared/types';
 import { defaultProjectIdForPath } from './default-id-for-path';
 import { defaultProjectNameForPath } from './default-name-for-path';
 import { getProject } from './get';
-import { sql } from 'drizzle-orm';
+import { projects } from '../../db/schema';
 export async function createProject(input: {
   home?: string;
   name?: string;
@@ -27,7 +27,7 @@ export async function createProject(input: {
   const remote =
     input.githubRemote ??
     `https://github.com/${input.githubOwner}/${input.githubRepo}.git`;
-  await db.run(sql`insert into projects (id,name,canonical_path,github_owner,github_repo,github_remote,target_branch,status,integration_mode,inferred_commands_json,health_details_json,created_at,updated_at) values (${id},${name},${input.canonicalPath},${input.githubOwner},${input.githubRepo},${remote},${input.targetBranch ?? 'main'},${input.status ?? 'healthy'},${input.integrationMode ?? 'github_pr'},${JSON.stringify(input.inferredCommands ?? {})},${JSON.stringify(input.healthDetails ?? {})},${ts},${ts})`);
+  await db.insert(projects).values({ id, name, canonicalPath: input.canonicalPath, githubOwner: input.githubOwner, githubRepo: input.githubRepo, githubRemote: remote, targetBranch: input.targetBranch ?? 'main', status: input.status ?? 'healthy', integrationMode: input.integrationMode ?? 'github_pr', inferredCommandsJson: JSON.stringify(input.inferredCommands ?? {}), healthDetailsJson: JSON.stringify(input.healthDetails ?? {}), createdAt: ts, updatedAt: ts });
   await emitEvent(db, 'project.created', 'project', id, {
     name,
     targetBranch: input.targetBranch ?? 'main',

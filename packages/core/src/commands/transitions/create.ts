@@ -2,7 +2,7 @@ import { openRuntimeDb } from '../../db/client';
 import { emitEvent } from '../../shared/events';
 import { now, randomId } from '../../shared/ids';
 import type { AgentTransitionRecord } from '../../shared/types';
-import { sql } from 'drizzle-orm';
+import { agentTransitions } from '../../db/schema';
 export async function createAgentTransition(input: {
   home?: string;
   sourceAgentId: string;
@@ -27,7 +27,7 @@ export async function createAgentTransition(input: {
     createdAt: ts,
     updatedAt: ts,
   };
-  await db.run(sql`insert into agent_transitions (id,source_agent_id,target_agent_id,name,description,status,transition_objective,assignment_meta_json,created_at,updated_at) values (${record.id},${record.sourceAgentId},${record.targetAgentId},${record.name},${record.description},${record.status},${record.transitionObjective},${record.assignmentMetaJson},${ts},${ts})`);
+  await db.insert(agentTransitions).values(record);
   await emitEvent(db, 'agent-transition.created', 'agent-transition', record.id, {
     sourceAgentId: record.sourceAgentId,
     targetAgentId: record.targetAgentId,

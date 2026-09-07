@@ -1,9 +1,10 @@
 import { openRuntimeDb } from '../../db/client';
 import { mapAgentRow } from '../../db/mappers';
-import { sql } from 'drizzle-orm';
+import { agents } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function getAgentBySlug(slug: string, home?: string) {
   const db = openRuntimeDb(home);
-  const agent = mapAgentRow((await db.all(sql`select * from agents where slug=${slug}`))[0]);
+  const agent = mapAgentRow((await db.select().from(agents).where(eq(agents.slug, slug)))[0]);
   return agent;
 }

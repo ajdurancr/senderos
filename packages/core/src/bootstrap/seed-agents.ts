@@ -3,6 +3,7 @@ import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openRuntimeDb } from '../db/client';
 import { mapAgentRow, mapAgentTransitionRow } from '../db/mappers';
+import { agents, agentTransitions } from '../db/schema';
 import type {
   AgentKind,
   AgentRecord,
@@ -11,7 +12,7 @@ import type {
 } from '../shared/types';
 import { now, randomId } from '../shared/ids';
 import { emitEvent } from '../shared/events';
-import { sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 const defaultObjective = (slug: string) =>
   `Run ${slug} as a focused agent with one explicit objective.`;
@@ -22,7 +23,7 @@ export function builtInAgentSeedDir() {
 }
 
 async function ensureDefaultTransition(db: ReturnType<typeof openRuntimeDb>, agent: AgentRecord) {
-  const existing = mapAgentTransitionRow((await db.all(sql`select * from agent_transitions where source_agent_id=${agent.id} and name=${transitionName}`))[0]);
+  const existing = mapAgentTransitionRow((await db.select().from(agentTransitions).where(and(eq(agentTransitions.sourceAgentId, agent.id), eq(agentTransitions.name, transitionName))))[0]);
   if (existing) return existing;
   const ts = now();
   const record: AgentTransitionRecord = {
@@ -37,7 +38,7 @@ async function ensureDefaultTransition(db: ReturnType<typeof openRuntimeDb>, age
     createdAt: ts,
     updatedAt: ts,
   };
-  await db.run(sql`insert into agent_transitions (id,source_agent_id,target_agent_id,name,description,status,transition_objective,assignment_meta_json,created_at,updated_at) values (${record.id},${record.sourceAgentId},${record.targetAgentId},${record.name},${record.description},${record.status},${record.transitionObjective},${record.assignmentMetaJson},${ts},${ts})`);
+  await db.insert(agentTransitions).values(record);
   await emitEvent(db, 'agent-transition.seeded', 'agent-transition', record.id, {
     sourceAgentId: agent.id,
   });
@@ -73,12 +74,12 @@ export async function seedBuiltInAgents(
       createdAt: raw.createdAt ?? ts,
       updatedAt: ts,
     };
-    const existing = mapAgentRow((await db.all(sql`select * from agents where slug=${seed.slug}`))[0]);
+    const existing = mapAgentRow((await db.select().from(agents).where(eq(agents.slug, seed.slug)))[0]);
     if (existing)
-      await db.run(sql`update agents set name=${seed.name},description=${seed.description},kind=${seed.kind},status=${seed.status},definition_format=${seed.definitionFormat},definition_body=${seed.definitionBody},default_goal=${seed.defaultGoal},default_meta_json=${seed.defaultMetaJson},updated_at=${ts} where id=${existing.id}`);
+      await db.update(agents).set({ name: seed.name, description: seed.description, kind: seed.kind, status: seed.status, definitionFormat: seed.definitionFormat, definitionBody: seed.definitionBody, defaultGoal: seed.defaultGoal, defaultMetaJson: seed.defaultMetaJson, updatedAt: ts }).where(eq(agents.id, existing.id));
     else
-      await db.run(sql`insert into agents (id,slug,name,description,kind,status,definition_format,definition_body,default_goal,default_meta_json,created_at,updated_at) values (${seed.id},${seed.slug},${seed.name},${seed.description},${seed.kind},${seed.status},${seed.definitionFormat},${seed.definitionBody},${seed.defaultGoal},${seed.defaultMetaJson},${seed.createdAt},${ts})`);
-    const agent = mapAgentRow((await db.all(sql`select * from agents where slug=${seed.slug}`))[0])!;
+      await db.insert(agents).values(seed);
+    const agent = mapAgentRow((await db.select().from(agents).where(eq(agents.slug, seed.slug)))[0])!;
     await ensureDefaultTransition(db, agent);
     seeded.push(agent);
     await emitEvent(db, 'agent.seeded', 'agent', agent.id, { slug: agent.slug });
