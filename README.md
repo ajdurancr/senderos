@@ -45,7 +45,7 @@ Intent → Planning → Context → Execution → Validation → Feedback → Co
 
 At the runtime level, Senderos acts as a control plane:
 
-- it stores orchestration state in SQLite
+- it stores orchestration state through Drizzle on a configurable libSQL connection
 - it plans the next dispatchable work with `senderos plan`
 - it accepts explicit dispatch requests with `senderos run dispatch ...`
 - it records projects, goals, agent transitions, runs, run attempts, and events

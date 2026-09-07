@@ -13,7 +13,7 @@ Senderos is a TypeScript and Bun monorepo with three runtime-facing pieces:
 human or automation
   -> Senderos CLI or Studio
   -> @senderos/core
-  -> SQLite runtime state
+  -> Drizzle -> libSQL runtime state
   -> planning and dispatch output
   -> host agent executes work externally
 ```

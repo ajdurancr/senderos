@@ -14,7 +14,10 @@ managed runtime paths.
 
 ```json
 {
-  "database": { "kind": "local", "path": "/absolute/path/.senderos/senderos.db" },
+  "database": {
+    "urlEnv": "SENDEROS_DATABASE_URL",
+    "authTokenEnv": "SENDEROS_DATABASE_AUTH_TOKEN"
+  },
   "artifactRoot": "/absolute/path/.senderos/artifacts",
   "logRoot": "/absolute/path/.senderos/logs",
   "cacheRoot": "/absolute/path/.senderos/cache",
@@ -24,11 +27,16 @@ managed runtime paths.
 }
 ```
 
-`database` selects the adapter used by runtime commands. The local SQLite
-adapter is fully operational. Turso can be described and health-checked, but
-its command-execution connection is not implemented yet. The three `*Root`
-paths are created and checked by `init` and `doctor`; `restrictToHome` rejects
-managed paths outside the Senderos home.
+`database.urlEnv` names the environment variable containing the libSQL URL.
+`database.authTokenEnv` optionally names the variable containing the libSQL
+authentication token. Senderos uses Drizzle for all runtime reads and writes.
+
+When `senderos init` runs without a URL already set, it assigns a local `file:`
+URL under the Senderos home. A remote libSQL URL works with the same runtime and
+migrations; set the URL and, if required, its token in the configured variables
+before running commands. The three `*Root` paths are created and checked by
+`init` and `doctor`; `restrictToHome` rejects managed paths outside the
+Senderos home.
 
 ## Actions
 
@@ -40,7 +48,7 @@ managed paths outside the Senderos home.
 
 ```bash
 senderos config show
-senderos config get database.kind
+senderos config get database.urlEnv
 senderos config set defaultHarness openclaw
 ```
 

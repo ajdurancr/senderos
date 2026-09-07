@@ -46,7 +46,7 @@ senderos status --home ./.senderos
 `senderos init` creates the Senderos runtime only after approval. The resulting structure includes:
 
 - config file
-- SQLite database or remote DB configuration
+- local `file:` libSQL database by default, or a remote libSQL connection
 - artifact directories
 - initial schema
 - built-in agent definitions and their default transitions
@@ -55,7 +55,7 @@ senderos status --home ./.senderos
 
 The configuration file defines:
 
-- database driver and connection details
+- environment-variable names for the libSQL URL and optional auth token
 - artifact directories
 - default harness
 - output mode defaults

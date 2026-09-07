@@ -11,7 +11,10 @@ Senderos is a stateful orchestration engine for software-change goals. It plans 
 - A **run** is a logical execution of one goal.
 - A **run attempt** is a concrete execution, including its host-session details and physical `working_path`.
 
-The runtime stores structured state in SQLite and large artifacts on disk under `.senderos/`.
+The runtime stores structured state through Drizzle on a libSQL connection. By
+default, `senderos init` configures a local `file:` database under `.senderos/`;
+set the configured URL and optional auth-token environment variables to use a
+remote libSQL service. Large artifacts remain on disk under `.senderos/`.
 
 ## CLI
 

@@ -10,5 +10,5 @@ Senderos records the path on the run attempt for auditability. On a retry, a
 previous working path can be reused when the host does not supply a new one.
 
 The Senderos home directory is separate from that path. Senderos manages only
-its own configuration, SQLite database, logs, cache, and artifacts under the
+its own configuration, local libSQL database by default, logs, cache, and artifacts under the
 configured home directory.
