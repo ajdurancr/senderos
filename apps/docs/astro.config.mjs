@@ -3,7 +3,8 @@ import mdx from '@astrojs/mdx';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  site: 'https://senderos.dev',
+  site: 'https://ajdurancr.github.io',
+  base: '/senderos',
   vite: {
     plugins: [tailwindcss()],
   },

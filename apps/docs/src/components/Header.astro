@@ -1,12 +1,13 @@
 ---
 import { SITE } from '@/data/site';
+const base = import.meta.env.BASE_URL;
 const pathname = Astro.url.pathname;
-const docsActive = pathname.startsWith('/docs');
+const docsActive = pathname.startsWith(`${base}docs`);
 ---
 
 <header class="sticky top-0 z-40 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(8,12,26,0.78)] backdrop-blur-xl">
   <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
-    <a href="/" class="flex items-center gap-3 no-underline">
+    <a href={base} class="flex items-center gap-3 no-underline">
       <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-lg font-bold text-[var(--accent)]">S</div>
       <div>
         <div class="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Senderos</div>
@@ -16,7 +17,7 @@ const docsActive = pathname.startsWith('/docs');
 
     <nav class="flex items-center gap-3 text-sm">
       <a
-        href="/docs/introduction"
+        href={`${base}docs/introduction`}
         class:list={[
           'rounded-full px-4 py-2 no-underline transition',
           docsActive
