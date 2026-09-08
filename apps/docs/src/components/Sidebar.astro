@@ -1,6 +1,7 @@
 ---
 import { NAVIGATION } from '@/data/site';
 const { currentSlug } = Astro.props as { currentSlug: string };
+const base = import.meta.env.BASE_URL;
 ---
 
 <aside class="doc-sidebar sticky top-24 h-max rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(24,34,61,0.92),rgba(15,22,40,0.92))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
@@ -15,7 +16,7 @@ const { currentSlug } = Astro.props as { currentSlug: string };
             return (
               <li>
                 <a
-                  href={`/docs/${item.slug}`}
+                  href={`${base}docs/${item.slug}`}
                   class:list={[
                     'block rounded-xl px-3 py-2 text-sm no-underline transition',
                     active

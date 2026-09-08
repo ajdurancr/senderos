@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { SITE, NAVIGATION } from '@/data/site';
+const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="Senderos Docs" description={SITE.description}>
@@ -17,7 +18,7 @@ import { SITE, NAVIGATION } from '@/data/site';
           It exists to stop agent work from dissolving into prompt soup. Senderos keeps the control plane local, exposes it through a CLI, and tracks real state for features, tasks, runs, sessions, and workspaces.
         </p>
         <div class="flex flex-wrap gap-3">
-          <a class="rounded-2xl bg-[var(--accent)] px-5 py-3 font-semibold text-slate-950 no-underline hover:bg-[var(--accent-strong)]" href="/docs/introduction">Read the docs</a>
+          <a class="rounded-2xl bg-[var(--accent)] px-5 py-3 font-semibold text-slate-950 no-underline hover:bg-[var(--accent-strong)]" href={`${base}docs/introduction`}>Read the docs</a>
           <a class="rounded-2xl border border-[var(--border)] px-5 py-3 font-semibold text-[var(--text)] no-underline hover:border-[var(--accent)]" href={SITE.repoUrl} target="_blank" rel="noreferrer">View repository</a>
         </div>
       </div>
@@ -50,7 +51,7 @@ import { SITE, NAVIGATION } from '@/data/site';
             <ul class="m-0 list-none space-y-2 p-0">
               {group.items.map((item) => (
                 <li>
-                  <a class="text-[var(--muted)] no-underline hover:text-[var(--text)]" href={`/docs/${item.slug}`}>{item.title}</a>
+                  <a class="text-[var(--muted)] no-underline hover:text-[var(--text)]" href={`${base}docs/${item.slug}`}>{item.title}</a>
                 </li>
               ))}
             </ul>
