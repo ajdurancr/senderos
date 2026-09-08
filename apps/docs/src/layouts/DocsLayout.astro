@@ -17,7 +17,7 @@ const {
 };
 
 const neighbors = getNeighbors(currentSlug);
-const base = import.meta.env.BASE_URL;
+const base = `${import.meta.env.BASE_URL}/`;
 ---
 
 <BaseLayout title={`${title} | Senderos Docs`} description={description}>

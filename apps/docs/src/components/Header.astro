@@ -1,6 +1,6 @@
 ---
 import { SITE } from '@/data/site';
-const base = import.meta.env.BASE_URL;
+const base = `${import.meta.env.BASE_URL}/`;
 const pathname = Astro.url.pathname;
 const docsActive = pathname.startsWith(`${base}docs`);
 ---
