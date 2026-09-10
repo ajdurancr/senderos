@@ -1,4 +1,5 @@
 import { seedBuiltInAgents } from "../bootstrap/seed-agents";
+import { seedBuiltInSenderos } from "../bootstrap/seed-senderos";
 import type { SeedAgentsOptions } from "../shared/types";
 import { databaseConnectionFromEnvironment } from "./client";
 import { migrateRuntimeDb } from "./migrate";
@@ -16,4 +17,5 @@ export async function prepareSharedDatabase(
   databaseConnectionFromEnvironment();
   await migrateRuntimeDb();
   await seedBuiltInAgents(undefined, seedOptions);
+  await seedBuiltInSenderos();
 }

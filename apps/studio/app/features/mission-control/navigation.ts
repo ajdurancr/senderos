@@ -5,6 +5,9 @@ export type StudioLocation = {
   agentId?: string;
   attemptId?: string;
   transitionId?: string;
+  senderoId?: string;
+  senderoNodeId?: string;
+  senderoEdgeId?: string;
   create: boolean;
 };
 
@@ -39,12 +42,22 @@ export function attemptPath(projectId: string | undefined, attemptId: string) {
   return `${projectPath(projectId, "runs")}/attempts/${encode(attemptId)}`;
 }
 
+export function senderoPath(senderoId: string, selection?: { nodeId?: string; edgeId?: string }) {
+  let path = `/senderos/${encode(senderoId)}`;
+  if (selection?.nodeId) path += `/nodes/${encode(selection.nodeId)}`;
+  if (selection?.edgeId) path += `/edges/${encode(selection.edgeId)}`;
+  return path;
+}
+
 export function parseStudioPath(pathname: string): StudioLocation {
   const parts = pathname.split("/").filter(Boolean).map(decodeURIComponent);
   if (parts[0] !== "projects") {
     const view = parts[0] ?? "canvas";
     return {
       view,
+      senderoId: view === "senderos" ? parts[1] : undefined,
+      senderoNodeId: view === "senderos" && parts[2] === "nodes" ? parts[3] : undefined,
+      senderoEdgeId: view === "senderos" && parts[2] === "edges" ? parts[3] : undefined,
       attemptId: parts[1] === "attempts" ? parts[2] : undefined,
       create: view === "goals" && parts[1] === "new",
     };

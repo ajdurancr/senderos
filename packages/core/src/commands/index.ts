@@ -7,6 +7,7 @@ export * from './goals';
 export * from './planning';
 export * from './projects';
 export * from './runs';
+export * from './senderos';
 export * from './system';
 export * from './transitions';
 export { listEvents } from '../shared/events';

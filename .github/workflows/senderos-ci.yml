@@ -102,6 +102,8 @@ jobs:
                 exit 1
               }
           done
+          curl --fail --silent http://127.0.0.1:5173/senderos/sendero-software-delivery |
+            grep --quiet 'Verified software delivery' || exit 1
           for route_and_copy in \
             'goals:Outcome inventory' \
             'runs:Execution history' \

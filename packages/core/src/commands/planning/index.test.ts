@@ -31,7 +31,7 @@ test('planner advances from a succeeded transition to its target agent transitio
     transitionObjective: 'Hand off to implementation.',
   });
   const goal = (await activateGoal(
-    (await createGoal({ home, projectId: project.id, title: 'Advance' })).id,
+    (await createGoal({ home, projectId: project.id, title: 'Advance', senderoVersionId: null })).id,
     home,
   ))!;
   const dispatched = await dispatchRun(
@@ -45,4 +45,15 @@ test('planner advances from a succeeded transition to its target agent transitio
     (await listAgentTransitions(home)).find((item) => item.sourceAgentId === target.id)
       ?.id,
   );
+});
+
+test('planner retries a failed legacy transition outside a Sendero', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const source = (await getAgentBySlug('spec-partner', home))!;
+  const transition = await createAgentTransition({ home, sourceAgentId: source.id, name: 'retry me', transitionObjective: 'Retry this segment.' });
+  const goal = (await activateGoal((await createGoal({ home, projectId: project.id, title: 'Repair', senderoVersionId: null })).id, home))!;
+  const dispatched = await dispatchRun({ goalId: goal.id, transitionId: transition.id, agentId: source.id }, home);
+  await updateRunAttempt(dispatched.attemptId, { status: 'failed' }, home);
+  expect((await plan({ home }))[0]?.transitionId).toBe(transition.id);
 });

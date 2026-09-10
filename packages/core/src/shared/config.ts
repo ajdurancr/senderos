@@ -8,6 +8,7 @@ import type {
 } from '../shared/types';
 import { migrateRuntimeDb } from '../db/migrate';
 import { seedBuiltInAgents } from '../bootstrap/seed-agents';
+import { seedBuiltInSenderos } from '../bootstrap/seed-senderos';
 import { inferHarnessFromEnvironment } from './harness';
 
 export function defaultHomePath() {
@@ -135,6 +136,7 @@ export async function initializeRuntime(
 
   await migrateRuntimeDb(resolvedHome);
   await seedBuiltInAgents(resolvedHome, seedOptions);
+  await seedBuiltInSenderos(resolvedHome);
 
   return { home: resolvedHome, configPath: configPathForHome(resolvedHome) };
 }

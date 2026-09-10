@@ -2,7 +2,7 @@ import { DurableLink as Link } from "../components/durable-link";
 import { CommandPalette } from "../features/mission-control/components/command-palette";
 import { Icon, SenderosMark } from "../features/mission-control/components/icons";
 import type { MissionControlData } from "../features/mission-control/server";
-import { projectPath, type StudioLocation } from "../features/mission-control/navigation";
+import { projectPath, senderoPath, type StudioLocation } from "../features/mission-control/navigation";
 
 const navigation = [
   ["now", "Now", "inbox"],
@@ -11,6 +11,7 @@ const navigation = [
   ["runs", "Runs", "activity"],
   ["reviews", "Reviews", "check"],
   ["agents", "Agents", "spark"],
+  ["senderos", "Senderos", "nodes"],
   ["events", "Events", "clock"],
 ] as const;
 
@@ -42,7 +43,7 @@ export function StudioLayout({
             <Link
               className={view === key ? "active" : ""}
               key={key}
-              to={projectPath(project?.id, key)}
+              to={key === "senderos" && data.senderoGraphs[0] ? senderoPath(data.senderoGraphs[0].sendero.id) : projectPath(project?.id, key)}
             >
               <Icon name={icon} /><span>{label}</span>
               {key === "reviews" && data.queue.reviews.length > 0 && <em>{data.queue.reviews.length}</em>}

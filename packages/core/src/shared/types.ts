@@ -34,6 +34,9 @@ export type AgentTransitionStatus =
   | "active"
   | "disabled"
   | "archived";
+export type SenderoStatus = "draft" | "active" | "archived";
+export type SenderoVersionStatus = "draft" | "published" | "retired";
+export type SenderoNodeKind = "start" | "agent" | "end";
 export type RunAttemptStatus =
   | "queued"
   | "running"
@@ -117,6 +120,25 @@ export type AgentTransitionRecord = Omit<
   typeof agentTransitions.$inferSelect,
   "status"
 > & { status: AgentTransitionStatus };
+export type SenderoRecord = Omit<typeof senderos.$inferSelect, "status"> & {
+  status: SenderoStatus;
+};
+export type SenderoVersionRecord = Omit<
+  typeof senderoVersions.$inferSelect,
+  "status"
+> & { status: SenderoVersionStatus };
+export type SenderoNodeRecord = Omit<typeof senderoNodes.$inferSelect, "kind"> & {
+  kind: SenderoNodeKind;
+};
+export type SenderoEdgeRecord = Omit<typeof senderoEdges.$inferSelect, "status"> & {
+  status: AgentTransitionStatus;
+};
+export interface SenderoGraph {
+  sendero: SenderoRecord;
+  version: SenderoVersionRecord;
+  nodes: SenderoNodeRecord[];
+  edges: SenderoEdgeRecord[];
+}
 export type RunAttemptRecord = Omit<
   typeof runAttempts.$inferSelect,
   "harness" | "status"
@@ -148,4 +170,8 @@ import type {
   projects,
   runAttempts,
   runs,
+  senderoEdges,
+  senderoNodes,
+  senderos,
+  senderoVersions,
 } from "../db/schema";

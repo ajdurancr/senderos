@@ -7,6 +7,7 @@ import {
   goalPath,
   parseStudioPath,
   projectPath,
+  senderoPath,
 } from "./navigation";
 
 describe("Studio entity routes", () => {
@@ -45,6 +46,13 @@ describe("Studio entity routes", () => {
       projectId: "senderos",
       create: true,
     });
+  });
+
+  it("keeps Sendero, node, and arc identities in durable paths", () => {
+    expect(senderoPath("delivery trail", { nodeId: "node/start" })).toBe("/senderos/delivery%20trail/nodes/node%2Fstart");
+    expect(senderoPath("delivery", { edgeId: "edge_2" })).toBe("/senderos/delivery/edges/edge_2");
+    expect(parseStudioPath("/senderos/delivery/edges/edge_2")).toMatchObject({ view: "senderos", senderoId: "delivery", senderoEdgeId: "edge_2" });
+    expect(parseStudioPath("/senderos/delivery/nodes/node_1")).toMatchObject({ view: "senderos", senderoId: "delivery", senderoNodeId: "node_1" });
   });
 
   it("handles root, encoded IDs, and optional canvas entities", () => {

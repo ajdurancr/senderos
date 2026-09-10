@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { listAgents } from "../commands";
+import { listAgents, listSenderoGraphs } from "../commands";
 import { tempHome } from "../test-support/runtime";
 import { prepareSharedDatabase } from "./bootstrap";
 
@@ -10,6 +10,8 @@ test("prepareSharedDatabase migrates and seeds without a runtime config", async 
 
   await expect(prepareSharedDatabase()).resolves.toBeUndefined();
   await expect(listAgents()).resolves.toHaveLength(5);
+  await expect(listSenderoGraphs()).resolves.toHaveLength(1);
   await expect(prepareSharedDatabase()).resolves.toBeUndefined();
   await expect(listAgents()).resolves.toHaveLength(5);
+  await expect(listSenderoGraphs()).resolves.toHaveLength(1);
 });
