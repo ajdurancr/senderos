@@ -1,63 +1,101 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { SITE, NAVIGATION } from '@/data/site';
+import Logo from '@/components/Logo.astro';
+import { SITE } from '@/data/site';
 const base = `${import.meta.env.BASE_URL}/`;
 ---
 
-<BaseLayout title="Senderos Docs" description={SITE.description}>
-  <main class="mx-auto max-w-7xl px-5 py-10 md:py-16">
-    <section class="rounded-[2rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(25,35,63,0.92),rgba(14,21,39,0.9))] px-6 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.24)] md:px-10 md:py-14">
-      <div class="max-w-4xl space-y-6">
-        <div class="inline-flex rounded-full border border-[var(--border)] bg-[var(--accent-soft)] px-4 py-1 text-sm font-medium text-[var(--accent)]">
-          Local-first orchestration for agent-driven software delivery
+<BaseLayout title="Senderos · Orchestrate the path from intent to verified delivery" description={SITE.description}>
+  <main class="landing">
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="eyebrow"><span></span> Open source · built for agent-driven engineering</div>
+      <h1>Make software agents<br /><em>finish the journey.</em></h1>
+      <p class="hero-copy">Senderos is the durable control plane between a software objective and a verified outcome. It gives humans and agents one shared model for planning, dispatch, execution evidence, and what happens next.</p>
+      <div class="hero-actions">
+        <a class="button primary" href={`${base}docs/getting-started/quickstart`}>Start the quickstart <span>→</span></a>
+        <a class="button secondary" href={`${base}docs/introduction`}>Explore the model</a>
+      </div>
+      <div class="hero-note"><span class="pulse"></span> v0.1 is usable today and evolving in public</div>
+    </section>
+
+    <section class="control-plane" aria-label="Senderos control plane">
+      <div class="terminal-top"><span></span><span></span><span></span><strong>senderos — mission control</strong></div>
+      <div class="terminal-body">
+        <div class="terminal-line"><span class="prompt">$</span><code>senderos plan</code></div>
+        <div class="terminal-output">
+          <div><span>goal</span><strong>ship-docs-redesign</strong></div>
+          <div><span>next agent</span><strong>tdd-craftsman</strong></div>
+          <div><span>transition</span><strong>implementation-handoff</strong></div>
+          <div><span>status</span><strong class="ready">ready to dispatch</strong></div>
         </div>
-        <h1 class="m-0 max-w-4xl text-5xl font-bold tracking-tight md:text-6xl">
-          Senderos turns specs, queued work, coding runs, and durable status into one coherent system.
-        </h1>
-        <p class="max-w-3xl text-xl leading-8 text-[var(--muted)]">
-          It exists to stop agent work from dissolving into prompt soup. Senderos keeps the control plane local, exposes it through a CLI, and tracks real state for features, tasks, runs, sessions, and workspaces.
-        </p>
-        <div class="flex flex-wrap gap-3">
-          <a class="rounded-2xl bg-[var(--accent)] px-5 py-3 font-semibold text-slate-950 no-underline hover:bg-[var(--accent-strong)]" href={`${base}docs/introduction`}>Read the docs</a>
-          <a class="rounded-2xl border border-[var(--border)] px-5 py-3 font-semibold text-[var(--text)] no-underline hover:border-[var(--accent)]" href={SITE.repoUrl} target="_blank" rel="noreferrer">View repository</a>
-        </div>
+        <div class="terminal-line muted"><span class="prompt">$</span><code>senderos run dispatch --goal-id goal_…</code><i></i></div>
+      </div>
+      <div class="flow-rail">
+        <div class="complete"><span>01</span><strong>Intent</strong><small>captured</small></div>
+        <div class="complete"><span>02</span><strong>Plan</strong><small>resolved</small></div>
+        <div class="active"><span>03</span><strong>Execute</strong><small>in progress</small></div>
+        <div><span>04</span><strong>Verify</strong><small>evidence</small></div>
+        <div><span>05</span><strong>Advance</strong><small>next handoff</small></div>
       </div>
     </section>
 
-    <section class="mt-10 grid gap-5 md:grid-cols-3">
-      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
-        <h2 class="mt-0 text-xl">CLI first</h2>
-        <p>The CLI is the control plane. Skills and harnesses are adapters, not the system of record.</p>
+    <section class="problem-grid">
+      <div class="section-intro">
+        <div class="kicker">The missing layer</div>
+        <h2>Prompts are temporary.<br />Engineering state shouldn’t be.</h2>
+        <p>Agent harnesses are excellent execution environments. Senderos adds the durable coordination layer they deliberately don’t provide.</p>
       </div>
-      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
-        <h2 class="mt-0 text-xl">Durable state</h2>
-        <p>Senderos persists features, runs, sessions, artifacts, and cleanup status so work survives session death.</p>
-      </div>
-      <div class="rounded-[1.5rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(22,32,57,0.92),rgba(16,23,42,0.88))] p-6 shadow-[0_16px_50px_rgba(0,0,0,0.16)]">
-        <h2 class="mt-0 text-xl">Controlled automation</h2>
-        <p>Host agents can plan, dispatch, and execute work while respecting confirmation and safety policies.</p>
+      <div class="capability-list">
+        <article><span>01</span><div><h3>A real system of record</h3><p>Projects, goals, runs, attempts, evidence, and handoffs survive individual model sessions.</p></div></article>
+        <article><span>02</span><div><h3>Deterministic next steps</h3><p>Planning is computed from persisted state, so every harness gets the same dispatch answer.</p></div></article>
+        <article><span>03</span><div><h3>Execution stays portable</h3><p>OpenClaw, Codex, Claude Code, or a future harness does the work. Senderos records the contract and outcome.</p></div></article>
+        <article><span>04</span><div><h3>Verification is first-class</h3><p>Store evidence and operator review decisions beside the exact attempt they evaluate.</p></div></article>
       </div>
     </section>
 
-    <section class="mt-10 rounded-[2rem] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(21,30,53,0.88),rgba(14,20,37,0.84))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-8">
-      <div class="mb-6">
-        <h2 class="m-0 text-2xl font-semibold">Documentation map</h2>
-        <p class="mt-2 text-[var(--muted)]">Everything important, without template filler.</p>
+    <section class="architecture-section">
+      <div class="section-heading"><div><div class="kicker">One coherent loop</div><h2>Control plane, not another coding agent.</h2></div><a href={`${base}docs/core/architecture`}>Architecture details →</a></div>
+      <div class="architecture-map">
+        <article class="input"><span>01</span><h3>Human intent</h3><p>Outcome, constraints, and acceptance criteria become a durable goal.</p></article>
+        <div class="connector"><span>→</span></div>
+        <article class="senderos"><Logo compact={true} /><span>02</span><h3>Senderos</h3><p>Persists truth, plans the next transition, and records every execution attempt.</p><div class="chips"><small>Drizzle</small><small>libSQL</small><small>TypeScript</small></div></article>
+        <div class="connector"><span>→</span></div>
+        <article class="host"><span>03</span><h3>Host agent</h3><p>Executes in the real repository with its own tools, permissions, and sessions.</p></article>
+        <div class="feedback-line"><span>evidence · status · result</span></div>
       </div>
-      <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {NAVIGATION.map((group) => (
-          <section class="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-5 transition hover:border-[rgba(112,225,200,0.28)] hover:bg-[rgba(255,255,255,0.03)]">
-            <h3 class="mt-0 text-lg">{group.section}</h3>
-            <ul class="m-0 list-none space-y-2 p-0">
-              {group.items.map((item) => (
-                <li>
-                  <a class="text-[var(--muted)] no-underline hover:text-[var(--text)]" href={`${base}docs/${item.slug}`}>{item.title}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+    </section>
+
+    <section class="start-section">
+      <div class="start-copy"><div class="kicker">Try the current release</div><h2>From clone to first planned goal.</h2><p>Senderos is in active development and currently runs from the monorepo with Bun. The quickstart is honest about that—no fictional package-install command.</p><a href={`${base}docs/getting-started/setup`}>Full installation guide →</a></div>
+      <div class="code-window">
+        <div class="code-tabs"><span class="active">Terminal</span><span>From source</span></div>
+        <pre><code><span class="comment"># Clone and install</span>
+git clone https://github.com/ajdurancr/senderos.git
+cd senderos && bun install
+
+<span class="comment"># Preview, then initialize</span>
+bun run packages/cli/src/index.ts init
+bun run packages/cli/src/index.ts init --approve
+
+<span class="comment"># Verify the runtime</span>
+bun run packages/cli/src/index.ts doctor</code></pre>
       </div>
+    </section>
+
+    <section class="status-section">
+      <div><div class="kicker">Built now</div><h2>A working foundation,<br />not a vaporware diagram.</h2></div>
+      <div class="status-columns">
+        <article><h3><span class="status-dot shipped"></span>Available today</h3><ul><li>CLI-first planning and dispatch</li><li>Drizzle + local or remote libSQL</li><li>Goal, run, attempt, and event history</li><li>Evidence and human review records</li><li>Studio Mission Control foundation</li></ul></article>
+        <article><h3><span class="status-dot next"></span>Near-term direction</h3><ul><li>Deeper Mission Control workflows</li><li>More ergonomic installation and distribution</li><li>Richer execution lifecycle visibility</li><li>Stronger host-agent operating adapters</li><li>Expanded verification and recovery flows</li></ul></article>
+      </div>
+      <a class="button secondary" href={`${base}docs/project/status-and-roadmap`}>See status and roadmap</a>
+    </section>
+
+    <section class="final-cta">
+      <div class="eyebrow"><span></span> Pick up the trail</div>
+      <h2>Build toward outcomes,<br /><em>not abandoned sessions.</em></h2>
+      <div class="hero-actions"><a class="button primary" href={`${base}docs/getting-started/quickstart`}>Read the quickstart <span>→</span></a><a class="button secondary" href={SITE.repoUrl}>View on GitHub</a></div>
     </section>
   </main>
 </BaseLayout>

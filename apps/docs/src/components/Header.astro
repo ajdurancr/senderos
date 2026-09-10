@@ -1,40 +1,31 @@
 ---
+import Logo from '@/components/Logo.astro';
+import SearchPalette from '@/components/SearchPalette.astro';
 import { SITE } from '@/data/site';
 const base = `${import.meta.env.BASE_URL}/`;
 const pathname = Astro.url.pathname;
 const docsActive = pathname.startsWith(`${base}docs`);
 ---
 
-<header class="sticky top-0 z-40 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(8,12,26,0.78)] backdrop-blur-xl">
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
-    <a href={base} class="flex items-center gap-3 no-underline">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-lg font-bold text-[var(--accent)]">S</div>
-      <div>
-        <div class="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Senderos</div>
-        <div class="text-base font-semibold text-[var(--text)]">Docs</div>
-      </div>
+<header class="site-header">
+  <div class="header-inner">
+    <a href={base} class="brand" aria-label="Senderos home">
+      <Logo />
+      <span class="brand-name">Senderos</span>
+      <span class="brand-divider"></span>
+      <span class="brand-product">Docs</span>
     </a>
 
-    <nav class="flex items-center gap-3 text-sm">
-      <a
-        href={`${base}docs/introduction`}
-        class:list={[
-          'rounded-full px-4 py-2 no-underline transition',
-          docsActive
-            ? 'bg-[rgba(255,255,255,0.06)] text-[var(--text)]'
-            : 'text-[var(--muted)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text)]'
-        ]}
-      >
-        Documentation
-      </a>
-      <a
-        class="rounded-full px-4 py-2 text-[var(--muted)] no-underline transition hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--text)]"
-        href={SITE.repoUrl}
-        target="_blank"
-        rel="noreferrer"
-      >
-        GitHub
-      </a>
-    </nav>
+    <div class="header-actions">
+      <SearchPalette />
+      <nav class="header-nav" aria-label="Primary navigation">
+        <a class:list={[docsActive && 'active']} href={`${base}docs/introduction`}>Docs</a>
+        <a href={`${base}docs/project/status-and-roadmap`}>Roadmap</a>
+        <a class="github-link" href={SITE.repoUrl} target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.82a9.5 9.5 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+    </div>
   </div>
 </header>
