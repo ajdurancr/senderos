@@ -16,7 +16,7 @@ import type { MissionControlData } from "./server";
 import { type StudioLocation } from "./navigation";
 
 export function MissionControlOverview({ data, route, search }: { data: MissionControlData; route: StudioLocation; search: URLSearchParams }) {
-  const { view, goalId, attemptId, transitionId } = route;
+  const { view, goalId, agentId, attemptId, transitionId } = route;
   const projectId = route.projectId ?? data.projects[0]?.id;
 
   if (view === "now") return <AttentionView data={data} filter={search.get("filter") ?? undefined} projectId={projectId}/>;
@@ -35,6 +35,6 @@ export function MissionControlOverview({ data, route, search }: { data: MissionC
       <OrchestrationCanvas data={data} projectId={projectId} goalId={selectedGoal}/>
       {search.get("plan") === "true" && <DispatchTray data={data}/>}
     </section>
-    <ContextualInspector data={data} goalId={selectedGoal} attemptId={attemptId} transitionId={transitionId}/>
+    <ContextualInspector data={data} goalId={selectedGoal} agentId={agentId} attemptId={attemptId} transitionId={transitionId}/>
   </div>;
 }

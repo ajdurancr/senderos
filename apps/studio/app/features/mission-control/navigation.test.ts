@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   attemptPath,
+  canvasAgentPath,
   canvasEntityPath,
   goalPath,
   parseStudioPath,
@@ -22,6 +23,9 @@ describe("Studio entity routes", () => {
     })).toBe(
       "/projects/senderos/canvas/goals/goal_1/transitions/transition_2/attempts/attempt_3",
     );
+    expect(canvasAgentPath("senderos", "goal_1", "agent_2")).toBe(
+      "/projects/senderos/canvas/goals/goal_1/agents/agent_2",
+    );
   });
 
   it("parses deep links back into Studio context", () => {
@@ -31,6 +35,7 @@ describe("Studio entity routes", () => {
       view: "canvas",
       projectId: "senderos",
       goalId: "goal_1",
+      agentId: undefined,
       transitionId: "transition_2",
       attemptId: "attempt_3",
       create: false,

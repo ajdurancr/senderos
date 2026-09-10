@@ -6,23 +6,25 @@ import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";
 import { Icon } from "./icons";
 
-export function ContextualInspector({ data, goalId, attemptId, transitionId }: { data: MissionControlData; goalId?: string; attemptId?: string; transitionId?: string }) {
+export function ContextualInspector({ data, goalId, agentId, attemptId, transitionId }: { data: MissionControlData; goalId?: string; agentId?: string; attemptId?: string; transitionId?: string }) {
   const goal = data.goals.find((item) => item.id === goalId);
   if (!goal) return null;
   const execution = goalExecution(data, goal.id);
   const attempt = data.attempts.find((item) => item.id === attemptId) ?? execution.latestAttempt;
   const transition = data.transitions.find((item) => item.id === (transitionId ?? attempt?.transitionId));
-  const agent = data.agents.find((item) => item.id === (attempt?.agentId ?? transition?.sourceAgentId));
+  const agent = data.agents.find((item) => item.id === (agentId ?? attempt?.agentId ?? transition?.sourceAgentId));
   const snapshot = parseAttemptSnapshot(attempt?.statusSnapshotJson ?? "{}");
-  const events = data.events.filter((event) => [goal.id, execution.latestRun?.id, attempt?.id].includes(event.entityId)).slice(-6).reverse();
+  const events = data.events.filter((event) => [goal.id, execution.latestRun?.id, attempt?.id, agent?.id, transition?.id].includes(event.entityId)).slice(-6).reverse();
   const terminal = attempt && ["succeeded", "failed", "canceled"].includes(attempt.status);
 
   return <aside className="context-inspector">
-    <header><div><span>Goal inspector</span><h2>{goal.title}</h2></div><a href={projectPath(goal.projectId)} aria-label="Close inspector"><Icon name="x" /></a></header>
+    <header><div><span>{agentId ? "Agent inspector" : transitionId ? "Trail segment" : attemptId ? "Run attempt" : "Goal inspector"}</span><h2>{agentId ? agent?.name ?? agentId : transitionId ? transition?.name ?? transitionId : goal.title}</h2></div><a href={projectPath(goal.projectId)} aria-label="Close inspector"><Icon name="x" /></a></header>
     <div className="inspector-tabs"><span className="active">Execution context</span></div>
     <section className="inspector-section">
       <div className="inspector-status"><StatusBadge value={attempt?.status ?? goal.status} /><span>{attempt ? relativeTime(attempt.updatedAt) : "Not dispatched"}</span></div>
       <dl className="property-list">
+        {agent && <><div><dt>Agent ID</dt><dd className="mono">{agent.id}</dd></div><div><dt>Role</dt><dd>{agent.description || agent.defaultGoal || agent.kind}</dd></div></>}
+        {transition && <><div><dt>Arc ID</dt><dd className="mono">{transition.id}</dd></div><div><dt>Objective</dt><dd>{transition.transitionObjective}</dd></div></>}
         <div><dt>Agent</dt><dd>{agent?.name ?? "Not selected"}</dd></div>
         <div><dt>Transition</dt><dd>{transition?.name ?? "Waiting for plan"}</dd></div>
         <div><dt>Harness</dt><dd>{attempt?.harness ?? "—"}</dd></div>

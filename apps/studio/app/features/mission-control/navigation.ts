@@ -2,6 +2,7 @@ export type StudioLocation = {
   view: string;
   projectId?: string;
   goalId?: string;
+  agentId?: string;
   attemptId?: string;
   transitionId?: string;
   create: boolean;
@@ -30,6 +31,10 @@ export function canvasEntityPath(input: {
   return path;
 }
 
+export function canvasAgentPath(projectId: string, goalId: string, agentId: string) {
+  return `${goalPath(projectId, goalId)}/agents/${encode(agentId)}`;
+}
+
 export function attemptPath(projectId: string, attemptId: string) {
   return `${projectPath(projectId, "runs")}/attempts/${encode(attemptId)}`;
 }
@@ -47,6 +52,7 @@ export function parseStudioPath(pathname: string): StudioLocation {
     view,
     projectId,
     goalId: valueAfter("goals"),
+    agentId: valueAfter("agents"),
     transitionId: valueAfter("transitions"),
     attemptId: valueAfter("attempts"),
     create: view === "goals" && parts[3] === "new",
