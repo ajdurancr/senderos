@@ -30,4 +30,4 @@ Use these commands when you need to:
 - inspect active goals, runs, and attempts
 - decide which goal or run needs deeper inspection
 
-Use [`senderos doctor`](./doctor) separately when you need to validate configuration, storage, paths, schema, or harness readiness.
+Use [`senderos doctor`](../doctor) separately when you need to validate configuration, storage, paths, schema, or harness readiness.

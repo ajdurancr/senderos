@@ -100,4 +100,4 @@ The config stores the *names* of those variables, not their secret values.
 
 ## Next step
 
-Continue to the [Quickstart](./quickstart) to register a project, create a goal, ask Senderos what can run, and dispatch the first attempt.
+Continue to the [Quickstart](../quickstart) to register a project, create a goal, ask Senderos what can run, and dispatch the first attempt.

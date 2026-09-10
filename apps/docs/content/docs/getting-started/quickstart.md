@@ -3,7 +3,7 @@ title: Quickstart
 description: "Register a repository, create a durable goal, and move it through planning and dispatch without hiding the host-agent boundary."
 ---
 
-This walkthrough creates one real planning record from end to end. It assumes you completed [Install & configure](./setup), defined the `senderos` alias, and are inside the repository you want to coordinate.
+This walkthrough creates one real planning record from end to end. It assumes you completed [Install & configure](../setup), defined the `senderos` alias, and are inside the repository you want to coordinate.
 
 ## 1. Register the project
 
@@ -96,4 +96,4 @@ The host environment performs the run.
 The outcome returns to Senderos as durable state.
 ```
 
-Next, read [How it works](../core/how-senderos-works) for the lifecycle rules behind this flow or use the [Command overview](../cli/overview) as a reference.
+Next, read [How it works](../../core/how-senderos-works) for the lifecycle rules behind this flow or use the [Command overview](../../cli/overview) as a reference.
