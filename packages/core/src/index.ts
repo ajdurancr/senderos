@@ -2,6 +2,8 @@ export * from './shared/types';
 export * from './shared/config';
 export * from './commands';
 export * from './shared/harness';
+export { databaseConnectionFromEnvironment, describeCurrentDb } from './db/client';
+export { listEvents } from './shared/events';
 export {
   missionControlGoal,
   missionControlOverview,

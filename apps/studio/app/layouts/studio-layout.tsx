@@ -55,7 +55,7 @@ export function StudioLayout({
         </nav>
         <div className="runtime-card">
           <span className="health-dot" />
-          <div><strong>Runtime connected</strong><small>{pending ? "Applying change…" : data.runtime.paths.home}</small></div>
+          <div><strong>Database connected</strong><small>{pending ? "Applying change…" : data.runtime.database.endpoint}</small></div>
         </div>
       </aside>
 

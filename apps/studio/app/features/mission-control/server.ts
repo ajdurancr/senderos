@@ -1,4 +1,4 @@
-import { listEvents, resolveRuntime, type GoalKind } from "@senderos/core";
+import { databaseConnectionFromEnvironment, listEvents, type GoalKind } from "@senderos/core";
 
 import { senderosForStudio } from "../../server/senderos.server";
 
@@ -8,9 +8,19 @@ export async function missionControlData() {
     senderos.missionControl.overview(),
     senderos.commands.agents.list(),
     senderos.commands.agents.transitions(),
-    listEvents({ home: process.env.SENDEROS_HOME }),
+    listEvents({}),
   ]);
-  const runtime = resolveRuntime(process.env.SENDEROS_HOME);
+  const database = databaseConnectionFromEnvironment();
+  const runtime = {
+    database: {
+      urlEnv: "SENDEROS_DATABASE_URL",
+      authTokenEnv: "SENDEROS_DATABASE_AUTH_TOKEN",
+      endpoint: database.url.startsWith("file:")
+        ? "Local libSQL database"
+        : new URL(database.url).host,
+      remote: !database.url.startsWith("file:"),
+    },
+  };
   return { ...overview, agents, transitions, events, runtime };
 }
 
