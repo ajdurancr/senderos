@@ -1,5 +1,4 @@
-import { Link, useNavigate } from "react-router";
-
+import { DurableLink as Link } from "../components/durable-link";
 import { CommandPalette } from "../features/mission-control/components/command-palette";
 import { Icon, SenderosMark } from "../features/mission-control/components/icons";
 import type { MissionControlData } from "../features/mission-control/server";
@@ -26,7 +25,6 @@ export function StudioLayout({
   pending: boolean;
   route: StudioLocation;
 }) {
-  const navigate = useNavigate();
   const view = route.view;
   const projectId = route.projectId ?? data.projects[0]?.id ?? "";
   const project = data.projects.find((item) => item.id === projectId) ?? data.projects[0];
@@ -70,7 +68,7 @@ export function StudioLayout({
                 aria-label="Project"
                 value={project?.id ?? ""}
                 onChange={(event) => {
-                  navigate(projectPath(event.target.value, view));
+                  window.location.assign(projectPath(event.target.value, view));
                 }}
               >
                 {data.projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

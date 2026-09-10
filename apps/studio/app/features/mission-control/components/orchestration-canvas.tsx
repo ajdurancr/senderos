@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
+import { DurableLink as Link } from "../../../components/durable-link";
 
 import { StatusBadge } from "../../../components/status-badge";
 import { goalExecution, relativeTime } from "../model";

@@ -88,3 +88,17 @@ jobs:
             cat /tmp/senderos-studio.log
             exit 1
           }
+          for route_and_copy in \
+            'goals:Outcome inventory' \
+            'runs:Execution history' \
+            'agents:Execution topology' \
+            'events:Append-only history' \
+            'settings:Project &amp; database settings'; do
+            route=${route_and_copy%%:*}
+            copy=${route_and_copy#*:}
+            curl --fail --silent "http://127.0.0.1:5173/projects/smoke/$route" |
+              grep --quiet "$copy" || {
+                cat /tmp/senderos-studio.log
+                exit 1
+              }
+          done

@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { DurableLink as Link } from "../../../components/durable-link";
 
 import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";

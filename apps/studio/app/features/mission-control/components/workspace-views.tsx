@@ -1,5 +1,6 @@
-import { Form, Link } from "react-router";
+import { Form } from "react-router";
 
+import { DurableLink as Link } from "../../../components/durable-link";
 import { StatusBadge } from "../../../components/status-badge";
 import { eventLabel, goalExecution, parseAttemptSnapshot, relativeTime } from "../model";
 import { attemptPath, goalPath, projectPath } from "../navigation";
