@@ -1,55 +1,92 @@
+import { Link, useSearchParams } from "react-router";
+
+import { CommandPalette } from "../features/mission-control/components/command-palette";
+import { Icon, SenderosMark } from "../features/mission-control/components/icons";
+import type { MissionControlData } from "../features/mission-control/server";
+
+const navigation = [
+  ["now", "Now", "inbox"],
+  ["canvas", "Canvas", "nodes"],
+  ["goals", "Goals", "target"],
+  ["runs", "Runs", "activity"],
+  ["reviews", "Reviews", "check"],
+  ["agents", "Agents", "spark"],
+  ["events", "Events", "clock"],
+] as const;
+
 export function StudioLayout({
   children,
+  data,
   pending,
 }: {
   children: React.ReactNode;
+  data: MissionControlData;
   pending: boolean;
 }) {
+  const [params] = useSearchParams();
+  const view = params.get("view") ?? "canvas";
+  const projectId = params.get("project") ?? data.projects[0]?.id ?? "";
+  const project = data.projects.find((item) => item.id === projectId) ?? data.projects[0];
+  const projectQuery = project ? `&project=${encodeURIComponent(project.id)}` : "";
+
   return (
-    <main className="min-h-screen bg-[#07111f] text-slate-100">
-      <div className="mx-auto max-w-[1600px] px-5 py-5 lg:px-8">
-        <header className="flex items-center justify-between border-b border-white/10 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-300 to-cyan-300 font-black text-slate-950">
-              S
-            </div>
+    <main className="studio-shell">
+      <aside className="global-sidebar">
+        <Link className="studio-brand" to="/?view=canvas">
+          <SenderosMark />
+          <span><strong>Senderos</strong><small>Studio</small></span>
+        </Link>
+        <nav className="primary-navigation" aria-label="Studio navigation">
+          <p>Workspace</p>
+          {navigation.map(([key, label, icon]) => (
+            <Link
+              className={view === key ? "active" : ""}
+              key={key}
+              to={`/?view=${key}${projectQuery}`}
+            >
+              <Icon name={icon} /><span>{label}</span>
+              {key === "reviews" && data.queue.reviews.length > 0 && <em>{data.queue.reviews.length}</em>}
+            </Link>
+          ))}
+          <p className="manage-label">Manage</p>
+          <Link className={view === "settings" ? "active" : ""} to={`/?view=settings${projectQuery}`}>
+            <Icon name="settings" /><span>Settings</span>
+          </Link>
+        </nav>
+        <div className="runtime-card">
+          <span className="health-dot" />
+          <div><strong>Runtime connected</strong><small>{pending ? "Applying change…" : data.runtime.paths.home}</small></div>
+        </div>
+      </aside>
+
+      <section className="studio-workspace">
+        <header className="project-header">
+          <div className="project-context">
+            <div className="project-symbol">{project?.name?.slice(0, 1).toUpperCase() ?? "S"}</div>
             <div>
-              <p className="font-semibold text-white">Senderos Studio</p>
-              <p className="text-xs text-slate-400">Mission Control</p>
+              <select
+                aria-label="Project"
+                value={project?.id ?? ""}
+                onChange={(event) => {
+                  const next = new URLSearchParams(params);
+                  next.set("project", event.target.value);
+                  window.location.search = next.toString();
+                }}
+              >
+                {data.projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+              <span><Icon name="branch" /> {project?.targetBranch ?? "No project"}</span>
             </div>
           </div>
-          <div className="text-xs text-slate-400">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-300" />
-            Runtime connected {pending ? "· Updating" : ""}
+          <div className="header-tools">
+            <CommandPalette data={data} projectId={project?.id} />
+            <Link className="icon-button" to={`/?view=events${projectQuery}`} aria-label="Activity"><Icon name="clock" /></Link>
+            <Link className="new-goal-button" to={`/?view=goals&create=true${projectQuery}`}><Icon name="plus" /> New goal</Link>
           </div>
         </header>
-        <div className="grid gap-6 py-7 xl:grid-cols-[210px_minmax(0,1fr)_310px]">
-          <aside className="hidden xl:block">
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-[.16em] text-slate-500">
-              Workspace
-            </p>
-            <nav className="mt-3 space-y-1">
-              {[
-                "Now",
-                "Goals",
-                "Runs",
-                "Reviews",
-                "Agents",
-                "Projects",
-                "Operations",
-              ].map((item, index) => (
-                <span
-                  className={`block rounded-lg px-3 py-2 text-sm ${index === 0 ? "bg-cyan-300/10 font-medium text-cyan-100" : "text-slate-400"}`}
-                  key={item}
-                >
-                  {item}
-                </span>
-              ))}
-            </nav>
-          </aside>
-          {children}
-        </div>
-      </div>
+        {pending && <div className="pending-bar" />}
+        {children}
+      </section>
     </main>
   );
 }

@@ -1,34 +1,42 @@
-import { AttemptInspector } from "./components/attempt-inspector";
-import { GoalList } from "./components/goal-list";
-import { QueueMetrics } from "./components/queue-metrics";
+import { AttentionRail } from "./components/attention-rail";
+import { ContextualInspector } from "./components/contextual-inspector";
+import { DispatchTray } from "./components/dispatch-tray";
+import { Icon } from "./components/icons";
+import { OrchestrationCanvas } from "./components/orchestration-canvas";
+import {
+  AgentsView,
+  AttentionView,
+  EventsView,
+  GoalsView,
+  ReviewsView,
+  RunsView,
+  SettingsView,
+} from "./components/workspace-views";
 import type { MissionControlData } from "./server";
 
-export function MissionControlOverview({ data }: { data: MissionControlData }) {
-  return (
-    <>
-      <section className="min-w-0 space-y-6">
-        <header>
-          <p className="text-xs font-semibold uppercase tracking-[.2em] text-cyan-300">
-            Decision queue
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            What needs attention now.
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            Human attention is reserved for exceptions, proof, and consequential
-            decisions.
-          </p>
-        </header>
+export function MissionControlOverview({ data, params }: { data: MissionControlData; params: URLSearchParams }) {
+  const view = params.get("view") ?? "canvas";
+  const projectId = params.get("project") ?? data.projects[0]?.id;
+  const goalId = params.get("goal") ?? undefined;
+  const attemptId = params.get("attempt") ?? undefined;
+  const transitionId = params.get("transition") ?? undefined;
 
-        <QueueMetrics queue={data.queue} />
-        <GoalList goals={data.goals} runs={data.runs} />
-      </section>
+  if (view === "now") return <AttentionView data={data} filter={params.get("filter") ?? undefined} projectId={projectId}/>;
+  if (view === "goals") return <GoalsView data={data} projectId={projectId} create={params.get("create") === "true"}/>;
+  if (view === "runs") return <RunsView data={data} attemptId={attemptId}/>;
+  if (view === "reviews") return <ReviewsView data={data}/>;
+  if (view === "agents") return <AgentsView data={data}/>;
+  if (view === "events") return <EventsView data={data}/>;
+  if (view === "settings") return <SettingsView data={data} projectId={projectId}/>;
 
-      <AttemptInspector
-        attempts={data.attempts}
-        goals={data.goals}
-        runs={data.runs}
-      />
-    </>
-  );
+  const selectedGoal = goalId ?? data.goals.find((goal) => goal.projectId === projectId)?.id;
+  return <div className={`canvas-workspace ${selectedGoal ? "with-inspector" : ""}`}>
+    <section className="canvas-column">
+      <header className="canvas-page-header"><div><span>Project canvas</span><h1>Orchestration topology</h1><p>Follow durable intent through each planned handoff, execution, and review.</p></div><button className="view-mode"><Icon name="nodes"/> Goal flow <Icon name="arrow"/></button></header>
+      <AttentionRail data={data} projectId={projectId}/>
+      <OrchestrationCanvas data={data} projectId={projectId} goalId={selectedGoal}/>
+      {params.get("plan") === "true" && <DispatchTray data={data}/>}
+    </section>
+    <ContextualInspector data={data} goalId={selectedGoal} attemptId={attemptId} transitionId={transitionId}/>
+  </div>;
 }
