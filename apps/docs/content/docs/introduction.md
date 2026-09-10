@@ -56,4 +56,4 @@ That separation lets execution environments change without changing the meaning 
 
 Senderos is at `v0.1` and under active development. The core model, CLI, libSQL persistence, host-agent boundary, evidence/review records, and initial Studio Mission Control are implemented. Distribution is not packaged for a public registry yet, so the current installation path runs from source with Bun.
 
-Start with [Install & configure](./getting-started/setup), then follow the [Quickstart](./getting-started/quickstart) to create and dispatch a real goal. See [Status & roadmap](./project/status-and-roadmap) for an honest line between current capability and near-term direction.
+Start with [Install & configure](../getting-started/setup), then follow the [Quickstart](../getting-started/quickstart) to create and dispatch a real goal. See [Status & roadmap](../project/status-and-roadmap) for an honest line between current capability and near-term direction.
