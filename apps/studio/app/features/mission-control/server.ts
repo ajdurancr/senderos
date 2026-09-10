@@ -1,8 +1,9 @@
 import { databaseConnectionFromEnvironment, listEvents, type GoalKind } from "@senderos/core";
 
-import { senderosForStudio } from "../../server/senderos.server";
+import { prepareStudioDatabase, senderosForStudio } from "../../server/senderos.server";
 
 export async function missionControlData() {
+  await prepareStudioDatabase();
   const senderos = senderosForStudio();
   const [overview, agents, transitions, events] = await Promise.all([
     senderos.missionControl.overview(),
@@ -27,6 +28,7 @@ export async function missionControlData() {
 export type MissionControlData = Awaited<ReturnType<typeof missionControlData>>;
 
 export async function applyMissionControlAction(form: FormData) {
+  await prepareStudioDatabase();
   const senderos = senderosForStudio();
   const intent = String(form.get("intent"));
 

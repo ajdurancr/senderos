@@ -3,6 +3,7 @@ export * from './shared/config';
 export * from './commands';
 export * from './shared/harness';
 export { databaseConnectionFromEnvironment, describeCurrentDb } from './db/client';
+export { prepareSharedDatabase } from './db/bootstrap';
 export { listEvents } from './shared/events';
 export {
   missionControlGoal,

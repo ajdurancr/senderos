@@ -14,3 +14,7 @@ SENDEROS_DATABASE_AUTH_TOKEN=...
 
 Every CLI or worker instance that points to the same database participates in the
 same orchestration system, regardless of its host or local filesystem.
+
+On startup, Studio applies the bundled database migrations and idempotently seeds
+the built-in agents. The database identity remains the only shared deployment
+dependency.
