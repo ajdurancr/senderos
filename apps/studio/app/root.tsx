@@ -1,4 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -28,18 +28,38 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const message = error instanceof Error ? error.message : "Unknown error";
+  const technicalMessage = error instanceof Error ? error.message : String(error);
+  const fullError = error instanceof Error && error.cause instanceof Error
+    ? `${technicalMessage} ${error.cause.message}`
+    : technicalMessage;
+  const databaseError = /SENDEROS_DATABASE|libsql|sqlite|database|fetch failed|network|auth/i.test(fullError);
+  const missingConfiguration = /Missing env:SENDEROS_DATABASE_URL/i.test(fullError);
+  const notFound = isRouteErrorResponse(error) && error.status === 404;
+  const title = notFound
+    ? "That Studio page does not exist"
+    : missingConfiguration
+      ? "Studio needs a database connection"
+      : databaseError
+        ? "Studio could not reach the Senderos database"
+        : "Studio hit an unexpected problem";
+  const message = notFound
+    ? "The URL may be stale or the referenced entity may have moved."
+    : missingConfiguration
+      ? "Set SENDEROS_DATABASE_URL for the Studio process. For a remote libSQL database, also provide SENDEROS_DATABASE_AUTH_TOKEN."
+      : databaseError
+        ? "Check the database URL, credentials, and network access. Studio will migrate and seed a reachable database automatically."
+        : "Your data was not changed. Try the request again; if it keeps failing, inspect the server log using the reference below.";
+  const reference = `studio-${Date.now().toString(36)}`;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-rose-300">
-          Studio error
-        </p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">
-          The route failed to render.
-        </h1>
-        <p className="mt-4 text-sm leading-7 text-slate-200">{message}</p>
+    <main className="error-page">
+      <div className="error-card">
+        <div className="error-mark">!</div>
+        <p>Senderos Studio</p>
+        <h1>{title}</h1>
+        <span>{message}</span>
+        <div className="error-actions"><a href="">Try again</a><a href="/">Return to Studio</a></div>
+        <small>Reference: {reference}</small>
       </div>
     </main>
   );

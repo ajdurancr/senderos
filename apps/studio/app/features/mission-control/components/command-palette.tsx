@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import type { MissionControlData } from "../server";
+import { attemptPath, goalPath, projectPath } from "../navigation";
 import { Icon } from "./icons";
 
 export function CommandPalette({ data, projectId }: { data: MissionControlData; projectId?: string }) {
@@ -20,16 +21,15 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
   }, []);
   useEffect(() => { if (open) requestAnimationFrame(() => input.current?.focus()); }, [open]);
 
-  const base = projectId ? `&project=${encodeURIComponent(projectId)}` : "";
   const items = useMemo(() => [
-    { label: "Open orchestration canvas", detail: "Workspace", href: `/?view=canvas${base}`, icon: "nodes" },
-    { label: "Show work needing attention", detail: "Decision queue", href: `/?view=now${base}`, icon: "inbox" },
-    { label: "Review dispatch plan", detail: `${data.queue.dispatchable.length} ready`, href: `/?view=canvas&plan=true${base}`, icon: "activity" },
-    { label: "Create a new goal", detail: "Action", href: `/?view=goals&create=true${base}`, icon: "plus" },
-    { label: "Open runtime settings", detail: "Configuration", href: `/?view=settings${base}`, icon: "settings" },
-    ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status}`, href: `/?view=canvas&goal=${goal.id}${base}`, icon: "target" })),
-    ...data.attempts.map((attempt) => ({ label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: `/?view=runs&attempt=${attempt.id}${base}`, icon: "activity" })),
-  ], [base, data]);
+    { label: "Open orchestration canvas", detail: "Workspace", href: projectPath(projectId), icon: "nodes" },
+    { label: "Show work needing attention", detail: "Decision queue", href: projectPath(projectId, "now"), icon: "inbox" },
+    { label: "Review dispatch plan", detail: `${data.queue.dispatchable.length} ready`, href: `${projectPath(projectId)}?plan=true`, icon: "activity" },
+    { label: "Create a new goal", detail: "Action", href: `${projectPath(projectId, "goals")}/new`, icon: "plus" },
+    { label: "Open database settings", detail: "Configuration", href: projectPath(projectId, "settings"), icon: "settings" },
+    ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
+    ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: attemptPath(goal?.projectId ?? projectId ?? "unknown", attempt.id), icon: "activity" }; }),
+  ], [projectId, data]);
   const matches = items.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 9);
 
   return <>

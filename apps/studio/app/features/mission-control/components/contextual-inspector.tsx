@@ -3,6 +3,7 @@ import { Form } from "react-router";
 import { StatusBadge } from "../../../components/status-badge";
 import { eventLabel, goalExecution, parseAttemptSnapshot, relativeTime } from "../model";
 import type { MissionControlData } from "../server";
+import { projectPath } from "../navigation";
 import { Icon } from "./icons";
 
 export function ContextualInspector({ data, goalId, attemptId, transitionId }: { data: MissionControlData; goalId?: string; attemptId?: string; transitionId?: string }) {
@@ -17,7 +18,7 @@ export function ContextualInspector({ data, goalId, attemptId, transitionId }: {
   const terminal = attempt && ["succeeded", "failed", "canceled"].includes(attempt.status);
 
   return <aside className="context-inspector">
-    <header><div><span>Goal inspector</span><h2>{goal.title}</h2></div><a href={`/?view=canvas&project=${goal.projectId}`} aria-label="Close inspector"><Icon name="x" /></a></header>
+    <header><div><span>Goal inspector</span><h2>{goal.title}</h2></div><a href={projectPath(goal.projectId)} aria-label="Close inspector"><Icon name="x" /></a></header>
     <div className="inspector-tabs"><span className="active">Execution context</span></div>
     <section className="inspector-section">
       <div className="inspector-status"><StatusBadge value={attempt?.status ?? goal.status} /><span>{attempt ? relativeTime(attempt.updatedAt) : "Not dispatched"}</span></div>
@@ -40,6 +41,6 @@ export function ContextualInspector({ data, goalId, attemptId, transitionId }: {
       {attempt && <Form className="compact-form" method="post"><input type="hidden" name="intent" value="evidence"/><input type="hidden" name="attemptId" value={attempt.id}/><input name="label" placeholder="Evidence label" required/><input name="url" placeholder="Optional URL"/><button>Record evidence</button></Form>}
       {attempt && <Form className="review-form" method="post"><input type="hidden" name="intent" value="review"/><input type="hidden" name="attemptId" value={attempt.id}/><div><select name="status" defaultValue="approved"><option value="approved">Approve</option><option value="changes_requested">Request changes</option><option value="rejected">Reject</option></select><input name="rationale" placeholder="Decision rationale"/></div><button>Record decision</button>{snapshot.review && <p>Current review: <strong>{snapshot.review.status.replaceAll("_", " ")}</strong></p>}</Form>}
     </section>
-    <section className="inspector-section event-preview"><header><h3>Recent activity</h3><a href={`/?view=events&project=${goal.projectId}`}>View all</a></header>{events.map((event) => <div key={event.id}><i/><span><strong>{eventLabel(event.eventType)}</strong><small>{relativeTime(event.createdAt)}</small></span></div>)}</section>
+    <section className="inspector-section event-preview"><header><h3>Recent activity</h3><a href={projectPath(goal.projectId,"events")}>View all</a></header>{events.map((event) => <div key={event.id}><i/><span><strong>{eventLabel(event.eventType)}</strong><small>{relativeTime(event.createdAt)}</small></span></div>)}</section>
   </aside>;
 }

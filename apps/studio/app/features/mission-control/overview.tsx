@@ -13,16 +13,14 @@ import {
   SettingsView,
 } from "./components/workspace-views";
 import type { MissionControlData } from "./server";
+import { type StudioLocation } from "./navigation";
 
-export function MissionControlOverview({ data, params }: { data: MissionControlData; params: URLSearchParams }) {
-  const view = params.get("view") ?? "canvas";
-  const projectId = params.get("project") ?? data.projects[0]?.id;
-  const goalId = params.get("goal") ?? undefined;
-  const attemptId = params.get("attempt") ?? undefined;
-  const transitionId = params.get("transition") ?? undefined;
+export function MissionControlOverview({ data, route, search }: { data: MissionControlData; route: StudioLocation; search: URLSearchParams }) {
+  const { view, goalId, attemptId, transitionId } = route;
+  const projectId = route.projectId ?? data.projects[0]?.id;
 
-  if (view === "now") return <AttentionView data={data} filter={params.get("filter") ?? undefined} projectId={projectId}/>;
-  if (view === "goals") return <GoalsView data={data} projectId={projectId} create={params.get("create") === "true"}/>;
+  if (view === "now") return <AttentionView data={data} filter={search.get("filter") ?? undefined} projectId={projectId}/>;
+  if (view === "goals") return <GoalsView data={data} projectId={projectId} create={route.create}/>;
   if (view === "runs") return <RunsView data={data} attemptId={attemptId}/>;
   if (view === "reviews") return <ReviewsView data={data}/>;
   if (view === "agents") return <AgentsView data={data}/>;
@@ -35,7 +33,7 @@ export function MissionControlOverview({ data, params }: { data: MissionControlD
       <header className="canvas-page-header"><div><span>Project canvas</span><h1>Orchestration topology</h1><p>Follow durable intent through each planned handoff, execution, and review.</p></div><button className="view-mode"><Icon name="nodes"/> Goal flow <Icon name="arrow"/></button></header>
       <AttentionRail data={data} projectId={projectId}/>
       <OrchestrationCanvas data={data} projectId={projectId} goalId={selectedGoal}/>
-      {params.get("plan") === "true" && <DispatchTray data={data}/>}
+      {search.get("plan") === "true" && <DispatchTray data={data}/>}
     </section>
     <ContextualInspector data={data} goalId={selectedGoal} attemptId={attemptId} transitionId={transitionId}/>
   </div>;

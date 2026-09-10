@@ -1,8 +1,9 @@
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { CommandPalette } from "../features/mission-control/components/command-palette";
 import { Icon, SenderosMark } from "../features/mission-control/components/icons";
 import type { MissionControlData } from "../features/mission-control/server";
+import { projectPath, type StudioLocation } from "../features/mission-control/navigation";
 
 const navigation = [
   ["now", "Now", "inbox"],
@@ -18,21 +19,22 @@ export function StudioLayout({
   children,
   data,
   pending,
+  route,
 }: {
   children: React.ReactNode;
   data: MissionControlData;
   pending: boolean;
+  route: StudioLocation;
 }) {
-  const [params] = useSearchParams();
-  const view = params.get("view") ?? "canvas";
-  const projectId = params.get("project") ?? data.projects[0]?.id ?? "";
+  const navigate = useNavigate();
+  const view = route.view;
+  const projectId = route.projectId ?? data.projects[0]?.id ?? "";
   const project = data.projects.find((item) => item.id === projectId) ?? data.projects[0];
-  const projectQuery = project ? `&project=${encodeURIComponent(project.id)}` : "";
 
   return (
     <main className="studio-shell">
       <aside className="global-sidebar">
-        <Link className="studio-brand" to="/?view=canvas">
+        <Link className="studio-brand" to={projectPath(project?.id)}>
           <SenderosMark />
           <span><strong>Senderos</strong><small>Studio</small></span>
         </Link>
@@ -42,14 +44,14 @@ export function StudioLayout({
             <Link
               className={view === key ? "active" : ""}
               key={key}
-              to={`/?view=${key}${projectQuery}`}
+              to={projectPath(project?.id, key)}
             >
               <Icon name={icon} /><span>{label}</span>
               {key === "reviews" && data.queue.reviews.length > 0 && <em>{data.queue.reviews.length}</em>}
             </Link>
           ))}
           <p className="manage-label">Manage</p>
-          <Link className={view === "settings" ? "active" : ""} to={`/?view=settings${projectQuery}`}>
+          <Link className={view === "settings" ? "active" : ""} to={projectPath(project?.id, "settings")}>
             <Icon name="settings" /><span>Settings</span>
           </Link>
         </nav>
@@ -68,9 +70,7 @@ export function StudioLayout({
                 aria-label="Project"
                 value={project?.id ?? ""}
                 onChange={(event) => {
-                  const next = new URLSearchParams(params);
-                  next.set("project", event.target.value);
-                  window.location.search = next.toString();
+                  navigate(projectPath(event.target.value, view));
                 }}
               >
                 {data.projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -80,8 +80,8 @@ export function StudioLayout({
           </div>
           <div className="header-tools">
             <CommandPalette data={data} projectId={project?.id} />
-            <Link className="icon-button" to={`/?view=events${projectQuery}`} aria-label="Activity"><Icon name="clock" /></Link>
-            <Link className="new-goal-button" to={`/?view=goals&create=true${projectQuery}`}><Icon name="plus" /> New goal</Link>
+            <Link className="icon-button" to={projectPath(project?.id, "events")} aria-label="Activity"><Icon name="clock" /></Link>
+            <Link className="new-goal-button" to={`${projectPath(project?.id, "goals")}/new`}><Icon name="plus" /> New goal</Link>
           </div>
         </header>
         {pending && <div className="pending-bar" />}
