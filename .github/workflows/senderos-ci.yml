@@ -73,3 +73,18 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck:studio
       - run: bun run --cwd apps/studio coverage
+      - name: Studio dev-server smoke test
+        run: |
+          SENDEROS_DATABASE_URL=file:/tmp/senderos-studio-ci.db bun run --cwd apps/studio dev --host 127.0.0.1 > /tmp/senderos-studio.log 2>&1 &
+          studio_pid=$!
+          trap 'kill "$studio_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /tmp/senderos-studio.html; then
+              break
+            fi
+            sleep 1
+          done
+          grep --quiet 'Orchestration topology' /tmp/senderos-studio.html || {
+            cat /tmp/senderos-studio.log
+            exit 1
+          }
