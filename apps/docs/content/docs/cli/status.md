@@ -1,11 +1,9 @@
 ---
-title: status and doctor
-description: "Operational visibility commands for current runtime truth and health validation."
+title: status
+description: "Inspect the current runtime truth: open goals, active executions, and the identifiers an operator needs for diagnosis."
 ---
 
-These commands expose the system-wide operating view.
-
-## `senderos status`
+`senderos status` exposes the system-wide operating view.
 
 Returns a high-level summary of:
 
@@ -24,20 +22,12 @@ senderos status
 `status` is report-only.
 It does not mutate runtime state.
 
-## `senderos doctor`
-
-Validates the configured runtime and reports whether the home/libSQL setup is healthy.
-
-### Example
-
-```bash
-senderos doctor
-```
-
 ## Typical use cases
 
 Use these commands when you need to:
 
 - understand what the system is doing now
 - inspect active goals, runs, and attempts
-- validate runtime health before relying on planning/dispatch output
+- decide which goal or run needs deeper inspection
+
+Use [`senderos doctor`](./doctor) separately when you need to validate configuration, storage, paths, schema, or harness readiness.

@@ -2,33 +2,30 @@
 import { NAVIGATION } from '@/data/site';
 const { currentSlug } = Astro.props as { currentSlug: string };
 const base = `${import.meta.env.BASE_URL}/`;
+const activeItem = NAVIGATION.flatMap((group) => group.items).find((item) => item.slug === currentSlug);
 ---
 
-<aside class="doc-sidebar sticky top-24 h-max rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(24,34,61,0.92),rgba(15,22,40,0.92))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
-  <div class="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Documentation</div>
-  <nav class="space-y-6">
+<details class="mobile-doc-nav">
+  <summary><span>{activeItem?.section ?? 'Documentation'}</span><strong>{activeItem?.title ?? 'Browse docs'}</strong></summary>
+  <nav aria-label="Mobile documentation navigation">
     {NAVIGATION.map((group) => (
       <section>
-        <h2 class="mb-2 text-sm font-semibold text-[var(--text)]">{group.section}</h2>
-        <ul class="m-0 list-none space-y-1 p-0">
-          {group.items.map((item) => {
-            const active = item.slug === currentSlug;
-            return (
-              <li>
-                <a
-                  href={`${base}docs/${item.slug}`}
-                  class:list={[
-                    'block rounded-xl px-3 py-2 text-sm no-underline transition',
-                    active
-                      ? 'bg-[var(--accent-soft)] text-[var(--text)]'
-                      : 'text-[var(--muted)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text)]'
-                  ]}
-                >
-                  {item.title}
-                </a>
-              </li>
-            );
-          })}
+        <h2>{group.section}</h2>
+        {group.items.map((item) => <a class:list={[item.slug === currentSlug && 'active']} href={`${base}docs/${item.slug}`}>{item.title}</a>)}
+      </section>
+    ))}
+  </nav>
+</details>
+
+<aside class="doc-sidebar">
+  <nav aria-label="Documentation navigation">
+    {NAVIGATION.map((group) => (
+      <section>
+        <h2>{group.section}</h2>
+        <ul>
+          {group.items.map((item) => (
+            <li><a class:list={[item.slug === currentSlug && 'active']} aria-current={item.slug === currentSlug ? 'page' : undefined} href={`${base}docs/${item.slug}`}>{item.title}</a></li>
+          ))}
         </ul>
       </section>
     ))}

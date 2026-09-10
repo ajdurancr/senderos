@@ -1,67 +1,103 @@
 ---
-title: Setup and First Run
-description: "How Senderos is installed, configured, and started in a real environment."
+title: Install & configure
+description: "Run the current Senderos release from source, initialize its runtime home, and verify that storage and harness detection are healthy."
 ---
 
-Senderos is installed into the local environment and operated through the CLI.
+Senderos currently runs from its Bun monorepo. It is not yet published as a registry package, so commands in these docs use the CLI TypeScript entry point directly. This is the supported, honest path for `v0.1`.
 
-## First-run flow
+## Prerequisites
 
-1. install the CLI
-2. run `senderos init`
-3. inspect the previewed configuration
-4. rerun `senderos init --approve` once the configuration is acceptable
-5. run `senderos doctor`
-6. create the first project
-7. create the first goal
-8. activate the goal
-9. call `senderos plan`
-10. dispatch one returned item with `senderos run dispatch ...`
+- [Bun](https://bun.sh/) `1.3` or newer
+- Git
+- a host-agent environment such as OpenClaw, Codex, or Claude Code
+- a repository you want Senderos to coordinate
 
-## Example
+## Install from source
 
 ```bash
-senderos init --home ./.senderos --harness codex
+git clone https://github.com/ajdurancr/senderos.git
+cd senderos
+bun install
+```
+
+For shorter commands during evaluation, define a shell-local alias:
+
+```bash
+alias senderos='bun run packages/cli/src/index.ts'
+senderos help
+```
+
+The alias is only a convenience. It does not install or modify Senderos globally.
+
+## Preview initialization
+
+Senderos keeps its own state in a runtime home. From the repository you want to operate, first preview the configuration with the shell alias created above:
+
+```bash
+senderos init \
+  --home ./.senderos \
+  --harness codex
+```
+
+Supported harness values are `openclaw`, `codex`, and `claude-code`. Senderos attempts to infer the harness, but an explicit value is required if inference returns `unknown`.
+
+The preview reports:
+
+- the resolved Senderos home;
+- the configuration path;
+- managed artifact, log, and cache directories;
+- the database URL environment variable;
+- the inferred or selected harness.
+
+Nothing is created until you approve it.
+
+## Create the runtime
+
+Repeat the command with `--approve`:
+
+```bash
 senderos init --home ./.senderos --harness codex --approve
+```
+
+Initialization creates the config and managed directories, runs database migrations, and seeds the built-in agent definitions and transitions.
+
+The default layout is:
+
+```text
+.senderos/
+  config.json
+  senderos.db
+  artifacts/
+  logs/
+  cache/
+```
+
+## Verify the environment
+
+```bash
 senderos doctor --home ./.senderos
-senderos project create \
-  --home ./.senderos \
-  --canonical-path /repo/path \
-  --github-owner ajdurancr \
-  --github-repo senderos
-senderos goal create \
-  --home ./.senderos \
-  --project-id senderos-ab12cd34 \
-  --title "Add billing portal" \
-  --kind feature \
-  --spec-text "Authenticated users can open the billing portal."
-senderos goal activate <goal-id> --home ./.senderos
-senderos plan --home ./.senderos
-senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --working-path /repo/path --home ./.senderos
 senderos status --home ./.senderos
 ```
 
-## What `senderos init` creates
+`doctor` validates configuration, database connectivity, schema availability, managed directories, guardrails, and harness readiness. Fix any reported failure before dispatching work.
 
-`senderos init` creates the Senderos runtime only after approval. The resulting structure includes:
+## Local and remote storage
 
-- config file
-- local `file:` libSQL database by default, or a remote libSQL connection
-- artifact directories
-- initial schema
-- built-in agent definitions and their default transitions
+When `SENDEROS_DATABASE_URL` is unset, initialization uses a local database under the runtime home:
 
-## Required configuration
+```bash
+export SENDEROS_DATABASE_URL='file:/absolute/path/.senderos/senderos.db'
+```
 
-The configuration file defines:
+For remote libSQL, set the configured URL and optional token before running commands:
 
-- environment-variable names for the libSQL URL and optional auth token
-- artifact directories
-- default harness
-- output mode defaults
-- guardrail settings
+```bash
+export SENDEROS_DATABASE_URL='libsql://your-database.turso.io'
+export SENDEROS_DATABASE_AUTH_TOKEN='…'
+```
 
-## Manual and scheduled operation
+The config stores the *names* of those variables, not their secret values.
 
-Senderos can always be run manually through the CLI.
-If the host environment supports scheduling, the host agent can periodically call the planning/dispatch flow itself.
+## Next step
+
+Continue to the [Quickstart](./quickstart) to register a project, create a goal, ask Senderos what can run, and dispatch the first attempt.
