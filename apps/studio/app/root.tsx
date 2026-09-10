@@ -1,13 +1,14 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import type { Route } from "./+types/root";
+import { DocumentHtml } from "./components/document-html";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <DocumentHtml>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,7 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
         <Scripts />
       </body>
-    </html>
+    </DocumentHtml>
   );
 }
 
@@ -49,7 +50,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       : databaseError
         ? "Check the database URL, credentials, and network access. Studio will migrate and seed a reachable database automatically."
         : "Your data was not changed. Try the request again; if it keeps failing, inspect the server log using the reference below.";
-  const reference = `studio-${Date.now().toString(36)}`;
 
   return (
     <main className="error-page">
@@ -59,7 +59,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <h1>{title}</h1>
         <span>{message}</span>
         <div className="error-actions"><a href="">Try again</a><a href="/">Return to Studio</a></div>
-        <small>Reference: {reference}</small>
+        <small>Detailed diagnostics are available in the Studio server log.</small>
       </div>
     </main>
   );
