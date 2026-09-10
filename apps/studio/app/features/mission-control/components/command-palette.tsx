@@ -28,7 +28,7 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
     { label: "Create a new goal", detail: "Action", href: `${projectPath(projectId, "goals")}/new`, icon: "plus" },
     { label: "Open database settings", detail: "Configuration", href: projectPath(projectId, "settings"), icon: "settings" },
     ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
-    ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: attemptPath(goal?.projectId ?? projectId ?? "unknown", attempt.id), icon: "activity" }; }),
+    ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: attemptPath(goal?.projectId ?? projectId, attempt.id), icon: "activity" }; }),
   ], [projectId, data]);
   const matches = items.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 9);
 

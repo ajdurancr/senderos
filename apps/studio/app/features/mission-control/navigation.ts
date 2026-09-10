@@ -11,7 +11,7 @@ export type StudioLocation = {
 const encode = encodeURIComponent;
 
 export function projectPath(projectId: string | undefined, view = "canvas") {
-  if (!projectId) return "/";
+  if (!projectId) return `/${view}`;
   return `/projects/${encode(projectId)}/${view}`;
 }
 
@@ -35,13 +35,20 @@ export function canvasAgentPath(projectId: string, goalId: string, agentId: stri
   return `${goalPath(projectId, goalId)}/agents/${encode(agentId)}`;
 }
 
-export function attemptPath(projectId: string, attemptId: string) {
+export function attemptPath(projectId: string | undefined, attemptId: string) {
   return `${projectPath(projectId, "runs")}/attempts/${encode(attemptId)}`;
 }
 
 export function parseStudioPath(pathname: string): StudioLocation {
   const parts = pathname.split("/").filter(Boolean).map(decodeURIComponent);
-  if (parts[0] !== "projects") return { view: "canvas", create: false };
+  if (parts[0] !== "projects") {
+    const view = parts[0] ?? "canvas";
+    return {
+      view,
+      attemptId: parts[1] === "attempts" ? parts[2] : undefined,
+      create: view === "goals" && parts[1] === "new",
+    };
+  }
   const projectId = parts[1];
   const view = parts[2] ?? "canvas";
   const valueAfter = (key: string) => {

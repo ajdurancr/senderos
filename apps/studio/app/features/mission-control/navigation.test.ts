@@ -48,7 +48,7 @@ describe("Studio entity routes", () => {
   });
 
   it("handles root, encoded IDs, and optional canvas entities", () => {
-    expect(projectPath(undefined)).toBe("/");
+    expect(projectPath(undefined)).toBe("/canvas");
     expect(parseStudioPath("/")).toEqual({ view: "canvas", create: false });
     expect(goalPath("my project", "goal/one")).toBe(
       "/projects/my%20project/canvas/goals/goal%2Fone",
@@ -59,6 +59,24 @@ describe("Studio entity routes", () => {
     expect(parseStudioPath("/projects/p")).toMatchObject({
       projectId: "p",
       view: "canvas",
+      create: false,
+    });
+  });
+
+  it("keeps every workspace screen navigable before a project exists", () => {
+    expect(projectPath(undefined, "goals")).toBe("/goals");
+    expect(projectPath(undefined, "runs")).toBe("/runs");
+    expect(projectPath(undefined, "agents")).toBe("/agents");
+    expect(projectPath(undefined, "events")).toBe("/events");
+    expect(projectPath(undefined, "settings")).toBe("/settings");
+    expect(parseStudioPath("/goals/new")).toEqual({
+      view: "goals",
+      attemptId: undefined,
+      create: true,
+    });
+    expect(parseStudioPath("/runs/attempts/attempt_1")).toEqual({
+      view: "runs",
+      attemptId: "attempt_1",
       create: false,
     });
   });
