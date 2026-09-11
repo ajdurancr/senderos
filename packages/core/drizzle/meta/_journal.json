@@ -8,6 +8,13 @@
       "when": 1788724606481,
       "tag": "0000_chief_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789098069338,
+      "tag": "0001_groovy_dracula",
+      "breakpoints": true
     }
   ]
 }

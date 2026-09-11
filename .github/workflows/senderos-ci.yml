@@ -73,3 +73,53 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck:studio
       - run: bun run --cwd apps/studio coverage
+      - name: Studio dev-server smoke test
+        run: |
+          SENDEROS_DATABASE_URL=file:/tmp/senderos-studio-ci.db bun run --cwd apps/studio dev --host 127.0.0.1 > /tmp/senderos-studio.log 2>&1 &
+          studio_pid=$!
+          trap 'kill "$studio_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /tmp/senderos-studio.html; then
+              break
+            fi
+            sleep 1
+          done
+          grep --quiet 'Orchestration topology' /tmp/senderos-studio.html || {
+            cat /tmp/senderos-studio.log
+            exit 1
+          }
+          for route_and_copy in \
+            'goals:Outcome inventory' \
+            'runs:Execution history' \
+            'agents:Execution topology' \
+            'events:Append-only history' \
+            'settings:Project &amp; database settings'; do
+            route=${route_and_copy%%:*}
+            copy=${route_and_copy#*:}
+            curl --fail --silent "http://127.0.0.1:5173/projects/smoke/$route" |
+              grep --quiet "$copy" || {
+                cat /tmp/senderos-studio.log
+                exit 1
+              }
+          done
+          for sendero in \
+            sendero-software-delivery \
+            sendero-production-hotfix \
+            sendero-security-hardening \
+            sendero-dependency-upgrade; do
+            curl --fail --silent "http://127.0.0.1:5173/senderos/$sendero" > /tmp/sendero.html
+            test "$(grep --only-matching 'draggable-node' /tmp/sendero.html | wc --lines)" -eq 7
+            test "$(grep --only-matching 'edge-hit-target' /tmp/sendero.html | wc --lines)" -eq 6
+            test "$(grep --only-matching 'style=\"left:' /tmp/sendero.html | wc --lines)" -eq 7
+          done
+          for route_and_copy in \
+            'goals:Outcome inventory' \
+            'runs:Execution history' \
+            'agents:Execution topology' \
+            'events:Append-only history' \
+            'settings:Project &amp; database settings'; do
+            route=${route_and_copy%%:*}
+            copy=${route_and_copy#*:}
+            curl --fail --silent "http://127.0.0.1:5173/$route" |
+              grep --quiet "$copy" || exit 1
+          done

@@ -1,0 +1,14 @@
+{
+  "id": "agent-release-manager",
+  "slug": "release-manager",
+  "name": "Release Manager",
+  "description": "Verify release readiness, rollout constraints, observability, and rollback expectations.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Release Manager\n\nReview delivery evidence and produce a safe rollout and rollback decision.\n",
+  "defaultGoal": "Turn verified work into a controlled, observable release decision.",
+  "defaultMetaJson": "{\"builtIn\":true}",
+  "createdAt": "2026-09-11T00:00:00.000Z",
+  "updatedAt": "2026-09-11T00:00:00.000Z"
+}
