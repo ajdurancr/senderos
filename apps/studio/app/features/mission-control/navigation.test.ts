@@ -49,7 +49,7 @@ describe("Studio entity routes", () => {
   });
 
   it("keeps Sendero, node, and arc identities in durable paths", () => {
-    expect(senderoPath("delivery trail", { nodeId: "node/start" })).toBe("/senderos/delivery%20trail/nodes/node%2Fstart");
+    expect(senderoPath("software delivery", { nodeId: "node/start" })).toBe("/senderos/software%20delivery/nodes/node%2Fstart");
     expect(senderoPath("delivery", { edgeId: "edge_2" })).toBe("/senderos/delivery/edges/edge_2");
     expect(parseStudioPath("/senderos/delivery/edges/edge_2")).toMatchObject({ view: "senderos", senderoId: "delivery", senderoEdgeId: "edge_2" });
     expect(parseStudioPath("/senderos/delivery/nodes/node_1")).toMatchObject({ view: "senderos", senderoId: "delivery", senderoNodeId: "node_1" });

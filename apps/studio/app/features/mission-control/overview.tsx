@@ -39,7 +39,7 @@ export function MissionControlOverview({
           <div className="empty-state">
             <Icon name="nodes" />
             <h2>No Senderos available</h2>
-            <p>Create or seed a trail definition in the shared database.</p>
+            <p>Create or seed a Sendero definition in the shared database.</p>
           </div>
         </div>
       );

@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 
 import { openRuntimeDb } from "../../db/client";
 import { senderoNodes } from "../../db/schema";
-import { emitEvent } from "../../shared/events";
 import { now } from "../../shared/ids";
 
 export async function updateSenderoNodePosition(input: {
@@ -24,14 +23,6 @@ export async function updateSenderoNodePosition(input: {
     .update(senderoNodes)
     .set({ positionX, positionY, updatedAt: now() })
     .where(eq(senderoNodes.id, input.id));
-  await emitEvent(
-    db,
-    "sendero.node-position-updated",
-    "sendero-node",
-    input.id,
-    { positionX, positionY },
-  );
-
   return (
     await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id))
   )[0];

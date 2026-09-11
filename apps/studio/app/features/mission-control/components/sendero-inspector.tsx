@@ -38,7 +38,7 @@ export function SenderoInspector({
         <div>
           <span>
             {edge
-              ? "Trail arc"
+              ? "Sendero transition"
               : node
                 ? `${node.kind} node`
                 : "Sendero definition"}

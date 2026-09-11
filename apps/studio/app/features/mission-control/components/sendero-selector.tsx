@@ -16,7 +16,7 @@ export function SenderoSelector({
   return (
     <label className="sendero-selector">
       <span>
-        <Icon name="nodes" /> Trail {selectedIndex + 1} of{" "}
+        <Icon name="nodes" /> Sendero {selectedIndex + 1} of{" "}
         {data.senderoGraphs.length}
       </span>
       <select

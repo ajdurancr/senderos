@@ -70,7 +70,7 @@ export function OrchestrationCanvas({
       <section className="canvas-empty">
         <Icon name="nodes" />
         <h2>No Senderos available</h2>
-        <p>The shared database has no published trail definition.</p>
+        <p>The shared database has no published Sendero definition.</p>
       </section>
     );
 
@@ -151,7 +151,7 @@ export function OrchestrationCanvas({
       >
         <div className="canvas-stage" style={{ width, height }}>
           <div className="canvas-watermark">
-            DURABLE TRAIL · {goal ? "LIVE EXECUTION OVERLAY" : "DEFINITION"}
+            SENDERO · {goal ? "LIVE EXECUTION OVERLAY" : "DEFINITION"}
           </div>
           <svg className="canvas-edges" width={width} height={height}>
             {graph.edges.map((edge) => {
@@ -174,7 +174,12 @@ export function OrchestrationCanvas({
                 y2: to.y + canvasNodeSize.height / 2,
               };
               return (
-                <Link key={edge.id} to={href}>
+                <Link
+                  key={edge.id}
+                  to={href}
+                  title={`${edge.name}: ${edge.description || edge.transitionObjective}`}
+                  aria-label={`Inspect transition ${edge.name}`}
+                >
                   <line className="edge-hit-target" {...coordinates} />
                   <line
                     className={`edge-line ${active ? "active" : ""}`}
@@ -213,12 +218,31 @@ export function OrchestrationCanvas({
                 ? canvasAgentPath(goal.projectId, goal.id, agent.id)
                 : graphPath({ nodeId: node.id });
             const point = positions[node.id];
+            const nodeKind =
+              node.kind === "agent"
+                ? "Agent"
+                : node.kind === "start"
+                  ? "Start"
+                  : "End";
+            const nodeTitle = [
+              `${nodeKind}: ${agent?.name ?? node.label}`,
+              agent?.description ??
+                (node.kind === "start"
+                  ? graph.sendero.description
+                  : node.kind === "end"
+                    ? "The verified endpoint for this Sendero."
+                    : undefined),
+            ]
+              .filter(Boolean)
+              .join(" — ");
             return (
               <Link
                 draggable={false}
                 key={node.id}
                 className={`${className} draggable-node`}
                 style={canvasNodeStyle(point)}
+                title={nodeTitle}
+                aria-label={`Inspect ${node.kind} ${agent?.name ?? node.label}`}
                 onPointerDown={(event) => drag(node.id, event)}
                 onDragStart={(event) => event.preventDefault()}
                 onClick={(event) => {
@@ -230,9 +254,7 @@ export function OrchestrationCanvas({
                 to={href}
               >
                 <div className="node-top">
-                  <span>
-                    {node.kind.toUpperCase()} · {node.id}
-                  </span>
+                  <span>{node.kind.toUpperCase()}</span>
                   <i />
                 </div>
                 {node.kind === "agent" ? (
@@ -243,22 +265,14 @@ export function OrchestrationCanvas({
                   <Icon name={node.kind === "start" ? "target" : "check"} />
                 )}
                 <h3>{agent?.name ?? node.label}</h3>
-                <p>
-                  {agent?.description ??
-                    (node.kind === "start"
-                      ? graph.sendero.description
-                      : "Every terminal arc converges on a verified outcome.")}
-                </p>
-                <footer>
-                  <span>
-                    {agent ? `${attempts.length} attempts` : node.label}
-                  </span>
-                  <span>
-                    {current
-                      ? relativeTime(latestAttempt?.updatedAt)
-                      : node.kind}
-                  </span>
-                </footer>
+                {agent && (
+                  <footer>
+                    <span>{attempts.length} attempts</span>
+                    <span>
+                      {current ? relativeTime(latestAttempt?.updatedAt) : "Ready"}
+                    </span>
+                  </footer>
+                )}
               </Link>
             );
           })}

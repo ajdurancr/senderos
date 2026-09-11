@@ -76,7 +76,7 @@ export function ContextualInspector({
             {agentId
               ? "Agent inspector"
               : transitionId
-                ? "Trail segment"
+                ? "Sendero transition"
                 : attemptId
                   ? "Run attempt"
                   : "Goal inspector"}

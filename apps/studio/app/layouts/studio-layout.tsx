@@ -101,7 +101,7 @@ export function StudioLayout({
                   <strong>Shared Senderos</strong>
                   <span>
                     <Icon name="database" /> {data.senderoGraphs.length}{" "}
-                    available trails
+                    Senderos available
                   </span>
                 </>
               ) : (

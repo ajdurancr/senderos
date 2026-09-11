@@ -5,6 +5,7 @@ import { updateRunAttempt } from "../attempts";
 import { plan } from "../planning";
 import { dispatchRun, getRun } from "../runs";
 import { createProjectFixture, initHome } from "../../test-support/runtime";
+import { listEvents } from "../../shared/events";
 import {
   getSenderoGraph,
   listSenderoGraphs,
@@ -14,7 +15,7 @@ import {
   updateSenderoNodePosition,
 } from ".";
 
-test("built-in Sendero is a connected, versioned, reusable trail", async () => {
+test("built-in Sendero is connected, versioned, and reusable", async () => {
   const home = await initHome();
   const graph = (await listSenderoGraphs(home)).find(
     (item) => item.sendero.slug === "software-delivery",
@@ -69,13 +70,14 @@ test("Sendero layout is durable and runs reference the assigned version", async 
       (item) => item.id === node.id,
     ),
   ).toMatchObject({ positionX: 444, positionY: 222 });
+  expect(await listEvents({ home, entityId: node.id })).toHaveLength(0);
 
   const goal = (await activateGoal(
     (
       await createGoal({
         home,
         projectId: project.id,
-        title: "Follow the trail",
+        title: "Run the Sendero",
       })
     ).id,
     home,

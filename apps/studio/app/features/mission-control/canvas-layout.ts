@@ -1,7 +1,7 @@
 export type CanvasPoint = { x: number; y: number };
 export type CanvasPositions = Record<string, CanvasPoint>;
 
-export const canvasNodeSize = { width: 190, height: 168 } as const;
+export const canvasNodeSize = { width: 164, height: 96 } as const;
 
 export function automaticCanvasLayout(nodeIds: string[]): CanvasPositions {
   return Object.fromEntries(
