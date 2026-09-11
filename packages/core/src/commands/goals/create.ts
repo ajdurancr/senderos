@@ -28,9 +28,19 @@ export async function createGoal(input: {
   const db = openRuntimeDb(input.home);
   const id = input.id ?? randomId("goal");
   const ts = now();
-  const defaultSendero = (await db.select().from(senderos).where(eq(senderos.status, "active")))[0];
+  const activeSenderos = await db
+    .select()
+    .from(senderos)
+    .where(eq(senderos.status, "active"));
+  const defaultSendero =
+    activeSenderos.find((sendero) => sendero.isDefault) ?? activeSenderos[0];
   const defaultVersion = defaultSendero
-    ? (await db.select().from(senderoVersions).where(eq(senderoVersions.senderoId, defaultSendero.id))).find((item) => item.version === defaultSendero.currentVersion)
+    ? (
+        await db
+          .select()
+          .from(senderoVersions)
+          .where(eq(senderoVersions.senderoId, defaultSendero.id))
+      ).find((item) => item.version === defaultSendero.currentVersion)
     : undefined;
   await db.insert(goals).values({
     id,
@@ -40,7 +50,10 @@ export async function createGoal(input: {
     intakeText: input.intakeText ?? "",
     specText: input.specText ?? "",
     status: "draft",
-    senderoVersionId: input.senderoVersionId === undefined ? defaultVersion?.id ?? null : input.senderoVersionId,
+    senderoVersionId:
+      input.senderoVersionId === undefined
+        ? (defaultVersion?.id ?? null)
+        : input.senderoVersionId,
     baseTargetBranch: project.targetBranch,
     branchName: null,
     prUrl: null,

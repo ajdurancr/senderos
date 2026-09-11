@@ -3,7 +3,6 @@ CREATE TABLE `sendero_edges` (
 	`sendero_version_id` text NOT NULL,
 	`source_node_id` text NOT NULL,
 	`target_node_id` text NOT NULL,
-	`transition_id` text,
 	`name` text NOT NULL,
 	`description` text DEFAULT '' NOT NULL,
 	`transition_objective` text NOT NULL,
@@ -42,6 +41,7 @@ CREATE TABLE `senderos` (
 	`name` text NOT NULL,
 	`description` text DEFAULT '' NOT NULL,
 	`status` text NOT NULL,
+	`is_default` integer DEFAULT false NOT NULL,
 	`current_version` integer DEFAULT 1 NOT NULL,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL
@@ -49,5 +49,4 @@ CREATE TABLE `senderos` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_senderos_slug` ON `senderos` (`slug`);--> statement-breakpoint
 ALTER TABLE `goals` ADD `sendero_version_id` text;--> statement-breakpoint
-ALTER TABLE `runs` ADD `sendero_version_id` text;--> statement-breakpoint
-ALTER TABLE `runs` ADD `sendero_snapshot_json` text DEFAULT '{}' NOT NULL;
+ALTER TABLE `runs` ADD `sendero_version_id` text;

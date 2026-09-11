@@ -1,61 +1,180 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, extname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 
 import { openRuntimeDb } from "../db/client";
-import { agents, agentTransitions, senderoEdges, senderoNodes, senderos, senderoVersions } from "../db/schema";
+import {
+  agents,
+  senderoEdges,
+  senderoNodes,
+  senderos,
+  senderoVersions,
+} from "../db/schema";
 import { emitEvent } from "../shared/events";
+import type { SenderoNodeKind } from "../shared/types";
 
-const timestamp = "2026-09-10T00:00:00.000Z";
-const senderoId = "sendero-software-delivery";
-const versionId = `${senderoId}-v1`;
+const timestamp = "2026-09-11T00:00:00.000Z";
+
+type NodeDefinition = {
+  key: string;
+  kind: SenderoNodeKind;
+  label: string;
+  agentSlug?: string;
+  x: number;
+  y: number;
+};
+
+type EdgeDefinition = {
+  key: string;
+  source: string;
+  target: string;
+  sourceAgentSlug?: string;
+  name: string;
+  objective: string;
+};
+
+type SenderoDefinition = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  default?: boolean;
+  nodes: NodeDefinition[];
+  edges: EdgeDefinition[];
+};
+
+export function builtInSenderoSeedDir() {
+  return resolve(dirname(fileURLToPath(import.meta.url)), "./senderos");
+}
+
+function loadDefinitions(directory = builtInSenderoSeedDir()) {
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && extname(entry.name) === ".json")
+    .map(
+      (entry) =>
+        JSON.parse(
+          readFileSync(resolve(directory, entry.name), "utf8"),
+        ) as SenderoDefinition,
+    )
+    .sort(
+      (left, right) =>
+        Number(Boolean(right.default)) - Number(Boolean(left.default)),
+    );
+}
 
 export async function seedBuiltInSenderos(home?: string) {
   const db = openRuntimeDb(home);
   const agentRows = await db.select().from(agents);
-  const bySlug = new Map(agentRows.map((agent) => [agent.slug, agent]));
-  const required = ["spec-partner", "craftsman-lead", "tdd-craftsman", "mutation-tester", "judge"];
-  if (required.some((slug) => !bySlug.has(slug))) return null;
+  const agentsBySlug = new Map(agentRows.map((agent) => [agent.slug, agent]));
+  const seeded: string[] = [];
 
-  let created = false;
-  if (!(await db.select().from(senderos).where(eq(senderos.id, senderoId)))[0]) {
-    created = true;
-    await db.insert(senderos).values({ id: senderoId, slug: "software-delivery", name: "Verified software delivery", description: "A complete trail from clarified intent through implementation, validation, and judgment.", status: "active", currentVersion: 1, createdAt: timestamp, updatedAt: timestamp });
-    await db.insert(senderoVersions).values({ id: versionId, senderoId, version: 1, status: "published", createdAt: timestamp });
+  for (const definition of loadDefinitions()) {
+    const missingAgent = definition.nodes
+      .map((node) => node.agentSlug)
+      .find((slug) => slug && !agentsBySlug.has(slug));
+    if (missingAgent) {
+      throw new Error(
+        `Sendero ${definition.slug} references missing agent: ${missingAgent}`,
+      );
+    }
+
+    const versionId = `${definition.id}-v1`;
+    const existing = (
+      await db.select().from(senderos).where(eq(senderos.id, definition.id))
+    )[0];
+
+    if (!existing) {
+      await db.insert(senderos).values({
+        id: definition.id,
+        slug: definition.slug,
+        name: definition.name,
+        description: definition.description,
+        status: "active",
+        isDefault: definition.default ?? false,
+        currentVersion: 1,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      await emitEvent(db, "sendero.seeded", "sendero", definition.id, {
+        version: 1,
+      });
+    }
+
+    if (
+      !(
+        await db
+          .select()
+          .from(senderoVersions)
+          .where(eq(senderoVersions.id, versionId))
+      )[0]
+    ) {
+      await db.insert(senderoVersions).values({
+        id: versionId,
+        senderoId: definition.id,
+        version: 1,
+        status: "published",
+        createdAt: timestamp,
+      });
+    }
+
+    for (const node of definition.nodes) {
+      const id = `${versionId}-node-${node.key}`;
+      if (
+        (await db.select().from(senderoNodes).where(eq(senderoNodes.id, id)))[0]
+      )
+        continue;
+
+      await db.insert(senderoNodes).values({
+        id,
+        senderoVersionId: versionId,
+        agentId: node.agentSlug ? agentsBySlug.get(node.agentSlug)!.id : null,
+        kind: node.kind,
+        label: node.label,
+        positionX: node.x,
+        positionY: node.y,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+    }
+
+    for (const edge of definition.edges) {
+      const targetNode = definition.nodes.find(
+        (node) => node.key === edge.target,
+      );
+      if (!targetNode) {
+        throw new Error(
+          `Sendero ${definition.slug} has an invalid target: ${edge.target}`,
+        );
+      }
+      const edgeId = `${versionId}-edge-${edge.key}`;
+      if (
+        (
+          await db
+            .select()
+            .from(senderoEdges)
+            .where(eq(senderoEdges.id, edgeId))
+        )[0]
+      )
+        continue;
+
+      await db.insert(senderoEdges).values({
+        id: edgeId,
+        senderoVersionId: versionId,
+        sourceNodeId: `${versionId}-node-${edge.source}`,
+        targetNodeId: `${versionId}-node-${edge.target}`,
+        name: edge.name,
+        description: edge.objective,
+        transitionObjective: edge.objective,
+        conditionJson: "{}",
+        status: "active",
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+    }
+
+    seeded.push(definition.id);
   }
 
-  const definitions = [
-    ["start", null, "start", "Requested outcome", 60, 220],
-    ["spec", "spec-partner", "agent", "Clarify", 330, 220],
-    ["craft", "craftsman-lead", "agent", "Frame handoff", 600, 80],
-    ["tdd", "tdd-craftsman", "agent", "Implement", 870, 220],
-    ["mutation", "mutation-tester", "agent", "Stress test", 1140, 80],
-    ["judge", "judge", "agent", "Judge", 1410, 220],
-    ["end", null, "end", "Verified outcome", 1680, 220],
-  ] as const;
-  for (const [key, slug, kind, label, positionX, positionY] of definitions) {
-    const id = `${versionId}-node-${key}`;
-    if (!(await db.select().from(senderoNodes).where(eq(senderoNodes.id, id)))[0])
-      await db.insert(senderoNodes).values({ id, senderoVersionId: versionId, agentId: slug ? bySlug.get(slug)!.id : null, kind, label, positionX, positionY, createdAt: timestamp, updatedAt: timestamp });
-  }
-
-  const links = [
-    ["begin", "start", "spec", null, "Begin with a durable specification."],
-    ["spec-handoff", "spec", "craft", "spec-partner", "Hand the clarified outcome to the continuity steward."],
-    ["implementation", "craft", "tdd", "craftsman-lead", "Prepare a focused implementation handoff."],
-    ["validation", "tdd", "mutation", "tdd-craftsman", "Validate the implementation beyond the happy path."],
-    ["judgment", "mutation", "judge", "mutation-tester", "Submit evidence and residual risks for judgment."],
-    ["complete", "judge", "end", "judge", "Accept the verified outcome or return it for repair."],
-  ] as const;
-  for (const [key, source, target, sourceSlug, objective] of links) {
-    const transitionId = sourceSlug ? `${versionId}-transition-${key}` : null;
-    const sourceAgent = sourceSlug ? bySlug.get(sourceSlug)! : null;
-    const targetNode = definitions.find((item) => item[0] === target)!;
-    const targetAgent = targetNode[1] ? bySlug.get(targetNode[1])! : null;
-    if (transitionId && !(await db.select().from(agentTransitions).where(eq(agentTransitions.id, transitionId)))[0])
-      await db.insert(agentTransitions).values({ id: transitionId, sourceAgentId: sourceAgent!.id, targetAgentId: targetAgent?.id ?? null, name: key.replaceAll("-", " "), description: objective, status: "active", transitionObjective: objective, assignmentMetaJson: JSON.stringify({ senderoId, senderoVersionId: versionId }), createdAt: timestamp, updatedAt: timestamp });
-    const edgeId = `${versionId}-edge-${key}`;
-    if (!(await db.select().from(senderoEdges).where(eq(senderoEdges.id, edgeId)))[0])
-      await db.insert(senderoEdges).values({ id: edgeId, senderoVersionId: versionId, sourceNodeId: `${versionId}-node-${source}`, targetNodeId: `${versionId}-node-${target}`, transitionId, name: key.replaceAll("-", " "), description: objective, transitionObjective: objective, conditionJson: "{}", status: "active", createdAt: timestamp, updatedAt: timestamp });
-  }
-  if (created) await emitEvent(db, "sendero.seeded", "sendero", senderoId, { version: 1 });
-  return senderoId;
+  return seeded;
 }

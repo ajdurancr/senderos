@@ -1,17 +1,25 @@
-import { databaseConnectionFromEnvironment, listEvents, type GoalKind } from "@senderos/core";
+import {
+  databaseConnectionFromEnvironment,
+  listEvents,
+  type GoalKind,
+} from "@senderos/core";
 
-import { prepareStudioDatabase, senderosForStudio } from "../../server/senderos.server";
+import {
+  prepareStudioDatabase,
+  senderosForStudio,
+} from "../../server/senderos.server";
 
 export async function missionControlData() {
   await prepareStudioDatabase();
   const senderos = senderosForStudio();
-  const [overview, agents, transitions, senderoGraphs, events] = await Promise.all([
-    senderos.missionControl.overview(),
-    senderos.commands.agents.list(),
-    senderos.commands.agents.transitions(),
-    senderos.commands.senderos.graphs(),
-    listEvents({}),
-  ]);
+  const [overview, agents, transitions, senderoGraphs, events] =
+    await Promise.all([
+      senderos.missionControl.overview(),
+      senderos.commands.agents.list(),
+      senderos.commands.agents.transitions(),
+      senderos.commands.senderos.graphs(),
+      listEvents({}),
+    ]);
   const database = databaseConnectionFromEnvironment();
   const runtime = {
     database: {
@@ -43,9 +51,13 @@ export async function applyMissionControlAction(form: FormData) {
     });
   }
   if (intent === "start")
-    await senderos.missionControl.startGoal({ goalId: String(form.get("goalId")) });
+    await senderos.missionControl.startGoal({
+      goalId: String(form.get("goalId")),
+    });
   if (intent === "retry")
-    await senderos.missionControl.retryExecution({ goalId: String(form.get("goalId")) });
+    await senderos.missionControl.retryExecution({
+      goalId: String(form.get("goalId")),
+    });
   if (intent === "dispatch-plan") {
     const plan = await senderos.commands.plan();
     for (const item of plan) {
@@ -56,7 +68,9 @@ export async function applyMissionControlAction(form: FormData) {
     }
   }
   if (intent === "stop")
-    await senderos.missionControl.stopExecution({ runId: String(form.get("runId")) });
+    await senderos.missionControl.stopExecution({
+      runId: String(form.get("runId")),
+    });
   if (intent === "evidence")
     await senderos.commands.attempts.recordEvidence({
       attemptId: String(form.get("attemptId")),
@@ -68,9 +82,7 @@ export async function applyMissionControlAction(form: FormData) {
     await senderos.commands.attempts.review({
       attemptId: String(form.get("attemptId")),
       status: String(form.get("status")) as
-        | "approved"
-        | "changes_requested"
-        | "rejected",
+        "approved" | "changes_requested" | "rejected",
       reviewer: "Studio operator",
       rationale: String(form.get("rationale")) || undefined,
     });
@@ -80,8 +92,7 @@ export async function applyMissionControlAction(form: FormData) {
       name: String(form.get("name")),
       targetBranch: String(form.get("targetBranch")),
       integrationMode: String(form.get("integrationMode")) as
-        | "github_pr"
-        | "local_merge",
+        "github_pr" | "local_merge",
     });
   if (intent === "update-sendero-node-position")
     await senderos.commands.senderos.updateNodePosition({
@@ -90,18 +101,29 @@ export async function applyMissionControlAction(form: FormData) {
       positionY: Number(form.get("positionY")),
     });
   if (intent === "update-sendero-layout") {
-    const positions = JSON.parse(String(form.get("positions"))) as Record<string, { x: number; y: number }>;
+    const positions = JSON.parse(String(form.get("positions"))) as Record<
+      string,
+      { x: number; y: number }
+    >;
     for (const [id, point] of Object.entries(positions))
-      await senderos.commands.senderos.updateNodePosition({ id, positionX: point.x, positionY: point.y });
+      await senderos.commands.senderos.updateNodePosition({
+        id,
+        positionX: point.x,
+        positionY: point.y,
+      });
   }
   if (intent === "update-sendero-node")
-    await senderos.commands.senderos.updateNode({ id: String(form.get("nodeId")), label: String(form.get("label")) });
+    await senderos.commands.senderos.updateNode({
+      id: String(form.get("nodeId")),
+      label: String(form.get("label")),
+    });
   if (intent === "update-sendero-edge")
     await senderos.commands.senderos.updateEdge({
       id: String(form.get("edgeId")),
       name: String(form.get("name")),
       description: String(form.get("description")),
       transitionObjective: String(form.get("transitionObjective")),
-      status: String(form.get("status")) as "draft" | "active" | "disabled" | "archived",
+      status: String(form.get("status")) as
+        "draft" | "active" | "disabled" | "archived",
     });
 }

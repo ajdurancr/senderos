@@ -30,6 +30,9 @@ export const senderos = sqliteTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     status: text("status").notNull(),
+    isDefault: integer("is_default", { mode: "boolean" })
+      .notNull()
+      .default(false),
     currentVersion: integer("current_version").notNull().default(1),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
@@ -47,7 +50,10 @@ export const senderoVersions = sqliteTable(
     createdAt: text("created_at").notNull(),
   },
   (table) => [
-    uniqueIndex("idx_sendero_versions_number").on(table.senderoId, table.version),
+    uniqueIndex("idx_sendero_versions_number").on(
+      table.senderoId,
+      table.version,
+    ),
   ],
 );
 
@@ -74,7 +80,6 @@ export const senderoEdges = sqliteTable(
     senderoVersionId: text("sendero_version_id").notNull(),
     sourceNodeId: text("source_node_id").notNull(),
     targetNodeId: text("target_node_id").notNull(),
-    transitionId: text("transition_id"),
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     transitionObjective: text("transition_objective").notNull(),
@@ -111,7 +116,6 @@ export const runs = sqliteTable("runs", {
   baseBranch: text("base_branch"),
   maxAttempts: integer("max_attempts").notNull().default(3),
   senderoVersionId: text("sendero_version_id"),
-  senderoSnapshotJson: text("sendero_snapshot_json").notNull().default("{}"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

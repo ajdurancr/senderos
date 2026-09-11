@@ -6,10 +6,10 @@ import { seedBuiltInSenderos } from "./seed-senderos";
 
 test("built-in Sendero seeding is idempotent", async () => {
   const home = await initHome();
-  await expect(seedBuiltInSenderos(home)).resolves.toBe("sendero-software-delivery");
-  await expect(seedBuiltInSenderos(home)).resolves.toBe("sendero-software-delivery");
+  await expect(seedBuiltInSenderos(home)).resolves.toHaveLength(4);
+  await expect(seedBuiltInSenderos(home)).resolves.toHaveLength(4);
   const graphs = await listSenderoGraphs(home);
-  expect(graphs).toHaveLength(1);
-  expect(graphs[0]?.nodes).toHaveLength(7);
-  expect(graphs[0]?.edges).toHaveLength(6);
+  expect(graphs).toHaveLength(4);
+  expect(graphs.every((graph) => graph.nodes.length === 7)).toBe(true);
+  expect(graphs.every((graph) => graph.edges.length === 6)).toBe(true);
 });
