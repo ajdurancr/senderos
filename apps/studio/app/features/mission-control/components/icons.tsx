@@ -18,7 +18,7 @@ const paths: Record<string, () => React.ReactNode> = {
 
 export function Icon({ name, className = "" }: { name: string; className?: string }) {
   const draw = paths[name];
-  return <svg className={`ui-icon ${className}`} viewBox="0 0 24 24" aria-hidden="true">{draw?.()}</svg>;
+  return <svg className={`ui-icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{draw?.()}</svg>;
 }
 
 export function SenderosMark() {
