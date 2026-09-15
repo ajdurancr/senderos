@@ -1,6 +1,5 @@
+import { getSenderoGraph, listSenderos } from "../../commands/senderos";
 import type { SenderoGraph } from "../../shared/types";
-import { getSenderoGraph } from "./get-graph";
-import { listSenderos } from "./list";
 
 export async function listSenderoGraphs(home?: string) {
   const records = await listSenderos(home);

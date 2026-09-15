@@ -17,7 +17,7 @@ export async function missionControlData() {
       senderos.missionControl.overview(),
       senderos.commands.agents.list(),
       senderos.commands.agents.transitions(),
-      senderos.commands.senderos.graphs(),
+      senderos.missionControl.senderos.listGraphs(),
       listEvents({}),
     ]);
   const database = databaseConnectionFromEnvironment();
@@ -95,7 +95,7 @@ export async function applyMissionControlAction(form: FormData) {
         "github_pr" | "local_merge",
     });
   if (intent === "update-sendero-node-position")
-    await senderos.commands.senderos.updateNodePosition({
+    await senderos.missionControl.senderos.updateNodePosition({
       id: String(form.get("nodeId")),
       positionX: Number(form.get("positionX")),
       positionY: Number(form.get("positionY")),
@@ -106,19 +106,19 @@ export async function applyMissionControlAction(form: FormData) {
       { x: number; y: number }
     >;
     for (const [id, point] of Object.entries(positions))
-      await senderos.commands.senderos.updateNodePosition({
+      await senderos.missionControl.senderos.updateNodePosition({
         id,
         positionX: point.x,
         positionY: point.y,
       });
   }
   if (intent === "update-sendero-node")
-    await senderos.commands.senderos.updateNode({
+    await senderos.commands.senderos.nodes.update({
       id: String(form.get("nodeId")),
       label: String(form.get("label")),
     });
   if (intent === "update-sendero-edge")
-    await senderos.commands.senderos.updateEdge({
+    await senderos.commands.senderos.edges.update({
       id: String(form.get("edgeId")),
       name: String(form.get("name")),
       description: String(form.get("description")),

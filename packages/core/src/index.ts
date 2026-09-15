@@ -39,18 +39,19 @@ import {
   recordAttemptEvidence,
   reviewRunAttempt,
   getSenderoGraph,
-  listSenderoGraphs,
+  listSenderoVersions,
   listSenderos,
-  updateSenderoNodePosition,
   updateSenderoNode,
   updateSenderoEdge,
 } from './commands';
 import {
+  listSenderoGraphs,
   missionControlGoal,
   missionControlOverview,
   missionControlRetryExecution,
   missionControlStartGoal,
   missionControlStopExecution,
+  updateSenderoNodePosition,
 } from './mission-control';
 
 export function createSenderos(input: { home?: string } = {}) {
@@ -99,17 +100,28 @@ export function createSenderos(input: { home?: string } = {}) {
       },
       senderos: {
         list: () => listSenderos(home),
-        graphs: () => listSenderoGraphs(home),
-        graph: (id: string, version?: number) => getSenderoGraph(id, version, home),
-        updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
-          updateSenderoNodePosition({ ...value, home }),
-        updateNode: (value: Omit<Parameters<typeof updateSenderoNode>[0], 'home'>) => updateSenderoNode({ ...value, home }),
-        updateEdge: (value: Omit<Parameters<typeof updateSenderoEdge>[0], 'home'>) => updateSenderoEdge({ ...value, home }),
+        get: (id: string, version?: number) => getSenderoGraph(id, version, home),
+        versions: {
+          list: () => listSenderoVersions(home),
+        },
+        nodes: {
+          update: (value: Omit<Parameters<typeof updateSenderoNode>[0], 'home'>) =>
+            updateSenderoNode({ ...value, home }),
+        },
+        edges: {
+          update: (value: Omit<Parameters<typeof updateSenderoEdge>[0], 'home'>) =>
+            updateSenderoEdge({ ...value, home }),
+        },
       },
       plan: () => plan({ home }),
       status: () => status(home),
     },
     missionControl: {
+      senderos: {
+        listGraphs: () => listSenderoGraphs(home),
+        updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
+          updateSenderoNodePosition({ ...value, home }),
+      },
       overview: () => missionControlOverview(home),
       goal: (value: { goalId: string }) =>
         missionControlGoal({ ...value, home }),

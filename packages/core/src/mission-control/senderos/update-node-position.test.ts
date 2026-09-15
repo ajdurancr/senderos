@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { initHome } from "../../test-support/runtime";
-import { getSenderoGraph } from "./get-graph";
+import { getSenderoGraph } from "../../commands/senderos";
 import { updateSenderoNodePosition } from "./update-node-position";
 
 test("persists rounded canvas coordinates", async () => {

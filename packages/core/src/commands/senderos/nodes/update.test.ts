@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { initHome } from "../../test-support/runtime";
-import { getSenderoGraph } from "./get-graph";
-import { updateSenderoNode } from "./update-node";
+import { initHome } from "../../../test-support/runtime";
+import { getSenderoGraph } from "../get-graph";
+import { updateSenderoNode } from "./update";
 
 test("updates Sendero node configuration", async () => {
   const home = await initHome();

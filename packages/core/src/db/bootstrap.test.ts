@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
-import { listAgents, listSenderoGraphs } from "../commands";
+import { listAgents } from "../commands";
+import { listSenderoGraphs } from "../mission-control/senderos";
 import { tempHome } from "../test-support/runtime";
 import { prepareSharedDatabase } from "./bootstrap";
 

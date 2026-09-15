@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 
-import { openRuntimeDb } from "../../db/client";
-import { senderoEdges } from "../../db/schema";
-import { emitEvent } from "../../shared/events";
-import { now } from "../../shared/ids";
-import type { AgentTransitionStatus } from "../../shared/types";
+import { openRuntimeDb } from "../../../db/client";
+import { senderoEdges } from "../../../db/schema";
+import { emitEvent } from "../../../shared/events";
+import { now } from "../../../shared/ids";
+import type { AgentTransitionStatus } from "../../../shared/types";
 
 export async function updateSenderoEdge(input: {
   id: string;

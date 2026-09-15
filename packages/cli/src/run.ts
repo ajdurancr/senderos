@@ -11,6 +11,7 @@ import { handleRun } from './commands/run';
 import { handleTransition } from './commands/transition';
 import { handleAttempt } from './commands/attempt';
 import { handleSystemCommand } from './commands/system';
+import { handleSendero } from './commands/sendero';
 import { resolveHelp } from './help';
 
 export async function runCli(argv = process.argv.slice(2)) {
@@ -50,6 +51,9 @@ export async function runCli(argv = process.argv.slice(2)) {
         break;
       case 'transition':
         result = await handleTransition(sub, positionals, options, home);
+        break;
+      case 'sendero':
+        result = await handleSendero(sub, positionals, options, home);
         break;
       case 'goal':
         result = await handleGoal(sub, positionals, options, home);

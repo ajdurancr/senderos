@@ -18,6 +18,7 @@ The `senderos` CLI is the primary public operating surface. It is intentionally 
 | `goal` | Create and manage durable outcomes | Except `list`, `show` |
 | `agent` | Inspect persisted agent definitions | No |
 | `transition` | Create and inspect allowed agent handoffs | `create` only |
+| `sendero` | Inspect versioned Senderos and manage node or edge configuration | `node update`, `edge update` |
 | `plan` | Return the next dispatchable work | No |
 | `run` | Dispatch, inspect, or cancel logical executions | `dispatch`, `cancel` |
 | `attempt` | Inspect and update concrete executions | `update` |

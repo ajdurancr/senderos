@@ -8,12 +8,14 @@ import { createProjectFixture, initHome } from "../../test-support/runtime";
 import { listEvents } from "../../shared/events";
 import {
   getSenderoGraph,
-  listSenderoGraphs,
   listSenderoVersions,
   updateSenderoEdge,
   updateSenderoNode,
-  updateSenderoNodePosition,
 } from ".";
+import {
+  listSenderoGraphs,
+  updateSenderoNodePosition,
+} from "../../mission-control/senderos";
 
 test("built-in Sendero is connected, versioned, and reusable", async () => {
   const home = await initHome();

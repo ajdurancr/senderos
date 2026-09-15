@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { initHome } from "../../test-support/runtime";
-import { listSenderoVersions } from "./list-versions";
+import { initHome } from "../../../test-support/runtime";
+import { listSenderoVersions } from "./list";
 
 test("lists published Sendero versions", async () => {
   const versions = await listSenderoVersions(await initHome());

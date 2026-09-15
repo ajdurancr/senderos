@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { listSenderoGraphs } from "../commands/senderos";
+import { listSenderoGraphs } from "../mission-control/senderos";
 import { initHome } from "../test-support/runtime";
 import { seedBuiltInSenderos } from "./seed-senderos";
 

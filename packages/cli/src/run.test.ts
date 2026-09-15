@@ -45,6 +45,23 @@ describe('runCli', () => {
     expect(logs.join('\n')).toContain('spec-partner');
   });
 
+  test('sendero command family routes through runCli', async () => {
+    const home = tempHome();
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+
+    try {
+      await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['sendero', 'show', 'software-delivery', '--home', home]);
+    } finally {
+      console.log = original;
+    }
+
+    expect(logs.join('\n')).toContain('software-delivery');
+    expect(logs.join('\n')).toContain('nodes');
+  });
+
   test('help output includes agent descriptions by default and can omit them', async () => {
     const logs: string[] = [];
     const original = console.log;
