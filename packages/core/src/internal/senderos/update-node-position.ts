@@ -14,16 +14,9 @@ export async function updateSenderoNodePosition(input: {
   const node = (
     await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id))
   )[0];
-
   if (!node) throw new Error(`Sendero node not found: ${input.id}`);
-
   const positionX = Math.round(input.positionX);
   const positionY = Math.round(input.positionY);
-  await db
-    .update(senderoNodes)
-    .set({ positionX, positionY, updatedAt: now() })
-    .where(eq(senderoNodes.id, input.id));
-  return (
-    await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id))
-  )[0];
+  await db.update(senderoNodes).set({ positionX, positionY, updatedAt: now() }).where(eq(senderoNodes.id, input.id));
+  return (await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id)))[0];
 }

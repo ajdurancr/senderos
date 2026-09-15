@@ -4,6 +4,4 @@ export * from "./agents/add";
 export * from "./agents/remove";
 export * from "./connections/connect";
 export * from "./connections/disconnect";
-export * from "./edges/update";
-export * from "./nodes/update";
 export * from "./versions/list";

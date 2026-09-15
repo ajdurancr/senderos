@@ -4,7 +4,7 @@ import { senderoEdges, senderoNodes } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { now, randomId } from "../../../shared/ids";
 import { getSenderoGraph } from "../get-graph";
-import { resolveSenderoAgentNode } from "../resolve-node";
+import { resolveSenderoAgentNode } from "../../../internal/senderos/resolve-node";
 
 export async function removeAgentFromSendero(input: { senderoId: string; agentId: string; home?: string }) {
   const graph = await getSenderoGraph(input.senderoId, undefined, input.home);

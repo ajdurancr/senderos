@@ -3,7 +3,7 @@ import { senderoEdges } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { now, randomId } from "../../../shared/ids";
 import { getSenderoGraph } from "../get-graph";
-import { resolveSenderoAgentNode } from "../resolve-node";
+import { resolveSenderoAgentNode } from "../../../internal/senderos/resolve-node";
 
 export async function connectSenderoAgents(input: {
   senderoId: string; from: string; to: string; home?: string;

@@ -1,5 +1,5 @@
-import { getAgent } from "../agents/get";
-import { getAgentBySlug } from "../agents/get-by-slug";
+import { getAgent } from "../../commands/agents/get";
+import { getAgentBySlug } from "../../commands/agents/get-by-slug";
 import type { SenderoGraph, SenderoNodeRecord } from "../../shared/types";
 
 export async function resolveSenderoNode(

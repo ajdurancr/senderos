@@ -41,13 +41,14 @@ import {
   getSenderoGraph,
   listSenderoVersions,
   listSenderos,
-  updateSenderoNode,
-  updateSenderoEdge,
   addAgentToSendero,
   removeAgentFromSendero,
   connectSenderoAgents,
   disconnectSenderoAgents,
 } from './commands';
+import { updateSenderoEdge } from './internal/senderos/update-edge';
+import { updateSenderoNode } from './internal/senderos/update-node';
+import { updateSenderoNodePosition } from './internal/senderos/update-node-position';
 import {
   listSenderoGraphs,
   missionControlGoal,
@@ -55,7 +56,6 @@ import {
   missionControlRetryExecution,
   missionControlStartGoal,
   missionControlStopExecution,
-  updateSenderoNodePosition,
 } from './mission-control';
 
 export function createSenderos(input: { home?: string } = {}) {
@@ -108,14 +108,6 @@ export function createSenderos(input: { home?: string } = {}) {
         versions: {
           list: () => listSenderoVersions(home),
         },
-        nodes: {
-          update: (value: Omit<Parameters<typeof updateSenderoNode>[0], 'home'>) =>
-            updateSenderoNode({ ...value, home }),
-        },
-        edges: {
-          update: (value: Omit<Parameters<typeof updateSenderoEdge>[0], 'home'>) =>
-            updateSenderoEdge({ ...value, home }),
-        },
         agents: {
           add: (value: Omit<Parameters<typeof addAgentToSendero>[0], 'home'>) =>
             addAgentToSendero({ ...value, home }),
@@ -133,6 +125,10 @@ export function createSenderos(input: { home?: string } = {}) {
     missionControl: {
       senderos: {
         listGraphs: () => listSenderoGraphs(home),
+        updateNode: (value: Omit<Parameters<typeof updateSenderoNode>[0], 'home'>) =>
+          updateSenderoNode({ ...value, home }),
+        updateEdge: (value: Omit<Parameters<typeof updateSenderoEdge>[0], 'home'>) =>
+          updateSenderoEdge({ ...value, home }),
         updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
           updateSenderoNodePosition({ ...value, home }),
       },

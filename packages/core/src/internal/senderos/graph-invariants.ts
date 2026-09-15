@@ -1,4 +1,4 @@
-import type { SenderoEdgeRecord, SenderoGraph } from "../../../shared/types";
+import type { SenderoEdgeRecord, SenderoGraph } from "../../shared/types";
 
 export function assertConnectedSendero(
   graph: SenderoGraph,

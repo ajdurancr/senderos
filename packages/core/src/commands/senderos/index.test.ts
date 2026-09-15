@@ -9,13 +9,13 @@ import { listEvents } from "../../shared/events";
 import {
   getSenderoGraph,
   listSenderoVersions,
-  updateSenderoEdge,
-  updateSenderoNode,
 } from ".";
+import { updateSenderoEdge } from "../../internal/senderos/update-edge";
+import { updateSenderoNode } from "../../internal/senderos/update-node";
 import {
   listSenderoGraphs,
-  updateSenderoNodePosition,
 } from "../../mission-control/senderos";
+import { updateSenderoNodePosition } from "../../internal/senderos/update-node-position";
 
 test("built-in Sendero is connected, versioned, and reusable", async () => {
   const home = await initHome();

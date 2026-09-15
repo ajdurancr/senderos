@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 
-import { openRuntimeDb } from "../../../db/client";
-import { senderoNodes } from "../../../db/schema";
-import { emitEvent } from "../../../shared/events";
-import { now } from "../../../shared/ids";
+import { openRuntimeDb } from "../../db/client";
+import { senderoNodes } from "../../db/schema";
+import { emitEvent } from "../../shared/events";
+import { now } from "../../shared/ids";
 
 export async function updateSenderoNode(input: {
   id: string;

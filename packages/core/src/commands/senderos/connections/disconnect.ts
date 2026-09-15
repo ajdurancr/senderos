@@ -3,8 +3,8 @@ import { openRuntimeDb } from "../../../db/client";
 import { senderoEdges } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { getSenderoGraph } from "../get-graph";
-import { resolveSenderoAgentNode } from "../resolve-node";
-import { assertConnectedSendero } from "./graph-invariants";
+import { assertConnectedSendero } from "../../../internal/senderos/graph-invariants";
+import { resolveSenderoAgentNode } from "../../../internal/senderos/resolve-node";
 
 export async function disconnectSenderoAgents(input: { senderoId: string; from: string; to: string; home?: string }) {
   const graph = await getSenderoGraph(input.senderoId, undefined, input.home);

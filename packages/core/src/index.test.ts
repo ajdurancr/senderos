@@ -12,6 +12,6 @@ test('createSenderos scopes the public API to one Senderos home', async () => {
   expect(await senderos.commands.senderos.versions.list()).toHaveLength(4);
   expect((await senderos.commands.senderos.get(graph!.sendero.id))?.version.id).toBe(graph!.version.id);
   await senderos.missionControl.senderos.updateNodePosition({ id: graph!.nodes[0]!.id, positionX: 80, positionY: 90 });
-  await senderos.commands.senderos.nodes.update({ id: graph!.nodes[0]!.id, label: 'Start here' });
-  await senderos.commands.senderos.edges.update({ id: graph!.edges[0]!.id, name: 'begin here' });
+  await senderos.missionControl.senderos.updateNode({ id: graph!.nodes[0]!.id, label: 'Start here' });
+  await senderos.missionControl.senderos.updateEdge({ id: graph!.edges[0]!.id, name: 'begin here' });
 });

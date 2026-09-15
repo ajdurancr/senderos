@@ -113,12 +113,12 @@ export async function applyMissionControlAction(form: FormData) {
       });
   }
   if (intent === "update-sendero-node")
-    await senderos.commands.senderos.nodes.update({
+    await senderos.missionControl.senderos.updateNode({
       id: String(form.get("nodeId")),
       label: String(form.get("label")),
     });
   if (intent === "update-sendero-edge")
-    await senderos.commands.senderos.edges.update({
+    await senderos.missionControl.senderos.updateEdge({
       id: String(form.get("edgeId")),
       name: String(form.get("name")),
       description: String(form.get("description")),
