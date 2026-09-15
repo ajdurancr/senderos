@@ -4,7 +4,7 @@ import { listSenderoVersions } from "./list";
 
 test("lists published Sendero versions", async () => {
   const versions = await listSenderoVersions(await initHome());
-  expect(versions).toHaveLength(4);
+  expect(versions).toHaveLength(5);
   expect(versions.every((version) => version.status === "published")).toBe(
     true,
   );

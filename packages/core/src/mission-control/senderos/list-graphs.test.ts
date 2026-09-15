@@ -9,5 +9,6 @@ test("lists one current graph for every Sendero", async () => {
     "dependency-upgrade",
     "production-hotfix",
     "security-hardening",
+    "timed-wait-demo",
   ]);
 });

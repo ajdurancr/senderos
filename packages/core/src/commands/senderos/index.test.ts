@@ -24,7 +24,7 @@ test("built-in Sendero is connected, versioned, and reusable", async () => {
   );
   expect(graph?.sendero.slug).toBe("software-delivery");
   expect(graph?.version.status).toBe("published");
-  expect(await listSenderoVersions(home)).toHaveLength(4);
+  expect(await listSenderoVersions(home)).toHaveLength(5);
   expect(graph?.nodes).toHaveLength(7);
   expect(graph?.edges).toHaveLength(6);
   expect(graph?.nodes.filter((node) => node.kind === "agent")).toHaveLength(5);

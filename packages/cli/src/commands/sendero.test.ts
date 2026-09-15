@@ -6,8 +6,8 @@ import { handleSendero } from './sendero';
 
 test('sendero CLI exposes intent-level graph actions', async () => {
   const home = await initHome();
-  expect(await handleSendero('list', [], {}, home)).toHaveLength(4);
-  expect(await handleSendero('version', ['sendero', 'version', 'list'], {}, home)).toHaveLength(4);
+  expect(await handleSendero('list', [], {}, home)).toHaveLength(5);
+  expect(await handleSendero('version', ['sendero', 'version', 'list'], {}, home)).toHaveLength(5);
 
   const added = (await handleSendero(
     'agent',

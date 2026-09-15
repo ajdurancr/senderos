@@ -120,7 +120,8 @@ jobs:
             sendero-software-delivery \
             sendero-production-hotfix \
             sendero-security-hardening \
-            sendero-dependency-upgrade; do
+            sendero-dependency-upgrade \
+            sendero-timed-wait-demo; do
             curl --fail --silent "http://127.0.0.1:5173/senderos/$sendero" > /tmp/sendero.html
             test "$(grep --only-matching 'draggable-node' /tmp/sendero.html | wc --lines)" -eq 7
             test "$(grep --only-matching 'edge-hit-target' /tmp/sendero.html | wc --lines)" -eq 6

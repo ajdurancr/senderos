@@ -1,0 +1,14 @@
+{
+  "id": "agent-wait-one-minute",
+  "slug": "wait-one-minute",
+  "name": "Wait One Minute",
+  "description": "Demo agent that waits exactly one minute before completing.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Wait One Minute\n\nWait for exactly 1 minute. Do not perform any other work. After the full minute has elapsed, report that the 1-minute wait completed successfully.\n",
+  "defaultGoal": "Wait exactly 1 minute, then confirm completion.",
+  "defaultMetaJson": "{\"builtIn\":true,\"demo\":true,\"waitMinutes\":1}",
+  "createdAt": "2026-09-15T00:00:00.000Z",
+  "updatedAt": "2026-09-15T00:00:00.000Z"
+}

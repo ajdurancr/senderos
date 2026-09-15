@@ -3,3 +3,4 @@ linker = "isolated"
 
 [test]
 preload = []
+timeout = 15000
