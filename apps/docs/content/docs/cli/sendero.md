@@ -10,19 +10,24 @@ definitions. Read operations accept either a Sendero ID or its stable slug.
 senderos sendero list
 senderos sendero show software-delivery
 senderos sendero show software-delivery --version 1
-senderos sendero versions
+senderos sendero version list
 ```
 
-Node and edge changes are grouped by the entity they manage:
+The mutation surface describes intent rather than database records:
 
 ```bash
-senderos sendero node update <node-id> --label "Clarify intent"
-senderos sendero edge update <edge-id> \
-  --name "ready for implementation" \
-  --description "The specification is approved." \
-  --objective "Implement the approved specification." \
-  --status active
+senderos sendero agent add software-delivery incident-responder --label "Respond"
+senderos sendero connect software-delivery \
+  --from mutation-tester \
+  --to incident-responder \
+  --name "escalate" \
+  --objective "Respond to the discovered issue."
+senderos sendero disconnect software-delivery \
+  --from mutation-tester \
+  --to incident-responder
+senderos sendero agent remove software-delivery incident-responder
 ```
 
-Canvas coordinates are not part of this command family. They are presentation
-state owned by Mission Control and are persisted through its dedicated API.
+References may be agent slugs, agent IDs, node IDs, labels, or the `start` and
+`end` boundary names. Removing an agent also removes its incident connections.
+Canvas coordinates and raw node/edge updates are not exposed by this CLI.

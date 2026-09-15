@@ -1,40 +1,53 @@
 import { expect, test } from 'bun:test';
-import type { SenderoGraph } from '@senderos/core';
+import type { SenderoGraph, SenderoNodeRecord } from '@senderos/core';
 
 import { initHome } from '../../../core/src/test-support/runtime';
 import { handleSendero } from './sendero';
 
-test('sendero commands expose business operations without canvas layout mutations', async () => {
+test('sendero CLI exposes intent-level graph actions', async () => {
   const home = await initHome();
-  const senderos = await handleSendero('list', [], {}, home);
-  expect(senderos).toHaveLength(4);
+  expect(await handleSendero('list', [], {}, home)).toHaveLength(4);
+  expect(await handleSendero('version', ['sendero', 'version', 'list'], {}, home)).toHaveLength(4);
+
+  const added = (await handleSendero(
+    'agent',
+    ['sendero', 'agent', 'add', 'software-delivery', 'incident-responder'],
+    { label: 'Respond' },
+    home,
+  )) as SenderoNodeRecord;
+  expect(added).toMatchObject({ label: 'Respond' });
+
+  await expect(
+    handleSendero(
+      'connect',
+      ['sendero', 'connect', 'software-delivery'],
+      { from: 'mutation-tester', to: 'incident-responder', name: 'escalate', objective: 'Respond to the discovered issue.' },
+      home,
+    ),
+  ).resolves.toMatchObject({ name: 'escalate' });
+
+  await expect(
+    handleSendero(
+      'disconnect',
+      ['sendero', 'disconnect', 'software-delivery'],
+      { from: 'mutation-tester', to: 'incident-responder' },
+      home,
+    ),
+  ).resolves.toMatchObject({ name: 'escalate' });
+
+  const removed = await handleSendero(
+    'agent',
+    ['sendero', 'agent', 'remove', 'software-delivery', 'incident-responder'],
+    {},
+    home,
+  );
+  expect(removed).toMatchObject({ removedConnections: 0 });
 
   const graph = (await handleSendero(
     'show',
     ['sendero', 'show', 'software-delivery'],
-    { version: '1' },
+    {},
     home,
-  )) as SenderoGraph | null;
-  expect(graph?.version.version).toBe(1);
-
-  const versions = await handleSendero('versions', [], {}, home);
-  expect(versions).toHaveLength(4);
-
-  await expect(
-    handleSendero(
-      'node',
-      ['sendero', 'node', 'update', graph!.nodes[0]!.id],
-      { label: 'Begin' },
-      home,
-    ),
-  ).resolves.toMatchObject({ label: 'Begin' });
-
-  await expect(
-    handleSendero(
-      'edge',
-      ['sendero', 'edge', 'update', graph!.edges[0]!.id],
-      { name: 'continue' },
-      home,
-    ),
-  ).resolves.toMatchObject({ name: 'continue' });
+  )) as SenderoGraph;
+  expect(graph.nodes.some((node) => node.agentId === added.agentId)).toBe(false);
 });

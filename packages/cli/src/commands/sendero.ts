@@ -1,74 +1,67 @@
 import {
+  addAgentToSendero,
+  connectSenderoNodes,
+  disconnectSenderoNodes,
   getSenderoGraph,
   listSenderos,
   listSenderoVersions,
-  updateSenderoEdge,
-  updateSenderoNode,
-  type AgentTransitionStatus,
+  removeAgentFromSendero,
 } from '@senderos/core';
 
 import type { CliOptionValue } from '../args';
 import { requirePositional } from '../shared';
 
-const senderoNodeHelp = {
-  command: 'node',
-  summary: 'Manage nodes in a Sendero version.',
-  usage: ['senderos sendero node update <node-id> [--label <label>]'],
-  subcommands: [
-    {
-      command: 'update',
-      summary: 'Update the business configuration of a Sendero node.',
-      usage: ['senderos sendero node update <node-id> [--label <label>]'],
-    },
-  ],
-};
-
-const senderoEdgeHelp = {
-  command: 'edge',
-  summary: 'Manage edges in a Sendero version.',
-  usage: [
-    'senderos sendero edge update <edge-id> [--name <name>] [--description <description>] [--objective <objective>] [--status <status>]',
-  ],
-  subcommands: [
-    {
-      command: 'update',
-      summary: 'Update the business configuration of a Sendero edge.',
-      usage: [
-        'senderos sendero edge update <edge-id> [--name <name>] [--description <description>] [--objective <objective>] [--status <status>]',
-      ],
-    },
-  ],
-};
-
 export const senderoCommandHelp = {
   command: 'sendero',
-  summary: 'Inspect and manage versioned Senderos.',
+  summary: 'Inspect and change versioned Senderos through intent-level actions.',
   agentDescription:
-    'Use this command to inspect Sendero definitions and change node or edge business configuration. Canvas layout is intentionally managed by Mission Control, not this CLI.',
-  usage: ['senderos sendero <list|show|versions|node|edge> ...'],
+    'Use these commands to express graph intent. Refer to agents by slug or ID and to boundary nodes as start or end. Do not attempt low-level node or edge updates.',
+  usage: ['senderos sendero <list|show|version|agent|connect|disconnect> ...'],
   subcommands: [
-    {
-      command: 'list',
-      summary: 'List Senderos.',
-      usage: ['senderos sendero list'],
-    },
+    { command: 'list', summary: 'List Senderos.', usage: ['senderos sendero list'] },
     {
       command: 'show',
-      summary: 'Show one Sendero graph.',
+      summary: 'Show one Sendero graph and its stable node and connection IDs.',
       usage: ['senderos sendero show <sendero-id-or-slug> [--version <number>]'],
     },
     {
-      command: 'versions',
-      summary: 'List persisted Sendero versions.',
-      usage: ['senderos sendero versions'],
+      command: 'version',
+      summary: 'Inspect Sendero versions.',
+      usage: ['senderos sendero version list'],
+      subcommands: [
+        { command: 'list', summary: 'List persisted Sendero versions.', usage: ['senderos sendero version list'] },
+      ],
     },
-    senderoNodeHelp,
-    senderoEdgeHelp,
+    {
+      command: 'agent',
+      summary: 'Add or remove an agent from a Sendero.',
+      usage: [
+        'senderos sendero agent add <sendero-id-or-slug> <agent-id-or-slug> [--label <label>]',
+        'senderos sendero agent remove <sendero-id-or-slug> <agent-id-or-slug>',
+      ],
+      subcommands: [
+        { command: 'add', summary: 'Add an existing agent to a Sendero.', usage: ['senderos sendero agent add <sendero> <agent> [--label <label>]'] },
+        { command: 'remove', summary: 'Remove an agent and its connections from a Sendero.', usage: ['senderos sendero agent remove <sendero> <agent>'] },
+      ],
+    },
+    {
+      command: 'connect',
+      summary: 'Connect two nodes in a Sendero.',
+      usage: ['senderos sendero connect <sendero> --from <node-or-agent> --to <node-or-agent> --name <name> --objective <objective>'],
+    },
+    {
+      command: 'disconnect',
+      summary: 'Remove the connection between two Sendero nodes.',
+      usage: ['senderos sendero disconnect <sendero> --from <node-or-agent> --to <node-or-agent>'],
+    },
   ],
 };
 
-function optionalString(value: CliOptionValue | undefined) {
-  return typeof value === 'string' ? value : undefined;
+function option(options: Record<string, CliOptionValue>, name: string, required = false) {
+  const value = options[name];
+  if (typeof value === 'string') return value;
+  if (required) throw new Error(`Missing required option: --${name}`);
+  return undefined;
 }
 
 export async function handleSendero(
@@ -79,37 +72,42 @@ export async function handleSendero(
 ) {
   switch (subcommand) {
     case 'list':
-      return await listSenderos(home);
+      return listSenderos(home);
     case 'show': {
-      const versionValue = optionalString(options.version);
-      const version = versionValue === undefined ? undefined : Number(versionValue);
-      if (version !== undefined && !Number.isInteger(version)) {
+      const rawVersion = option(options, 'version');
+      const version = rawVersion === undefined ? undefined : Number(rawVersion);
+      if (version !== undefined && !Number.isInteger(version))
         throw new Error('Sendero version must be an integer');
-      }
-      return await getSenderoGraph(
-        requirePositional(positionals[2], 'sendero id or slug'),
-        version,
-        home,
-      );
+      return getSenderoGraph(requirePositional(positionals[2], 'sendero id or slug'), version, home);
     }
-    case 'versions':
-      return await listSenderoVersions(home);
-    case 'node':
-      if (positionals[2] !== 'update') throw new Error('Unknown sendero node action');
-      return await updateSenderoNode({
+    case 'version':
+      if (positionals[2] !== 'list') throw new Error('Unknown sendero version action');
+      return listSenderoVersions(home);
+    case 'agent': {
+      const action = positionals[2];
+      const senderoId = requirePositional(positionals[3], 'sendero id or slug');
+      const agentId = requirePositional(positionals[4], 'agent id or slug');
+      if (action === 'add')
+        return addAgentToSendero({ senderoId, agentId, label: option(options, 'label'), home });
+      if (action === 'remove') return removeAgentFromSendero({ senderoId, agentId, home });
+      throw new Error('Unknown sendero agent action');
+    }
+    case 'connect':
+      return connectSenderoNodes({
+        senderoId: requirePositional(positionals[2], 'sendero id or slug'),
+        from: option(options, 'from', true)!,
+        to: option(options, 'to', true)!,
+        name: option(options, 'name', true)!,
+        objective: option(options, 'objective', true)!,
+        description: option(options, 'description'),
         home,
-        id: requirePositional(positionals[3], 'sendero node id'),
-        label: optionalString(options.label),
       });
-    case 'edge':
-      if (positionals[2] !== 'update') throw new Error('Unknown sendero edge action');
-      return await updateSenderoEdge({
+    case 'disconnect':
+      return disconnectSenderoNodes({
+        senderoId: requirePositional(positionals[2], 'sendero id or slug'),
+        from: option(options, 'from', true)!,
+        to: option(options, 'to', true)!,
         home,
-        id: requirePositional(positionals[3], 'sendero edge id'),
-        name: optionalString(options.name),
-        description: optionalString(options.description),
-        transitionObjective: optionalString(options.objective),
-        status: optionalString(options.status) as AgentTransitionStatus | undefined,
       });
     default:
       throw new Error('Unknown sendero action');
