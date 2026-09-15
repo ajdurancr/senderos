@@ -14,4 +14,25 @@ test('createSenderos scopes the public API to one Senderos home', async () => {
   await senderos.missionControl.senderos.updateNodePosition({ id: graph!.nodes[0]!.id, positionX: 80, positionY: 90 });
   await senderos.missionControl.senderos.updateNode({ id: graph!.nodes[0]!.id, label: 'Start here' });
   await senderos.missionControl.senderos.updateEdge({ id: graph!.edges[0]!.id, name: 'begin here' });
+  const added = await senderos.commands.senderos.agents.add({
+    senderoId: graph!.sendero.id,
+    agentId: 'incident-responder',
+    from: 'mutation-tester',
+  });
+  await senderos.commands.senderos.connect({
+    senderoId: graph!.sendero.id,
+    from: 'tdd-craftsman',
+    to: 'incident-responder',
+  });
+  await senderos.commands.senderos.disconnect({
+    senderoId: graph!.sendero.id,
+    from: 'tdd-craftsman',
+    to: 'incident-responder',
+  });
+  expect(
+    await senderos.commands.senderos.agents.remove({
+      senderoId: graph!.sendero.id,
+      agentId: added.agent.id,
+    }),
+  ).toMatchObject({ agent: { id: added.agent.id } });
 });
