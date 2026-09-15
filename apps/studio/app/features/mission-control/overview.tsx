@@ -27,7 +27,7 @@ export function MissionControlOverview({
   search: URLSearchParams;
 }) {
   const { view, goalId, agentId, attemptId, transitionId } = route;
-  const projectId = route.projectId ?? data.projects[0]?.id;
+  const projectId = route.projectId ?? search.get("project") ?? undefined;
 
   if (view === "senderos") {
     const graph =
@@ -85,8 +85,9 @@ export function MissionControlOverview({
   if (view === "settings")
     return <SettingsView data={data} projectId={projectId} />;
 
+  const canvasProjectId = projectId ?? data.projects[0]?.id;
   const selectedGoal =
-    goalId ?? data.goals.find((goal) => goal.projectId === projectId)?.id;
+    goalId ?? data.goals.find((goal) => goal.projectId === canvasProjectId)?.id;
   return (
     <div className={`canvas-workspace ${selectedGoal ? "with-inspector" : ""}`}>
       <section className="canvas-column">
@@ -103,10 +104,10 @@ export function MissionControlOverview({
             <Icon name="nodes" /> Goal flow <Icon name="arrow" />
           </button>
         </header>
-        <AttentionRail data={data} projectId={projectId} />
+        <AttentionRail data={data} projectId={canvasProjectId} />
         <OrchestrationCanvas
           data={data}
-          projectId={projectId}
+          projectId={canvasProjectId}
           goalId={selectedGoal}
         />
         {search.get("plan") === "true" && <DispatchTray data={data} />}

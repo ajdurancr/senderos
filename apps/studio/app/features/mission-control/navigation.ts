@@ -13,6 +13,13 @@ export type StudioLocation = {
 
 const encode = encodeURIComponent;
 
+export function withScopeFilters(path: string, input: { executionContextId?: string; projectId?: string }) {
+  const search = new URLSearchParams();
+  if (input.executionContextId) search.set("context", input.executionContextId);
+  if (input.projectId) search.set("project", input.projectId);
+  return search.size ? `${path}?${search}` : path;
+}
+
 export function projectPath(projectId: string | undefined, view = "canvas") {
   if (!projectId) return `/${view}`;
   return `/projects/${encode(projectId)}/${view}`;

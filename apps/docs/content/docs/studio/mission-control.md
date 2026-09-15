@@ -17,6 +17,14 @@ The current Studio foundation consumes the same runtime and database as the CLI.
 
 This is a working operational foundation. The UX is still early and will continue to grow around the lifecycle already present in core.
 
+## Execution-context filters
+
+Studio shows every execution context and project by default. The header can narrow
+the workspace first by execution context and then by project. Both selections are
+stored in the URL as `context` and `project` query parameters, so filtered goals,
+runs, reviews, and events can be bookmarked and shared without changing the
+database-level ownership of those records.
+
 ## Decision queues
 
 Mission Control organizes runtime data around questions an operator must answer:

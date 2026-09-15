@@ -11,5 +11,5 @@ export async function prepareStudioDatabase() {
 }
 
 export function senderosForStudio() {
-  return createSenderos();
+  return createSenderos({ allExecutionContexts: true });
 }

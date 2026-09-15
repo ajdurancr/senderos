@@ -8,6 +8,7 @@ import {
   parseStudioPath,
   projectPath,
   senderoPath,
+  withScopeFilters,
 } from "./navigation";
 
 describe("Studio entity routes", () => {
@@ -87,5 +88,13 @@ describe("Studio entity routes", () => {
       attemptId: "attempt_1",
       create: false,
     });
+  });
+
+  it("persists hierarchical Studio filters in the URL", () => {
+    expect(withScopeFilters("/goals", {
+      executionContextId: "context alpha",
+      projectId: "project/one",
+    })).toBe("/goals?context=context+alpha&project=project%2Fone");
+    expect(withScopeFilters("/goals", {})).toBe("/goals");
   });
 });

@@ -1,9 +1,10 @@
-import { redirect, useLoaderData, useLocation, useNavigation } from "react-router";
+import { useLoaderData, useLocation, useNavigation } from "react-router";
 
 import { MissionControlOverview } from "../features/mission-control/overview";
 import { applyMissionControlAction, missionControlData } from "../features/mission-control/server";
 import { StudioLayout } from "../layouts/studio-layout";
-import { parseStudioPath, projectPath } from "../features/mission-control/navigation";
+import { parseStudioPath } from "../features/mission-control/navigation";
+import { filterMissionControlData } from "../features/mission-control/scope-filters";
 import type { Route } from "./+types/home";
 
 export function meta() {
@@ -14,10 +15,7 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const data = await missionControlData();
-  if (new URL(request.url).pathname === "/" && data.projects[0])
-    throw redirect(projectPath(data.projects[0].id));
-  return data;
+  return await missionControlData();
 }
 export async function action({ request }: Route.ActionArgs) {
   await applyMissionControlAction(await request.formData());
@@ -29,9 +27,15 @@ export default function Home() {
   const pending = useNavigation().state !== "idle";
   const location = useLocation();
   const route = parseStudioPath(location.pathname);
+  const search = new URLSearchParams(location.search);
+  const filteredData = filterMissionControlData(
+    data,
+    search.get("context") ?? undefined,
+    search.get("project") ?? route.projectId,
+  );
   return (
-    <StudioLayout data={data} pending={pending} route={route}>
-      <MissionControlOverview data={data} route={route} search={new URLSearchParams(location.search)} />
+    <StudioLayout data={data} pending={pending} route={route} search={search}>
+      <MissionControlOverview data={filteredData} route={route} search={search} />
     </StudioLayout>
   );
 }

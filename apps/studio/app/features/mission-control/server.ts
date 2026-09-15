@@ -12,9 +12,10 @@ import {
 export async function missionControlData() {
   await prepareStudioDatabase();
   const senderos = senderosForStudio();
-  const [overview, agents, transitions, senderoGraphs, events] =
+  const [overview, executionContexts, agents, transitions, senderoGraphs, events] =
     await Promise.all([
       senderos.missionControl.overview(),
+      senderos.commands.executionContexts.list(),
       senderos.commands.agents.list(),
       senderos.commands.agents.transitions(),
       senderos.missionControl.senderos.listGraphs(),
@@ -31,7 +32,7 @@ export async function missionControlData() {
       remote: !database.url.startsWith("file:"),
     },
   };
-  return { ...overview, agents, transitions, senderoGraphs, events, runtime };
+  return { ...overview, executionContexts, agents, transitions, senderoGraphs, events, runtime };
 }
 
 export type MissionControlData = Awaited<ReturnType<typeof missionControlData>>;

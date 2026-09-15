@@ -1,4 +1,5 @@
 import { DurableLink as Link } from "../components/durable-link";
+import { useNavigate } from "react-router";
 import { CommandPalette } from "../features/mission-control/components/command-palette";
 import {
   Icon,
@@ -27,16 +28,30 @@ export function StudioLayout({
   data,
   pending,
   route,
+  search,
 }: {
   children: React.ReactNode;
   data: MissionControlData;
   pending: boolean;
   route: StudioLocation;
+  search: URLSearchParams;
 }) {
+  const navigate = useNavigate();
   const view = route.view;
-  const projectId = route.projectId ?? data.projects[0]?.id ?? "";
+  const contextId = search.get("context") ?? "";
+  const filterProjectId = search.get("project") ?? route.projectId ?? "";
+  const availableProjects = data.projects.filter(
+    (item) => !contextId || item.executionContextId === contextId,
+  );
+  const projectId = filterProjectId;
   const project =
-    data.projects.find((item) => item.id === projectId) ?? data.projects[0];
+    data.projects.find((item) => item.id === projectId);
+  const updateFilters = (context?: string, project?: string) => {
+    const next = new URLSearchParams(search);
+    context ? next.set("context", context) : next.delete("context");
+    project ? next.set("project", project) : next.delete("project");
+    navigate(`${route.view === "canvas" ? "/canvas" : `/${route.view}`}${next.size ? `?${next}` : ""}`);
+  };
 
   return (
     <main className="studio-shell">
@@ -57,7 +72,9 @@ export function StudioLayout({
               to={
                 key === "senderos" && data.senderoGraphs[0]
                   ? senderoPath(data.senderoGraphs[0].sendero.id)
-                  : projectPath(project?.id, key)
+                  : key === "canvas"
+                    ? projectPath(project?.id, key)
+                    : `/${key}${search.size ? `?${search}` : ""}`
               }
             >
               <Icon name={icon} />
@@ -70,7 +87,7 @@ export function StudioLayout({
           <p className="manage-label">Manage</p>
           <Link
             className={view === "settings" ? "active" : ""}
-            to={projectPath(project?.id, "settings")}
+            to={`/settings${search.size ? `?${search}` : ""}`}
           >
             <Icon name="settings" />
             <span>Settings</span>
@@ -89,7 +106,7 @@ export function StudioLayout({
 
       <section className="studio-workspace">
         <header className="project-header">
-          <div className="project-context">
+          <div className="project-context scope-filters">
             <div className="project-symbol">
               {view === "senderos"
                 ? "S"
@@ -106,16 +123,15 @@ export function StudioLayout({
                 </>
               ) : (
                 <>
-                  <select
-                    aria-label="Project"
-                    value={project?.id ?? ""}
-                    onChange={(event) => {
-                      window.location.assign(
-                        projectPath(event.target.value, view),
-                      );
-                    }}
-                  >
-                    {data.projects.map((item) => (
+                  <select aria-label="Execution context" value={contextId} onChange={(event) => updateFilters(event.target.value, "")}>
+                    <option value="">All execution contexts</option>
+                    {data.executionContexts.map((context) => (
+                      <option key={context.id} value={context.id}>{context.name}</option>
+                    ))}
+                  </select>
+                  <select aria-label="Project" value={project?.id ?? ""} onChange={(event) => updateFilters(contextId, event.target.value)}>
+                    <option value="">All projects</option>
+                    {availableProjects.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name}
                       </option>
@@ -123,7 +139,7 @@ export function StudioLayout({
                   </select>
                   <span>
                     <Icon name="branch" />{" "}
-                    {project?.targetBranch ?? "No project"}
+                    {project ? project.targetBranch : `${availableProjects.length} projects`}
                   </span>
                 </>
               )}
