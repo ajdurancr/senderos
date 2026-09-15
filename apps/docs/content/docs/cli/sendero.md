@@ -16,12 +16,12 @@ senderos sendero version list
 The mutation surface describes intent rather than database records:
 
 ```bash
-senderos sendero agent add software-delivery incident-responder --label "Respond"
+senderos sendero agent add software-delivery incident-responder \
+  --from mutation-tester \
+  --label "Respond"
 senderos sendero connect software-delivery \
   --from mutation-tester \
-  --to incident-responder \
-  --name "escalate" \
-  --objective "Respond to the discovered issue."
+  --to incident-responder
 senderos sendero disconnect software-delivery \
   --from mutation-tester \
   --to incident-responder

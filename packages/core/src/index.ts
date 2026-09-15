@@ -45,8 +45,8 @@ import {
   updateSenderoEdge,
   addAgentToSendero,
   removeAgentFromSendero,
-  connectSenderoNodes,
-  disconnectSenderoNodes,
+  connectSenderoAgents,
+  disconnectSenderoAgents,
 } from './commands';
 import {
   listSenderoGraphs,
@@ -122,10 +122,10 @@ export function createSenderos(input: { home?: string } = {}) {
           remove: (value: Omit<Parameters<typeof removeAgentFromSendero>[0], 'home'>) =>
             removeAgentFromSendero({ ...value, home }),
         },
-        connect: (value: Omit<Parameters<typeof connectSenderoNodes>[0], 'home'>) =>
-          connectSenderoNodes({ ...value, home }),
-        disconnect: (value: Omit<Parameters<typeof disconnectSenderoNodes>[0], 'home'>) =>
-          disconnectSenderoNodes({ ...value, home }),
+        connect: (value: Omit<Parameters<typeof connectSenderoAgents>[0], 'home'>) =>
+          connectSenderoAgents({ ...value, home }),
+        disconnect: (value: Omit<Parameters<typeof disconnectSenderoAgents>[0], 'home'>) =>
+          disconnectSenderoAgents({ ...value, home }),
       },
       plan: () => plan({ home }),
       status: () => status(home),

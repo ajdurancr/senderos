@@ -1,7 +1,7 @@
 import {
   addAgentToSendero,
-  connectSenderoNodes,
-  disconnectSenderoNodes,
+  connectSenderoAgents,
+  disconnectSenderoAgents,
   getSenderoGraph,
   listSenderos,
   listSenderoVersions,
@@ -36,18 +36,18 @@ export const senderoCommandHelp = {
       command: 'agent',
       summary: 'Add or remove an agent from a Sendero.',
       usage: [
-        'senderos sendero agent add <sendero-id-or-slug> <agent-id-or-slug> [--label <label>]',
+        'senderos sendero agent add <sendero-id-or-slug> <agent-id-or-slug> [--from <agent>] [--to <agent>] [--label <label>]',
         'senderos sendero agent remove <sendero-id-or-slug> <agent-id-or-slug>',
       ],
       subcommands: [
-        { command: 'add', summary: 'Add an existing agent to a Sendero.', usage: ['senderos sendero agent add <sendero> <agent> [--label <label>]'] },
+        { command: 'add', summary: 'Add and connect an existing agent to a Sendero.', usage: ['senderos sendero agent add <sendero> <agent> [--from <agent>] [--to <agent>]'] },
         { command: 'remove', summary: 'Remove an agent and its connections from a Sendero.', usage: ['senderos sendero agent remove <sendero> <agent>'] },
       ],
     },
     {
       command: 'connect',
       summary: 'Connect two nodes in a Sendero.',
-      usage: ['senderos sendero connect <sendero> --from <node-or-agent> --to <node-or-agent> --name <name> --objective <objective>'],
+      usage: ['senderos sendero connect <sendero> --from <agent> --to <agent>'],
     },
     {
       command: 'disconnect',
@@ -88,22 +88,19 @@ export async function handleSendero(
       const senderoId = requirePositional(positionals[3], 'sendero id or slug');
       const agentId = requirePositional(positionals[4], 'agent id or slug');
       if (action === 'add')
-        return addAgentToSendero({ senderoId, agentId, label: option(options, 'label'), home });
+        return addAgentToSendero({ senderoId, agentId, from: option(options, 'from'), to: option(options, 'to'), label: option(options, 'label'), home });
       if (action === 'remove') return removeAgentFromSendero({ senderoId, agentId, home });
       throw new Error('Unknown sendero agent action');
     }
     case 'connect':
-      return connectSenderoNodes({
+      return connectSenderoAgents({
         senderoId: requirePositional(positionals[2], 'sendero id or slug'),
         from: option(options, 'from', true)!,
         to: option(options, 'to', true)!,
-        name: option(options, 'name', true)!,
-        objective: option(options, 'objective', true)!,
-        description: option(options, 'description'),
         home,
       });
     case 'disconnect':
-      return disconnectSenderoNodes({
+      return disconnectSenderoAgents({
         senderoId: requirePositional(positionals[2], 'sendero id or slug'),
         from: option(options, 'from', true)!,
         to: option(options, 'to', true)!,

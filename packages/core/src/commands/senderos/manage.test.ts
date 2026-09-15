@@ -3,8 +3,8 @@ import { expect, test } from "bun:test";
 import { initHome } from "../../test-support/runtime";
 import {
   addAgentToSendero,
-  connectSenderoNodes,
-  disconnectSenderoNodes,
+  connectSenderoAgents,
+  disconnectSenderoAgents,
   getSenderoGraph,
   removeAgentFromSendero,
 } from ".";
@@ -15,40 +15,37 @@ test("manages agents and connections through Sendero business actions", async ()
     home,
     senderoId: "software-delivery",
     agentId: "incident-responder",
+    from: "mutation-tester",
   });
-  expect(node.kind).toBe("agent");
+  expect(node.agent.kind).toBe("agent");
 
-  const edge = await connectSenderoNodes({
+  const edge = await connectSenderoAgents({
     home,
     senderoId: "software-delivery",
-    from: "mutation-tester",
+    from: "tdd-craftsman",
     to: "incident-responder",
-    name: "escalate",
-    objective: "Respond to the discovered issue.",
   });
-  expect(edge.targetNodeId).toBe(node.id);
+  expect(edge.targetNodeId).toBe(node.agent.id);
   await expect(
-    connectSenderoNodes({
+    connectSenderoAgents({
       home,
       senderoId: "software-delivery",
-      from: "mutation-tester",
+      from: "tdd-craftsman",
       to: "incident-responder",
-      name: "duplicate",
-      objective: "Duplicate connection.",
     }),
   ).rejects.toThrow("already exists");
 
-  await disconnectSenderoNodes({
+  await disconnectSenderoAgents({
     home,
     senderoId: "software-delivery",
-    from: "mutation-tester",
+    from: "tdd-craftsman",
     to: "incident-responder",
   });
   await expect(
-    disconnectSenderoNodes({
+    disconnectSenderoAgents({
       home,
       senderoId: "software-delivery",
-      from: "mutation-tester",
+      from: "tdd-craftsman",
       to: "incident-responder",
     }),
   ).rejects.toThrow("not found");
@@ -60,7 +57,33 @@ test("manages agents and connections through Sendero business actions", async ()
   });
   expect(
     (await getSenderoGraph("software-delivery", undefined, home))?.nodes.some(
-      (item) => item.id === node.id,
+      (item) => item.id === node.agent.id,
     ),
   ).toBe(false);
+});
+
+test("adding the first agent creates a complete one-agent Sendero", async () => {
+  const home = await initHome();
+  for (const agent of [
+    "spec-partner",
+    "craftsman-lead",
+    "tdd-craftsman",
+    "mutation-tester",
+    "judge",
+  ])
+    await removeAgentFromSendero({
+      home,
+      senderoId: "software-delivery",
+      agentId: agent,
+    });
+
+  const added = await addAgentToSendero({
+    home,
+    senderoId: "software-delivery",
+    agentId: "incident-responder",
+  });
+  expect(added.connections).toHaveLength(2);
+  const graph = (await getSenderoGraph("software-delivery", undefined, home))!;
+  expect(graph.nodes.filter((node) => node.kind === "agent")).toHaveLength(1);
+  expect(graph.edges).toHaveLength(2);
 });

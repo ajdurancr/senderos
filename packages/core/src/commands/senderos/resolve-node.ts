@@ -25,3 +25,14 @@ export async function resolveSenderoNode(
     throw new Error(`Sendero node reference is ambiguous: ${reference}`);
   return unique[0]!;
 }
+
+export async function resolveSenderoAgentNode(
+  graph: SenderoGraph,
+  reference: string,
+  home?: string,
+) {
+  const node = await resolveSenderoNode(graph, reference, home);
+  if (node.kind !== "agent")
+    throw new Error(`Sendero agent not found: ${reference}`);
+  return node;
+}

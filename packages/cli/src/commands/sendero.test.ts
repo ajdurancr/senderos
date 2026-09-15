@@ -12,28 +12,28 @@ test('sendero CLI exposes intent-level graph actions', async () => {
   const added = (await handleSendero(
     'agent',
     ['sendero', 'agent', 'add', 'software-delivery', 'incident-responder'],
-    { label: 'Respond' },
+    { label: 'Respond', from: 'mutation-tester' },
     home,
-  )) as SenderoNodeRecord;
-  expect(added).toMatchObject({ label: 'Respond' });
+  )) as { agent: SenderoNodeRecord };
+  expect(added.agent).toMatchObject({ label: 'Respond' });
 
   await expect(
     handleSendero(
       'connect',
       ['sendero', 'connect', 'software-delivery'],
-      { from: 'mutation-tester', to: 'incident-responder', name: 'escalate', objective: 'Respond to the discovered issue.' },
+      { from: 'tdd-craftsman', to: 'incident-responder' },
       home,
     ),
-  ).resolves.toMatchObject({ name: 'escalate' });
+  ).resolves.toMatchObject({ sourceNodeId: expect.any(String) });
 
   await expect(
     handleSendero(
       'disconnect',
       ['sendero', 'disconnect', 'software-delivery'],
-      { from: 'mutation-tester', to: 'incident-responder' },
+      { from: 'tdd-craftsman', to: 'incident-responder' },
       home,
     ),
-  ).resolves.toMatchObject({ name: 'escalate' });
+  ).resolves.toMatchObject({ targetNodeId: added.agent.id });
 
   const removed = await handleSendero(
     'agent',
@@ -41,7 +41,7 @@ test('sendero CLI exposes intent-level graph actions', async () => {
     {},
     home,
   );
-  expect(removed).toMatchObject({ removedConnections: 0 });
+  expect(removed).toMatchObject({ removedConnections: 2 });
 
   const graph = (await handleSendero(
     'show',
@@ -49,5 +49,5 @@ test('sendero CLI exposes intent-level graph actions', async () => {
     {},
     home,
   )) as SenderoGraph;
-  expect(graph.nodes.some((node) => node.agentId === added.agentId)).toBe(false);
+  expect(graph.nodes.some((node) => node.agentId === added.agent.agentId)).toBe(false);
 });
