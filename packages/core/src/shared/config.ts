@@ -10,6 +10,8 @@ import { migrateRuntimeDb } from '../db/migrate';
 import { seedBuiltInAgents } from '../bootstrap/seed-agents';
 import { seedBuiltInSenderos } from '../bootstrap/seed-senderos';
 import { inferHarnessFromEnvironment } from './harness';
+import { randomId } from './ids';
+import { registerExecutionContext } from '../commands/execution-contexts/register';
 
 export function defaultHomePath() {
   return resolve(join(process.cwd(), '.senderos'));
@@ -45,8 +47,10 @@ export function loadConfig(home = defaultHomePath()): SenderosConfig {
 export function defaultConfigForHome(
   home: string,
   harness: SenderosConfig['defaultHarness'],
+  executionContextId = randomId('context'),
 ): SenderosConfig {
   return {
+    executionContextId,
     database: {
       urlEnv: 'SENDEROS_DATABASE_URL',
       authTokenEnv: 'SENDEROS_DATABASE_AUTH_TOKEN',
@@ -63,12 +67,14 @@ export function defaultConfigForHome(
 export function previewInit(
   home?: string,
   harness?: SenderosConfig['defaultHarness'],
+  executionContext?: { id?: string; name: string },
 ): InitPreview {
   const inferredHarness = harness ?? inferHarnessFromEnvironment();
   const resolvedHome = resolve(home ?? defaultHomePath());
   const config = defaultConfigForHome(
     resolvedHome,
     inferredHarness === 'unknown' ? 'unknown' : inferredHarness,
+    executionContext?.id,
   );
 
   return {
@@ -84,6 +90,7 @@ export function previewInit(
         ? `Using provided harness: ${harness}`
         : `Harness inferred as ${inferredHarness}`,
       `Database URL environment variable: ${config.database.urlEnv}`,
+      `Execution context: ${executionContext?.name ?? 'name required for initialization'} (${config.executionContextId})`,
     ],
     requiresApproval: true,
   };
@@ -93,6 +100,7 @@ export async function initializeRuntime(
   home: string,
   config?: SenderosConfig,
   seedOptions?: SeedAgentsOptions,
+  executionContextName?: string,
 ) {
   const resolvedHome = resolve(home);
   const inferredHarness = inferHarnessFromEnvironment();
@@ -135,10 +143,27 @@ export async function initializeRuntime(
     ensureWithinHome(resolvedHome, databaseUrl.slice('file:'.length));
 
   await migrateRuntimeDb(resolvedHome);
+  await registerExecutionContext({
+    home: resolvedHome,
+    id: runtimeConfig.executionContextId,
+    name: executionContextName ?? runtimeConfig.executionContextId,
+  });
   await seedBuiltInAgents(resolvedHome, seedOptions);
   await seedBuiltInSenderos(resolvedHome);
 
   return { home: resolvedHome, configPath: configPathForHome(resolvedHome) };
+}
+
+export function resolveExecutionContextId(home = defaultHomePath()) {
+  if (runtimeExists(home)) {
+    const value = loadConfig(home).executionContextId;
+    if (value) return value;
+  }
+  const value = process.env.SENDEROS_EXECUTION_CONTEXT_ID;
+  if (value) return value;
+  throw new Error(
+    'Missing execution context. Run senderos init or set SENDEROS_EXECUTION_CONTEXT_ID.',
+  );
 }
 
 export function resolveRuntime(home = defaultHomePath()) {

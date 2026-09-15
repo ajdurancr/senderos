@@ -1,4 +1,5 @@
 import { doctor, status } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 
 const doctorHelp = {
   command: 'doctor',
@@ -23,7 +24,7 @@ export async function handleSystemCommand(cmd: string | undefined, home: string)
     case 'doctor':
       return await doctor(home);
     case 'status':
-      return await status(home);
+      return await status(home, resolveExecutionContextId(home));
     default:
       throw new Error(`Unknown command: ${cmd}`);
   }

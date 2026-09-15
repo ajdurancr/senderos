@@ -6,6 +6,7 @@ import { defaultProjectIdForPath } from "./default-id-for-path";
 import { defaultProjectNameForPath } from "./default-name-for-path";
 import { getProject } from "./get";
 import { projects } from "../../db/schema";
+import { resolveExecutionContextId } from '../../shared/config';
 export async function createProject(input: {
   home?: string;
   name?: string;
@@ -19,11 +20,13 @@ export async function createProject(input: {
   healthDetails?: Record<string, unknown>;
   status?: ProjectStatus;
   id?: string;
+  executionContextId?: string;
 }) {
   const db = openRuntimeDb(input.home);
   const ts = now();
   const id = input.id ?? defaultProjectIdForPath(input.canonicalPath);
   const name = input.name ?? defaultProjectNameForPath(input.canonicalPath);
+  const executionContextId = input.executionContextId ?? resolveExecutionContextId(input.home);
   const remote =
     input.githubRemote ??
     `https://github.com/${input.githubOwner}/${input.githubRepo}.git`;
@@ -31,6 +34,7 @@ export async function createProject(input: {
     .insert(projects)
     .values({
       id,
+      executionContextId,
       name,
       canonicalPath: input.canonicalPath,
       githubOwner: input.githubOwner,

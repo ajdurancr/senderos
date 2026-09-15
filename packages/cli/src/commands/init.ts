@@ -1,5 +1,6 @@
 import type { HarnessKind } from '@senderos/core';
 import { initializeRuntime, previewInit } from '@senderos/core';
+import { optionString } from '../shared';
 
 export const initCommandHelp = {
   command: 'init',
@@ -7,11 +8,12 @@ export const initCommandHelp = {
   agentDescription:
     'Use init to preview or create the Senderos home directory and database. This is a bootstrap/setup command and does not plan or dispatch any goal work.',
   usage: [
-    'senderos init',
-    'senderos init --home /path/to/.senderos --harness codex',
-    'senderos init --home /path/to/.senderos --harness codex --approve',
+    'senderos init --name "My development workspace"',
+    'senderos init --name "My development workspace" --execution-context-id context-abc123 --approve',
   ],
   options: [
+    { name: '--name', description: 'Required globally unique execution context name.', required: true },
+    { name: '--execution-context-id', description: 'Existing context ID to re-register; generated when omitted.' },
     { name: '--home', description: 'Proposed Senderos home directory.' },
     {
       name: '--harness',
@@ -27,6 +29,8 @@ export const initCommandHelp = {
 export async function handleInit(
   options: Record<string, string | boolean | string[]>,
 ) {
+  const name = optionString(options.name);
+  if (!name) throw new Error('Missing required option: --name');
   const preview = previewInit(
     (Array.isArray(options.home) ? options.home.at(-1) : options.home) as
       | string
@@ -34,6 +38,7 @@ export async function handleInit(
     (Array.isArray(options.harness)
       ? options.harness.at(-1)
       : options.harness) as HarnessKind | undefined,
+    { name, id: optionString(options['execution-context-id']) },
   );
 
   if (!options.approve) {
@@ -46,5 +51,5 @@ export async function handleInit(
     );
   }
 
-  return await initializeRuntime(preview.home, preview.config);
+  return await initializeRuntime(preview.home, preview.config, undefined, name);
 }

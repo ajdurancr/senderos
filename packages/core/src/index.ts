@@ -45,6 +45,7 @@ import {
   removeAgentFromSendero,
   connectSenderoAgents,
   disconnectSenderoAgents,
+  listExecutionContexts,
 } from './commands';
 import { updateSenderoEdge } from './internal/senderos/update-edge';
 import { updateSenderoNode } from './internal/senderos/update-node';
@@ -57,24 +58,31 @@ import {
   missionControlStartGoal,
   missionControlStopExecution,
 } from './mission-control';
+import { resolveExecutionContextId } from './shared/config';
 
-export function createSenderos(input: { home?: string } = {}) {
+export function createSenderos(input: { home?: string; executionContextId?: string; allExecutionContexts?: boolean } = {}) {
   const home = input.home;
+  const executionContextId = input.allExecutionContexts
+    ? undefined
+    : input.executionContextId ?? resolveExecutionContextId(home);
   return {
     commands: {
       projects: {
         create: (value: Parameters<typeof createProject>[0]) =>
-          createProject({ ...value, home }),
-        get: (id: string) => getProject(id, home),
-        list: () => listProjects(home),
+          createProject({ ...value, home, executionContextId }),
+        get: (id: string) => getProject(id, home, executionContextId),
+        list: () => listProjects(home, executionContextId),
         update: (value: Parameters<typeof updateProject>[0]) =>
-          updateProject({ ...value, home }),
+          updateProject({ ...value, home, executionContextId }),
+      },
+      executionContexts: {
+        list: () => listExecutionContexts(home),
       },
       goals: {
         create: (value: Parameters<typeof createGoal>[0]) =>
-          createGoal({ ...value, home }),
-        get: (id: string) => getGoal(id, home),
-        list: () => listGoals(home),
+          createGoal({ ...value, home, executionContextId }),
+        get: (id: string) => getGoal(id, home, executionContextId),
+        list: () => listGoals(home, executionContextId),
         activate: (id: string) => activateGoal(id, home),
         cancel: (id: string) => cancelGoal(id, home),
         update: (value: Parameters<typeof updateGoal>[0]) =>
@@ -83,13 +91,13 @@ export function createSenderos(input: { home?: string } = {}) {
       runs: {
         dispatch: (value: Parameters<typeof dispatchRun>[0]) =>
           dispatchRun(value, home),
-        get: (id: string) => getRun(id, home),
-        list: () => listRuns(home),
+        get: (id: string) => getRun(id, home, executionContextId),
+        list: () => listRuns(home, executionContextId),
         cancel: (id: string) => cancelRun(id, home),
       },
       attempts: {
-        get: (id: string) => getAttempt(id, home),
-        list: (runId?: string) => listRunAttempts(runId, home),
+        get: (id: string) => getAttempt(id, home, executionContextId),
+        list: (runId?: string) => listRunAttempts(runId, home, executionContextId),
         update: (id: string, value: Parameters<typeof updateRunAttempt>[1]) =>
           updateRunAttempt(id, value, home),
         recordEvidence: (value: Omit<Parameters<typeof recordAttemptEvidence>[0], 'home'>) =>
@@ -119,8 +127,8 @@ export function createSenderos(input: { home?: string } = {}) {
         disconnect: (value: Omit<Parameters<typeof disconnectSenderoAgents>[0], 'home'>) =>
           disconnectSenderoAgents({ ...value, home }),
       },
-      plan: () => plan({ home }),
-      status: () => status(home),
+      plan: () => plan({ home, executionContextId }),
+      status: () => status(home, executionContextId),
     },
     missionControl: {
       senderos: {
@@ -132,7 +140,7 @@ export function createSenderos(input: { home?: string } = {}) {
         updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
           updateSenderoNodePosition({ ...value, home }),
       },
-      overview: () => missionControlOverview(home),
+      overview: () => missionControlOverview(home, executionContextId),
       goal: (value: { goalId: string }) =>
         missionControlGoal({ ...value, home }),
       startGoal: (value: { goalId: string; workingPath?: string }) =>

@@ -77,6 +77,7 @@ async function nextTransition(
 export async function plan(input: {
   home?: string;
   goalStatuses?: GoalStatus[];
+  executionContextId?: string;
 }) {
   const statuses = input.goalStatuses?.length
     ? input.goalStatuses
@@ -87,7 +88,7 @@ export async function plan(input: {
     agentId: string;
     previousRunId: string | null;
   }> = [];
-  for (const goal of (await listGoals(input.home)).filter((goal) =>
+  for (const goal of (await listGoals(input.home, input.executionContextId)).filter((goal) =>
     statuses.includes(goal.status),
   )) {
     const previous: any = await latestRunForGoal(goal.id, input.home);

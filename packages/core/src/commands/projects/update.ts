@@ -18,8 +18,9 @@ export async function updateProject(input: {
   inferredCommands?: Record<string, unknown>;
   healthDetails?: Record<string, unknown>;
   status?: ProjectStatus;
+  executionContextId?: string;
 }) {
-  const current = await getProject(input.id, input.home);
+  const current = await getProject(input.id, input.home, input.executionContextId);
   if (!current) throw new Error(`Project not found: ${input.id}`);
   const db = openRuntimeDb(input.home);
   await db
@@ -44,5 +45,5 @@ export async function updateProject(input: {
     })
     .where(eq(projects.id, input.id));
   await emitEvent(db, "project.updated", "project", input.id, input);
-  return getProject(input.id, input.home);
+  return getProject(input.id, input.home, input.executionContextId);
 }

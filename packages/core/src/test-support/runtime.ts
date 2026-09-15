@@ -100,4 +100,5 @@ afterEach(() => {
 
   delete process.env.SENDEROS_TURSO_TOKEN;
   delete process.env.SENDEROS_DATABASE_URL;
+  delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
 });

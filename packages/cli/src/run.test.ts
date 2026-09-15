@@ -14,7 +14,7 @@ describe('runCli', () => {
     console.log = (...args: unknown[]) => logs.push(args.join(' '));
 
     try {
-      await runCli(['init', '--home', home, '--harness', 'codex']);
+      await runCli(['init', '--name', 'Preview context', '--home', home, '--harness', 'codex']);
     } finally {
       console.log = original;
     }
@@ -25,7 +25,7 @@ describe('runCli', () => {
 
   test('init with approve creates the runtime', async () => {
     const home = tempHome();
-    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+    await runCli(['init', '--name', 'Approved context', '--home', home, '--harness', 'codex', '--approve']);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
   });
 
@@ -36,7 +36,7 @@ describe('runCli', () => {
     console.log = (...args: unknown[]) => logs.push(args.join(' '));
 
     try {
-      await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['init', '--name', 'Agent context', '--home', home, '--harness', 'codex', '--approve']);
       await runCli(['agent', 'list', '--home', home]);
     } finally {
       console.log = original;
@@ -52,7 +52,7 @@ describe('runCli', () => {
     console.log = (...args: unknown[]) => logs.push(args.join(' '));
 
     try {
-      await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['init', '--name', 'Sendero context', '--home', home, '--harness', 'codex', '--approve']);
       await runCli(['sendero', 'show', 'software-delivery', '--home', home]);
     } finally {
       console.log = original;
@@ -80,7 +80,7 @@ describe('runCli', () => {
 
   test('config commands route through runCli and persist updates', async () => {
     const home = tempHome();
-    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+    await runCli(['init', '--name', 'Config context', '--home', home, '--harness', 'codex', '--approve']);
     await runCli(['config', 'set', 'defaultHarness', 'codex', '--home', home]);
     expect(loadConfig(home).defaultHarness).toBe('codex');
     expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('codex');

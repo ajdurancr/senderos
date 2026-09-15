@@ -4,6 +4,7 @@ import {
   listProjects,
   updateProject,
 } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 import { requirePositional } from '../shared';
 
 const projectCreateHelp = {
@@ -153,6 +154,7 @@ function parseProjectUpdateOptions(
 
   return {
     home,
+    executionContextId: resolveExecutionContextId(home),
     id,
     name: options.name as string | undefined,
     canonicalPath: options['canonical-path'] as string | undefined,
@@ -171,13 +173,14 @@ export async function handleProject(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
   switch (sub) {
     case 'create':
       return await createProject(parseProjectCreateOptions(home, options));
     case 'list':
-      return await listProjects(home);
+      return await listProjects(home, executionContextId);
     case 'show':
-      return await getProject(requirePositional(positionals[2], 'project id'), home);
+      return await getProject(requirePositional(positionals[2], 'project id'), home, executionContextId);
     case 'update':
       return await updateProject(
         parseProjectUpdateOptions(

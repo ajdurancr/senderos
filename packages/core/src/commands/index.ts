@@ -3,6 +3,7 @@ export * from './agents/get';
 export * from './agents/get-by-slug';
 export * from './attempts';
 export * from './config';
+export * from './execution-contexts';
 export * from './goals';
 export * from './planning';
 export * from './projects';

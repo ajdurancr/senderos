@@ -5,6 +5,7 @@ import {
   initializeRuntime,
   previewInit,
   resolveRuntime,
+  resolveExecutionContextId,
   runtimeExists,
 } from './config';
 import { initHome, tempHome } from '../test-support/runtime';
@@ -36,5 +37,14 @@ describe('runtime configuration', () => {
     const resolved = resolveRuntime(home);
     expect(resolved.paths.home).toBe(home);
     expect(resolved.config.database.urlEnv).toBe('SENDEROS_DATABASE_URL');
+  });
+
+  test('resolves context from config before the environment fallback', async () => {
+    const home = await initHome();
+    process.env.SENDEROS_EXECUTION_CONTEXT_ID = 'context-environment';
+    expect(resolveExecutionContextId(home)).not.toBe('context-environment');
+    expect(resolveExecutionContextId(tempHome())).toBe('context-environment');
+    delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
+    expect(() => resolveExecutionContextId(tempHome())).toThrow('Missing execution context');
   });
 });

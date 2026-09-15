@@ -6,6 +6,7 @@ import {
   listGoals,
   updateGoal,
 } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 import { requirePositional } from '../shared';
 export const goalCommandHelp = {
   command: 'goal',
@@ -46,9 +47,17 @@ export async function handleGoal(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
   const goalId = () => requirePositional(positionals[2], 'goal id');
+  const requireOwnedGoal = async () => {
+    const id = goalId();
+    if (!(await getGoal(id, home, executionContextId)))
+      throw new Error(`Goal not found in the current execution context: ${id}`);
+    return id;
+  };
   const goalInput = {
     home,
+    executionContextId,
     projectId: String(options['project-id'] ?? ''),
     title: String(options.title ?? ''),
     kind: options.kind as any,
@@ -59,15 +68,15 @@ export async function handleGoal(
     case 'create':
       return await createGoal(goalInput);
     case 'list':
-      return await listGoals(home);
+      return await listGoals(home, executionContextId);
     case 'show':
-      return await getGoal(goalId(), home);
+      return await getGoal(goalId(), home, executionContextId);
     case 'update':
-      return await updateGoal({ ...goalInput, id: goalId() });
+      return await updateGoal({ ...goalInput, id: await requireOwnedGoal() });
     case 'activate':
-      return await activateGoal(goalId(), home);
+      return await activateGoal(await requireOwnedGoal(), home);
     case 'cancel':
-      return await cancelGoal(goalId(), home);
+      return await cancelGoal(await requireOwnedGoal(), home);
     default:
       throw new Error('Unknown goal action');
   }

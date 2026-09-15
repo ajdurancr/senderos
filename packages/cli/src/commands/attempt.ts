@@ -4,6 +4,7 @@ import {
   resumeAttempt,
   updateRunAttempt,
 } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 import { requirePositional } from '../shared';
 export const attemptCommandHelp = {
   command: 'attempt',
@@ -38,14 +39,21 @@ export async function handleAttempt(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
+  const requireOwnedAttempt = async () => {
+    const id = requirePositional(positionals[2], 'attempt id');
+    if (!(await getAttempt(id, home, executionContextId)))
+      throw new Error(`Attempt not found in the current execution context: ${id}`);
+    return id;
+  };
   switch (subcommand) {
     case 'list':
-      return await listRunAttempts(options['run-id'] as string | undefined, home);
+      return await listRunAttempts(options['run-id'] as string | undefined, home, executionContextId);
     case 'show':
-      return await getAttempt(requirePositional(positionals[2], 'attempt id'), home);
+      return await getAttempt(requirePositional(positionals[2], 'attempt id'), home, executionContextId);
     case 'update':
       return await updateRunAttempt(
-        requirePositional(positionals[2], 'attempt id'),
+        await requireOwnedAttempt(),
         {
           status: options.status as any,
           checkpoint: options.checkpoint as string | undefined,
@@ -64,7 +72,7 @@ export async function handleAttempt(
       );
     case 'resume':
       return await resumeAttempt(
-        requirePositional(positionals[2], 'attempt id'),
+        await requireOwnedAttempt(),
         home,
       );
     default:

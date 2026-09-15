@@ -1,15 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 
 import { handleAttempt } from './attempt';
-import { createRunAttempt, getAgentBySlug } from '@senderos/core';
-import { initHome } from '../../../core/src/test-support/runtime';
+import { createGoal, createRunAttempt, createRunRecord, getAgentBySlug } from '@senderos/core';
+import { createProjectFixture, initHome } from '../../../core/src/test-support/runtime';
 
 async function createAttemptFixture() {
   const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = await createGoal({ home, projectId: project.id, title: 'Attempt fixture' });
+  const run = (await createRunRecord(goal, home))!;
   const agent = (await getAgentBySlug('spec-partner', home))!;
   const attempt = await createRunAttempt({
     home,
-    runId: 'run-1',
+    runId: run.id,
     attemptNumber: 1,
     agentId: agent.id,
     executionObjective: 'Execute work.',

@@ -1,4 +1,5 @@
 import { plan } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 import { optionStrings } from '../shared';
 
 export const planCommandHelp = {
@@ -26,6 +27,7 @@ export async function handlePlan(
 ) {
   return await plan({
     home,
+    executionContextId: resolveExecutionContextId(home),
     goalStatuses: optionStrings(options['goal-status']) as any[],
   });
 }

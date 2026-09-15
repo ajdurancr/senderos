@@ -53,7 +53,7 @@ A failed command sets a non-zero process exit code.
 ## Common operating sequence
 
 ```bash
-senderos init --approve
+senderos init --name "My development workspace" --approve
 senderos doctor
 senderos project create --canonical-path /repo --github-owner owner --github-repo repo
 senderos goal create --project-id <project-id> --title "Outcome" --kind feature

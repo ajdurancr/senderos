@@ -13,6 +13,7 @@ import { handleAttempt } from './commands/attempt';
 import { handleSystemCommand } from './commands/system';
 import { handleSendero } from './commands/sendero';
 import { resolveHelp } from './help';
+import { resolveExecutionContextId } from '@senderos/core';
 
 export async function runCli(argv = process.argv.slice(2)) {
   const { positionals, options } = parseArgs(argv);
@@ -32,6 +33,9 @@ export async function runCli(argv = process.argv.slice(2)) {
     }
 
     let result: unknown;
+
+    if (cmd !== 'init' && cmd !== 'bootstrap-agent-skill')
+      resolveExecutionContextId(home);
 
     switch (cmd) {
       case 'init':

@@ -74,6 +74,7 @@ export interface AttemptReview {
 }
 
 export interface SenderosConfig {
+  executionContextId: string;
   database: {
     /** Environment variable containing a file: or remote libSQL URL. */
     urlEnv: string;
@@ -87,6 +88,7 @@ export interface SenderosConfig {
   output: { format: "json" | "text" };
   guardrails: { restrictToHome: boolean };
 }
+export type ExecutionContextRecord = typeof executionContexts.$inferSelect;
 export interface RuntimePaths {
   home: string;
   configPath: string;
@@ -164,6 +166,7 @@ export interface CommandHelp {
   subcommands?: CommandHelp[];
 }
 import type {
+  executionContexts,
   agents,
   agentTransitions,
   goals,

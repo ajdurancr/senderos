@@ -33,6 +33,8 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     (
       await invokeCli([
         'init',
+        '--name',
+        'CLI workflow context',
         '--home',
         home,
         '--harness',

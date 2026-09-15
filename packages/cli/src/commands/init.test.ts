@@ -7,15 +7,16 @@ import { tempHome } from '../../../core/src/test-support/runtime';
 describe('init command', () => {
   test('returns a non-mutating preview without approval', async () => {
     const home = tempHome();
-    const preview: any = await handleInit({ home, harness: 'codex' });
+    const preview: any = await handleInit({ home, harness: 'codex', name: 'Test context' });
     expect(preview.requiresApproval).toBe(true);
+    expect(preview.config.executionContextId).toStartWith('context-');
     expect(existsSync(join(home, 'config.json'))).toBe(false);
   });
 
   test('creates a configured runtime after approval', async () => {
     const home = tempHome();
     expect(
-      (await handleInit({ home, harness: 'codex', approve: true })).home,
+      (await handleInit({ home, harness: 'codex', name: 'Configured context', approve: true })).home,
     ).toBe(home);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
   });
@@ -38,7 +39,7 @@ describe('init command', () => {
     for (const key of keys) delete process.env[key];
     try {
       await expect(
-        handleInit({ home: tempHome(), approve: true }),
+        handleInit({ home: tempHome(), name: 'Unknown harness context', approve: true }),
       ).rejects.toThrow('Harness is not known');
     } finally {
       for (const key of keys)
@@ -46,5 +47,15 @@ describe('init command', () => {
           ? delete process.env[key]
           : (process.env[key] = previous[key]);
     }
+  });
+
+  test('requires a context name and accepts an existing context id', async () => {
+    await expect(handleInit({ harness: 'codex' })).rejects.toThrow('--name');
+    const preview: any = await handleInit({
+      name: 'Re-registered context',
+      harness: 'codex',
+      'execution-context-id': 'context-existing',
+    });
+    expect(preview.config.executionContextId).toBe('context-existing');
   });
 });

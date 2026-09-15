@@ -8,6 +8,7 @@ import {
 
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
+  executionContextId: text("execution_context_id").notNull(),
   name: text("name").notNull(),
   canonicalPath: text("canonical_path").notNull(),
   githubOwner: text("github_owner").notNull(),
@@ -20,7 +21,17 @@ export const projects = sqliteTable("projects", {
   healthDetailsJson: text("health_details_json").notNull().default("{}"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-});
+}, (table) => [
+  uniqueIndex("idx_projects_context_name").on(table.executionContextId, table.name),
+  index("idx_projects_execution_context").on(table.executionContextId),
+]);
+
+export const executionContexts = sqliteTable("execution_contexts", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [uniqueIndex("idx_execution_contexts_name").on(table.name)]);
 
 export const senderos = sqliteTable(
   "senderos",
