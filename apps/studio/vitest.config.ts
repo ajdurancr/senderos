@@ -6,6 +6,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
+      include: [
+        "app/components/**/*.{ts,tsx}",
+        "app/features/mission-control/**/*.{ts,tsx}",
+        "app/layouts/**/*.{ts,tsx}",
+        "app/routes/home.tsx",
+        "app/server/**/*.ts",
+      ],
+      exclude: ["**/*.test.{ts,tsx}"],
       thresholds: {
         branches: 85,
         functions: 90,
