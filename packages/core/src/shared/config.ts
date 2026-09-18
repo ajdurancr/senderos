@@ -1,5 +1,19 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
 
 import type {
   InitPreview,
@@ -21,9 +35,28 @@ export function configPathForHome(home: string) {
   return join(home, 'config.json');
 }
 
+function resolveThroughExistingAncestors(path: string) {
+  let ancestor = resolve(path);
+  const missingSegments: string[] = [];
+
+  while (!existsSync(ancestor)) {
+    const parent = dirname(ancestor);
+    if (parent === ancestor) break;
+    missingSegments.unshift(basename(ancestor));
+    ancestor = parent;
+  }
+
+  return resolve(
+    existsSync(ancestor) ? realpathSync(ancestor) : ancestor,
+    ...missingSegments,
+  );
+}
+
 export function ensureWithinHome(home: string, target: string) {
-  const rel = relative(home, target);
-  if (rel.startsWith('..') || (!rel && resolve(target) !== resolve(home))) {
+  const canonicalHome = resolveThroughExistingAncestors(home);
+  const canonicalTarget = resolveThroughExistingAncestors(target);
+  const rel = relative(canonicalHome, canonicalTarget);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(
       `Guardrail violation: path outside Senderos home: ${target}`,
     );
