@@ -50,6 +50,7 @@
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@senderos/core": "workspace:*",
     "typescript": "^5.9.3",
     "@types/bun": "latest"
   }
