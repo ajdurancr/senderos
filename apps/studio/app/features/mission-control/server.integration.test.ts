@@ -1,15 +1,23 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { RouterContextProvider } from "react-router";
 
-const databasePath = join(tmpdir(), `senderos-studio-${crypto.randomUUID()}.db`);
+const testRuntimeBase = resolve(
+  process.env.SENDEROS_TEST_RUNTIME_ROOT ??
+    resolve(import.meta.dirname, "../../../../../.tmp/test-runtime"),
+);
+const testRuntimeRoot = resolve(testRuntimeBase, "studio");
+mkdirSync(testRuntimeRoot, { recursive: true });
+const databasePath = join(testRuntimeRoot, `senderos-studio-${crypto.randomUUID()}.db`);
 process.env.SENDEROS_DATABASE_URL = `file:${databasePath}`;
 
 describe("Studio server integration", () => {
   afterAll(() => {
-    for (const suffix of ["", "-shm", "-wal"]) rmSync(`${databasePath}${suffix}`, { force: true });
+    rmSync(testRuntimeRoot, { recursive: true, force: true });
+    if (existsSync(testRuntimeBase) && readdirSync(testRuntimeBase).length === 0) {
+      rmSync(testRuntimeBase, { recursive: true, force: true });
+    }
   });
 
   it("loads the shared database and applies every Studio intent", async () => {

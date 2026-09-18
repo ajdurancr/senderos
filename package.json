@@ -21,8 +21,10 @@
     "typecheck:cli": "bun run --cwd packages/cli typecheck",
     "typecheck:studio": "bun run --cwd apps/studio typecheck",
     "typecheck:docs": "bun run --cwd apps/docs typecheck",
-    "test": "bun run test:core && bun run test:cli",
+    "test": "bun scripts/run-with-test-runtime.ts bun run test:all",
+    "test:all": "bun run --cwd packages/core test:raw && bun run --cwd packages/cli test:raw && bun run --cwd apps/studio test:raw",
     "test:core": "bun run --cwd packages/core test",
-    "test:cli": "bun run --cwd packages/cli test"
+    "test:cli": "bun run --cwd packages/cli test",
+    "test:studio": "bun run --cwd apps/studio test"
   }
 }

@@ -1,6 +1,5 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 type PackageManifest = {
   private?: boolean;
@@ -19,6 +18,27 @@ function invariant(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+const testRuntimeBase = resolve(
+  process.env.SENDEROS_TEST_RUNTIME_ROOT ??
+    resolve(import.meta.dir, "../../../../.tmp/test-runtime"),
+);
+const testRuntimeRoot = resolve(testRuntimeBase, "cli-package-check");
+rmSync(testRuntimeRoot, { recursive: true, force: true });
+mkdirSync(testRuntimeRoot, { recursive: true });
+process.on("exit", () => {
+  rmSync(testRuntimeRoot, { recursive: true, force: true });
+  if (existsSync(testRuntimeBase) && readdirSync(testRuntimeBase).length === 0) {
+    rmSync(testRuntimeBase, { recursive: true, force: true });
+  }
+});
+const testEnvironment = {
+  ...process.env,
+  SENDEROS_TEST_RUNTIME_ROOT: testRuntimeRoot,
+  TMPDIR: testRuntimeRoot,
+  TMP: testRuntimeRoot,
+  TEMP: testRuntimeRoot,
+};
+
 const manifest: PackageManifest = JSON.parse(readFileSync("package.json", "utf8"));
 invariant(manifest.private === false, "The CLI package must be public.");
 invariant(manifest.publishConfig?.access === "public", "publishConfig.access must be public.");
@@ -36,23 +56,23 @@ const help = Bun.spawnSync(["bun", "dist/index.js", "--help"]);
 invariant(help.exitCode === 0, `Built CLI help failed:\n${help.stderr.toString()}`);
 invariant(help.stdout.toString().includes("senderos"), "Built CLI help did not render the command name.");
 
-const smokeHome = mkdtempSync(join(tmpdir(), "senderos-package-check-"));
+const smokeHome = mkdtempSync(join(testRuntimeRoot, "senderos-package-check-"));
 try {
   const smoke = Bun.spawnSync([
     "bun", "dist/index.js", "init", "--home", smokeHome,
     "--harness", "codex", "--name", "Package smoke test", "--approve",
-  ]);
+  ], { env: testEnvironment });
   invariant(smoke.exitCode === 0, `Built CLI initialization failed:\n${smoke.stderr.toString()}`);
 } finally {
   rmSync(smokeHome, { recursive: true, force: true });
 }
 
-const packageCheckRoot = mkdtempSync(join(tmpdir(), "senderos-packed-artifact-"));
+const packageCheckRoot = mkdtempSync(join(testRuntimeRoot, "senderos-packed-artifact-"));
 try {
   const packed = Bun.spawnSync([
     "npm", "pack", "--ignore-scripts", "--json", "--pack-destination", packageCheckRoot,
   ], {
-    env: { ...process.env, npm_config_dry_run: "false" },
+    env: { ...testEnvironment, npm_config_dry_run: "false" },
   });
   invariant(packed.exitCode === 0, `npm pack failed:\n${packed.stderr.toString()}`);
   const packResults: PackResult[] = JSON.parse(packed.stdout.toString());
@@ -71,12 +91,12 @@ try {
   writeFileSync(join(installRoot, "package.json"), '{"private":true}');
   const install = Bun.spawnSync(
     ["bun", "add", join(packageCheckRoot, packResult.filename)],
-    { cwd: installRoot },
+    { cwd: installRoot, env: testEnvironment },
   );
   invariant(install.exitCode === 0, `Packed CLI installation failed:\n${install.stderr.toString()}`);
   const installedHelp = Bun.spawnSync(
     [join(installRoot, "node_modules/.bin/senderos"), "--help"],
-    { cwd: installRoot },
+    { cwd: installRoot, env: testEnvironment },
   );
   invariant(installedHelp.exitCode === 0, `Installed CLI failed:\n${installedHelp.stderr.toString()}`);
 

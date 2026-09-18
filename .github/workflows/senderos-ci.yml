@@ -87,17 +87,23 @@ jobs:
       - run: bun run --cwd apps/studio coverage
       - name: Studio dev-server smoke test
         run: |
-          SENDEROS_DATABASE_URL=file:/tmp/senderos-studio-ci.db bun run --cwd apps/studio dev --host 127.0.0.1 > /tmp/senderos-studio.log 2>&1 &
+          studio_runtime=.tmp/test-runtime/studio-ci
+          rm -rf "$studio_runtime"
+          mkdir -p "$studio_runtime"
+          export TMPDIR="$PWD/$studio_runtime"
+          export TMP="$TMPDIR"
+          export TEMP="$TMPDIR"
+          SENDEROS_DATABASE_URL="file:$PWD/$studio_runtime/senderos.db" bun run --cwd apps/studio dev --host 127.0.0.1 > "$studio_runtime/studio.log" 2>&1 &
           studio_pid=$!
-          trap 'kill "$studio_pid"' EXIT
+          trap 'kill "$studio_pid" 2>/dev/null || true; rm -rf "$studio_runtime"' EXIT
           for attempt in {1..20}; do
-            if curl --fail --silent http://127.0.0.1:5173/ > /tmp/senderos-studio.html; then
+            if curl --fail --silent http://127.0.0.1:5173/ > "$studio_runtime/studio.html"; then
               break
             fi
             sleep 1
           done
-          grep --quiet 'Orchestration topology' /tmp/senderos-studio.html || {
-            cat /tmp/senderos-studio.log
+          grep --quiet 'Orchestration topology' "$studio_runtime/studio.html" || {
+            cat "$studio_runtime/studio.log"
             exit 1
           }
           for route_and_copy in \
@@ -110,7 +116,7 @@ jobs:
             copy=${route_and_copy#*:}
             curl --fail --silent "http://127.0.0.1:5173/projects/smoke/$route" |
               grep --quiet "$copy" || {
-                cat /tmp/senderos-studio.log
+                cat "$studio_runtime/studio.log"
                 exit 1
               }
           done
@@ -120,10 +126,10 @@ jobs:
             sendero-security-hardening \
             sendero-dependency-upgrade \
             sendero-timed-wait-demo; do
-            curl --fail --silent "http://127.0.0.1:5173/senderos/$sendero" > /tmp/sendero.html
-            test "$(grep --only-matching 'draggable-node' /tmp/sendero.html | wc --lines)" -eq 7
-            test "$(grep --only-matching 'edge-hit-target' /tmp/sendero.html | wc --lines)" -eq 6
-            test "$(grep --only-matching 'style=\"left:' /tmp/sendero.html | wc --lines)" -eq 7
+            curl --fail --silent "http://127.0.0.1:5173/senderos/$sendero" > "$studio_runtime/sendero.html"
+            test "$(grep --only-matching 'draggable-node' "$studio_runtime/sendero.html" | wc --lines)" -eq 7
+            test "$(grep --only-matching 'edge-hit-target' "$studio_runtime/sendero.html" | wc --lines)" -eq 6
+            test "$(grep --only-matching 'style=\"left:' "$studio_runtime/sendero.html" | wc --lines)" -eq 7
           done
           for route_and_copy in \
             'goals:Outcome inventory' \

@@ -8,11 +8,15 @@
     "dev": "bun --watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test --isolate",
-    "test:unit": "find ./src -path './src/integration' -prune -o -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
-    "test:integration": "find ./src/integration -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
+    "test": "bun ../../scripts/run-with-test-runtime.ts bun run test:raw",
+    "test:raw": "bun test --isolate",
+    "test:unit": "bun ../../scripts/run-with-test-runtime.ts bun run test:unit:raw",
+    "test:unit:raw": "find ./src -path './src/integration' -prune -o -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
+    "test:integration": "bun ../../scripts/run-with-test-runtime.ts bun run test:integration:raw",
+    "test:integration:raw": "find ./src/integration -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
     "db:inspect": "bun src/scripts/inspect-db.ts",
-    "coverage": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run src/scripts/check-coverage.ts 97 coverage 95 && bun run src/scripts/check-test-structure.ts"
+    "coverage": "bun ../../scripts/run-with-test-runtime.ts bun run coverage:raw",
+    "coverage:raw": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run src/scripts/check-coverage.ts 97 coverage 95 && bun run src/scripts/check-test-structure.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
