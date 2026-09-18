@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { eventLabel, goalExecution, parseAttemptSnapshot, relativeTime } from "./model";
+import { missionControlFixture } from "../../test-support/mission-control-fixture";
 
 describe("mission-control model helpers", () => {
   it("parses snapshots defensively", () => {
@@ -20,16 +21,17 @@ describe("mission-control model helpers", () => {
 
   it("orders a goal's runs and attempts and returns the latest records", () => {
     const data = {
+      ...missionControlFixture,
       runs: [
-        { id: "run-2", goalId: "goal", createdAt: "2026-02-02" },
-        { id: "run-1", goalId: "goal", createdAt: "2026-02-01" },
-        { id: "other", goalId: "other", createdAt: "2026-02-03" },
+        { ...missionControlFixture.runs[0]!, id: "run-2", goalId: "goal", createdAt: "2026-02-02" },
+        { ...missionControlFixture.runs[0]!, id: "run-1", goalId: "goal", createdAt: "2026-02-01" },
+        { ...missionControlFixture.runs[0]!, id: "other", goalId: "other", createdAt: "2026-02-03" },
       ],
       attempts: [
-        { id: "a2", runId: "run-2", attemptNumber: 2 },
-        { id: "a1", runId: "run-1", attemptNumber: 1 },
+        { ...missionControlFixture.attempts[0]!, id: "a2", runId: "run-2", attemptNumber: 2 },
+        { ...missionControlFixture.attempts[0]!, id: "a1", runId: "run-1", attemptNumber: 1 },
       ],
-    } as any;
+    };
     expect(goalExecution(data, "goal")).toMatchObject({
       runs: [{ id: "run-1" }, { id: "run-2" }],
       attempts: [{ id: "a1" }, { id: "a2" }],

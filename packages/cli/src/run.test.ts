@@ -11,7 +11,7 @@ describe('runCli', () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['init', '--name', 'Preview context', '--home', home, '--harness', 'codex']);
@@ -33,7 +33,7 @@ describe('runCli', () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['init', '--name', 'Agent context', '--home', home, '--harness', 'codex', '--approve']);
@@ -49,7 +49,7 @@ describe('runCli', () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['init', '--name', 'Sendero context', '--home', home, '--harness', 'codex', '--approve']);
@@ -65,7 +65,7 @@ describe('runCli', () => {
   test('help output includes agent descriptions by default and can omit them', async () => {
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['run', 'dispatch', '--help']);
@@ -91,7 +91,7 @@ describe('runCli', () => {
     const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli([
@@ -119,7 +119,7 @@ describe('runCli', () => {
     const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['bootstrap-agent-skill', '--path', skillPath, '--print']);
@@ -136,7 +136,7 @@ describe('runCli', () => {
     const errors: string[] = [];
     const original = console.error;
     const originalExitCode = process.exitCode;
-    console.error = (...args: unknown[]) => errors.push(args.join(' '));
+    console.error = (...args: Parameters<typeof console.error>) => errors.push(args.join(' '));
     process.exitCode = 0;
     try {
       await runCli(['wat', '--home', tempHome()]);

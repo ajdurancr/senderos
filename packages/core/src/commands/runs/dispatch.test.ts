@@ -31,9 +31,7 @@ test("run service dispatches and cancels a concrete attempt", async () => {
     home,
   );
   expect((await showRunState(goal.id, home)).attempts).toHaveLength(1);
-  expect(((await cancelRun(dispatched.runId, home)) as any).status).toBe(
-    "canceled",
-  );
+  expect(await cancelRun(dispatched.runId, home)).toMatchObject({ status: "canceled" });
 });
 
 test("cancelRun rejects an unknown run", async () => {

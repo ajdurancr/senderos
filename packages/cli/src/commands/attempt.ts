@@ -5,7 +5,9 @@ import {
   updateRunAttempt,
 } from '@senderos/core';
 import { resolveExecutionContextId } from '@senderos/core';
-import { requirePositional } from '../shared';
+import { enumOption, optionString, requirePositional } from '../shared';
+import type { RunAttemptStatus } from '@senderos/core';
+const attemptStatuses = ['queued', 'running', 'paused', 'succeeded', 'failed', 'canceled'] as const satisfies readonly RunAttemptStatus[];
 export const attemptCommandHelp = {
   command: 'attempt',
   summary: 'Inspect concrete run attempts.',
@@ -48,22 +50,20 @@ export async function handleAttempt(
   };
   switch (subcommand) {
     case 'list':
-      return await listRunAttempts(options['run-id'] as string | undefined, home, executionContextId);
+      return await listRunAttempts(optionString(options['run-id']), home, executionContextId);
     case 'show':
       return await getAttempt(requirePositional(positionals[2], 'attempt id'), home, executionContextId);
     case 'update':
       return await updateRunAttempt(
         await requireOwnedAttempt(),
         {
-          status: options.status as any,
-          checkpoint: options.checkpoint as string | undefined,
-          workingPath: options['working-path'] as string | undefined,
-          externalSessionId: options['external-session-id'] as
-            | string
-            | undefined,
-          resumeCommand: options['resume-command'] as string | undefined,
-          failureStep: options['failure-step'] as string | undefined,
-          failureSummary: options['failure-summary'] as string | undefined,
+          status: enumOption(optionString(options.status), attemptStatuses, 'status'),
+          checkpoint: optionString(options.checkpoint),
+          workingPath: optionString(options['working-path']),
+          externalSessionId: optionString(options['external-session-id']),
+          resumeCommand: optionString(options['resume-command']),
+          failureStep: optionString(options['failure-step']),
+          failureSummary: optionString(options['failure-summary']),
           result: options['result-json']
             ? JSON.parse(String(options['result-json']))
             : undefined,

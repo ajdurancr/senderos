@@ -32,52 +32,40 @@ export async function runCli(argv = process.argv.slice(2)) {
       return;
     }
 
-    let result: unknown;
+    const result = await (async () => {
+      if (cmd !== 'init' && cmd !== 'bootstrap-agent-skill')
+        resolveExecutionContextId(home);
 
-    if (cmd !== 'init' && cmd !== 'bootstrap-agent-skill')
-      resolveExecutionContextId(home);
-
-    switch (cmd) {
+      switch (cmd) {
       case 'init':
-        result = await handleInit(options);
-        break;
+        return await handleInit(options);
       case 'bootstrap-agent-skill':
-        result = await handleBootstrapAgentSkill(options);
-        break;
+        return await handleBootstrapAgentSkill(options);
       case 'config':
-        result = await handleConfig(sub, positionals, home);
-        break;
+        return await handleConfig(sub, positionals, home);
       case 'project':
-        result = await handleProject(sub, positionals, options, home);
-        break;
+        return await handleProject(sub, positionals, options, home);
       case 'agent':
-        result = await handleAgent(sub, positionals, home);
-        break;
+        return await handleAgent(sub, positionals, home);
       case 'transition':
-        result = await handleTransition(sub, positionals, options, home);
-        break;
+        return await handleTransition(sub, positionals, options, home);
       case 'sendero':
-        result = await handleSendero(sub, positionals, options, home);
-        break;
+        return await handleSendero(sub, positionals, options, home);
       case 'goal':
-        result = await handleGoal(sub, positionals, options, home);
-        break;
+        return await handleGoal(sub, positionals, options, home);
       case 'plan':
-        result = await handlePlan(options, home);
-        break;
+        return await handlePlan(options, home);
       case 'run':
-        result = await handleRun(sub, positionals, options, home);
-        break;
+        return await handleRun(sub, positionals, options, home);
       case 'attempt':
-        result = await handleAttempt(sub, positionals, options, home);
-        break;
+        return await handleAttempt(sub, positionals, options, home);
       case 'doctor':
       case 'status':
-        result = await handleSystemCommand(cmd, home);
-        break;
+        return await handleSystemCommand(cmd, home);
       default:
         throw new Error(`Unknown command: ${cmd}`);
-    }
+      }
+    })();
 
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {

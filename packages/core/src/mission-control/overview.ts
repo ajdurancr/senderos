@@ -4,13 +4,14 @@ import { listRuns } from '../commands/runs/list';
 import { listRunAttempts } from '../commands/attempts/list';
 import { plan } from '../commands/planning/plan';
 import { status } from '../commands/system/status';
+import type { AttemptReview } from '../shared/types';
 
 export async function missionControlOverview(home?: string, executionContextId?: string) {
   const goals = await listGoals(home, executionContextId);
   const runs = await listRuns(home, executionContextId);
   const attempts = await listRunAttempts(undefined, home, executionContextId);
   const reviews = attempts.flatMap((attempt) => {
-    const snapshot = JSON.parse(attempt.statusSnapshotJson) as Record<string, any>;
+    const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
     return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
   });
   return {

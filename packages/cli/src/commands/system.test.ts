@@ -4,12 +4,12 @@ import { initHome } from '../../../core/src/test-support/runtime';
 
 test('system commands report status and health', async () => {
   const home = await initHome();
-  expect((await (handleSystemCommand as any)('doctor', home)).ok).toBe(true);
-  expect((await (handleSystemCommand as any)('status', home)).openGoals).toBe(0);
+  expect(await handleSystemCommand('doctor', home)).toMatchObject({ ok: true });
+  expect(await handleSystemCommand('status', home)).toMatchObject({ openGoals: 0 });
 });
 
 test('system command rejects unknown commands', async () => {
-  await expect((handleSystemCommand as any)('wat', await initHome())).rejects.toThrow(
-    'Unknown command: wat',
+  await expect(handleSystemCommand('invalid-action', await initHome())).rejects.toThrow(
+    'Unknown command: invalid-action',
   );
 });

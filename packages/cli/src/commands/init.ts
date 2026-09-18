@@ -1,6 +1,10 @@
-import type { HarnessKind } from '@senderos/core';
+import type { HarnessKind, InitPreview } from '@senderos/core';
 import { initializeRuntime, previewInit } from '@senderos/core';
-import { optionString } from '../shared';
+import { enumOption, optionString } from '../shared';
+
+const harnessKinds = ['openclaw', 'codex', 'claude-code'] as const satisfies readonly HarnessKind[];
+type InitOptions = Record<string, string | boolean | string[]>;
+type InitializedRuntime = Awaited<ReturnType<typeof initializeRuntime>>;
 
 export const initCommandHelp = {
   command: 'init',
@@ -26,18 +30,15 @@ export const initCommandHelp = {
   ],
 };
 
-export async function handleInit(
-  options: Record<string, string | boolean | string[]>,
-) {
+export function handleInit(options: InitOptions & { approve?: false }): Promise<InitPreview>;
+export function handleInit(options: InitOptions & { approve: true }): Promise<InitializedRuntime>;
+export function handleInit(options: InitOptions): Promise<InitPreview | InitializedRuntime>;
+export async function handleInit(options: InitOptions): Promise<InitPreview | InitializedRuntime> {
   const name = optionString(options.name);
   if (!name) throw new Error('Missing required option: --name');
   const preview = previewInit(
-    (Array.isArray(options.home) ? options.home.at(-1) : options.home) as
-      | string
-      | undefined,
-    (Array.isArray(options.harness)
-      ? options.harness.at(-1)
-      : options.harness) as HarnessKind | undefined,
+    optionString(options.home),
+    enumOption(optionString(options.harness), harnessKinds, 'harness'),
     { name, id: optionString(options['execution-context-id']) },
   );
 

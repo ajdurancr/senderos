@@ -7,9 +7,9 @@ import { tempHome } from '../../../core/src/test-support/runtime';
 describe('init command', () => {
   test('returns a non-mutating preview without approval', async () => {
     const home = tempHome();
-    const preview: any = await handleInit({ home, harness: 'codex', name: 'Test context' });
-    expect(preview.requiresApproval).toBe(true);
-    expect(preview.config.executionContextId).toStartWith('context-');
+    const preview = await handleInit({ home, harness: 'codex', name: 'Test context' });
+    expect(preview).toMatchObject({ requiresApproval: true });
+    expect('config' in preview ? preview.config.executionContextId : '').toStartWith('context-');
     expect(existsSync(join(home, 'config.json'))).toBe(false);
   });
 
@@ -51,11 +51,11 @@ describe('init command', () => {
 
   test('requires a context name and accepts an existing context id', async () => {
     await expect(handleInit({ harness: 'codex' })).rejects.toThrow('--name');
-    const preview: any = await handleInit({
+    const preview = await handleInit({
       name: 'Re-registered context',
       harness: 'codex',
       'execution-context-id': 'context-existing',
     });
-    expect(preview.config.executionContextId).toBe('context-existing');
+    expect(preview).toMatchObject({ config: { executionContextId: 'context-existing' } });
   });
 });

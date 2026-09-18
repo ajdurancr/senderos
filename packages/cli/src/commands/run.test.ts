@@ -4,6 +4,7 @@ import {
   activateGoal,
   createGoal,
   listAgentTransitions,
+  listRuns,
 } from '@senderos/core';
 import {
   createProjectFixture,
@@ -18,7 +19,7 @@ test('run command dispatches a planned goal', async () => {
     home,
   ))!;
   const transition = (await listAgentTransitions(home))[0]!;
-  const dispatched = await (handleRun as any)(
+  await expect(handleRun(
     'dispatch',
     [],
     {
@@ -27,21 +28,20 @@ test('run command dispatches a planned goal', async () => {
       'agent-id': transition.sourceAgentId,
     },
     home,
-  );
-  expect(
-    (await (handleRun as any)('show', ['run', 'show', dispatched.runId], {}, home)).id,
-  ).toBe(dispatched.runId);
+  )).resolves.toMatchObject({ goalId: goal.id });
+  const dispatched = (await listRuns(home))[0]!;
+  expect(await handleRun('show', ['run', 'show', dispatched.id], {}, home)).toMatchObject({ id: dispatched.id });
 });
 
 test('run command rejects unknown actions and records outside the current context', async () => {
   const home = await initHome();
-  await expect((handleRun as any)('wat', [], {}, home)).rejects.toThrow(
+  await expect(handleRun('invalid-action', [], {}, home)).rejects.toThrow(
     'Unknown run action',
   );
   await expect(
-    (handleRun as any)('cancel', ['run', 'cancel', 'run-missing'], {}, home),
+    handleRun('cancel', ['run', 'cancel', 'run-missing'], {}, home),
   ).rejects.toThrow('Run not found in the current execution context');
   await expect(
-    (handleRun as any)('state', ['run', 'state', 'goal-missing'], {}, home),
+    handleRun('state', ['run', 'state', 'goal-missing'], {}, home),
   ).rejects.toThrow('Goal not found in the current execution context');
 });

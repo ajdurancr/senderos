@@ -24,7 +24,7 @@ test('sendero CLI exposes intent-level graph actions', async () => {
       { from: 'tdd-craftsman', to: 'incident-responder' },
       home,
     ),
-  ).resolves.toMatchObject({ sourceNodeId: expect.any(String) });
+  ).resolves.toMatchObject({ sourceNodeId: expect.stringMatching(/^sendero-/) });
 
   await expect(
     handleSendero(

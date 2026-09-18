@@ -2,26 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
-import type { MissionControlData } from "./server";
+import { missionControlFixture } from "../../test-support/mission-control-fixture";
 import { MissionControlOverview } from "./overview";
 import { parseStudioPath } from "./navigation";
 
-const timestamp = "2026-09-17T12:00:00.000Z";
-const agent = { id: "agent-1", slug: "agent", name: "Agent One", kind: "worker", status: "active", description: "Does work", defaultGoal: "Ship", createdAt: timestamp, updatedAt: timestamp };
-const attempt = { id: "attempt-1", runId: "run-1", attemptNumber: 1, agentId: agent.id, transitionId: "edge-1", executionObjective: "Deliver", harness: "codex", externalSessionId: null, resumeCommand: null, heartbeatAt: timestamp, hostEnvironmentName: "host", workingPath: "/tmp/work", workingPathMode: "new", retryFromAttemptId: null, checkpoint: "testing", status: "failed", failureSummary: "Tests failed", statusSnapshotJson: JSON.stringify({ evidence: [{ id: "proof", label: "Test report", kind: "manual" }], review: { status: "changes_requested" } }), startedAt: timestamp, completedAt: timestamp, createdAt: timestamp, updatedAt: timestamp };
-const data = {
-  executionContexts: [{ id: "context-1", name: "Context One", createdAt: timestamp, updatedAt: timestamp }],
-  projects: [{ id: "project-1", executionContextId: "context-1", name: "Project One", githubOwner: "owner", githubRepo: "repo", targetBranch: "main", integrationMode: "github_pr", status: "active", createdAt: timestamp, updatedAt: timestamp }],
-  goals: [{ id: "goal-1", projectId: "project-1", title: "Ship feature", kind: "feature", status: "failed", baseTargetBranch: "main", senderoVersionId: "version-1", createdAt: timestamp, updatedAt: timestamp }],
-  runs: [{ id: "run-1", goalId: "goal-1", status: "failed", createdAt: timestamp, updatedAt: timestamp }],
-  attempts: [attempt],
-  agents: [agent],
-  transitions: [{ id: "transition-1", sourceAgentId: agent.id, targetAgentId: null, name: "Handoff", description: "Move", transitionObjective: "Deliver", status: "active", createdAt: timestamp, updatedAt: timestamp }],
-  senderoGraphs: [{ sendero: { id: "sendero-1", slug: "demo", name: "Demo Sendero", description: "A demo", status: "active" }, version: { id: "version-1", senderoId: "sendero-1", version: 1 }, nodes: [{ id: "node-start", senderoVersionId: "version-1", agentId: null, kind: "start", label: "Start", positionX: 20, positionY: 80 }, { id: "node-agent", senderoVersionId: "version-1", agentId: agent.id, kind: "agent", label: "Agent", positionX: 300, positionY: 80 }, { id: "node-end", senderoVersionId: "version-1", agentId: null, kind: "end", label: "End", positionX: 580, positionY: 80 }], edges: [{ id: "edge-1", senderoVersionId: "version-1", sourceNodeId: "node-agent", targetNodeId: "node-end", name: "Finish", description: "Complete", transitionObjective: "Complete", status: "active" }] }],
-  events: [{ id: "event-1", eventType: "attempt.failed", entityType: "attempt", entityId: attempt.id, payload: { reason: "tests" }, createdAt: timestamp }],
-  queue: { reviews: [{ attempt }], failedAttempts: [attempt], staleAttempts: [attempt], dispatchable: [{ goalId: "goal-1", transitionId: "edge-1", agentId: agent.id, previousRunId: "run-0" }], blockedGoals: [] },
-  runtime: { database: { urlEnv: "SENDEROS_DATABASE_URL", authTokenEnv: "SENDEROS_DATABASE_AUTH_TOKEN", endpoint: "Local libSQL database", remote: false } },
-} as unknown as MissionControlData;
+const data = missionControlFixture;
 
 function renderPath(path: string) {
   const [pathname, query = ""] = path.split("?");
@@ -64,7 +49,7 @@ describe("MissionControlOverview", () => {
       ...data,
       projects: [], goals: [], runs: [], attempts: [], agents: [], transitions: [], events: [],
       queue: { reviews: [], activeRuns: [], failedAttempts: [], staleAttempts: [], dispatchable: [], blockedGoals: [] },
-    } as any;
+    };
     for (const [path, copy] of [["/now?filter=failed", "Queue clear"], ["/runs", "No execution history"], ["/settings", "Shared database"]]) {
       const [pathname, query = ""] = path.split("?");
       const router = createMemoryRouter([{ path: "*", element: <MissionControlOverview data={empty} route={parseStudioPath(pathname)} search={new URLSearchParams(query)} /> }]);

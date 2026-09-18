@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
@@ -10,14 +10,15 @@ import { OrchestrationCanvas } from "./orchestration-canvas";
 import { QueueMetrics } from "./queue-metrics";
 import { DispatchTray } from "./dispatch-tray";
 import { AgentsView, AttentionView, EventsView, GoalsView, ReviewsView, RunsView, SettingsView } from "./workspace-views";
+import { fixtureTimestamp, missionControlFixture } from "../../../test-support/mission-control-fixture";
+import type { MissionControlData } from "../server";
 
-const now = "2026-09-17T12:00:00Z";
-const agent = { id: "agent", name: "Worker", description: "Works", kind: "worker", status: "active" };
-const goal = { id: "goal", projectId: "project", title: "Test goal", kind: "feature", baseTargetBranch: "main", senderoVersionId: "version", status: "draft", createdAt: now, updatedAt: now };
-const run = { id: "run", goalId: goal.id, status: "running", createdAt: now, updatedAt: now };
-const attempt = { id: "attempt", runId: run.id, attemptNumber: 1, agentId: agent.id, transitionId: "edge", executionObjective: "Execute", harness: "codex", checkpoint: null, heartbeatAt: now, workingPath: null, retryFromAttemptId: null, status: "running", statusSnapshotJson: JSON.stringify({ evidence: [{ id: "e", label: "Proof", kind: "manual" }], review: { status: "approved" } }), createdAt: now, updatedAt: now };
-const graph = { sendero: { id: "sendero", name: "Trail", description: "Trail description", status: "active" }, version: { id: "version", version: 1 }, nodes: [{ id: "start", kind: "start", label: "Start", agentId: null, positionX: 20, positionY: 60 }, { id: "worker", kind: "agent", label: "Worker", agentId: agent.id, positionX: 300, positionY: 60 }, { id: "end", kind: "end", label: "End", agentId: null, positionX: 580, positionY: 60 }], edges: [{ id: "edge", sourceNodeId: "worker", targetNodeId: "end", name: "Finish", description: "Done", transitionObjective: "Done", status: "active" }] };
-const data = { projects: [{ id: "project" }], goals: [goal], runs: [run], attempts: [attempt], agents: [agent], transitions: [], senderoGraphs: [graph], events: [], queue: { reviews: [], dispatchable: [{ goalId: goal.id, transitionId: "edge", agentId: agent.id }], failedAttempts: [], staleAttempts: [], blockedGoals: [] } } as any;
+const now = fixtureTimestamp;
+const data = missionControlFixture;
+const agent = data.agents[0]!;
+const goal = data.goals[0]!;
+const run = data.runs[0]!;
+const attempt = data.attempts[0]!;
 
 function inRouter(element: React.ReactNode) {
   const router = createMemoryRouter([{ path: "*", action: () => null, element }]);
@@ -26,7 +27,7 @@ function inRouter(element: React.ReactNode) {
 
 describe("mission-control components", () => {
   it("renders legacy summary components and all goal actions", () => {
-    inRouter(<><QueueMetrics queue={data.queue} /><GoalList goals={[goal, { ...goal, id: "failed", status: "failed" }, { ...goal, id: "active", status: "active" }] as any} runs={[run] as any} /><AttemptInspector attempts={[attempt] as any} goals={[goal] as any} runs={[run] as any} /></>);
+    inRouter(<><QueueMetrics queue={data.queue} /><GoalList goals={[{ ...goal, status: "draft" }, { ...goal, id: "failed", status: "failed" }, { ...goal, id: "active", status: "active" }]} runs={[{ ...run, status: "executing" }]} /><AttemptInspector attempts={[{ ...attempt, status: "running", statusSnapshotJson: JSON.stringify({ evidence: [{ id: "e", label: "Proof", kind: "manual" }], review: { status: "approved" } }) }]} goals={[goal]} runs={[run]} /></>);
     expect(screen.getByText("Needs review")).toBeTruthy();
     expect(screen.getByText("Start goal")).toBeTruthy();
     expect(screen.getByText("Retry")).toBeTruthy();
@@ -40,7 +41,7 @@ describe("mission-control components", () => {
   });
 
   it("opens, filters, and closes the command palette from mouse and keyboard", () => {
-    inRouter(<CommandPalette data={data} projectId="project" />);
+    inRouter(<CommandPalette data={data} projectId={goal.projectId} />);
     fireEvent.click(screen.getByText("Search or run a command"));
     const input = screen.getByPlaceholderText("Find a goal, attempt, or action…");
     fireEvent.change(input, { target: { value: "nothing-here" } });
@@ -49,13 +50,29 @@ describe("mission-control components", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
     expect(screen.getByRole("dialog")).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole("dialog"));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    const backdrop = screen.getByRole("dialog").parentElement;
+    expect(backdrop).not.toBeNull();
+    if (backdrop) fireEvent.mouseDown(backdrop);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByText("Search or run a command"));
+    fireEvent.click(screen.getByText("Esc"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("lists attempts whose run or goal is no longer present", () => {
+    const view = inRouter(<CommandPalette data={{ ...data, goals: [], runs: [] }} />);
+    const rendered = within(view.container);
+    fireEvent.click(rendered.getByText("Search or run a command"));
+    expect(rendered.getByText(`Attempt ${attempt.id}`)).toBeTruthy();
   });
 
   it("renders and resets an interactive Sendero canvas", () => {
-    inRouter(<OrchestrationCanvas data={data} projectId="project" goalId="goal" />);
-    expect(screen.getAllByText("Trail").length).toBeGreaterThan(0);
+    inRouter(<OrchestrationCanvas data={data} projectId={goal.projectId} goalId={goal.id} />);
+    expect(screen.getAllByText("Demo Sendero").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("Auto layout"));
-    const node = screen.getByLabelText("Inspect agent Worker");
+    const node = screen.getByLabelText("Inspect agent Agent One");
     fireEvent.pointerDown(node, { button: 1, pointerId: 1 });
     Object.assign(node, { setPointerCapture: () => undefined });
     fireEvent.pointerDown(node, { button: 0, pointerId: 2, clientX: 100, clientY: 100 });
@@ -70,8 +87,8 @@ describe("mission-control components", () => {
   });
 
   it("covers contextual inspector selections and terminal empty evidence", () => {
-    const terminalAttempt = { ...attempt, status: "succeeded", statusSnapshotJson: "{}", checkpoint: "done", workingPath: "/tmp/done" };
-    const detailed = { ...data, attempts: [terminalAttempt], transitions: [{ id: "legacy", sourceAgentId: agent.id, name: "Legacy", transitionObjective: "Hand off" }], events: [{ id: "event", eventType: "goal.updated", entityId: goal.id, createdAt: now }] };
+    const terminalAttempt: MissionControlData["attempts"][number] = { ...attempt, status: "succeeded", statusSnapshotJson: "{}", checkpoint: "done", workingPath: "/tmp/done" };
+    const detailed: MissionControlData = { ...data, attempts: [terminalAttempt], transitions: [{ ...data.transitions[0]!, id: "legacy", sourceAgentId: agent.id, name: "Legacy", transitionObjective: "Hand off" }], events: [{ ...data.events[0]!, id: "event", eventType: "goal.updated", entityId: goal.id, createdAt: now }] };
     inRouter(<>
       <ContextualInspector data={detailed} />
       <ContextualInspector data={detailed} goalId={goal.id} />
@@ -85,13 +102,13 @@ describe("mission-control components", () => {
   });
 
   it("renders fallback and empty branches across operational views", () => {
-    const orphan = { ...attempt, id: "orphan", runId: "missing", failureSummary: undefined, heartbeatAt: null, retryFromAttemptId: "prior", statusSnapshotJson: JSON.stringify({ evidence: [{ id: "e", label: "Evidence", kind: "manual" }] }) };
-    const fallback = {
+    const orphan: MissionControlData["attempts"][number] = { ...attempt, id: "orphan", runId: "missing", failureSummary: null, heartbeatAt: null, retryFromAttemptId: "prior", statusSnapshotJson: JSON.stringify({ evidence: [{ id: "e", label: "Evidence", kind: "manual" }] }) };
+    const fallback: MissionControlData = {
       ...data,
-      executionContexts: [], projects: [{ id: "settings", name: "Settings project", githubOwner: "owner", githubRepo: "repo", targetBranch: "main", integrationMode: "github_pr", status: "active" }], goals: [], runs: [], attempts: [orphan], agents: [{ ...agent, description: "", defaultGoal: "" }], events: [{ id: "event", eventType: "run.started", entityType: "run", entityId: "missing", payload: {}, createdAt: now }],
-      queue: { reviews: [{ attempt: orphan }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ goalId: "missing", transitionId: "missing", agentId: "missing" }], blockedGoals: [] },
+      executionContexts: [], projects: [{ ...data.projects[0]!, id: "settings", name: "Settings project" }], goals: [], runs: [], attempts: [orphan], agents: [{ ...agent, description: "", defaultGoal: "" }], events: [{ ...data.events[0]!, id: "event", eventType: "run.started", entityType: "run", entityId: "missing", payload: {}, createdAt: now }],
+      queue: { reviews: [{ attempt: orphan, review: { status: "pending" } }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ goalId: "missing", transitionId: "missing", agentId: "missing", previousRunId: null }], blockedGoals: [] },
       runtime: { database: { endpoint: "db.example.test", remote: true, urlEnv: "URL", authTokenEnv: "TOKEN" } },
-    } as any;
+    };
     inRouter(<>
       <AttentionView data={fallback} />
       <GoalsView data={fallback} create={false} />

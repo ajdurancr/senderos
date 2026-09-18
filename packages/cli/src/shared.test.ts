@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  enumOption,
   optionString,
   optionStrings,
   resolveHome,
@@ -22,5 +23,10 @@ describe('cli shared helpers', () => {
     expect(optionStrings(['active', 'failed'])).toEqual(['active', 'failed']);
     expect(optionStrings('active')).toEqual(['active']);
     expect(optionStrings(true)).toEqual([]);
+    expect(enumOption(undefined, ['active', 'failed'], 'status')).toBeUndefined();
+    expect(enumOption('active', ['active', 'failed'], 'status')).toBe('active');
+    expect(() => enumOption('invalid', ['active', 'failed'], 'status')).toThrow(
+      'Invalid --status: invalid',
+    );
   });
 });

@@ -20,6 +20,6 @@ test("removes an agent and reconnects the surrounding Sendero", async () => {
     }),
   ).resolves.toMatchObject({
     removedConnections: 2,
-    connections: [{ sourceNodeId: expect.any(String), targetNodeId: expect.any(String) }],
+    connections: [{ sourceNodeId: expect.stringMatching(/^sendero-/), targetNodeId: expect.stringMatching(/^sendero-/) }],
   });
 });

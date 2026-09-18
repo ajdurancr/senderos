@@ -15,8 +15,8 @@ export async function updateProject(input: {
   githubRemote?: string;
   targetBranch?: string;
   integrationMode?: IntegrationMode;
-  inferredCommands?: Record<string, unknown>;
-  healthDetails?: Record<string, unknown>;
+  inferredCommands?: Record<string, string>;
+  healthDetails?: Record<string, string | number | boolean | null>;
   status?: ProjectStatus;
   executionContextId?: string;
 }) {

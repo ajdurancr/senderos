@@ -91,7 +91,7 @@ export async function plan(input: {
   for (const goal of (await listGoals(input.home, input.executionContextId)).filter((goal) =>
     statuses.includes(goal.status),
   )) {
-    const previous: any = await latestRunForGoal(goal.id, input.home);
+    const previous = await latestRunForGoal(goal.id, input.home);
     if (
       previous &&
       !["succeeded", "failed", "canceled"].includes(previous.status)

@@ -7,7 +7,9 @@ import {
   updateGoal,
 } from '@senderos/core';
 import { resolveExecutionContextId } from '@senderos/core';
-import { requirePositional } from '../shared';
+import type { GoalKind } from '@senderos/core';
+import { enumOption, optionString, requirePositional } from '../shared';
+const goalKinds = ['feature', 'bugfix', 'refactor', 'maintenance', 'security', 'migration'] as const satisfies readonly GoalKind[];
 export const goalCommandHelp = {
   command: 'goal',
   summary: 'Create and manage Senderos goals.',
@@ -60,9 +62,9 @@ export async function handleGoal(
     executionContextId,
     projectId: String(options['project-id'] ?? ''),
     title: String(options.title ?? ''),
-    kind: options.kind as any,
-    specText: options['spec-text'] as string | undefined,
-    intakeText: options['intake-text'] as string | undefined,
+    kind: enumOption(optionString(options.kind), goalKinds, 'kind'),
+    specText: optionString(options['spec-text']),
+    intakeText: optionString(options['intake-text']),
   };
   switch (subcommand) {
     case 'create':

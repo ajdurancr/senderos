@@ -141,7 +141,7 @@ describe('goal orchestration runtime model', () => {
       'external-1',
     );
 
-    expect((await cancelRun(dispatched.runId, home) as any)?.status).toBe('canceled');
+    expect(await cancelRun(dispatched.runId, home)).toMatchObject({ status: 'canceled' });
     expect((await cancelGoal(goal.id, home))?.status).toBe('canceled');
     await expect(cancelGoal('missing', home)).rejects.toThrow('Goal not found');
     await expect(

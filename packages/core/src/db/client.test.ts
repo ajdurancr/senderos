@@ -49,8 +49,8 @@ describe("db client", () => {
 
   test("openRuntimeDb returns a usable libSQL connection", async () => {
     const home = await initHome();
-    const db = openRuntimeDb(home) as any;
-    expect(await db.get("select 1 as value")).toEqual({ value: 1 });
+    const db = openRuntimeDb(home);
+    expect((await db.$client.execute("select 1 as value")).rows[0]?.value).toBe(1);
     db.$client.close();
   });
 
@@ -66,8 +66,8 @@ describe("db client", () => {
       url: `file:${home}/detached.db`,
     });
 
-    const db = openRuntimeDb() as any;
-    expect(await db.get("select 1 as value")).toEqual({ value: 1 });
+    const db = openRuntimeDb();
+    expect((await db.$client.execute("select 1 as value")).rows[0]?.value).toBe(1);
     db.$client.close();
   });
 });

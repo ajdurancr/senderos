@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { RouterContextProvider } from "react-router";
 
 const databasePath = join(tmpdir(), `senderos-studio-${crypto.randomUUID()}.db`);
 process.env.SENDEROS_DATABASE_URL = `file:${databasePath}`;
@@ -52,8 +53,10 @@ describe("Studio server integration", () => {
     expect(data.attempts.find((item) => item.id === attempt.id)?.statusSnapshotJson).toContain("changes_requested");
 
     const homeRoute = await import("../../routes/home");
-    expect(await homeRoute.loader({ request: new Request("http://localhost/") } as any)).toMatchObject({ projects: expect.any(Array) });
-    const noOp = new FormData(); noOp.set("intent", "unknown");
-    expect(await homeRoute.action({ request: new Request("http://localhost/", { method: "POST", body: noOp }) } as any)).toBeNull();
+    const routeContext = new RouterContextProvider();
+    const routeUrl = new URL("http://localhost/");
+    expect(await homeRoute.loader({ request: new Request(routeUrl), url: routeUrl, pattern: "/", params: {}, context: routeContext })).toMatchObject({ projects: data.projects });
+    const noOp = new FormData(); noOp.set("intent", "no-op");
+    expect(await homeRoute.action({ request: new Request(routeUrl, { method: "POST", body: noOp }), url: routeUrl, pattern: "/", params: {}, context: routeContext })).toBeNull();
   }, 30_000);
 });
