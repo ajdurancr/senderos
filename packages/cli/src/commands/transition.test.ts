@@ -29,3 +29,11 @@ test('transition command creates and retrieves a handoff', async () => {
       .length,
   ).toBeGreaterThan(0);
 });
+
+test('transition command lists all transitions and rejects unknown actions', async () => {
+  const home = await initHome();
+  expect(await (handleTransition as any)('list', [], {}, home)).toBeArray();
+  await expect((handleTransition as any)('wat', [], {}, home)).rejects.toThrow(
+    'Unknown transition action',
+  );
+});

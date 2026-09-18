@@ -51,3 +51,16 @@ test('sendero CLI exposes intent-level graph actions', async () => {
   )) as SenderoGraph;
   expect(graph.nodes.some((node) => node.agentId === added.agent.agentId)).toBe(false);
 });
+
+test('sendero CLI validates every unsupported or malformed action', async () => {
+  const home = await initHome();
+  await expect(handleSendero('show', ['sendero', 'show', 'software-delivery'], { version: 'nope' }, home))
+    .rejects.toThrow('Sendero version must be an integer');
+  await expect(handleSendero('version', ['sendero', 'version', 'show'], {}, home))
+    .rejects.toThrow('Unknown sendero version action');
+  await expect(handleSendero('agent', ['sendero', 'agent', 'move', 'software-delivery', 'spec-partner'], {}, home))
+    .rejects.toThrow('Unknown sendero agent action');
+  await expect(handleSendero('connect', ['sendero', 'connect', 'software-delivery'], {}, home))
+    .rejects.toThrow('Missing required option: --from');
+  await expect(handleSendero('wat', [], {}, home)).rejects.toThrow('Unknown sendero action');
+});

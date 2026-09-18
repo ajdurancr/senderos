@@ -32,3 +32,16 @@ test('run command dispatches a planned goal', async () => {
     (await (handleRun as any)('show', ['run', 'show', dispatched.runId], {}, home)).id,
   ).toBe(dispatched.runId);
 });
+
+test('run command rejects unknown actions and records outside the current context', async () => {
+  const home = await initHome();
+  await expect((handleRun as any)('wat', [], {}, home)).rejects.toThrow(
+    'Unknown run action',
+  );
+  await expect(
+    (handleRun as any)('cancel', ['run', 'cancel', 'run-missing'], {}, home),
+  ).rejects.toThrow('Run not found in the current execution context');
+  await expect(
+    (handleRun as any)('state', ['run', 'state', 'goal-missing'], {}, home),
+  ).rejects.toThrow('Goal not found in the current execution context');
+});

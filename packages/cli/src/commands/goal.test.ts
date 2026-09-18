@@ -22,3 +22,13 @@ test('goal command manages a goal lifecycle', async () => {
       .status,
   ).toBe('active');
 });
+
+test('goal command rejects unknown actions and cross-context goal access', async () => {
+  const home = await initHome();
+  await expect((handleGoal as any)('wat', [], {}, home)).rejects.toThrow(
+    'Unknown goal action',
+  );
+  await expect(
+    (handleGoal as any)('activate', ['goal', 'activate', 'goal-missing'], {}, home),
+  ).rejects.toThrow('Goal not found in the current execution context');
+});

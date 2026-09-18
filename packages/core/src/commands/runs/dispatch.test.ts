@@ -43,3 +43,19 @@ test("cancelRun rejects an unknown run", async () => {
     "Run not found: run-missing",
   );
 });
+
+test("dispatch rejects an invalid previous run", async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: "Retry goal" })).id,
+    home,
+  ))!;
+  const transition = (await listAgentTransitions(home))[0]!;
+  await expect(dispatchRun({
+    goalId: goal.id,
+    transitionId: transition.id,
+    agentId: transition.sourceAgentId,
+    previousRunId: "run-missing",
+  }, home)).rejects.toThrow("previous-run-id must reference a completed run for this goal");
+});

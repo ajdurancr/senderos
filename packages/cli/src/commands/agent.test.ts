@@ -10,3 +10,9 @@ test('agent command lists seeded agents and shows one by id', async () => {
     (await handleAgent('show', ['agent', 'show', agents[0].id], home) as any).id,
   ).toBe(agents[0].id);
 });
+
+test('agent command rejects unknown actions', async () => {
+  await expect(handleAgent('delete', [], await initHome())).rejects.toThrow(
+    'Unknown agent action',
+  );
+});

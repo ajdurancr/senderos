@@ -22,4 +22,9 @@ describe('parseArgs', () => {
       ]).options['feature-status'],
     ).toEqual(['active', 'failed']);
   });
+
+  test('collects a third repeated option after the value becomes an array', () => {
+    expect(parseArgs(['--tag', 'one', '--tag', 'two', '--tag', 'three']).options.tag)
+      .toEqual(['one', 'two', 'three']);
+  });
 });

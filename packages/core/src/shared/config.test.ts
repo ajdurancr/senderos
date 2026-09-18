@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import {
+  defaultConfigForHome,
   defaultHomePath,
   initializeRuntime,
   previewInit,
@@ -46,5 +47,21 @@ describe('runtime configuration', () => {
     expect(resolveExecutionContextId(tempHome())).toBe('context-environment');
     delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
     expect(() => resolveExecutionContextId(tempHome())).toThrow('Missing execution context');
+  });
+
+  test('rejects relative and outside-home managed paths', async () => {
+    const relativeHome = tempHome();
+    const relativeConfig = defaultConfigForHome(relativeHome, 'codex');
+    relativeConfig.artifactRoot = 'relative-artifacts';
+    await expect(initializeRuntime(relativeHome, relativeConfig)).rejects.toThrow(
+      'Path must be absolute',
+    );
+
+    const outsideHome = tempHome();
+    const outsideConfig = defaultConfigForHome(outsideHome, 'codex');
+    outsideConfig.logRoot = '/tmp/outside-senderos-home';
+    await expect(initializeRuntime(outsideHome, outsideConfig)).rejects.toThrow(
+      'Guardrail violation',
+    );
   });
 });

@@ -131,4 +131,20 @@ describe('runCli', () => {
     expect(logs.join('\n')).toContain('SenderOS Operator');
     expect(logs.join('\n')).toContain('copy-pasteable skill');
   });
+
+  test('reports command failures as JSON and sets a failing exit code', async () => {
+    const errors: string[] = [];
+    const original = console.error;
+    const originalExitCode = process.exitCode;
+    console.error = (...args: unknown[]) => errors.push(args.join(' '));
+    process.exitCode = 0;
+    try {
+      await runCli(['wat', '--home', tempHome()]);
+    } finally {
+      console.error = original;
+    }
+    expect(errors.join('\n')).toContain('Missing execution context');
+    expect(process.exitCode).toBe(1);
+    process.exitCode = originalExitCode ?? 0;
+  });
 });
