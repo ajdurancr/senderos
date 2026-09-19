@@ -9,6 +9,7 @@ on:
       - 'packages/core/**'
       - 'packages/cli/**'
       - 'apps/studio/**'
+      - 'scripts/**'
       - '.github/workflows/senderos-ci.yml'
       - 'package.json'
       - 'bun.lock'

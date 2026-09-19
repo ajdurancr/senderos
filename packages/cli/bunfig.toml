@@ -1,8 +1,6 @@
-[install]
-linker = "isolated"
-
 [test]
 preload = []
 timeout = 15000
 coverageSkipTestFiles = true
 coverageThreshold = 0.9
+coveragePathIgnorePatterns = ["../core/**", "src/integration/**"]

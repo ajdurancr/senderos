@@ -25,6 +25,7 @@
     "test:all": "bun run --cwd packages/core test:raw && bun run --cwd packages/cli test:raw && bun run --cwd apps/studio test:raw",
     "test:core": "bun run --cwd packages/core test",
     "test:cli": "bun run --cwd packages/cli test",
-    "test:studio": "bun run --cwd apps/studio test"
+    "test:studio": "bun run --cwd apps/studio test",
+    "coverage": "bun scripts/run-workspace-coverage.ts"
   }
 }

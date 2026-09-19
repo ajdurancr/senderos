@@ -16,7 +16,7 @@
     "test:integration:raw": "find ./src/integration -name '*.test.ts' -type f -print0 | xargs -0 bun test --isolate",
     "db:inspect": "bun src/scripts/inspect-db.ts",
     "coverage": "bun ../../scripts/run-with-test-runtime.ts bun run coverage:raw",
-    "coverage:raw": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun run src/scripts/check-coverage.ts 97 coverage 95 && bun run src/scripts/check-test-structure.ts"
+    "coverage:raw": "bun test --isolate --coverage --coverage-reporter=lcov --coverage-reporter=text --coverage-dir coverage && bun ../../scripts/check-bun-coverage.ts 97 97 95 && bun run src/scripts/check-test-structure.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

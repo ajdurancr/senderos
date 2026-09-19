@@ -9,6 +9,7 @@ import { GoalList } from "./goal-list";
 import { OrchestrationCanvas } from "./orchestration-canvas";
 import { QueueMetrics } from "./queue-metrics";
 import { DispatchTray } from "./dispatch-tray";
+import { SenderoInspector } from "./sendero-inspector";
 import { AgentsView, AttentionView, EventsView, GoalsView, ReviewsView, RunsView, SettingsView } from "./workspace-views";
 import { fixtureTimestamp, missionControlFixture } from "../../../test-support/mission-control-fixture";
 import type { MissionControlData } from "../server";
@@ -82,8 +83,15 @@ describe("mission-control components", () => {
   });
 
   it("renders the canvas empty state", () => {
-    inRouter(<OrchestrationCanvas data={{ ...data, senderoGraphs: [] }} />);
+    inRouter(<>
+      <OrchestrationCanvas data={{ ...data, senderoGraphs: [] }} />
+      <OrchestrationCanvas
+        data={{ ...data, goals: [], runs: [], attempts: [] }}
+        senderoId={data.senderoGraphs[0]!.sendero.id}
+      />
+    </>);
     expect(screen.getByText("The shared database has no published Sendero definition.")).toBeTruthy();
+    expect(screen.getByText(/DEFINITION/)).toBeTruthy();
   });
 
   it("covers contextual inspector selections and terminal empty evidence", () => {
@@ -99,6 +107,56 @@ describe("mission-control components", () => {
     expect(screen.getAllByText("No evidence recorded for this attempt.").length).toBeGreaterThan(0);
     expect(screen.getByText("Agent inspector")).toBeTruthy();
     expect(screen.getByText("Sendero transition")).toBeTruthy();
+  });
+
+  it("renders contextual inspector fallbacks before an execution exists", () => {
+    const undispatched: MissionControlData = {
+      ...data,
+      agents: [],
+      attempts: [],
+      events: [],
+      runs: [],
+      senderoGraphs: [],
+      transitions: [],
+    };
+    inRouter(<>
+      <ContextualInspector data={undispatched} goalId={goal.id} />
+      <ContextualInspector data={undispatched} goalId={goal.id} agentId="missing-agent" />
+      <ContextualInspector data={undispatched} goalId={goal.id} transitionId="missing-transition" />
+    </>);
+    expect(screen.getAllByText("Not dispatched").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not selected").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Waiting for plan").length).toBeGreaterThan(0);
+  });
+
+  it("renders Sendero definition, node, edge, and missing selections", () => {
+    const graph = data.senderoGraphs[0]!;
+    const node = graph.nodes.find((item) => item.agentId)!;
+    const edge = graph.edges[0]!;
+    inRouter(<>
+      <SenderoInspector data={data} senderoId="missing" />
+      <SenderoInspector data={data} senderoId={graph.sendero.id} />
+      <SenderoInspector data={data} senderoId={graph.sendero.id} nodeId={node.id} />
+      <SenderoInspector data={data} senderoId={graph.sendero.id} edgeId={edge.id} />
+    </>);
+    expect(screen.getByText("Sendero definition")).toBeTruthy();
+    expect(screen.getAllByText("Agent ID").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Arc ID").length).toBeGreaterThan(0);
+  });
+
+  it("renders plural retry dispatch plans with resolved entities", () => {
+    const dispatchable = {
+      goalId: goal.id,
+      transitionId: data.transitions[0]!.id,
+      agentId: agent.id,
+      previousRunId: run.id,
+    };
+    inRouter(<DispatchTray data={{
+      ...data,
+      queue: { ...data.queue, dispatchable: [dispatchable, { ...dispatchable, transitionId: "second" }] },
+    }} />);
+    expect(screen.getByText("2 proposed actions")).toBeTruthy();
+    expect(screen.getAllByText("retry")).toHaveLength(2);
   });
 
   it("renders fallback and empty branches across operational views", () => {
