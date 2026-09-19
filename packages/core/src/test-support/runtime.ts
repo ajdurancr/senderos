@@ -116,7 +116,7 @@ export function tursoConfigForHome(home: string): SenderosConfig {
   };
 }
 
-afterEach(() => {
+export function cleanupTestRuntimeFixtures() {
   while (homes.length) {
     rmSync(homes.pop()!, { recursive: true, force: true });
   }
@@ -129,4 +129,6 @@ afterEach(() => {
   delete process.env.SENDEROS_DATABASE_URL;
   delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
   removeTestRuntimeRootWhenEmpty();
-});
+}
+
+afterEach(cleanupTestRuntimeFixtures);
