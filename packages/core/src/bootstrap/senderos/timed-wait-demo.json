@@ -1,0 +1,23 @@
+{
+  "id": "sendero-timed-wait-demo",
+  "slug": "timed-wait-demo",
+  "name": "Timed wait demo",
+  "description": "Demonstrate a complete Sendero with five agents that wait progressively longer at each position.",
+  "nodes": [
+    { "key": "start", "kind": "start", "label": "Demo started", "x": 60, "y": 180 },
+    { "key": "wait-1", "kind": "agent", "agentSlug": "wait-one-minute", "label": "Wait 1 minute", "x": 330, "y": 180 },
+    { "key": "wait-2", "kind": "agent", "agentSlug": "wait-two-minutes", "label": "Wait 2 minutes", "x": 600, "y": 60 },
+    { "key": "wait-3", "kind": "agent", "agentSlug": "wait-three-minutes", "label": "Wait 3 minutes", "x": 870, "y": 180 },
+    { "key": "wait-4", "kind": "agent", "agentSlug": "wait-four-minutes", "label": "Wait 4 minutes", "x": 1140, "y": 60 },
+    { "key": "wait-5", "kind": "agent", "agentSlug": "wait-five-minutes", "label": "Wait 5 minutes", "x": 1410, "y": 180 },
+    { "key": "end", "kind": "end", "label": "Demo completed", "x": 1680, "y": 180 }
+  ],
+  "edges": [
+    { "key": "begin", "source": "start", "target": "wait-1", "name": "begin demo", "objective": "Start with the one-minute wait agent." },
+    { "key": "wait-2", "source": "wait-1", "target": "wait-2", "sourceAgentSlug": "wait-one-minute", "name": "continue to two minutes", "objective": "After waiting one minute, continue to the two-minute wait agent." },
+    { "key": "wait-3", "source": "wait-2", "target": "wait-3", "sourceAgentSlug": "wait-two-minutes", "name": "continue to three minutes", "objective": "After waiting two minutes, continue to the three-minute wait agent." },
+    { "key": "wait-4", "source": "wait-3", "target": "wait-4", "sourceAgentSlug": "wait-three-minutes", "name": "continue to four minutes", "objective": "After waiting three minutes, continue to the four-minute wait agent." },
+    { "key": "wait-5", "source": "wait-4", "target": "wait-5", "sourceAgentSlug": "wait-four-minutes", "name": "continue to five minutes", "objective": "After waiting four minutes, continue to the five-minute wait agent." },
+    { "key": "complete", "source": "wait-5", "target": "end", "sourceAgentSlug": "wait-five-minutes", "name": "complete demo", "objective": "After waiting five minutes, complete the demo." }
+  ]
+}

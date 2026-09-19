@@ -1,0 +1,111 @@
+{
+  "id": "sendero-production-hotfix",
+  "slug": "production-hotfix",
+  "name": "Production hotfix",
+  "description": "Contain a live incident, specify the repair, implement the smallest safe change, and control its release.",
+  "nodes": [
+    {
+      "key": "start",
+      "kind": "start",
+      "label": "Incident reported",
+      "x": 60,
+      "y": 190
+    },
+    {
+      "key": "incident",
+      "kind": "agent",
+      "agentSlug": "incident-responder",
+      "label": "Triage",
+      "x": 330,
+      "y": 190
+    },
+    {
+      "key": "spec",
+      "kind": "agent",
+      "agentSlug": "spec-partner",
+      "label": "Bound repair",
+      "x": 600,
+      "y": 70
+    },
+    {
+      "key": "tdd",
+      "kind": "agent",
+      "agentSlug": "tdd-craftsman",
+      "label": "Repair",
+      "x": 870,
+      "y": 190
+    },
+    {
+      "key": "judge",
+      "kind": "agent",
+      "agentSlug": "judge",
+      "label": "Verify",
+      "x": 1140,
+      "y": 70
+    },
+    {
+      "key": "release",
+      "kind": "agent",
+      "agentSlug": "release-manager",
+      "label": "Release",
+      "x": 1410,
+      "y": 190
+    },
+    {
+      "key": "end",
+      "kind": "end",
+      "label": "Incident resolved",
+      "x": 1680,
+      "y": 190
+    }
+  ],
+  "edges": [
+    {
+      "key": "begin",
+      "source": "start",
+      "target": "incident",
+      "name": "triage",
+      "objective": "Establish impact, evidence, and containment."
+    },
+    {
+      "key": "scope",
+      "source": "incident",
+      "target": "spec",
+      "sourceAgentSlug": "incident-responder",
+      "name": "scope repair",
+      "objective": "Turn incident evidence into a bounded repair."
+    },
+    {
+      "key": "repair",
+      "source": "spec",
+      "target": "tdd",
+      "sourceAgentSlug": "spec-partner",
+      "name": "implement repair",
+      "objective": "Implement the smallest safe correction."
+    },
+    {
+      "key": "verify",
+      "source": "tdd",
+      "target": "judge",
+      "sourceAgentSlug": "tdd-craftsman",
+      "name": "verify",
+      "objective": "Evaluate the fix and regression evidence."
+    },
+    {
+      "key": "release",
+      "source": "judge",
+      "target": "release",
+      "sourceAgentSlug": "judge",
+      "name": "release decision",
+      "objective": "Prepare an observable rollout and rollback plan."
+    },
+    {
+      "key": "complete",
+      "source": "release",
+      "target": "end",
+      "sourceAgentSlug": "release-manager",
+      "name": "resolve",
+      "objective": "Confirm the controlled recovery outcome."
+    }
+  ]
+}

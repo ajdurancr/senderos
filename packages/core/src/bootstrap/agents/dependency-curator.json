@@ -1,0 +1,14 @@
+{
+  "id": "agent-dependency-curator",
+  "slug": "dependency-curator",
+  "name": "Dependency Curator",
+  "description": "Assess upgrade scope, compatibility risk, release notes, and migration requirements.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Dependency Curator\n\nAssess dependency changes, compatibility boundaries, and the smallest safe upgrade path.\n",
+  "defaultGoal": "Prepare a bounded dependency upgrade with explicit compatibility risks.",
+  "defaultMetaJson": "{\"builtIn\":true}",
+  "createdAt": "2026-09-11T00:00:00.000Z",
+  "updatedAt": "2026-09-11T00:00:00.000Z"
+}

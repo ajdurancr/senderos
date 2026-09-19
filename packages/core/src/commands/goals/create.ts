@@ -1,15 +1,17 @@
 import { openRuntimeDb } from "../../db/client";
-import { goals, projects } from "../../db/schema";
+import { goals, projects, senderos, senderoVersions } from "../../db/schema";
 import { emitEvent } from "../../shared/events";
 import { now, randomId } from "../../shared/ids";
 import type { GoalKind } from "../../shared/types";
 import { getGoal } from "./get";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
-async function requireProject(projectId: string, home?: string) {
+async function requireProject(projectId: string, home?: string, executionContextId?: string) {
   const db = openRuntimeDb(home);
   const project = (
-    await db.select().from(projects).where(eq(projects.id, projectId))
+    await db.select().from(projects).where(executionContextId
+      ? and(eq(projects.id, projectId), eq(projects.executionContextId, executionContextId))
+      : eq(projects.id, projectId))
   )[0];
   if (!project) throw new Error(`Project not found: ${projectId}`);
   return project;
@@ -22,11 +24,27 @@ export async function createGoal(input: {
   specText?: string;
   intakeText?: string;
   id?: string;
+  senderoVersionId?: string | null;
+  executionContextId?: string;
 }) {
-  const project = await requireProject(input.projectId, input.home);
+  const project = await requireProject(input.projectId, input.home, input.executionContextId);
   const db = openRuntimeDb(input.home);
   const id = input.id ?? randomId("goal");
   const ts = now();
+  const activeSenderos = await db
+    .select()
+    .from(senderos)
+    .where(eq(senderos.status, "active"));
+  const defaultSendero =
+    activeSenderos.find((sendero) => sendero.isDefault) ?? activeSenderos[0];
+  const defaultVersion = defaultSendero
+    ? (
+        await db
+          .select()
+          .from(senderoVersions)
+          .where(eq(senderoVersions.senderoId, defaultSendero.id))
+      ).find((item) => item.version === defaultSendero.currentVersion)
+    : undefined;
   await db.insert(goals).values({
     id,
     projectId: input.projectId,
@@ -35,6 +53,10 @@ export async function createGoal(input: {
     intakeText: input.intakeText ?? "",
     specText: input.specText ?? "",
     status: "draft",
+    senderoVersionId:
+      input.senderoVersionId === undefined
+        ? (defaultVersion?.id ?? null)
+        : input.senderoVersionId,
     baseTargetBranch: project.targetBranch,
     branchName: null,
     prUrl: null,

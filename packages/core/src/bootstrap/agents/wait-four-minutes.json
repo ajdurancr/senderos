@@ -1,0 +1,14 @@
+{
+  "id": "agent-wait-four-minutes",
+  "slug": "wait-four-minutes",
+  "name": "Wait Four Minutes",
+  "description": "Demo agent that waits exactly four minutes before completing.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Wait Four Minutes\n\nWait for exactly 4 minutes. Do not perform any other work. After the full four minutes have elapsed, report that the 4-minute wait completed successfully.\n",
+  "defaultGoal": "Wait exactly 4 minutes, then confirm completion.",
+  "defaultMetaJson": "{\"builtIn\":true,\"demo\":true,\"waitMinutes\":4}",
+  "createdAt": "2026-09-15T00:00:00.000Z",
+  "updatedAt": "2026-09-15T00:00:00.000Z"
+}

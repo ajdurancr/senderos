@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  databaseConnectionFromEnvironment,
   describeCurrentDb,
   healthcheckCurrentDb,
   openRuntimeDb,
@@ -48,8 +49,25 @@ describe("db client", () => {
 
   test("openRuntimeDb returns a usable libSQL connection", async () => {
     const home = await initHome();
-    const db = openRuntimeDb(home) as any;
-    expect(await db.get("select 1 as value")).toEqual({ value: 1 });
+    const db = openRuntimeDb(home);
+    expect((await db.$client.execute("select 1 as value")).rows[0]?.value).toBe(1);
+    db.$client.close();
+  });
+
+  test("opens an environment-provided database without a runtime config file", async () => {
+    const home = tempHome();
+    process.env.SENDEROS_DATABASE_URL = `file:${home}/detached.db`;
+
+    expect(databaseConnectionFromEnvironment()).toEqual({
+      url: `file:${home}/detached.db`,
+    });
+    expect(describeCurrentDb()).toMatchObject({
+      urlEnv: "SENDEROS_DATABASE_URL",
+      url: `file:${home}/detached.db`,
+    });
+
+    const db = openRuntimeDb();
+    expect((await db.$client.execute("select 1 as value")).rows[0]?.value).toBe(1);
     db.$client.close();
   });
 });

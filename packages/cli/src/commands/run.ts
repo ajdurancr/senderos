@@ -1,10 +1,11 @@
-import { getRun } from '@senderos/core';
+import { getGoal, getRun } from '@senderos/core';
 import {
   cancelRun,
   dispatchRun,
   listRuns,
   showRunState,
 } from '@senderos/core';
+import { resolveExecutionContextId } from '@senderos/core';
 import { optionString, requirePositional } from '../shared';
 export const runCommandHelp = {
   command: 'run',
@@ -46,8 +47,19 @@ export async function handleRun(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
+  const requireOwnedRun = async (id: string) => {
+    if (!(await getRun(id, home, executionContextId)))
+      throw new Error(`Run not found in the current execution context: ${id}`);
+    return id;
+  };
   switch (sub) {
     case 'dispatch':
+      if (!(await getGoal(
+        requirePositional(optionString(options['goal-id']), 'goal id'),
+        home,
+        executionContextId,
+      ))) throw new Error('Goal not found in the current execution context.');
       return await dispatchRun(
         {
           goalId: requirePositional(
@@ -68,19 +80,21 @@ export async function handleRun(
         home,
       );
     case 'state':
-      return await showRunState(
-        requirePositional(
+      {
+        const id = requirePositional(
           optionString(options['goal-id']) ?? positionals[2],
           'goal id',
-        ),
-        home,
-      );
+        );
+        if (!(await getGoal(id, home, executionContextId)))
+          throw new Error(`Goal not found in the current execution context: ${id}`);
+        return await showRunState(id, home);
+      }
     case 'list':
-      return await listRuns(home);
+      return await listRuns(home, executionContextId);
     case 'show':
-      return await getRun(requirePositional(positionals[2], 'run id'), home);
+      return await getRun(requirePositional(positionals[2], 'run id'), home, executionContextId);
     case 'cancel':
-      return await cancelRun(requirePositional(positionals[2], 'run id'), home);
+      return await cancelRun(await requireOwnedRun(requirePositional(positionals[2], 'run id')), home);
     default:
       throw new Error('Unknown run action');
   }

@@ -18,6 +18,7 @@ The `senderos` CLI is the primary public operating surface. It is intentionally 
 | `goal` | Create and manage durable outcomes | Except `list`, `show` |
 | `agent` | Inspect persisted agent definitions | No |
 | `transition` | Create and inspect allowed agent handoffs | `create` only |
+| `sendero` | Inspect Senderos and manage agents and connections through intent-level actions | `agent add/remove`, `connect`, `disconnect` |
 | `plan` | Return the next dispatchable work | No |
 | `run` | Dispatch, inspect, or cancel logical executions | `dispatch`, `cancel` |
 | `attempt` | Inspect and update concrete executions | `update` |
@@ -52,7 +53,7 @@ A failed command sets a non-zero process exit code.
 ## Common operating sequence
 
 ```bash
-senderos init --approve
+senderos init --name "My development workspace" --approve
 senderos doctor
 senderos project create --canonical-path /repo --github-owner owner --github-repo repo
 senderos goal create --project-id <project-id> --title "Outcome" --kind feature

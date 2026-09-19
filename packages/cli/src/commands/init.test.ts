@@ -1,21 +1,31 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { handleInit } from './init';
-import { tempHome } from '../../../core/src/test-support/runtime';
+import {
+  cleanupTestRuntimeFixtures,
+  tempHome,
+} from '../../../core/src/test-support/runtime';
+
+beforeEach(() => {
+  delete process.env.SENDEROS_DATABASE_URL;
+});
+
+afterEach(cleanupTestRuntimeFixtures);
 
 describe('init command', () => {
   test('returns a non-mutating preview without approval', async () => {
     const home = tempHome();
-    const preview: any = await handleInit({ home, harness: 'codex' });
-    expect(preview.requiresApproval).toBe(true);
+    const preview = await handleInit({ home, harness: 'codex', name: 'Test context' });
+    expect(preview).toMatchObject({ requiresApproval: true });
+    expect('config' in preview ? preview.config.executionContextId : '').toStartWith('context-');
     expect(existsSync(join(home, 'config.json'))).toBe(false);
   });
 
   test('creates a configured runtime after approval', async () => {
     const home = tempHome();
     expect(
-      (await handleInit({ home, harness: 'codex', approve: true })).home,
+      (await handleInit({ home, harness: 'codex', name: 'Configured context', approve: true })).home,
     ).toBe(home);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
   });
@@ -38,7 +48,7 @@ describe('init command', () => {
     for (const key of keys) delete process.env[key];
     try {
       await expect(
-        handleInit({ home: tempHome(), approve: true }),
+        handleInit({ home: tempHome(), name: 'Unknown harness context', approve: true }),
       ).rejects.toThrow('Harness is not known');
     } finally {
       for (const key of keys)
@@ -46,5 +56,15 @@ describe('init command', () => {
           ? delete process.env[key]
           : (process.env[key] = previous[key]);
     }
+  });
+
+  test('requires a context name and accepts an existing context id', async () => {
+    await expect(handleInit({ harness: 'codex' })).rejects.toThrow('--name');
+    const preview = await handleInit({
+      name: 'Re-registered context',
+      harness: 'codex',
+      'execution-context-id': 'context-existing',
+    });
+    expect(preview).toMatchObject({ config: { executionContextId: 'context-existing' } });
   });
 });

@@ -1,0 +1,14 @@
+{
+  "id": "agent-wait-five-minutes",
+  "slug": "wait-five-minutes",
+  "name": "Wait Five Minutes",
+  "description": "Demo agent that waits exactly five minutes before completing.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Wait Five Minutes\n\nWait for exactly 5 minutes. Do not perform any other work. After the full five minutes have elapsed, report that the 5-minute wait completed successfully.\n",
+  "defaultGoal": "Wait exactly 5 minutes, then confirm completion.",
+  "defaultMetaJson": "{\"builtIn\":true,\"demo\":true,\"waitMinutes\":5}",
+  "createdAt": "2026-09-15T00:00:00.000Z",
+  "updatedAt": "2026-09-15T00:00:00.000Z"
+}

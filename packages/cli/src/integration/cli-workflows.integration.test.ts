@@ -12,8 +12,8 @@ async function invokeCli(argv: string[]) {
   const output: string[] = [];
   const originalLog = console.log;
   const originalError = console.error;
-  console.log = (...values: unknown[]) => output.push(values.join(' '));
-  console.error = (...values: unknown[]) => output.push(values.join(' '));
+  console.log = (...values: Parameters<typeof console.log>) => output.push(values.join(' '));
+  console.error = (...values: Parameters<typeof console.error>) => output.push(values.join(' '));
 
   try {
     await runCli(argv);
@@ -33,6 +33,8 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     (
       await invokeCli([
         'init',
+        '--name',
+        'CLI workflow context',
         '--home',
         home,
         '--harness',

@@ -11,10 +11,10 @@ describe('runCli', () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
-      await runCli(['init', '--home', home, '--harness', 'codex']);
+      await runCli(['init', '--name', 'Preview context', '--home', home, '--harness', 'codex']);
     } finally {
       console.log = original;
     }
@@ -25,7 +25,7 @@ describe('runCli', () => {
 
   test('init with approve creates the runtime', async () => {
     const home = tempHome();
-    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+    await runCli(['init', '--name', 'Approved context', '--home', home, '--harness', 'codex', '--approve']);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
   });
 
@@ -33,10 +33,10 @@ describe('runCli', () => {
     const home = tempHome();
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
-      await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['init', '--name', 'Agent context', '--home', home, '--harness', 'codex', '--approve']);
       await runCli(['agent', 'list', '--home', home]);
     } finally {
       console.log = original;
@@ -45,10 +45,27 @@ describe('runCli', () => {
     expect(logs.join('\n')).toContain('spec-partner');
   });
 
+  test('sendero command family routes through runCli', async () => {
+    const home = tempHome();
+    const logs: string[] = [];
+    const original = console.log;
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
+
+    try {
+      await runCli(['init', '--name', 'Sendero context', '--home', home, '--harness', 'codex', '--approve']);
+      await runCli(['sendero', 'show', 'software-delivery', '--home', home]);
+    } finally {
+      console.log = original;
+    }
+
+    expect(logs.join('\n')).toContain('software-delivery');
+    expect(logs.join('\n')).toContain('nodes');
+  });
+
   test('help output includes agent descriptions by default and can omit them', async () => {
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['run', 'dispatch', '--help']);
@@ -63,7 +80,7 @@ describe('runCli', () => {
 
   test('config commands route through runCli and persist updates', async () => {
     const home = tempHome();
-    await runCli(['init', '--home', home, '--harness', 'codex', '--approve']);
+    await runCli(['init', '--name', 'Config context', '--home', home, '--harness', 'codex', '--approve']);
     await runCli(['config', 'set', 'defaultHarness', 'codex', '--home', home]);
     expect(loadConfig(home).defaultHarness).toBe('codex');
     expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('codex');
@@ -74,7 +91,7 @@ describe('runCli', () => {
     const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli([
@@ -102,7 +119,7 @@ describe('runCli', () => {
     const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
-    console.log = (...args: unknown[]) => logs.push(args.join(' '));
+    console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
 
     try {
       await runCli(['bootstrap-agent-skill', '--path', skillPath, '--print']);
@@ -113,5 +130,21 @@ describe('runCli', () => {
     expect(existsSync(skillPath)).toBe(false);
     expect(logs.join('\n')).toContain('SenderOS Operator');
     expect(logs.join('\n')).toContain('copy-pasteable skill');
+  });
+
+  test('reports command failures as JSON and sets a failing exit code', async () => {
+    const errors: string[] = [];
+    const original = console.error;
+    const originalExitCode = process.exitCode;
+    console.error = (...args: Parameters<typeof console.error>) => errors.push(args.join(' '));
+    process.exitCode = 0;
+    try {
+      await runCli(['wat', '--home', tempHome()]);
+    } finally {
+      console.error = original;
+    }
+    expect(errors.join('\n')).toContain('Missing execution context');
+    expect(process.exitCode).toBe(1);
+    process.exitCode = originalExitCode ?? 0;
   });
 });

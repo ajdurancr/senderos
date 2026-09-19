@@ -1,0 +1,14 @@
+{
+  "id": "agent-wait-three-minutes",
+  "slug": "wait-three-minutes",
+  "name": "Wait Three Minutes",
+  "description": "Demo agent that waits exactly three minutes before completing.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Wait Three Minutes\n\nWait for exactly 3 minutes. Do not perform any other work. After the full three minutes have elapsed, report that the 3-minute wait completed successfully.\n",
+  "defaultGoal": "Wait exactly 3 minutes, then confirm completion.",
+  "defaultMetaJson": "{\"builtIn\":true,\"demo\":true,\"waitMinutes\":3}",
+  "createdAt": "2026-09-15T00:00:00.000Z",
+  "updatedAt": "2026-09-15T00:00:00.000Z"
+}

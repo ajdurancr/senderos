@@ -35,6 +35,7 @@ Senderos keeps its own state in a runtime home. From the repository you want to 
 
 ```bash
 senderos init \
+  --name "My development workspace" \
   --home ./.senderos \
   --harness codex
 ```
@@ -56,10 +57,10 @@ Nothing is created until you approve it.
 Repeat the command with `--approve`:
 
 ```bash
-senderos init --home ./.senderos --harness codex --approve
+senderos init --name "My development workspace" --home ./.senderos --harness codex --approve
 ```
 
-Initialization creates the config and managed directories, runs database migrations, and seeds the built-in agent definitions and transitions.
+Initialization registers the named execution context, creates the config and managed directories, runs database migrations, and seeds the built-in agent definitions and transitions.
 
 The default layout is:
 

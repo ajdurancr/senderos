@@ -31,9 +31,7 @@ test("run service dispatches and cancels a concrete attempt", async () => {
     home,
   );
   expect((await showRunState(goal.id, home)).attempts).toHaveLength(1);
-  expect(((await cancelRun(dispatched.runId, home)) as any).status).toBe(
-    "canceled",
-  );
+  expect(await cancelRun(dispatched.runId, home)).toMatchObject({ status: "canceled" });
 });
 
 test("cancelRun rejects an unknown run", async () => {
@@ -42,4 +40,20 @@ test("cancelRun rejects an unknown run", async () => {
   await expect(cancelRun("run-missing", home)).rejects.toThrow(
     "Run not found: run-missing",
   );
+});
+
+test("dispatch rejects an invalid previous run", async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = (await activateGoal(
+    (await createGoal({ home, projectId: project.id, title: "Retry goal" })).id,
+    home,
+  ))!;
+  const transition = (await listAgentTransitions(home))[0]!;
+  await expect(dispatchRun({
+    goalId: goal.id,
+    transitionId: transition.id,
+    agentId: transition.sourceAgentId,
+    previousRunId: "run-missing",
+  }, home)).rejects.toThrow("previous-run-id must reference a completed run for this goal");
 });

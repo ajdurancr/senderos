@@ -1,5 +1,8 @@
 import { plan } from '@senderos/core';
-import { optionStrings } from '../shared';
+import { resolveExecutionContextId } from '@senderos/core';
+import type { GoalStatus } from '@senderos/core';
+import { enumOption, optionStrings } from '../shared';
+const goalStatuses = ['draft', 'active', 'failed', 'blocked', 'canceled', 'completed'] as const satisfies readonly GoalStatus[];
 
 export const planCommandHelp = {
   command: 'plan',
@@ -26,6 +29,9 @@ export async function handlePlan(
 ) {
   return await plan({
     home,
-    goalStatuses: optionStrings(options['goal-status']) as any[],
+    executionContextId: resolveExecutionContextId(home),
+    goalStatuses: optionStrings(options['goal-status']).map((status) =>
+      enumOption(status, goalStatuses, 'goal-status')!,
+    ),
   });
 }

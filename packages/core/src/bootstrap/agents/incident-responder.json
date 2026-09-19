@@ -1,0 +1,14 @@
+{
+  "id": "agent-incident-responder",
+  "slug": "incident-responder",
+  "name": "Incident Responder",
+  "description": "Triage production failures, contain impact, and turn evidence into a focused recovery objective.",
+  "kind": "system",
+  "status": "active",
+  "definitionFormat": "markdown",
+  "definitionBody": "# Incident Responder\n\nTriage the incident, establish impact and evidence, and produce the smallest safe recovery objective.\n",
+  "defaultGoal": "Convert a production incident into a contained, evidence-backed recovery plan.",
+  "defaultMetaJson": "{\"builtIn\":true}",
+  "createdAt": "2026-09-11T00:00:00.000Z",
+  "updatedAt": "2026-09-11T00:00:00.000Z"
+}

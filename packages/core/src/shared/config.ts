@@ -1,5 +1,19 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
 
 import type {
   InitPreview,
@@ -8,7 +22,10 @@ import type {
 } from '../shared/types';
 import { migrateRuntimeDb } from '../db/migrate';
 import { seedBuiltInAgents } from '../bootstrap/seed-agents';
+import { seedBuiltInSenderos } from '../bootstrap/seed-senderos';
 import { inferHarnessFromEnvironment } from './harness';
+import { randomId } from './ids';
+import { registerExecutionContext } from '../commands/execution-contexts/register';
 
 export function defaultHomePath() {
   return resolve(join(process.cwd(), '.senderos'));
@@ -18,9 +35,28 @@ export function configPathForHome(home: string) {
   return join(home, 'config.json');
 }
 
+function resolveThroughExistingAncestors(path: string) {
+  let ancestor = resolve(path);
+  const missingSegments: string[] = [];
+
+  while (!existsSync(ancestor)) {
+    const parent = dirname(ancestor);
+    if (parent === ancestor) break;
+    missingSegments.unshift(basename(ancestor));
+    ancestor = parent;
+  }
+
+  return resolve(
+    existsSync(ancestor) ? realpathSync(ancestor) : ancestor,
+    ...missingSegments,
+  );
+}
+
 export function ensureWithinHome(home: string, target: string) {
-  const rel = relative(home, target);
-  if (rel.startsWith('..') || (!rel && resolve(target) !== resolve(home))) {
+  const canonicalHome = resolveThroughExistingAncestors(home);
+  const canonicalTarget = resolveThroughExistingAncestors(target);
+  const rel = relative(canonicalHome, canonicalTarget);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(
       `Guardrail violation: path outside Senderos home: ${target}`,
     );
@@ -44,8 +80,10 @@ export function loadConfig(home = defaultHomePath()): SenderosConfig {
 export function defaultConfigForHome(
   home: string,
   harness: SenderosConfig['defaultHarness'],
+  executionContextId = randomId('context'),
 ): SenderosConfig {
   return {
+    executionContextId,
     database: {
       urlEnv: 'SENDEROS_DATABASE_URL',
       authTokenEnv: 'SENDEROS_DATABASE_AUTH_TOKEN',
@@ -62,12 +100,14 @@ export function defaultConfigForHome(
 export function previewInit(
   home?: string,
   harness?: SenderosConfig['defaultHarness'],
+  executionContext?: { id?: string; name: string },
 ): InitPreview {
   const inferredHarness = harness ?? inferHarnessFromEnvironment();
   const resolvedHome = resolve(home ?? defaultHomePath());
   const config = defaultConfigForHome(
     resolvedHome,
     inferredHarness === 'unknown' ? 'unknown' : inferredHarness,
+    executionContext?.id,
   );
 
   return {
@@ -83,6 +123,7 @@ export function previewInit(
         ? `Using provided harness: ${harness}`
         : `Harness inferred as ${inferredHarness}`,
       `Database URL environment variable: ${config.database.urlEnv}`,
+      `Execution context: ${executionContext?.name ?? 'name required for initialization'} (${config.executionContextId})`,
     ],
     requiresApproval: true,
   };
@@ -92,6 +133,7 @@ export async function initializeRuntime(
   home: string,
   config?: SenderosConfig,
   seedOptions?: SeedAgentsOptions,
+  executionContextName?: string,
 ) {
   const resolvedHome = resolve(home);
   const inferredHarness = inferHarnessFromEnvironment();
@@ -134,9 +176,27 @@ export async function initializeRuntime(
     ensureWithinHome(resolvedHome, databaseUrl.slice('file:'.length));
 
   await migrateRuntimeDb(resolvedHome);
+  await registerExecutionContext({
+    home: resolvedHome,
+    id: runtimeConfig.executionContextId,
+    name: executionContextName ?? runtimeConfig.executionContextId,
+  });
   await seedBuiltInAgents(resolvedHome, seedOptions);
+  await seedBuiltInSenderos(resolvedHome);
 
   return { home: resolvedHome, configPath: configPathForHome(resolvedHome) };
+}
+
+export function resolveExecutionContextId(home = defaultHomePath()) {
+  if (runtimeExists(home)) {
+    const value = loadConfig(home).executionContextId;
+    if (value) return value;
+  }
+  const value = process.env.SENDEROS_EXECUTION_CONTEXT_ID;
+  if (value) return value;
+  throw new Error(
+    'Missing execution context. Run senderos init or set SENDEROS_EXECUTION_CONTEXT_ID.',
+  );
 }
 
 export function resolveRuntime(home = defaultHomePath()) {
