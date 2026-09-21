@@ -4,7 +4,10 @@ import {
   listProjects,
   updateProject,
 } from '@senderos/core';
-import { requirePositional } from '../shared';
+import { resolveExecutionContextId } from '@senderos/core';
+import type { IntegrationMode } from '@senderos/core';
+import { enumOption, optionString, requirePositional } from '../shared';
+const integrationModes = ['github_pr', 'local_merge'] as const satisfies readonly IntegrationMode[];
 
 const projectCreateHelp = {
   command: 'create',
@@ -110,12 +113,17 @@ export const projectCommandHelp = {
 };
 
 function commandMap(options: Record<string, string | boolean | string[]>) {
-  return {
-    install: options['install-command'],
-    build: options['build-command'],
-    test: options['test-command'],
-    lint: options['lint-command'],
-  };
+  const commands: Record<string, string> = {};
+  for (const [name, option] of [
+    ['install', 'install-command'],
+    ['build', 'build-command'],
+    ['test', 'test-command'],
+    ['lint', 'lint-command'],
+  ] as const) {
+    const value = optionString(options[option]);
+    if (value) commands[name] = value;
+  }
+  return commands;
 }
 
 function parseProjectCreateOptions(
@@ -124,19 +132,15 @@ function parseProjectCreateOptions(
 ) {
   return {
     home,
-    id: options.id as string | undefined,
-    name: options.name as string | undefined,
+    id: optionString(options.id),
+    name: optionString(options.name),
     canonicalPath: String(options['canonical-path'] ?? ''),
     githubOwner: String(options['github-owner'] ?? ''),
     githubRepo: String(options['github-repo'] ?? ''),
-    githubRemote: options['github-remote'] as string | undefined,
-    targetBranch: options['target-branch'] as string | undefined,
-    integrationMode: options['integration-mode'] as any,
-    inferredCommands: Object.fromEntries(
-      Object.entries(commandMap(options)).filter(
-        ([, value]) => typeof value === 'string' && value,
-      ),
-    ),
+    githubRemote: optionString(options['github-remote']),
+    targetBranch: optionString(options['target-branch']),
+    integrationMode: enumOption(optionString(options['integration-mode']), integrationModes, 'integration-mode'),
+    inferredCommands: commandMap(options),
   };
 }
 
@@ -145,22 +149,19 @@ function parseProjectUpdateOptions(
   id: string,
   options: Record<string, string | boolean | string[]>,
 ) {
-  const commands = Object.fromEntries(
-    Object.entries(commandMap(options)).filter(
-      ([, value]) => typeof value === 'string' && value,
-    ),
-  );
+  const commands = commandMap(options);
 
   return {
     home,
+    executionContextId: resolveExecutionContextId(home),
     id,
-    name: options.name as string | undefined,
-    canonicalPath: options['canonical-path'] as string | undefined,
-    githubOwner: options['github-owner'] as string | undefined,
-    githubRepo: options['github-repo'] as string | undefined,
-    githubRemote: options['github-remote'] as string | undefined,
-    targetBranch: options['target-branch'] as string | undefined,
-    integrationMode: options['integration-mode'] as any,
+    name: optionString(options.name),
+    canonicalPath: optionString(options['canonical-path']),
+    githubOwner: optionString(options['github-owner']),
+    githubRepo: optionString(options['github-repo']),
+    githubRemote: optionString(options['github-remote']),
+    targetBranch: optionString(options['target-branch']),
+    integrationMode: enumOption(optionString(options['integration-mode']), integrationModes, 'integration-mode'),
     inferredCommands: Object.keys(commands).length ? commands : undefined,
   };
 }
@@ -171,13 +172,14 @@ export async function handleProject(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
   switch (sub) {
     case 'create':
       return await createProject(parseProjectCreateOptions(home, options));
     case 'list':
-      return await listProjects(home);
+      return await listProjects(home, executionContextId);
     case 'show':
-      return await getProject(requirePositional(positionals[2], 'project id'), home);
+      return await getProject(requirePositional(positionals[2], 'project id'), home, executionContextId);
     case 'update':
       return await updateProject(
         parseProjectUpdateOptions(

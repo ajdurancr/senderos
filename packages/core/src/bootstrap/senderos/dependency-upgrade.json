@@ -1,0 +1,111 @@
+{
+  "id": "sendero-dependency-upgrade",
+  "slug": "dependency-upgrade",
+  "name": "Dependency upgrade",
+  "description": "Assess an upgrade, implement compatibility changes, verify behavior, and prepare a controlled release.",
+  "nodes": [
+    {
+      "key": "start",
+      "kind": "start",
+      "label": "Upgrade requested",
+      "x": 60,
+      "y": 180
+    },
+    {
+      "key": "dependency",
+      "kind": "agent",
+      "agentSlug": "dependency-curator",
+      "label": "Assess",
+      "x": 330,
+      "y": 180
+    },
+    {
+      "key": "tdd",
+      "kind": "agent",
+      "agentSlug": "tdd-craftsman",
+      "label": "Upgrade",
+      "x": 600,
+      "y": 60
+    },
+    {
+      "key": "mutation",
+      "kind": "agent",
+      "agentSlug": "mutation-tester",
+      "label": "Verify compatibility",
+      "x": 870,
+      "y": 180
+    },
+    {
+      "key": "release",
+      "kind": "agent",
+      "agentSlug": "release-manager",
+      "label": "Prepare release",
+      "x": 1140,
+      "y": 60
+    },
+    {
+      "key": "judge",
+      "kind": "agent",
+      "agentSlug": "judge",
+      "label": "Approve",
+      "x": 1410,
+      "y": 180
+    },
+    {
+      "key": "end",
+      "kind": "end",
+      "label": "Upgrade ready",
+      "x": 1680,
+      "y": 180
+    }
+  ],
+  "edges": [
+    {
+      "key": "begin",
+      "source": "start",
+      "target": "dependency",
+      "name": "assess upgrade",
+      "objective": "Read release notes and identify compatibility risk."
+    },
+    {
+      "key": "upgrade",
+      "source": "dependency",
+      "target": "tdd",
+      "sourceAgentSlug": "dependency-curator",
+      "name": "implement upgrade",
+      "objective": "Apply the smallest compatible dependency change."
+    },
+    {
+      "key": "verify",
+      "source": "tdd",
+      "target": "mutation",
+      "sourceAgentSlug": "tdd-craftsman",
+      "name": "verify compatibility",
+      "objective": "Challenge behavior across affected boundaries."
+    },
+    {
+      "key": "release",
+      "source": "mutation",
+      "target": "release",
+      "sourceAgentSlug": "mutation-tester",
+      "name": "prepare release",
+      "objective": "Prepare rollout, observability, and rollback guidance."
+    },
+    {
+      "key": "approve",
+      "source": "release",
+      "target": "judge",
+      "sourceAgentSlug": "release-manager",
+      "name": "approve",
+      "objective": "Judge readiness against compatibility evidence."
+    },
+    {
+      "key": "complete",
+      "source": "judge",
+      "target": "end",
+      "sourceAgentSlug": "judge",
+      "name": "complete",
+      "objective": "Accept the verified upgrade or return it for repair."
+    }
+  ]
+}

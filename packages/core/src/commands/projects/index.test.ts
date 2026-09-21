@@ -8,8 +8,49 @@ import { getProject } from "./get";
 import { listProjects } from "./list";
 import { updateProject } from "./update";
 import { initHome, tempProjectDir } from "../../test-support/runtime";
+import { createGoal } from "../goals/create";
+import { listGoals } from "../goals/list";
+import { createRunRecord } from "../runs/create";
+import { listRuns } from "../runs/list";
 
 describe("project services", () => {
+  test("allows the same project name in different execution contexts", async () => {
+    const home = await initHome();
+    const first = await createProject({
+      home,
+      name: "Shared name",
+      canonicalPath: tempProjectDir("context-project-a"),
+      githubOwner: "ajdurancr",
+      githubRepo: "project-a",
+    });
+    await expect(createProject({
+      home,
+      name: "Shared name",
+      canonicalPath: tempProjectDir("context-project-duplicate"),
+      githubOwner: "ajdurancr",
+      githubRepo: "project-duplicate",
+    })).rejects.toThrow();
+    const { registerExecutionContext } = await import("../execution-contexts/register");
+    await registerExecutionContext({ home, id: "context-secondary", name: "Secondary context" });
+    const second = await createProject({
+      home,
+      executionContextId: "context-secondary",
+      name: "Shared name",
+      canonicalPath: tempProjectDir("context-project-b"),
+      githubOwner: "ajdurancr",
+      githubRepo: "project-b",
+    });
+    expect(first.executionContextId).not.toBe(second.executionContextId);
+    expect(await listProjects(home, first.executionContextId)).toHaveLength(1);
+    expect(await listProjects(home, second.executionContextId)).toHaveLength(1);
+    await createGoal({ home, executionContextId: first.executionContextId, projectId: first.id, title: "First goal" });
+    const secondGoal = await createGoal({ home, executionContextId: second.executionContextId, projectId: second.id, title: "Second goal" });
+    await createRunRecord(secondGoal, home);
+    expect((await listGoals(home, first.executionContextId)).map((goal) => goal.title)).toEqual(["First goal"]);
+    expect((await listGoals(home, second.executionContextId)).map((goal) => goal.title)).toEqual(["Second goal"]);
+    expect(await listRuns(home, first.executionContextId)).toHaveLength(0);
+    expect(await listRuns(home, second.executionContextId)).toHaveLength(1);
+  });
   test("derives project ids from package names when no explicit id is provided", () => {
     const canonicalPath = tempProjectDir(
       "senderos-test-project",

@@ -4,7 +4,10 @@ import {
   resumeAttempt,
   updateRunAttempt,
 } from '@senderos/core';
-import { requirePositional } from '../shared';
+import { resolveExecutionContextId } from '@senderos/core';
+import { enumOption, optionString, requirePositional } from '../shared';
+import type { RunAttemptStatus } from '@senderos/core';
+const attemptStatuses = ['queued', 'running', 'paused', 'succeeded', 'failed', 'canceled'] as const satisfies readonly RunAttemptStatus[];
 export const attemptCommandHelp = {
   command: 'attempt',
   summary: 'Inspect concrete run attempts.',
@@ -38,24 +41,29 @@ export async function handleAttempt(
   options: Record<string, string | boolean | string[]>,
   home: string,
 ) {
+  const executionContextId = resolveExecutionContextId(home);
+  const requireOwnedAttempt = async () => {
+    const id = requirePositional(positionals[2], 'attempt id');
+    if (!(await getAttempt(id, home, executionContextId)))
+      throw new Error(`Attempt not found in the current execution context: ${id}`);
+    return id;
+  };
   switch (subcommand) {
     case 'list':
-      return await listRunAttempts(options['run-id'] as string | undefined, home);
+      return await listRunAttempts(optionString(options['run-id']), home, executionContextId);
     case 'show':
-      return await getAttempt(requirePositional(positionals[2], 'attempt id'), home);
+      return await getAttempt(requirePositional(positionals[2], 'attempt id'), home, executionContextId);
     case 'update':
       return await updateRunAttempt(
-        requirePositional(positionals[2], 'attempt id'),
+        await requireOwnedAttempt(),
         {
-          status: options.status as any,
-          checkpoint: options.checkpoint as string | undefined,
-          workingPath: options['working-path'] as string | undefined,
-          externalSessionId: options['external-session-id'] as
-            | string
-            | undefined,
-          resumeCommand: options['resume-command'] as string | undefined,
-          failureStep: options['failure-step'] as string | undefined,
-          failureSummary: options['failure-summary'] as string | undefined,
+          status: enumOption(optionString(options.status), attemptStatuses, 'status'),
+          checkpoint: optionString(options.checkpoint),
+          workingPath: optionString(options['working-path']),
+          externalSessionId: optionString(options['external-session-id']),
+          resumeCommand: optionString(options['resume-command']),
+          failureStep: optionString(options['failure-step']),
+          failureSummary: optionString(options['failure-summary']),
           result: options['result-json']
             ? JSON.parse(String(options['result-json']))
             : undefined,
@@ -64,7 +72,7 @@ export async function handleAttempt(
       );
     case 'resume':
       return await resumeAttempt(
-        requirePositional(positionals[2], 'attempt id'),
+        await requireOwnedAttempt(),
         home,
       );
     default:

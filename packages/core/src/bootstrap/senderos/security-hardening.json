@@ -1,0 +1,111 @@
+{
+  "id": "sendero-security-hardening",
+  "slug": "security-hardening",
+  "name": "Security hardening",
+  "description": "Model a threat, define security behavior, implement controls, attack the assumptions, and judge the evidence.",
+  "nodes": [
+    {
+      "key": "start",
+      "kind": "start",
+      "label": "Risk identified",
+      "x": 60,
+      "y": 210
+    },
+    {
+      "key": "security",
+      "kind": "agent",
+      "agentSlug": "security-reviewer",
+      "label": "Threat model",
+      "x": 330,
+      "y": 80
+    },
+    {
+      "key": "spec",
+      "kind": "agent",
+      "agentSlug": "spec-partner",
+      "label": "Specify controls",
+      "x": 600,
+      "y": 210
+    },
+    {
+      "key": "tdd",
+      "kind": "agent",
+      "agentSlug": "tdd-craftsman",
+      "label": "Implement controls",
+      "x": 870,
+      "y": 80
+    },
+    {
+      "key": "mutation",
+      "kind": "agent",
+      "agentSlug": "mutation-tester",
+      "label": "Attack assumptions",
+      "x": 1140,
+      "y": 210
+    },
+    {
+      "key": "judge",
+      "kind": "agent",
+      "agentSlug": "judge",
+      "label": "Security gate",
+      "x": 1410,
+      "y": 80
+    },
+    {
+      "key": "end",
+      "kind": "end",
+      "label": "Risk reduced",
+      "x": 1680,
+      "y": 210
+    }
+  ],
+  "edges": [
+    {
+      "key": "begin",
+      "source": "start",
+      "target": "security",
+      "name": "model threat",
+      "objective": "Identify attack paths and trust boundaries."
+    },
+    {
+      "key": "specify",
+      "source": "security",
+      "target": "spec",
+      "sourceAgentSlug": "security-reviewer",
+      "name": "specify controls",
+      "objective": "Convert threats into testable security behavior."
+    },
+    {
+      "key": "implement",
+      "source": "spec",
+      "target": "tdd",
+      "sourceAgentSlug": "spec-partner",
+      "name": "implement",
+      "objective": "Implement the specified controls with regression tests."
+    },
+    {
+      "key": "challenge",
+      "source": "tdd",
+      "target": "mutation",
+      "sourceAgentSlug": "tdd-craftsman",
+      "name": "challenge controls",
+      "objective": "Probe untested branches and weak assumptions."
+    },
+    {
+      "key": "judge",
+      "source": "mutation",
+      "target": "judge",
+      "sourceAgentSlug": "mutation-tester",
+      "name": "security gate",
+      "objective": "Judge risk reduction against concrete evidence."
+    },
+    {
+      "key": "complete",
+      "source": "judge",
+      "target": "end",
+      "sourceAgentSlug": "judge",
+      "name": "accept hardening",
+      "objective": "Accept the hardening outcome or require repair."
+    }
+  ]
+}

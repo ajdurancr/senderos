@@ -1,0 +1,112 @@
+{
+  "id": "sendero-software-delivery",
+  "slug": "software-delivery",
+  "name": "Verified software delivery",
+  "description": "Clarify an outcome, implement it, challenge the validation, and make an evidence-backed completion decision.",
+  "default": true,
+  "nodes": [
+    {
+      "key": "start",
+      "kind": "start",
+      "label": "Requested outcome",
+      "x": 60,
+      "y": 220
+    },
+    {
+      "key": "spec",
+      "kind": "agent",
+      "agentSlug": "spec-partner",
+      "label": "Clarify",
+      "x": 330,
+      "y": 220
+    },
+    {
+      "key": "craft",
+      "kind": "agent",
+      "agentSlug": "craftsman-lead",
+      "label": "Frame handoff",
+      "x": 600,
+      "y": 80
+    },
+    {
+      "key": "tdd",
+      "kind": "agent",
+      "agentSlug": "tdd-craftsman",
+      "label": "Implement",
+      "x": 870,
+      "y": 220
+    },
+    {
+      "key": "mutation",
+      "kind": "agent",
+      "agentSlug": "mutation-tester",
+      "label": "Stress test",
+      "x": 1140,
+      "y": 80
+    },
+    {
+      "key": "judge",
+      "kind": "agent",
+      "agentSlug": "judge",
+      "label": "Judge",
+      "x": 1410,
+      "y": 220
+    },
+    {
+      "key": "end",
+      "kind": "end",
+      "label": "Verified outcome",
+      "x": 1680,
+      "y": 220
+    }
+  ],
+  "edges": [
+    {
+      "key": "begin",
+      "source": "start",
+      "target": "spec",
+      "name": "begin",
+      "objective": "Begin with a durable specification."
+    },
+    {
+      "key": "spec-handoff",
+      "source": "spec",
+      "target": "craft",
+      "sourceAgentSlug": "spec-partner",
+      "name": "frame handoff",
+      "objective": "Hand the clarified outcome to the continuity steward."
+    },
+    {
+      "key": "implementation",
+      "source": "craft",
+      "target": "tdd",
+      "sourceAgentSlug": "craftsman-lead",
+      "name": "implement",
+      "objective": "Prepare a focused implementation handoff."
+    },
+    {
+      "key": "validation",
+      "source": "tdd",
+      "target": "mutation",
+      "sourceAgentSlug": "tdd-craftsman",
+      "name": "challenge",
+      "objective": "Validate the implementation beyond the happy path."
+    },
+    {
+      "key": "judgment",
+      "source": "mutation",
+      "target": "judge",
+      "sourceAgentSlug": "mutation-tester",
+      "name": "judge evidence",
+      "objective": "Submit evidence and residual risks for judgment."
+    },
+    {
+      "key": "complete",
+      "source": "judge",
+      "target": "end",
+      "sourceAgentSlug": "judge",
+      "name": "complete",
+      "objective": "Accept the verified outcome or return it for repair."
+    }
+  ]
+}

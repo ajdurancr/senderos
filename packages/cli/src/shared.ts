@@ -40,3 +40,14 @@ export function optionStrings(value: string | boolean | string[] | undefined) {
 
   return [];
 }
+
+export function enumOption<const Value extends string>(
+  value: string | undefined,
+  allowed: readonly Value[],
+  name: string,
+): Value | undefined {
+  if (value === undefined) return undefined;
+  const matched = allowed.find((candidate) => candidate === value);
+  if (matched !== undefined) return matched;
+  throw new Error(`Invalid --${name}: ${value}`);
+}

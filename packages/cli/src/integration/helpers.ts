@@ -7,10 +7,13 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-const tempRoot = join(process.cwd(), '.tmp');
-const integrationArtifactsRoot = join(tempRoot, 'integration-tests');
+const testRuntimeRoot = resolve(
+  process.env.SENDEROS_TEST_RUNTIME_ROOT ??
+    resolve(import.meta.dir, '../../../../.tmp/test-runtime'),
+);
+const integrationArtifactsRoot = join(testRuntimeRoot, 'cli-integration');
 const integrationRunRoot = join(
   integrationArtifactsRoot,
   `run-${process.pid}-${Math.random().toString(36).slice(2, 8)}`,
@@ -107,8 +110,8 @@ export function cleanupIntegrationRunRoot() {
     ) {
       rmSync(integrationArtifactsRoot, { recursive: true, force: true });
     }
-    if (existsSync(tempRoot) && readdirSync(tempRoot).length === 0) {
-      rmSync(tempRoot, { recursive: true, force: true });
+    if (existsSync(testRuntimeRoot) && readdirSync(testRuntimeRoot).length === 0) {
+      rmSync(testRuntimeRoot, { recursive: true, force: true });
     }
   } catch {
     // best-effort cleanup only

@@ -57,6 +57,7 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
       { slug: 'cli/goal', title: 'goal', description: 'Create and manage durable outcomes.', section: 'CLI reference' },
       { slug: 'cli/agent', title: 'agent', description: 'Inspect persisted executor definitions.', section: 'CLI reference' },
       { slug: 'cli/transition', title: 'transition', description: 'Define and inspect agent handoffs.', section: 'CLI reference' },
+      { slug: 'cli/sendero', title: 'sendero', description: 'Inspect and manage versioned Senderos.', section: 'CLI reference' },
       { slug: 'cli/plan', title: 'plan', description: 'Find dispatchable work without mutating state.', section: 'CLI reference' },
       { slug: 'cli/run', title: 'run', description: 'Dispatch, inspect, and cancel logical runs.', section: 'CLI reference' },
       { slug: 'cli/attempt', title: 'attempt', description: 'Track concrete external executions.', section: 'CLI reference' },

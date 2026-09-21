@@ -1,7 +1,13 @@
 import { afterEach } from 'bun:test';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+  mkdirSync,
+} from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import {
   defaultConfigForHome,
@@ -12,9 +18,28 @@ import { createProject } from '../../src/commands';
 
 const homes: string[] = [];
 const projects: string[] = [];
+const testRuntimeBase = resolve(
+  process.env.SENDEROS_TEST_RUNTIME_ROOT ??
+    resolve(import.meta.dir, '../../../../.tmp/test-runtime'),
+);
+const testRuntimeRoot = resolve(testRuntimeBase, 'core');
+
+function ensureTestRuntimeRoot() {
+  mkdirSync(testRuntimeRoot, { recursive: true });
+  return testRuntimeRoot;
+}
+
+function removeTestRuntimeRootWhenEmpty() {
+  if (existsSync(testRuntimeRoot) && readdirSync(testRuntimeRoot).length === 0) {
+    rmSync(testRuntimeRoot, { recursive: true, force: true });
+  }
+  if (existsSync(testRuntimeBase) && readdirSync(testRuntimeBase).length === 0) {
+    rmSync(testRuntimeBase, { recursive: true, force: true });
+  }
+}
 
 export function tempHome() {
-  const home = mkdtempSync(join(tmpdir(), 'senderos-test-'));
+  const home = mkdtempSync(join(ensureTestRuntimeRoot(), 'senderos-test-'));
   homes.push(home);
   return home;
 }
@@ -23,7 +48,9 @@ export function tempProjectDir(
   dirPrefix = 'senderos-demo',
   packageName = dirPrefix,
 ) {
-  const projectRoot = mkdtempSync(join(tmpdir(), `${dirPrefix}-`));
+  const projectRoot = mkdtempSync(
+    join(ensureTestRuntimeRoot(), `${dirPrefix}-`),
+  );
   projects.push(projectRoot);
   writeFileSync(
     join(projectRoot, 'package.json'),
@@ -89,7 +116,7 @@ export function tursoConfigForHome(home: string): SenderosConfig {
   };
 }
 
-afterEach(() => {
+export function cleanupTestRuntimeFixtures() {
   while (homes.length) {
     rmSync(homes.pop()!, { recursive: true, force: true });
   }
@@ -100,4 +127,8 @@ afterEach(() => {
 
   delete process.env.SENDEROS_TURSO_TOKEN;
   delete process.env.SENDEROS_DATABASE_URL;
-});
+  delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
+  removeTestRuntimeRootWhenEmpty();
+}
+
+afterEach(cleanupTestRuntimeFixtures);

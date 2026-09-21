@@ -14,6 +14,7 @@ managed runtime paths.
 
 ```json
 {
+  "executionContextId": "context-abc123",
   "database": {
     "urlEnv": "SENDEROS_DATABASE_URL",
     "authTokenEnv": "SENDEROS_DATABASE_AUTH_TOKEN"
@@ -58,3 +59,6 @@ senderos config set defaultHarness openclaw
 whole resulting object. Use `senderos doctor` immediately after changing
 database or path settings. Configuration affects Senderos runtime behavior, not
 host-agent state.
+The configuration stores the execution-context ID used to isolate projects and
+their operational records. If that field is unavailable, Senderos falls back to
+`SENDEROS_EXECUTION_CONTEXT_ID`.

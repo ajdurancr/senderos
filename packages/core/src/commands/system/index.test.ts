@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import { resolveRuntime } from "../../shared/config";
 import { createGoal, activateGoal } from "../goals";
+import { createRunRecord } from "../runs/create";
+import { createRunAttempt } from "../attempts/create";
+import { getAgentBySlug } from "../agents/get-by-slug";
 import {
   createProjectFixture,
   initHome,
@@ -29,4 +32,18 @@ test("status aggregates current project and goal state", async () => {
   const result = await status(home);
   expect(result.projects.total).toBe(1);
   expect(result.activeGoalIds).toContain(goal.id);
+  const run = (await createRunRecord(goal, home))!;
+  const agent = (await getAgentBySlug("spec-partner", home))!;
+  const attempt = await createRunAttempt({
+    home,
+    runId: run.id,
+    attemptNumber: 1,
+    agentId: agent.id,
+    executionObjective: "Check scoped status",
+    harness: "codex",
+  });
+  const scoped = await status(home, project.executionContextId);
+  expect(scoped.projects).toEqual({ total: 1, unhealthy: 0 });
+  expect(scoped.runningRunIds).toContain(run.id);
+  expect(scoped.activeAttemptIds).toContain(attempt.id);
 });

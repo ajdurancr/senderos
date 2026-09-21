@@ -9,6 +9,14 @@ describe('cli help metadata', () => {
       'list',
     );
     expect(resolveHelp('transition').command).toBe('transition');
+    expect(resolveHelp('sendero').subcommands?.map((x) => x.command)).toEqual([
+      'list',
+      'show',
+      'version',
+      'agent',
+      'connect',
+      'disconnect',
+    ]);
     expect(resolveHelp('plan').summary).toContain('dispatchable');
     expect(resolveHelp('run').subcommands?.map((x) => x.command)).toContain(
       'dispatch',

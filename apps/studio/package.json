@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "react-router dev",
+    "dev": "NODE_ENV=development react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test": "NODE_ENV=test vitest run --config vitest.config.ts",
-    "coverage": "NODE_ENV=test vitest run --config vitest.config.ts --coverage"
+    "test": "bun ../../scripts/run-with-test-runtime.ts bun run test:raw",
+    "test:raw": "NODE_ENV=test vitest run --config vitest.config.ts",
+    "coverage": "bun ../../scripts/run-with-test-runtime.ts bun run coverage:raw",
+    "coverage:raw": "NODE_ENV=test vitest run --config vitest.config.ts --coverage"
   },
   "dependencies": {
     "@senderos/core": "workspace:*",

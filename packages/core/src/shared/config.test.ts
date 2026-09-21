@@ -1,10 +1,15 @@
 import { describe, expect, test } from 'bun:test';
+import { rmSync, symlinkSync } from 'node:fs';
+import { join } from 'node:path';
 
 import {
+  defaultConfigForHome,
   defaultHomePath,
+  ensureWithinHome,
   initializeRuntime,
   previewInit,
   resolveRuntime,
+  resolveExecutionContextId,
   runtimeExists,
 } from './config';
 import { initHome, tempHome } from '../test-support/runtime';
@@ -36,5 +41,46 @@ describe('runtime configuration', () => {
     const resolved = resolveRuntime(home);
     expect(resolved.paths.home).toBe(home);
     expect(resolved.config.database.urlEnv).toBe('SENDEROS_DATABASE_URL');
+  });
+
+  test('resolves context from config before the environment fallback', async () => {
+    const home = await initHome();
+    process.env.SENDEROS_EXECUTION_CONTEXT_ID = 'context-environment';
+    expect(resolveExecutionContextId(home)).not.toBe('context-environment');
+    expect(resolveExecutionContextId(tempHome())).toBe('context-environment');
+    delete process.env.SENDEROS_EXECUTION_CONTEXT_ID;
+    expect(() => resolveExecutionContextId(tempHome())).toThrow('Missing execution context');
+  });
+
+  test('rejects relative and outside-home managed paths', async () => {
+    const relativeHome = tempHome();
+    const relativeConfig = defaultConfigForHome(relativeHome, 'codex');
+    relativeConfig.artifactRoot = 'relative-artifacts';
+    await expect(initializeRuntime(relativeHome, relativeConfig)).rejects.toThrow(
+      'Path must be absolute',
+    );
+
+    const outsideHome = tempHome();
+    const outsideConfig = defaultConfigForHome(outsideHome, 'codex');
+    outsideConfig.logRoot = '/tmp/outside-senderos-home';
+    await expect(initializeRuntime(outsideHome, outsideConfig)).rejects.toThrow(
+      'Guardrail violation',
+    );
+  });
+
+  test('compares canonical paths without allowing symlink escapes', () => {
+    const home = tempHome();
+    const homeAlias = tempHome();
+    rmSync(homeAlias, { recursive: true });
+    symlinkSync(home, homeAlias, 'dir');
+
+    const outside = tempHome();
+    const outsideAlias = join(home, 'outside-link');
+    symlinkSync(outside, outsideAlias, 'dir');
+
+    expect(() => ensureWithinHome(home, join(homeAlias, 'senderos.db'))).not.toThrow();
+    expect(() => ensureWithinHome(home, join(outsideAlias, 'senderos.db'))).toThrow(
+      'Guardrail violation',
+    );
   });
 });

@@ -16,6 +16,7 @@ export async function updateGoal(input: {
   prUrl?: string | null;
   prNumber?: number | null;
   branchName?: string | null;
+  senderoVersionId?: string | null;
 }) {
   const current = await getGoal(input.id, input.home);
   if (!current) throw new Error(`Goal not found: ${input.id}`);
@@ -32,6 +33,8 @@ export async function updateGoal(input: {
         input.prNumber === undefined ? current.prNumber : input.prNumber,
       branchName:
         input.branchName === undefined ? current.branchName : input.branchName,
+      senderoVersionId:
+        input.senderoVersionId === undefined ? current.senderoVersionId : input.senderoVersionId,
       updatedAt: now(),
     })
     .where(eq(goals.id, input.id));

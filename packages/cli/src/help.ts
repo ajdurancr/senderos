@@ -11,6 +11,7 @@ import { attemptCommandHelp } from './commands/attempt';
 import { systemCommandsHelp } from './commands/system';
 import { agentCommandHelp } from './commands/agent';
 import { transitionCommandHelp } from './commands/transition';
+import { senderoCommandHelp } from './commands/sendero';
 
 export const rootHelp: CommandHelp = {
   command: 'senderos',
@@ -46,6 +47,7 @@ export const rootHelp: CommandHelp = {
     projectCommandHelp,
     agentCommandHelp,
     transitionCommandHelp,
+    senderoCommandHelp,
     goalCommandHelp,
     planCommandHelp,
     runCommandHelp,

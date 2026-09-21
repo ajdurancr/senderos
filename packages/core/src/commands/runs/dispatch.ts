@@ -2,6 +2,9 @@ import { createRunAttempt } from "../attempts/create";
 import { listRunAttempts } from "../attempts/list";
 import { getGoal } from "../goals/get";
 import { getAgentTransition } from "../transitions/get";
+import { eq } from "drizzle-orm";
+import { openRuntimeDb } from "../../db/client";
+import { senderoEdges, senderoNodes } from "../../db/schema";
 import { now } from "../../shared/ids";
 import { createRunRecord } from "./create";
 import { getRun } from "./get";
@@ -19,7 +22,32 @@ export async function dispatchRun(
   if (!goal) throw new Error(`Goal not found: ${input.goalId}`);
   if (!["active", "failed"].includes(goal.status))
     throw new Error(`Goal is not dispatchable from status ${goal.status}`);
-  const transition = await getAgentTransition(input.transitionId, home);
+  const legacyTransition = await getAgentTransition(input.transitionId, home);
+  const db = openRuntimeDb(home);
+  const senderoEdge = (
+    await db
+      .select()
+      .from(senderoEdges)
+      .where(eq(senderoEdges.id, input.transitionId))
+  )[0];
+  const sourceNode = senderoEdge
+    ? (
+        await db
+          .select()
+          .from(senderoNodes)
+          .where(eq(senderoNodes.id, senderoEdge.sourceNodeId))
+      )[0]
+    : null;
+  const transition =
+    legacyTransition ??
+    (senderoEdge && sourceNode?.agentId
+      ? {
+          id: senderoEdge.id,
+          sourceAgentId: sourceNode.agentId,
+          status: senderoEdge.status,
+          transitionObjective: senderoEdge.transitionObjective,
+        }
+      : null);
   if (!transition || transition.status !== "active")
     throw new Error(`Active agent transition not found: ${input.transitionId}`);
   if (transition.sourceAgentId !== input.agentId)
