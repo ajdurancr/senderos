@@ -1,4 +1,5 @@
-export type HarnessKind = "openclaw" | "codex" | "claude-code" | "unknown";
+/** A harness identifier. Senderos preserves custom values for forward compatibility. */
+export type HarnessKind = string;
 export type ProjectStatus = "healthy" | "setup_failed" | "broken" | "archived";
 export type IntegrationMode = "github_pr" | "local_merge";
 export type GoalKind =

@@ -25,9 +25,27 @@ describe('init command', () => {
   test('creates a configured runtime after approval', async () => {
     const home = tempHome();
     expect(
-      (await handleInit({ home, harness: 'codex', name: 'Configured context', approve: true })).home,
+      (await handleInit({ home, harness: 'cursor', name: 'Configured context', approve: true })).home,
     ).toBe(home);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
+  });
+
+  test('accepts custom harness identifiers and rejects empty ones', async () => {
+    const preview = await handleInit({
+      home: tempHome(),
+      harness: 'my-company-agent',
+      name: 'Custom harness context',
+    });
+    expect('config' in preview ? preview.config.defaultHarness : '').toBe(
+      'my-company-agent',
+    );
+    await expect(
+      handleInit({
+        home: tempHome(),
+        harness: '   ',
+        name: 'Empty harness context',
+      }),
+    ).rejects.toThrow('expected a non-empty value');
   });
 
   test('requires an explicit harness when none can be inferred', async () => {

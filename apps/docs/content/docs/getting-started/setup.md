@@ -9,7 +9,7 @@ Senderos currently runs from its Bun monorepo. It is not yet published as a regi
 
 - [Bun](https://bun.sh/) `1.3` or newer
 - Git
-- a host-agent environment such as OpenClaw, Codex, or Claude Code
+- a host-agent environment such as OpenClaw, Codex, Claude Code, Cursor, or another harness
 - a repository you want Senderos to coordinate
 
 ## Install from source
@@ -40,7 +40,7 @@ senderos init \
   --harness codex
 ```
 
-Supported harness values are `openclaw`, `codex`, and `claude-code`. Senderos attempts to infer the harness, but an explicit value is required if inference returns `unknown`.
+Preset harness values are `openclaw`, `codex`, `claude-code`, and `cursor`. These are suggestions, not a whitelist: `--harness` accepts any non-empty identifier so new or private harnesses do not require a Senderos release. Senderos attempts to infer known environments, but an explicit value is required if inference returns `unknown`.
 
 The preview reports:
 

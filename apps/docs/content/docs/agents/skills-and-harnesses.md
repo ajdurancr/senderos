@@ -37,7 +37,12 @@ Examples:
 
 - OpenClaw,
 - Codex,
-- Claude Code.
+- Claude Code,
+- Cursor.
+
+These are presets for discoverability, not a closed compatibility list. Runtime
+configuration and attempts preserve any non-empty harness identifier supplied by
+the operator.
 
 Those details make attempts auditable without turning a host environment into
 Senderos-owned state.

@@ -38,7 +38,7 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
     section: 'Operate',
     items: [
       { slug: 'studio/mission-control', title: 'Mission Control', description: 'Use Studio to review and operate active work.', section: 'Operate' },
-      { slug: 'agents/skills-and-harnesses', title: 'Agents & harnesses', description: 'Connect OpenClaw, Codex, or Claude Code.', section: 'Operate' },
+      { slug: 'agents/skills-and-harnesses', title: 'Agents & harnesses', description: 'Use preset or custom execution harnesses.', section: 'Operate' },
       { slug: 'automation/worker-and-scheduling', title: 'Automation', description: 'Drive the loop from a host scheduler.', section: 'Operate' },
       { slug: 'operations/persistence-and-state', title: 'Persistence', description: 'Local and remote libSQL runtime state.', section: 'Operate' },
       { slug: 'operations/safety-and-confirmations', title: 'Safety boundaries', description: 'What Senderos owns and what it refuses to own.', section: 'Operate' },
