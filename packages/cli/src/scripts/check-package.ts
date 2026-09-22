@@ -52,8 +52,8 @@ invariant(
 const executable = readFileSync("dist/index.js", "utf8");
 invariant(executable.startsWith("#!/usr/bin/env bun"), "The built CLI must have a Bun executable shebang.");
 invariant(
-  existsSync("dist/skills/senderos-operator/SKILL.md"),
-  "The built CLI must contain the canonical Senderos Operator skill.",
+  existsSync("dist/skills/senderos/SKILL.md"),
+  "The built CLI must contain the canonical Senderos skill.",
 );
 
 const help = Bun.spawnSync(["bun", "dist/index.js", "--help"]);
@@ -97,8 +97,8 @@ try {
   const publishedFiles = packResult.files.map((file) => file.path);
   invariant(publishedFiles.includes("dist/index.js"), "The npm package does not contain dist/index.js.");
   invariant(
-    publishedFiles.includes("dist/skills/senderos-operator/SKILL.md"),
-    "The npm package does not contain the canonical Senderos Operator skill.",
+    publishedFiles.includes("dist/skills/senderos/SKILL.md"),
+    "The npm package does not contain the canonical Senderos skill.",
   );
   invariant(publishedFiles.includes("README.md"), "The npm package does not contain its README.");
   invariant(
@@ -133,7 +133,7 @@ try {
   );
   invariant(
     installedSkill.stdout.toString().includes("Use the CLI help as the source of truth."),
-    "Installed CLI did not return the canonical Senderos Operator skill.",
+    "Installed CLI did not return the canonical Senderos skill.",
   );
 
   console.log(JSON.stringify({ publishedFiles }, null, 2));

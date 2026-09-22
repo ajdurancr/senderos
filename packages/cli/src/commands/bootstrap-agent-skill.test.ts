@@ -6,7 +6,7 @@ import { tempHome } from '../../../core/src/test-support/runtime';
 
 describe('bootstrap-agent-skill command', () => {
   const canonicalSkill = readFileSync(
-    new URL('../skills/senderos-operator/SKILL.md', import.meta.url),
+    new URL('../skills/senderos/SKILL.md', import.meta.url),
     'utf8',
   );
 

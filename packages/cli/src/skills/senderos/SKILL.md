@@ -1,9 +1,9 @@
 ---
-name: senderos-operator
+name: senderos
 description: Use Senderos through its CLI to coordinate work, discover supported workflows and actions, and inspect their current guidance before deciding what to do.
 ---
 
-# Senderos Operator
+# Senderos
 
 Senderos is an orchestration system for turning intent into structured, observable work. Its CLI is the interface for people and agents to discover workflows, perform actions, and inspect current state.
 

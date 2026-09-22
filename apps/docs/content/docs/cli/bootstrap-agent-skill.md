@@ -19,10 +19,10 @@ Use `--print` to inspect or copy the content without writing a file.
 
 ```bash
 senderos bootstrap-agent-skill \
-  --path ./skills/senderos-operator/SKILL.md
+  --path ./skills/senderos/SKILL.md
 ```
 
-The default output path is `./skills/senderos-operator/SKILL.md`. Existing files are protected unless `--force` is supplied.
+The default output path is `./skills/senderos/SKILL.md`. Existing files are protected unless `--force` is supplied.
 
 ## Options
 

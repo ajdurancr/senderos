@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import skillContent from '../skills/senderos-operator/SKILL.md' with {
+import skillContent from '../skills/senderos/SKILL.md' with {
   type: 'text',
 };
 
@@ -13,7 +13,7 @@ export const bootstrapAgentSkillCommandHelp = {
   usage: [
     'senderos bootstrap-agent-skill',
     'senderos bootstrap-agent-skill --print',
-    'senderos bootstrap-agent-skill --path ./skills/senderos-operator/SKILL.md',
+    'senderos bootstrap-agent-skill --path ./skills/senderos/SKILL.md',
   ],
   options: [
     {
@@ -24,13 +24,13 @@ export const bootstrapAgentSkillCommandHelp = {
     {
       name: '--path',
       description:
-        'Where to write the skill scaffold. Defaults to ./skills/senderos-operator/SKILL.md.',
+        'Where to write the skill scaffold. Defaults to ./skills/senderos/SKILL.md.',
     },
     { name: '--force', description: 'Overwrite an existing skill file.' },
   ],
 };
 
-const DEFAULT_SKILL_PATH = 'skills/senderos-operator/SKILL.md';
+const DEFAULT_SKILL_PATH = 'skills/senderos/SKILL.md';
 
 export async function handleBootstrapAgentSkill(
   options: Record<string, string | boolean | string[]>,
