@@ -98,20 +98,18 @@ describe('runCli', () => {
         'bootstrap-agent-skill',
         '--path',
         skillPath,
-        '--home',
-        join(home, '.senderos'),
-        '--harness',
-        'codex',
       ]);
     } finally {
       console.log = original;
     }
 
     expect(existsSync(skillPath)).toBe(true);
-    expect(readFileSync(skillPath, 'utf8')).toContain('SenderOS Operator');
-    expect(readFileSync(skillPath, 'utf8')).toContain('senderos init --home');
-    expect(logs.join('\n')).toContain('agentPrompt');
-    expect(logs.join('\n')).toContain('senderos init');
+    expect(readFileSync(skillPath, 'utf8')).toContain('Senderos Operator');
+    expect(readFileSync(skillPath, 'utf8')).toContain('Use the CLI help');
+    expect(readFileSync(skillPath, 'utf8')).not.toContain('--home');
+    expect(readFileSync(skillPath, 'utf8')).not.toContain('--harness');
+    expect(logs.join('\n')).toContain('guidance');
+    expect(logs.join('\n')).toContain('CLI help');
   });
 
   test('bootstrap-agent-skill can print the scaffold without writing it', async () => {
@@ -128,7 +126,7 @@ describe('runCli', () => {
     }
 
     expect(existsSync(skillPath)).toBe(false);
-    expect(logs.join('\n')).toContain('SenderOS Operator');
+    expect(logs.join('\n')).toContain('Senderos Operator');
     expect(logs.join('\n')).toContain('copy-pasteable skill');
   });
 

@@ -1,11 +1,11 @@
 ---
 title: bootstrap-agent-skill
-description: "Generate a portable skill scaffold that teaches a host agent how to operate Senderos without moving orchestration logic into the adapter."
+description: "Install portable, configuration-agnostic guidance for discovering and operating Senderos through its CLI."
 ---
 
-`senderos bootstrap-agent-skill` creates the operating layer for an agent-driven setup. The generated Markdown skill teaches a host agent to initialize Senderos, register projects, turn discussions into goals, and use the CLI as the source of truth.
+`senderos bootstrap-agent-skill` prints or installs a small, portable skill that explains what Senderos is and directs people or agents to discover current workflows and actions through CLI help.
 
-It does not initialize the Senderos runtime or launch an agent.
+The skill contains no harness, home path, runtime configuration, project layout, or command sequence. It does not initialize or configure Senderos.
 
 ## Preview the generated skill
 
@@ -19,9 +19,7 @@ Use `--print` to inspect or copy the content without writing a file.
 
 ```bash
 senderos bootstrap-agent-skill \
-  --path ./skills/senderos-operator/SKILL.md \
-  --home /absolute/path/.senderos \
-  --harness codex
+  --path ./skills/senderos-operator/SKILL.md
 ```
 
 The default output path is `./skills/senderos-operator/SKILL.md`. Existing files are protected unless `--force` is supplied.
@@ -33,9 +31,7 @@ The default output path is `./skills/senderos-operator/SKILL.md`. Existing files
 | `--print` | Return content without writing it |
 | `--path` | Select the skill file path |
 | `--force` | Overwrite an existing skill file |
-| `--home` | Include a preferred Senderos home in generated next steps |
-| `--harness` | Include a preferred host harness in generated next steps |
 
 ## Adapter boundary
 
-The scaffold is intentionally thin. It teaches correct command usage and human interaction, while planning and lifecycle rules stay inside Senderos. If an adapter starts independently deciding what is dispatchable, the system has acquired two competing control planes.
+The skill is intentionally thin. The CLI's command help remains the current source of truth, while the human or agent chooses how to apply the available workflows to the task at hand.
