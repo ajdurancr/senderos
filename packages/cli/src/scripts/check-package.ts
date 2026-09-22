@@ -68,7 +68,7 @@ invariant(
   `Built CLI skill bootstrap failed:\n${builtSkill.stderr.toString()}`,
 );
 invariant(
-  builtSkill.stdout.toString().includes("Use the CLI help as the source of truth."),
+  builtSkill.stdout.toString().includes("bunx --bun senderos@latest --help"),
   "Built CLI skill bootstrap did not return the canonical skill.",
 );
 
@@ -132,7 +132,7 @@ try {
     `Installed CLI skill bootstrap failed:\n${installedSkill.stderr.toString()}`,
   );
   invariant(
-    installedSkill.stdout.toString().includes("Use the CLI help as the source of truth."),
+    installedSkill.stdout.toString().includes("bunx --bun senderos@latest --help"),
     "Installed CLI did not return the canonical Senderos skill.",
   );
 

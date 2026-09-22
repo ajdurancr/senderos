@@ -1,7 +1,7 @@
 {
   "name": "senderos",
   "private": false,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command-line interface for the Senderos engineering orchestration platform.",
   "type": "module",
   "bin": {
