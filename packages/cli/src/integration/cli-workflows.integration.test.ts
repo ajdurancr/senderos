@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { runCli } from '../run';
@@ -291,19 +291,16 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     (await invokeCli(['goal', 'cancel', goal.id, '--home', home])).status,
   ).toBe('canceled');
 
-  const skillPath = join(home, 'operator', 'SKILL.md');
+  const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
   expect(
     (
       await invokeCli([
         'bootstrap-agent-skill',
         '--path',
         skillPath,
-        '--home',
-        home,
-        '--harness',
-        'codex',
       ])
     ).created,
   ).toBe(true);
   expect(existsSync(skillPath)).toBe(true);
+  expect(readFileSync(skillPath, 'utf8')).toContain('Use the CLI help');
 }, 30_000);

@@ -51,10 +51,26 @@ invariant(
 
 const executable = readFileSync("dist/index.js", "utf8");
 invariant(executable.startsWith("#!/usr/bin/env bun"), "The built CLI must have a Bun executable shebang.");
+invariant(
+  existsSync("dist/skills/senderos/SKILL.md"),
+  "The built CLI must contain the canonical Senderos skill.",
+);
 
 const help = Bun.spawnSync(["bun", "dist/index.js", "--help"]);
 invariant(help.exitCode === 0, `Built CLI help failed:\n${help.stderr.toString()}`);
 invariant(help.stdout.toString().includes("senderos"), "Built CLI help did not render the command name.");
+
+const builtSkill = Bun.spawnSync([
+  "bun", "dist/index.js", "bootstrap-agent-skill", "--print",
+]);
+invariant(
+  builtSkill.exitCode === 0,
+  `Built CLI skill bootstrap failed:\n${builtSkill.stderr.toString()}`,
+);
+invariant(
+  builtSkill.stdout.toString().includes("Use the CLI help as the source of truth."),
+  "Built CLI skill bootstrap did not return the canonical skill.",
+);
 
 const smokeHome = mkdtempSync(join(testRuntimeRoot, "senderos-package-check-"));
 try {
@@ -80,6 +96,10 @@ try {
   invariant(Boolean(packResult), "npm pack did not report a packed artifact.");
   const publishedFiles = packResult.files.map((file) => file.path);
   invariant(publishedFiles.includes("dist/index.js"), "The npm package does not contain dist/index.js.");
+  invariant(
+    publishedFiles.includes("dist/skills/senderos/SKILL.md"),
+    "The npm package does not contain the canonical Senderos skill.",
+  );
   invariant(publishedFiles.includes("README.md"), "The npm package does not contain its README.");
   invariant(
     publishedFiles.every((file) => file === "package.json" || file === "README.md" || file.startsWith("dist/")),
@@ -99,6 +119,22 @@ try {
     { cwd: installRoot, env: testEnvironment },
   );
   invariant(installedHelp.exitCode === 0, `Installed CLI failed:\n${installedHelp.stderr.toString()}`);
+  const installedSkill = Bun.spawnSync(
+    [
+      join(installRoot, "node_modules/.bin/senderos"),
+      "bootstrap-agent-skill",
+      "--print",
+    ],
+    { cwd: installRoot, env: testEnvironment },
+  );
+  invariant(
+    installedSkill.exitCode === 0,
+    `Installed CLI skill bootstrap failed:\n${installedSkill.stderr.toString()}`,
+  );
+  invariant(
+    installedSkill.stdout.toString().includes("Use the CLI help as the source of truth."),
+    "Installed CLI did not return the canonical Senderos skill.",
+  );
 
   console.log(JSON.stringify({ publishedFiles }, null, 2));
 } finally {

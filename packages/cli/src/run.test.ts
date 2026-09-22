@@ -88,7 +88,7 @@ describe('runCli', () => {
 
   test('bootstrap-agent-skill writes a skill scaffold and next-step guidance', async () => {
     const home = tempHome();
-    const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
+    const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
     console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
@@ -98,25 +98,23 @@ describe('runCli', () => {
         'bootstrap-agent-skill',
         '--path',
         skillPath,
-        '--home',
-        join(home, '.senderos'),
-        '--harness',
-        'codex',
       ]);
     } finally {
       console.log = original;
     }
 
     expect(existsSync(skillPath)).toBe(true);
-    expect(readFileSync(skillPath, 'utf8')).toContain('SenderOS Operator');
-    expect(readFileSync(skillPath, 'utf8')).toContain('senderos init --home');
-    expect(logs.join('\n')).toContain('agentPrompt');
-    expect(logs.join('\n')).toContain('senderos init');
+    expect(readFileSync(skillPath, 'utf8')).toContain('# Senderos');
+    expect(readFileSync(skillPath, 'utf8')).toContain('Use the CLI help');
+    expect(readFileSync(skillPath, 'utf8')).not.toContain('--home');
+    expect(readFileSync(skillPath, 'utf8')).not.toContain('--harness');
+    expect(logs.join('\n')).toContain('guidance');
+    expect(logs.join('\n')).toContain('CLI help');
   });
 
   test('bootstrap-agent-skill can print the scaffold without writing it', async () => {
     const home = tempHome();
-    const skillPath = join(home, 'skills', 'senderos-operator', 'SKILL.md');
+    const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
     console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
@@ -128,7 +126,7 @@ describe('runCli', () => {
     }
 
     expect(existsSync(skillPath)).toBe(false);
-    expect(logs.join('\n')).toContain('SenderOS Operator');
+    expect(logs.join('\n')).toContain('# Senderos');
     expect(logs.join('\n')).toContain('copy-pasteable skill');
   });
 

@@ -1,7 +1,7 @@
 {
   "name": "senderos",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command-line interface for the Senderos engineering orchestration platform.",
   "type": "module",
   "bin": {
@@ -36,7 +36,7 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "clean": "rm -rf dist",
-    "build": "bun run clean && bun build ./src/index.ts --target=bun --outfile=./dist/index.js --external '@libsql/*' --external 'drizzle-orm/*' && cp -R ../core/drizzle ./dist/drizzle && cp -R ../core/src/bootstrap/agents ./dist/agents && cp -R ../core/src/bootstrap/senderos ./dist/senderos",
+    "build": "bun run clean && bun build ./src/index.ts --target=bun --outfile=./dist/index.js --external '@libsql/*' --external 'drizzle-orm/*' && cp -R ../core/drizzle ./dist/drizzle && cp -R ../core/src/bootstrap/agents ./dist/agents && cp -R ../core/src/bootstrap/senderos ./dist/senderos && cp -R ./src/skills ./dist/skills",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun ../../scripts/run-with-test-runtime.ts bun run test:raw",
     "test:raw": "bun test --isolate --timeout=15000",
