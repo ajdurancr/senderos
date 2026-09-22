@@ -88,7 +88,7 @@ describe('runCli', () => {
 
   test('bootstrap-agent-skill writes a skill scaffold and next-step guidance', async () => {
     const home = tempHome();
-    const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
+    const skillPath = join(home, '.agents', 'skills', 'senderos', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
     console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));
@@ -114,7 +114,7 @@ describe('runCli', () => {
 
   test('bootstrap-agent-skill can print the scaffold without writing it', async () => {
     const home = tempHome();
-    const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
+    const skillPath = join(home, '.agents', 'skills', 'senderos', 'SKILL.md');
     const logs: string[] = [];
     const original = console.log;
     console.log = (...args: Parameters<typeof console.log>) => logs.push(args.join(' '));

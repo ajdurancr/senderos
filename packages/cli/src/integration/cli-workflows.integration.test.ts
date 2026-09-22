@@ -291,7 +291,7 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     (await invokeCli(['goal', 'cancel', goal.id, '--home', home])).status,
   ).toBe('canceled');
 
-  const skillPath = join(home, 'skills', 'senderos', 'SKILL.md');
+  const skillPath = join(home, '.agents', 'skills', 'senderos', 'SKILL.md');
   expect(
     (
       await invokeCli([

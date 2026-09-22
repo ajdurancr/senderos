@@ -18,6 +18,8 @@ describe('bootstrap-agent-skill command', () => {
     });
     expect(result.mode).toBe('print');
     expect(result.content).toBe(canonicalSkill);
+    expect(result.content).toContain('bunx --bun senderos@latest --help');
+    expect(result.content).toContain('Do this only once per session.');
     expect(existsSync(path)).toBe(false);
   });
 
@@ -31,5 +33,20 @@ describe('bootstrap-agent-skill command', () => {
     expect(
       (await handleBootstrapAgentSkill({ path, force: true })).overwritten,
     ).toBe(true);
+  });
+
+  test('writes to the conventional agent skill path by default', async () => {
+    const cwd = process.cwd();
+    const home = tempHome();
+    process.chdir(home);
+
+    try {
+      const result = await handleBootstrapAgentSkill({});
+      const path = join(home, '.agents', 'skills', 'senderos', 'SKILL.md');
+      expect(result.skillPath).toBe(path);
+      expect(readFileSync(path, 'utf8')).toBe(canonicalSkill);
+    } finally {
+      process.chdir(cwd);
+    }
   });
 });

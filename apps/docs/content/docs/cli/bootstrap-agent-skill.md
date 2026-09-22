@@ -19,10 +19,12 @@ Use `--print` to inspect or copy the content without writing a file.
 
 ```bash
 senderos bootstrap-agent-skill \
-  --path ./skills/senderos/SKILL.md
+  --path ./.agents/skills/senderos/SKILL.md
 ```
 
-The default output path is `./skills/senderos/SKILL.md`. Existing files are protected unless `--force` is supplied.
+The default output path is `./.agents/skills/senderos/SKILL.md`, following the shared agent-skill convention. Existing files are protected unless `--force` is supplied.
+
+The installed skill directs its user to resolve the latest published Senderos CLI once at the beginning of each session with `bunx --bun senderos@latest --help`, then reuse that resolved version for the rest of the session.
 
 ## Options
 
