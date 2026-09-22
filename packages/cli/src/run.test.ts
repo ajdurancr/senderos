@@ -25,8 +25,9 @@ describe('runCli', () => {
 
   test('init with approve creates the runtime', async () => {
     const home = tempHome();
-    await runCli(['init', '--name', 'Approved context', '--home', home, '--harness', 'codex', '--approve']);
+    await runCli(['init', '--name', 'Approved context', '--home', home, '--harness', 'cursor', '--approve']);
     expect(existsSync(join(home, 'config.json'))).toBe(true);
+    expect(loadConfig(home).defaultHarness).toBe('cursor');
   });
 
   test('agent command family routes through runCli', async () => {
@@ -81,9 +82,9 @@ describe('runCli', () => {
   test('config commands route through runCli and persist updates', async () => {
     const home = tempHome();
     await runCli(['init', '--name', 'Config context', '--home', home, '--harness', 'codex', '--approve']);
-    await runCli(['config', 'set', 'defaultHarness', 'codex', '--home', home]);
-    expect(loadConfig(home).defaultHarness).toBe('codex');
-    expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('codex');
+    await runCli(['config', 'set', 'defaultHarness', 'my-company-agent', '--home', home]);
+    expect(loadConfig(home).defaultHarness).toBe('my-company-agent');
+    expect(readFileSync(join(home, 'config.json'), 'utf8')).toContain('my-company-agent');
   });
 
   test('bootstrap-agent-skill writes a skill scaffold and next-step guidance', async () => {

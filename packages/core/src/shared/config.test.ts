@@ -24,6 +24,15 @@ describe('runtime configuration', () => {
     expect(preview.requiresApproval).toBe(true);
   });
 
+  test('preserves preset and custom harness identifiers', () => {
+    expect(previewInit(undefined, 'cursor').config.defaultHarness).toBe(
+      'cursor',
+    );
+    expect(previewInit(undefined, 'my-company-agent').config.defaultHarness).toBe(
+      'my-company-agent',
+    );
+  });
+
   test('initializeRuntime creates a local runtime on disk', async () => {
     const home = await initHome();
     expect(runtimeExists(home)).toBe(true);

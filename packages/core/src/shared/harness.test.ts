@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { inferHarnessFromEnvironment } from './harness';
+import { HARNESS_PRESETS, inferHarnessFromEnvironment } from './harness';
 
 describe('harness utils', () => {
+  test('exposes suggested harness presets without restricting custom values', () => {
+    expect(HARNESS_PRESETS).toEqual([
+      'openclaw',
+      'codex',
+      'claude-code',
+      'cursor',
+    ]);
+  });
+
   test('infers harness families', () => {
     expect(
       inferHarnessFromEnvironment({

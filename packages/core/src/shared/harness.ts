@@ -1,4 +1,12 @@
 import type { HarnessKind } from '../shared/types';
+
+export const HARNESS_PRESETS = [
+  'openclaw',
+  'codex',
+  'claude-code',
+  'cursor',
+] as const satisfies readonly HarnessKind[];
+
 export function inferHarnessFromEnvironment(
   env: NodeJS.ProcessEnv = process.env,
 ): HarnessKind {

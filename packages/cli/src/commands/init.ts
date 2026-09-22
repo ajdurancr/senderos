@@ -1,10 +1,18 @@
-import type { HarnessKind, InitPreview } from '@senderos/core';
-import { initializeRuntime, previewInit } from '@senderos/core';
-import { enumOption, optionString } from '../shared';
+import type { InitPreview } from '@senderos/core';
+import { HARNESS_PRESETS, initializeRuntime, previewInit } from '@senderos/core';
+import { optionString } from '../shared';
 
-const harnessKinds = ['openclaw', 'codex', 'claude-code'] as const satisfies readonly HarnessKind[];
 type InitOptions = Record<string, string | boolean | string[]>;
 type InitializedRuntime = Awaited<ReturnType<typeof initializeRuntime>>;
+
+function harnessOption(value: InitOptions['harness']) {
+  if (value === undefined) return undefined;
+  const harness = optionString(value)?.trim();
+  if (!harness) {
+    throw new Error('Invalid --harness: expected a non-empty value.');
+  }
+  return harness;
+}
 
 export const initCommandHelp = {
   command: 'init',
@@ -21,7 +29,7 @@ export const initCommandHelp = {
     { name: '--home', description: 'Proposed Senderos home directory.' },
     {
       name: '--harness',
-      description: 'Harness to use: openclaw|codex|claude-code.',
+      description: `Harness identifier. Presets: ${HARNESS_PRESETS.join('|')}. Custom values are accepted.`,
     },
     {
       name: '--approve',
@@ -38,7 +46,7 @@ export async function handleInit(options: InitOptions): Promise<InitPreview | In
   if (!name) throw new Error('Missing required option: --name');
   const preview = previewInit(
     optionString(options.home),
-    enumOption(optionString(options.harness), harnessKinds, 'harness'),
+    harnessOption(options.harness),
     { name, id: optionString(options['execution-context-id']) },
   );
 
@@ -48,7 +56,7 @@ export async function handleInit(options: InitOptions): Promise<InitPreview | In
 
   if (!options.harness && preview.inferredHarness === 'unknown') {
     throw new Error(
-      'Harness is not known. Re-run with --harness <openclaw|codex|claude-code> and --approve.',
+      `Harness is not known. Re-run with --harness <value> and --approve. Presets: ${HARNESS_PRESETS.join(', ')}.`,
     );
   }
 

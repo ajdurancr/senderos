@@ -26,6 +26,10 @@ senderos init --name "My development workspace" --home /path/to/.senderos --harn
 senderos init --name "My development workspace" --execution-context-id context-abc123 --home /path/to/.senderos --harness codex --approve
 ```
 
+`--harness` accepts any non-empty identifier. Senderos suggests `openclaw`,
+`codex`, `claude-code`, and `cursor` as presets, while allowing new or private
+harnesses without a CLI update.
+
 ## Typical use cases
 
 Use `init` when:
