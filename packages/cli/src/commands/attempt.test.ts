@@ -1,24 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 
 import { handleAttempt } from './attempt';
-import { createGoal, createRunAttempt, createRunRecord, getAgentBySlug } from '@senderos/core';
+import { createGoal, activateGoal, dispatchRun, updateRunAttempt } from '@senderos/core';
 import { createProjectFixture, initHome } from '../../../core/src/test-support/runtime';
 
 async function createAttemptFixture() {
   const home = await initHome();
   const project = await createProjectFixture(home);
   const goal = await createGoal({ home, projectId: project.id, title: 'Attempt fixture' });
-  const run = (await createRunRecord(goal, home))!;
-  const agent = (await getAgentBySlug('spec-partner', home))!;
-  const attempt = await createRunAttempt({
-    home,
-    runId: run.id,
-    attemptNumber: 1,
-    agentId: agent.id,
-    executionObjective: 'Execute work.',
-    harness: 'codex',
-    resumeCommand: 'codex resume abc',
-  });
+  await activateGoal(goal.id, home);
+  const run = await dispatchRun({ goalId: goal.id }, home);
+  const attempt = await updateRunAttempt(run.attemptId, { resumeCommand: 'codex resume abc' }, home);
   return { home, attempt };
 }
 
@@ -102,6 +94,19 @@ describe('attempt command', () => {
         {},
         home,
       ))).toMatchObject({ resumeCommand: 'codex resume abc' });
+  });
+
+  test('supports the complete host ownership and completion metadata protocol', async () => {
+    const { home, attempt } = await createAttemptFixture();
+    const evidence = await handleAttempt('evidence', ['attempt', 'evidence', attempt.id], { kind: 'test', label: 'Passed', url: 'https://example.test/proof' }, home);
+    expect(evidence).toMatchObject({ kind: 'test', label: 'Passed' });
+    const review = await handleAttempt('review', ['attempt', 'review', attempt.id], { status: 'approved', reviewer: 'Tony', rationale: 'Verified' }, home);
+    expect(review).toMatchObject({ status: 'approved', reviewer: 'Tony' });
+    const claim = await handleAttempt('claim', ['attempt', 'claim', attempt.id], { 'owner-id': 'cli-host', 'lease-seconds': '120' }, home);
+    expect(claim).toMatchObject({ ownerId: 'cli-host' });
+    if (!claim || !("token" in claim)) throw new Error("Expected claim token");
+    expect(await handleAttempt('heartbeat', ['attempt', 'heartbeat', attempt.id], { token: claim.token, 'lease-seconds': '120' }, home)).toMatchObject({ cancellationRequested: false });
+    expect(await handleAttempt('abandon', ['attempt', 'abandon', attempt.id], { 'confirmed-stopped': true, reason: 'Host session ended' }, home)).toMatchObject({ status: 'failed' });
   });
 
   test('rejects unknown actions and missing attempt ids', async () => {

@@ -14,6 +14,7 @@ import { handleSystemCommand } from './commands/system';
 import { handleSendero } from './commands/sendero';
 import { resolveHelp } from './help';
 import { resolveExecutionContextId } from '@senderos/core';
+import { LifecycleError } from '@senderos/core';
 
 export async function runCli(argv = process.argv.slice(2)) {
   const { positionals, options } = parseArgs(argv);
@@ -69,7 +70,9 @@ export async function runCli(argv = process.argv.slice(2)) {
 
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error(JSON.stringify({ error: (error as Error).message }, null, 2));
-    process.exitCode = 1;
+    const lifecycle = error instanceof LifecycleError;
+    const busy = /SQLITE_BUSY|database is locked|TRANSACTION_BUSY/.test((error as Error).message);
+    console.error(JSON.stringify({ error: (error as Error).message, code: lifecycle ? error.code : busy ? 'DATABASE_BUSY' : 'COMMAND_ERROR', retryable: busy || (lifecycle && error.retryable), nextAction: lifecycle ? error.nextAction : busy ? 'Retry with the same request ID' : 'Check command help and inputs', schemaVersion: 1 }, null, 2));
+    process.exitCode = busy || (lifecycle && error.retryable) ? 75 : 1;
   }
 }

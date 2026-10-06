@@ -284,8 +284,9 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     goal.id,
   );
   expect((await invokeCli(['doctor', '--home', home])).ok).toBe(true);
+  const nextRun = await invokeCli(['run', 'dispatch', '--goal-id', goal.id, '--home', home]);
   expect(
-    (await invokeCli(['run', 'cancel', retryRun.runId, '--home', home])).status,
+    (await invokeCli(['run', 'cancel', nextRun.runId, '--home', home])).status,
   ).toBe('canceled');
   expect(
     (await invokeCli(['goal', 'cancel', goal.id, '--home', home])).status,

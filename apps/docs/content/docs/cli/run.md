@@ -16,8 +16,7 @@ description: "Dispatch, inspect, and cancel Senderos runs."
 ## Examples
 
 ```bash
-senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --working-path /repo/path
-senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --previous-run-id <run-id>
+senderos run dispatch --goal-id <goal-id> --request-id <stable-request-id> --expected-revision <revision>
 senderos run list
 senderos run show run-014
 senderos run state <goal-id>
@@ -26,9 +25,13 @@ senderos run cancel run-014
 
 ## `dispatch`
 
-`dispatch` is the forward-dispatch mutation command.
+`dispatch` atomically reserves the next Core-approved step. It does not start an
+external agent session.
 
-It consumes ids returned by `senderos plan` and creates the persisted runtime state needed for one external execution attempt.
+Pass a stable `--request-id` so an ambiguous response can be replayed without
+creating another attempt. `--expected-revision` rejects stale plans. Optional
+transition, agent, and previous-run IDs are assertions checked against Core's
+current decision, not instructions that override it.
 
 It returns only minimal dispatch result data such as:
 
@@ -37,8 +40,7 @@ It returns only minimal dispatch result data such as:
 - `runId`
 - `attemptId`
 
-The host agent decides how to use that result to launch real work.
-Senderos does not execute the coding task itself.
+The host must claim `attemptId` before launching real work.
 
 ## Why it matters
 

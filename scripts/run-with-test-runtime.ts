@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const command = process.argv.slice(2);
@@ -7,10 +7,9 @@ if (!command.length) {
 }
 
 const workspaceRoot = resolve(import.meta.dir, '..');
-const runtimeRoot = resolve(workspaceRoot, '.tmp/test-runtime');
-
-rmSync(runtimeRoot, { recursive: true, force: true });
-mkdirSync(runtimeRoot, { recursive: true });
+const runtimeBase = resolve(workspaceRoot, '.tmp/test-runtime');
+mkdirSync(runtimeBase, { recursive: true });
+const runtimeRoot = mkdtempSync(resolve(runtimeBase, 'run-'));
 
 try {
   const result = Bun.spawnSync(command, {

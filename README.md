@@ -1,5 +1,8 @@
 # Senderos
 
+See the [lifecycle and host integration contract](docs/lifecycle-contract.md) for
+claim/heartbeat/report, workflow publication, recovery, and upgrade guidance.
+
 Senderos is an engineering orchestration platform that transforms objectives into verified software outcomes by coordinating humans, AI systems, development tools, organizational knowledge, and continuous feedback loops.
 
 This repository contains the Senderos monorepo.

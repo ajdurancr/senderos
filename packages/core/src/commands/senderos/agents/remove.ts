@@ -1,5 +1,6 @@
+import { editableGraph } from "../../../lifecycle/versions";
 import { eq, or } from "drizzle-orm";
-import { openRuntimeDb } from "../../../db/client";
+import { atomic, openRuntimeDb } from "../../../db/client";
 import { senderoEdges, senderoNodes } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { now, randomId } from "../../../shared/ids";
@@ -7,7 +8,8 @@ import { getSenderoGraph } from "../get-graph";
 import { resolveSenderoAgentNode } from "../../../internal/senderos/resolve-node";
 
 export async function removeAgentFromSendero(input: { senderoId: string; agentId: string; home?: string }) {
-  const graph = await getSenderoGraph(input.senderoId, undefined, input.home);
+  return atomic(input.home, async () => {
+  const graph = await editableGraph(input.senderoId, input.home);
   if (!graph) throw new Error(`Sendero not found: ${input.senderoId}`);
   const node = await resolveSenderoAgentNode(graph, input.agentId, input.home);
   const incoming = graph.edges.filter((edge) => edge.targetNodeId === node.id);
@@ -34,4 +36,5 @@ export async function removeAgentFromSendero(input: { senderoId: string; agentId
     removedConnections: incoming.length + outgoing.length, createdConnections: reconnected.length,
   });
   return { agent: node, removedConnections: incoming.length + outgoing.length, connections: reconnected };
+  });
 }

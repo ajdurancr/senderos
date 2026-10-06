@@ -30,6 +30,7 @@ export function MissionControlOverview({
   const projectId = route.projectId ?? search.get("project") ?? undefined;
 
   if (view === "senderos") {
+    data = { ...data, senderoGraphs: data.senderoGraphs.map(g => data.draftGraphs?.find(d => d.sendero.id === g.sendero.id) ?? g) };
     const graph =
       data.senderoGraphs.find((item) => item.sendero.id === route.senderoId) ??
       data.senderoGraphs[0];

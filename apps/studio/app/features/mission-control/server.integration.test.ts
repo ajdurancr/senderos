@@ -52,10 +52,13 @@ describe("Studio server integration", () => {
     const position = new FormData(); Object.entries({ intent: "update-sendero-node-position", nodeId: node.id, positionX: "111", positionY: "222" }).forEach(([key, value]) => position.set(key, value)); await applyMissionControlAction(position);
     const layout = new FormData(); layout.set("intent", "update-sendero-layout"); layout.set("positions", JSON.stringify({ [node.id]: { x: 333, y: 444 } })); await applyMissionControlAction(layout);
     const updateNode = new FormData(); Object.entries({ intent: "update-sendero-node", nodeId: node.id, label: "New start" }).forEach(([key, value]) => updateNode.set(key, value)); await applyMissionControlAction(updateNode);
-    const edge = graph.edges[0]!;
+    const draftForm = new FormData(); draftForm.set('intent', 'draft-sendero'); draftForm.set('senderoId', graph.sendero.id); await applyMissionControlAction(draftForm);
+    const draft = (await missionControlData()).draftGraphs[0]!;
+    const edge = draft.edges[0]!;
     const updateEdge = new FormData(); Object.entries({ intent: "update-sendero-edge", edgeId: edge.id, name: "Updated arc", description: "Updated", transitionObjective: "Continue", status: "active" }).forEach(([key, value]) => updateEdge.set(key, value)); await applyMissionControlAction(updateEdge);
 
     data = await missionControlData();
+    const publishForm = new FormData(); publishForm.set('intent', 'publish-sendero'); publishForm.set('senderoId', graph.sendero.id); await applyMissionControlAction(publishForm);
     expect(data.projects.find((item) => item.id === project.id)).toMatchObject({ name: "Updated project", targetBranch: "develop" });
     expect(data.runtime.database).toMatchObject({ endpoint: "Local libSQL database", remote: false });
     expect(data.attempts.find((item) => item.id === attempt.id)?.statusSnapshotJson).toContain("changes_requested");

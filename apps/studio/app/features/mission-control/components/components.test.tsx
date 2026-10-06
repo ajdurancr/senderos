@@ -144,12 +144,41 @@ describe("mission-control components", () => {
     expect(screen.getAllByText("Arc ID").length).toBeGreaterThan(0);
   });
 
+  it("renders draft workflow controls, completion policy, and lifecycle guidance", () => {
+    const published = data.senderoGraphs[0]!;
+    const draft = {
+      ...published,
+      version: { ...published.version, id: "version-draft", version: 2, status: "draft" as const },
+      edges: published.edges.map((edge) => ({
+        ...edge,
+        senderoVersionId: "version-draft",
+        conditionJson: JSON.stringify({ completion: { requireReview: true, evidenceKinds: ["test"] } }),
+      })),
+    };
+    const guided = {
+      ...data,
+      decisions: [{ goalId: goal.id, state: "blocked" as const, reason: "retry_limit_reached", nextAction: "increase_retry_budget", revision: 2 }],
+      senderoGraphs: [draft],
+      draftGraphs: [draft],
+      historyGraphs: [published],
+    };
+    inRouter(<>
+      <SenderoInspector data={guided} senderoId={draft.sendero.id} edgeId={draft.edges[0]!.id} />
+      <ContextualInspector data={guided} goalId={goal.id} />
+    </>);
+    expect(screen.getByText("Validate & publish draft")).toBeTruthy();
+    expect(screen.getByLabelText(/Require approval/)).toBeTruthy();
+    expect(screen.getByDisplayValue("test")).toBeTruthy();
+    expect(screen.getByText(/retry limit reached/)).toBeTruthy();
+    expect(screen.getByText(/increase retry budget/)).toBeTruthy();
+  });
+
   it("renders plural retry dispatch plans with resolved entities", () => {
     const dispatchable = {
       goalId: goal.id,
       transitionId: data.transitions[0]!.id,
       agentId: agent.id,
-      previousRunId: run.id,
+      revision: 0, previousRunId: run.id,
     };
     inRouter(<DispatchTray data={{
       ...data,
@@ -164,7 +193,7 @@ describe("mission-control components", () => {
     const fallback: MissionControlData = {
       ...data,
       executionContexts: [], projects: [{ ...data.projects[0]!, id: "settings", name: "Settings project" }], goals: [], runs: [], attempts: [orphan], agents: [{ ...agent, description: "", defaultGoal: "" }], events: [{ ...data.events[0]!, id: "event", eventType: "run.started", entityType: "run", entityId: "missing", payload: {}, createdAt: now }],
-      queue: { reviews: [{ attempt: orphan, review: { status: "pending" } }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ goalId: "missing", transitionId: "missing", agentId: "missing", previousRunId: null }], blockedGoals: [] },
+      queue: { reviews: [{ attempt: orphan, review: { status: "pending" } }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ goalId: "missing", transitionId: "missing", agentId: "missing", revision: 0, previousRunId: null }], blockedGoals: [] },
       runtime: { database: { endpoint: "db.example.test", remote: true, urlEnv: "URL", authTokenEnv: "TOKEN" } },
     };
     inRouter(<>

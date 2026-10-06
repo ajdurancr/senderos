@@ -215,3 +215,31 @@ export const events = sqliteTable("events", {
   payloadJson: text("payload_json").notNull(),
   createdAt: text("created_at").notNull(),
 });
+
+/** Explicit cursor; existing goals are reconciled lazily on first lifecycle command. */
+export const goalExecutions = sqliteTable("goal_executions", {
+  goalId: text("goal_id").primaryKey(),
+  transitionId: text("transition_id"),
+  latestRunId: text("latest_run_id"),
+  attemptsUsed: integer("attempts_used").notNull().default(0),
+  maxAttempts: integer("max_attempts").notNull().default(3),
+  revision: integer("revision").notNull().default(0),
+  finishedAt: text("finished_at"),
+});
+
+export const attemptClaims = sqliteTable("attempt_claims", {
+  attemptId: text("attempt_id").primaryKey(),
+  ownerId: text("owner_id"),
+  token: text("token"),
+  leaseExpiresAt: text("lease_expires_at"),
+  cancellationRequestedAt: text("cancellation_requested_at"),
+  acknowledgedAt: text("acknowledged_at"),
+  packetJson: text("packet_json").notNull().default("{}"),
+});
+
+export const lifecycleRequests = sqliteTable("lifecycle_requests", {
+  id: text("id").primaryKey(),
+  goalId: text("goal_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  responseJson: text("response_json").notNull(),
+});

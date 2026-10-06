@@ -5,11 +5,14 @@ import { listRunAttempts } from '../commands/attempts/list';
 import { plan } from '../commands/planning/plan';
 import { status } from '../commands/system/status';
 import type { AttemptReview } from '../shared/types';
+import { explainGoal } from '../lifecycle/state';
 
 export async function missionControlOverview(home?: string, executionContextId?: string) {
   const goals = await listGoals(home, executionContextId);
   const runs = await listRuns(home, executionContextId);
   const attempts = await listRunAttempts(undefined, home, executionContextId);
+  const decisions: Awaited<ReturnType<typeof explainGoal>>[] = [];
+  for (const goal of goals) decisions.push(await explainGoal(goal.id, home));
   const reviews = attempts.flatMap((attempt) => {
     const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
     return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
@@ -20,12 +23,13 @@ export async function missionControlOverview(home?: string, executionContextId?:
     goals,
     runs,
     attempts,
+    decisions,
     queue: {
       dispatchable: await plan({ home, executionContextId }),
       reviews,
       blockedGoals: goals.filter((goal) => goal.status === 'blocked'),
       failedAttempts: attempts.filter((attempt) => attempt.status === 'failed'),
-      staleAttempts: attempts.filter((attempt) => attempt.status === 'running' && !attempt.heartbeatAt),
+      staleAttempts: attempts.filter((attempt) => decisions.some(d => d.attemptId === attempt.id && d.reason === 'lease_expired')),
       activeRuns: runs.filter((run) => !['succeeded', 'failed', 'canceled'].includes(run.status)),
     },
   };

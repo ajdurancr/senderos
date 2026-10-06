@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { draftSendero } from '../../lifecycle/versions';
 
 import { activateGoal, createGoal } from "../goals";
 import { updateRunAttempt } from "../attempts";
@@ -40,13 +41,14 @@ test("built-in Sendero is connected, versioned, and reusable", async () => {
     id: graph!.nodes[1]!.id,
     label: "Refine intent",
   });
+  const draft = (await draftSendero(graph!.sendero.id, home))!;
   await updateSenderoEdge({
     home,
-    id: graph!.edges[1]!.id,
+    id: draft.edges[1]!.id,
     name: "ready for framing",
     transitionObjective: "Frame the refined intent.",
   });
-  const updated = await getSenderoGraph(graph!.sendero.id, 1, home);
+  const updated = await getSenderoGraph(graph!.sendero.id, 2, home);
   expect(updated?.nodes[1]?.label).toBe("Refine intent");
   expect(updated?.edges[1]).toMatchObject({
     name: "ready for framing",

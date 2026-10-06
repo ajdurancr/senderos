@@ -8,6 +8,9 @@ test('sendero CLI exposes intent-level graph actions', async () => {
   const home = await initHome();
   expect(await handleSendero('list', [], {}, home)).toHaveLength(5);
   expect(await handleSendero('version', ['sendero', 'version', 'list'], {}, home)).toHaveLength(5);
+  await handleSendero('draft', ['sendero', 'draft', 'software-delivery'], {}, home);
+  await expect(handleSendero('policy', ['sendero', 'policy', 'software-delivery'], { agent: 'judge', 'require-review': true, 'evidence-kind': ['test', 'ci'] }, home))
+    .resolves.toMatchObject({ conditionJson: expect.stringContaining('requireReview') });
 
   const added = (await handleSendero(
     'agent',

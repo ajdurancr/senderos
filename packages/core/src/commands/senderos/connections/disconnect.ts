@@ -1,5 +1,6 @@
+import { editableGraph } from "../../../lifecycle/versions";
 import { eq } from "drizzle-orm";
-import { openRuntimeDb } from "../../../db/client";
+import { atomic, openRuntimeDb } from "../../../db/client";
 import { senderoEdges } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { getSenderoGraph } from "../get-graph";
@@ -7,7 +8,8 @@ import { assertConnectedSendero } from "../../../internal/senderos/graph-invaria
 import { resolveSenderoAgentNode } from "../../../internal/senderos/resolve-node";
 
 export async function disconnectSenderoAgents(input: { senderoId: string; from: string; to: string; home?: string }) {
-  const graph = await getSenderoGraph(input.senderoId, undefined, input.home);
+  return atomic(input.home, async () => {
+  const graph = await editableGraph(input.senderoId, input.home);
   if (!graph) throw new Error(`Sendero not found: ${input.senderoId}`);
   const source = await resolveSenderoAgentNode(graph, input.from, input.home);
   const target = await resolveSenderoAgentNode(graph, input.to, input.home);
@@ -22,4 +24,5 @@ export async function disconnectSenderoAgents(input: { senderoId: string; from: 
     senderoId: graph.sendero.id, sourceAgentId: source.agentId, targetAgentId: target.agentId,
   });
   return edge;
+  });
 }

@@ -2,6 +2,8 @@ import {
   databaseConnectionFromEnvironment,
   listEvents,
   type GoalKind,
+  listSenderoVersions,
+  getSenderoGraph,
 } from "@senderos/core";
 
 import {
@@ -22,6 +24,11 @@ export async function missionControlData() {
       listEvents({}),
     ]);
   const database = databaseConnectionFromEnvironment();
+  const allGraphs = [];
+  for (const version of await listSenderoVersions()) {
+    const graph = await getSenderoGraph(version.senderoId, version.version);
+    if (graph) allGraphs.push(graph);
+  }
   const runtime = {
     database: {
       urlEnv: "SENDEROS_DATABASE_URL",
@@ -32,7 +39,9 @@ export async function missionControlData() {
       remote: !database.url.startsWith("file:"),
     },
   };
-  return { ...overview, executionContexts, agents, transitions, senderoGraphs, events, runtime };
+  return { ...overview, executionContexts, agents, transitions, senderoGraphs, events, runtime,
+    draftGraphs: allGraphs.filter(g => g.version.status === 'draft'),
+    historyGraphs: allGraphs.filter(g => g.version.status === 'published') };
 }
 
 export type MissionControlData = Awaited<ReturnType<typeof missionControlData>>;
@@ -41,6 +50,8 @@ export async function applyMissionControlAction(form: FormData) {
   await prepareStudioDatabase();
   const senderos = senderosForStudio();
   const intent = String(form.get("intent"));
+  if (intent === 'draft-sendero') return senderos.commands.senderos.draft(String(form.get('senderoId')));
+  if (intent === 'publish-sendero') return senderos.commands.senderos.publish(String(form.get('senderoId')));
 
   if (intent === "create-goal") {
     await senderos.commands.goals.create({
@@ -65,6 +76,8 @@ export async function applyMissionControlAction(form: FormData) {
       await senderos.commands.runs.dispatch({
         ...item,
         previousRunId: item.previousRunId ?? undefined,
+        expectedRevision: item.revision,
+        requestId: `studio:${item.goalId}:${item.revision}`,
       });
     }
   }
@@ -124,6 +137,7 @@ export async function applyMissionControlAction(form: FormData) {
       name: String(form.get("name")),
       description: String(form.get("description")),
       transitionObjective: String(form.get("transitionObjective")),
+      completion: { requireReview: form.get('requireReview') === 'on', evidenceKinds: String(form.get('evidenceKinds') ?? '').split(',').map(s => s.trim()).filter(Boolean) },
       status: String(form.get("status")) as
         "draft" | "active" | "disabled" | "archived",
     });

@@ -45,17 +45,25 @@ Activation is the explicit signal that the goal is ready for planning.
 }
 ```
 
-Planning is global and read-only. Repeating it without a state change does not create duplicate runs.
+Planning is read-only. The response includes a cursor revision; `--explain`
+also returns non-ready goals with a reason and next action. Repeating planning
+without a state change does not create duplicate runs.
 
 ## 4. Dispatch one concrete execution
 
-`senderos run dispatch` validates the goal, transition, agent, and retry linkage before creating a run and its first attempt. The attempt records the selected harness and can record a host session, resume command, heartbeat, checkpoint, and working path.
+`senderos run dispatch` recomputes eligibility transactionally and creates a
+queued run/attempt. A stable request ID makes retries idempotent, and an expected
+revision detects stale plans. Provided transition/agent IDs are assertions; Core
+still decides what may happen next.
 
 Dispatch still does not edit code. It creates the durable contract for an external executor.
 
 ## 5. Execute outside Senderos
 
-The host agent starts or resumes work in its own environment. That host owns:
+The host claims the attempt first. Core returns a time-limited lease, fencing
+token, and execution packet containing the selected instructions, objective,
+completion policy, goal context, prior result/evidence, and workspace references.
+The host then starts or resumes work in its own environment. That host owns:
 
 - model and session management;
 - repository and worktree operations;
@@ -69,19 +77,19 @@ This makes the control plane portable across harnesses and keeps side-effect aut
 
 The host updates the attempt as work progresses. An attempt can store execution results, failure summaries, debug metadata, and evidence such as tests, CI checks, pull requests, artifacts, or manual validation.
 
-Evidence is attached to the exact attempt it supports. A review decision can then approve it, request changes, or reject it with a rationale.
+Evidence is attached to the exact attempt it supports. A review decision can then approve it, request changes, or reject it with a rationale. A reported success remains `paused` while required evidence or approval is missing.
 
 ## 7. Advance, retry, or stop
 
 Terminal attempt updates finalize the surrounding run and affect goal planning:
 
-- a successful step can make the next agent transition dispatchable;
-- a failed run can become eligible for a linked retry;
+- a successful step advances the explicit cursor or completes the goal;
+- a failed run retries the same step within its configured budget;
 - a blocked goal waits for external context;
 - cancellation ends the selected goal or run explicitly;
 - completion means the goal lifecycle has reached its verified outcome.
 
-The next call to `plan` derives its answer from that persisted truth—not from assumptions hidden in the previous host session.
+The next call to `plan` derives its answer from that persisted truth—not from assumptions hidden in the previous host session. Cancellation of owned work remains pending until the host acknowledges it stopped; lease expiry alone never proves termination.
 
 ## The design payoff
 

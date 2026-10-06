@@ -9,14 +9,23 @@ agent, transition, host-session metadata when available, and optional working pa
 ```bash
 senderos attempt list --run-id <run-id>
 senderos attempt show <attempt-id>
-senderos attempt update <attempt-id> --status failed --failure-summary "Verification failed"
-senderos attempt update <attempt-id> --status succeeded --result-json '{"validated":true}'
+senderos attempt claim <attempt-id> --owner-id <stable-host-id>
+senderos attempt heartbeat <attempt-id> --token <claim-token>
+senderos attempt update <attempt-id> --token <claim-token> --status succeeded --result-json '{"validated":true}'
+senderos attempt evidence <attempt-id> --kind ci --label "CI passed"
+senderos attempt review <attempt-id> --status approved --reviewer <name>
 senderos attempt resume <attempt-id>
 ```
 
-`resume` returns recorded resume information; it does not itself resume an
-external host-agent session.
+Claiming returns a lease, fencing token, and execution packet. Persist the token
+before starting the external session, heartbeat while it runs, and include the
+token in updates. An expired lease requires explicit reclaim after reconciling the
+old session; it does not prove that session stopped.
 
-Terminal attempt updates also finalize the enclosing run. A failed attempt marks
-its goal failed, making it eligible for a retry through `senderos plan` and
-`senderos run dispatch --previous-run-id <run-id>`.
+`resume` only returns recorded information. Cancellation is acknowledged by a
+`canceled` update. If a host is gone, use `abandon --confirmed-stopped --reason`
+only after independently confirming its process stopped.
+
+Terminal updates atomically finalize the run and advance, retry, cancel, or
+complete the goal. Required evidence/review can hold a reported success in
+`paused` until Core settles the completion gate.

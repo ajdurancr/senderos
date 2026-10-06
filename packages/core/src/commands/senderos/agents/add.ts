@@ -1,7 +1,8 @@
+import { editableGraph } from "../../../lifecycle/versions";
 import { eq } from "drizzle-orm";
 import { getAgent } from "../../agents/get";
 import { getAgentBySlug } from "../../agents/get-by-slug";
-import { openRuntimeDb } from "../../../db/client";
+import { atomic, openRuntimeDb } from "../../../db/client";
 import { senderoEdges, senderoNodes } from "../../../db/schema";
 import { emitEvent } from "../../../shared/events";
 import { now, randomId } from "../../../shared/ids";
@@ -16,7 +17,8 @@ export async function addAgentToSendero(input: {
   label?: string;
   home?: string;
 }) {
-  const graph = await getSenderoGraph(input.senderoId, undefined, input.home);
+  return atomic(input.home, async () => {
+  const graph = await editableGraph(input.senderoId, input.home);
   if (!graph) throw new Error(`Sendero not found: ${input.senderoId}`);
   const agent = (await getAgent(input.agentId, input.home)) ?? (await getAgentBySlug(input.agentId, input.home));
   if (!agent) throw new Error(`Agent not found: ${input.agentId}`);
@@ -58,4 +60,5 @@ export async function addAgentToSendero(input: {
     fromAgentId: source.agentId, toAgentId: target.agentId,
   });
   return { agent: node, connections: [incoming, outgoing], replacedConnectionId: replaced?.id ?? null };
+  });
 }

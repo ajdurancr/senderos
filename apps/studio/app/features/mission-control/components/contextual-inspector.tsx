@@ -31,7 +31,7 @@ export function ContextualInspector({
     data.attempts.find((item) => item.id === attemptId) ??
     execution.latestAttempt;
   const selectedTransitionId = transitionId ?? attempt?.transitionId;
-  const senderoGraph = data.senderoGraphs.find(
+  const senderoGraph = (data.historyGraphs ?? data.senderoGraphs).find(
     (item) => item.version.id === goal.senderoVersionId,
   );
   const senderoEdge = senderoGraph?.edges.find(
@@ -97,6 +97,7 @@ export function ContextualInspector({
         <span className="active">Execution context</span>
       </div>
       <section className="inspector-section">
+        {data.decisions?.filter(d => d.goalId === goal.id).map(d => <p key={d.goalId} role="status"><strong>{d.state}</strong> · {d.reason.replaceAll('_', ' ')}<br />Next: {d.nextAction.replaceAll('_', ' ')}</p>)}
         <div className="inspector-status">
           <StatusBadge value={attempt?.status ?? goal.status} />
           <span>

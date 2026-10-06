@@ -10,10 +10,11 @@ Senderos can be automated by a host agent, but it does not own the host schedule
 The host agent typically runs in this cycle:
 
 1. call `senderos status`
-2. call `senderos plan`
-3. dispatch each returned item with `senderos run dispatch ...`
-4. execute the real work asynchronously in separate host sessions
-5. return later and repeat after a delay or trigger
+2. call `senderos plan --explain` (or `plan` for ready work only)
+3. dispatch with a stable request ID and the returned revision
+4. claim the attempt and persist its fencing token
+5. launch the external session, heartbeat, and report its terminal result
+6. ask Core again after a delay or trigger
 
 This keeps scheduling logic in the host environment while preserving a deterministic Senderos control plane.
 
@@ -25,8 +26,9 @@ Examples:
 
 ```bash
 senderos status
-senderos plan
-senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> --working-path /repo/path
+senderos plan --explain
+senderos run dispatch --goal-id <goal-id> --request-id <stable-id> --expected-revision <revision>
+senderos attempt claim <attempt-id> --owner-id <stable-host-id>
 ```
 
 ## Scheduling model
@@ -41,8 +43,13 @@ A typical scheduled flow is simply:
 host scheduler
   -> senderos status
   -> senderos plan
-  -> host dispatches returned items
+  -> host dispatches and claims returned items
+  -> host heartbeats and reports results
 ```
+
+The lease prevents two hosts from owning one attempt, but it cannot guarantee
+exactly-once external side effects. Reconcile ambiguous launches and expired
+sessions before reclaiming; never treat lease expiry as proof a process stopped.
 
 ## Why scheduling stays outside Senderos
 

@@ -1,3 +1,5 @@
+import { atomic } from "../db/client";
+import { explainGoal } from "../lifecycle/state";
 import { getGoal } from '../commands/goals/get';
 import { plan } from '../commands/planning/plan';
 import { dispatchRun } from '../commands/runs/dispatch';
@@ -8,6 +10,9 @@ export async function missionControlRetryExecution(input: {
   workingPath?: string;
   home?: string;
 }) {
+  return atomic(input.home, async () => {
+  const decision = await explainGoal(input.goalId, input.home);
+  if (decision.state === "running" || decision.state === "completed") return missionControlGoal(input);
   const goal = await getGoal(input.goalId, input.home);
   if (!goal) throw new Error(`Goal not found: ${input.goalId}`);
   const item = (await plan({ home: input.home, goalStatuses: ['failed'] })).find(
@@ -23,4 +28,5 @@ export async function missionControlRetryExecution(input: {
     input.home,
   );
   return missionControlGoal({ goalId: goal.id, home: input.home });
+  });
 }

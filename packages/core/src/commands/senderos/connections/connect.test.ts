@@ -1,11 +1,14 @@
+import { draftSendero } from "../../../lifecycle/versions";
 import { expect, test } from "bun:test";
 import { initHome } from "../../../test-support/runtime";
 import { connectSenderoAgents } from "./connect";
 
 test("rejects self-connections between Sendero agents", async () => {
+  const home = await initHome();
+  await draftSendero("software-delivery", home);
   await expect(
     connectSenderoAgents({
-      home: await initHome(),
+      home,
       senderoId: "software-delivery",
       from: "judge",
       to: "judge",

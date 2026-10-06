@@ -1,3 +1,4 @@
+import { plan as nextPlan } from "../commands/planning/plan";
 import { describe, expect, test } from 'bun:test';
 import {
   createGoal,
@@ -28,7 +29,8 @@ describe('goal orchestration', () => {
       })).id,
       home,
     ))!;
-    const transition = (await listAgentTransitions(home))[0]!;
+    const planned = (await nextPlan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
     const dispatched = await dispatchRun(
       {
         goalId: goal.id,

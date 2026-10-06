@@ -1,6 +1,7 @@
+import { requireDraft } from "../../lifecycle/versions";
 import { eq } from "drizzle-orm";
 
-import { openRuntimeDb } from "../../db/client";
+import { atomic, openRuntimeDb } from "../../db/client";
 import { senderoEdges } from "../../db/schema";
 import { emitEvent } from "../../shared/events";
 import { now } from "../../shared/ids";
@@ -11,9 +12,11 @@ export async function updateSenderoEdge(input: {
   name?: string;
   description?: string;
   transitionObjective?: string;
+  completion?: { requireReview?: boolean; evidenceKinds?: string[] };
   status?: AgentTransitionStatus;
   home?: string;
 }) {
+  return atomic(input.home, async () => {
   const db = openRuntimeDb(input.home);
   const edge = (
     await db.select().from(senderoEdges).where(eq(senderoEdges.id, input.id))
@@ -21,7 +24,9 @@ export async function updateSenderoEdge(input: {
 
   if (!edge) throw new Error(`Sendero edge not found: ${input.id}`);
 
+  await requireDraft(edge.senderoVersionId, input.home);
   const changes = {
+    conditionJson: input.completion === undefined ? edge.conditionJson : JSON.stringify({ completion: input.completion }),
     name: input.name ?? edge.name,
     description: input.description ?? edge.description,
     transitionObjective: input.transitionObjective ?? edge.transitionObjective,
@@ -40,4 +45,5 @@ export async function updateSenderoEdge(input: {
   return (
     await db.select().from(senderoEdges).where(eq(senderoEdges.id, input.id))
   )[0];
+  });
 }

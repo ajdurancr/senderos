@@ -1,3 +1,4 @@
+import { draftSendero } from "../../../lifecycle/versions";
 import { expect, test } from "bun:test";
 import { initHome } from "../../../test-support/runtime";
 import { addAgentToSendero } from "./add";
@@ -5,6 +6,7 @@ import { removeAgentFromSendero } from "./remove";
 
 test("removes an agent and reconnects the surrounding Sendero", async () => {
   const home = await initHome();
+  await draftSendero("software-delivery", home);
   await addAgentToSendero({
     home,
     senderoId: "software-delivery",

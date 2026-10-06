@@ -17,6 +17,9 @@ export const fixtureAttempt: MissionControlData["attempts"][number] = {
 };
 
 export const missionControlFixture: MissionControlData = {
+  decisions: [],
+  draftGraphs: [],
+  historyGraphs: [],
   status: {
     projects: { total: 1, unhealthy: 0 },
     openGoals: 1,
@@ -86,7 +89,7 @@ export const missionControlFixture: MissionControlData = {
   queue: {
     reviews: [{ attempt: fixtureAttempt, review: { status: "pending" } }],
     failedAttempts: [fixtureAttempt], staleAttempts: [fixtureAttempt], activeRuns: [],
-    dispatchable: [{ goalId: "goal-1", transitionId: "edge-1", agentId: "agent-1", previousRunId: "run-0" }],
+    dispatchable: [{ goalId: "goal-1", transitionId: "edge-1", agentId: "agent-1", revision: 0, previousRunId: "run-0" }],
     blockedGoals: [],
   },
   runtime: {

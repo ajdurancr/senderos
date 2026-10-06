@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { openRuntimeDb } from "../../db/client";
+import { atomic, openRuntimeDb } from "../../db/client";
 import { senderoNodes } from "../../db/schema";
 import { emitEvent } from "../../shared/events";
 import { now } from "../../shared/ids";
@@ -12,6 +12,7 @@ export async function updateSenderoNode(input: {
   positionY?: number;
   home?: string;
 }) {
+  return atomic(input.home, async () => {
   const db = openRuntimeDb(input.home);
   const node = (
     await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id))
@@ -35,4 +36,5 @@ export async function updateSenderoNode(input: {
   return (
     await db.select().from(senderoNodes).where(eq(senderoNodes.id, input.id))
   )[0];
+  });
 }

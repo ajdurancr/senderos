@@ -1,4 +1,6 @@
-import { openRuntimeDb } from "../../db/client";
+import { atomic, openRuntimeDb } from "../../db/client";
+import { requireLifecycle } from "../../lifecycle/errors";
+import { requireGoal } from '../../lifecycle/scope';
 import { goals, projects, senderos, senderoVersions } from "../../db/schema";
 import { emitEvent } from "../../shared/events";
 import { now, randomId } from "../../shared/ids";
@@ -27,9 +29,17 @@ export async function createGoal(input: {
   senderoVersionId?: string | null;
   executionContextId?: string;
 }) {
+  return atomic(input.home, async () => {
+  requireLifecycle(typeof input.title === 'string' && input.title.trim().length > 0, 'INVALID_INPUT', 'Goal title is required');
+  requireLifecycle(input.kind === undefined || ['feature', 'bugfix', 'refactor', 'maintenance', 'security', 'migration'].includes(input.kind), 'INVALID_INPUT', 'Invalid goal kind');
   const project = await requireProject(input.projectId, input.home, input.executionContextId);
   const db = openRuntimeDb(input.home);
   const id = input.id ?? randomId("goal");
+  if (input.id && (await getGoal(input.id, input.home))) {
+    const existing = await requireGoal(input.id, input.home);
+    requireLifecycle(existing.projectId === input.projectId && existing.title === input.title && existing.specText === (input.specText ?? '') && existing.intakeText === (input.intakeText ?? '') && existing.kind === (input.kind ?? 'feature') && (input.senderoVersionId === undefined || existing.senderoVersionId === input.senderoVersionId), 'IDEMPOTENCY_CONFLICT', 'Goal ID already exists with different inputs');
+    return (await getGoal(input.id, input.home))!;
+  }
   const ts = now();
   const activeSenderos = await db
     .select()
@@ -45,6 +55,10 @@ export async function createGoal(input: {
           .where(eq(senderoVersions.senderoId, defaultSendero.id))
       ).find((item) => item.version === defaultSendero.currentVersion)
     : undefined;
+  if (input.senderoVersionId) {
+    const selected = (await db.select().from(senderoVersions).where(eq(senderoVersions.id, input.senderoVersionId)))[0];
+    requireLifecycle(selected?.status === 'published', 'INVALID_WORKFLOW', 'Select a published Sendero version');
+  }
   await db.insert(goals).values({
     id,
     projectId: input.projectId,
@@ -68,4 +82,5 @@ export async function createGoal(input: {
     projectId: input.projectId,
   });
   return (await getGoal(id, input.home))!;
+  });
 }

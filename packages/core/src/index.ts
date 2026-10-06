@@ -1,4 +1,12 @@
 export * from './shared/types';
+export { explainGoal, setRetryBudget } from './lifecycle/state';
+export { claimAttempt, heartbeatAttempt, abandonAttempt } from './lifecycle/hosts';
+export { draftSendero, publishSendero, editableGraph, setCompletionPolicy } from './lifecycle/versions';
+export { LifecycleError } from './lifecycle/errors';
+import { explainGoal, setRetryBudget } from './lifecycle/state';
+import { claimAttempt, heartbeatAttempt, abandonAttempt } from './lifecycle/hosts';
+import { draftSendero, publishSendero, setCompletionPolicy } from './lifecycle/versions';
+import { scopedApi } from './lifecycle/scope';
 export * from './shared/config';
 export * from './commands';
 export * from './shared/harness';
@@ -65,7 +73,7 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
   const executionContextId = input.allExecutionContexts
     ? undefined
     : input.executionContextId ?? resolveExecutionContextId(home);
-  return {
+  return scopedApi({
     commands: {
       projects: {
         create: (value: Parameters<typeof createProject>[0]) =>
@@ -79,6 +87,8 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         list: () => listExecutionContexts(home),
       },
       goals: {
+        explain: (id: string) => explainGoal(id, home),
+        setRetryBudget: (id: string, maxAttempts: number) => setRetryBudget(id, maxAttempts, home),
         create: (value: Parameters<typeof createGoal>[0]) =>
           createGoal({ ...value, home, executionContextId }),
         get: (id: string) => getGoal(id, home, executionContextId),
@@ -96,6 +106,9 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         cancel: (id: string) => cancelRun(id, home),
       },
       attempts: {
+        abandon: (value: Parameters<typeof abandonAttempt>[0]) => abandonAttempt(value, home),
+        claim: (value: Parameters<typeof claimAttempt>[0]) => claimAttempt(value, home),
+        heartbeat: (value: Parameters<typeof heartbeatAttempt>[0]) => heartbeatAttempt(value, home),
         get: (id: string) => getAttempt(id, home, executionContextId),
         list: (runId?: string) => listRunAttempts(runId, home, executionContextId),
         update: (id: string, value: Parameters<typeof updateRunAttempt>[1]) =>
@@ -111,6 +124,10 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         transitions: () => listAgentTransitions(home),
       },
       senderos: {
+        draft: (id: string) => draftSendero(id, home),
+        publish: (id: string) => publishSendero(id, home),
+        setCompletionPolicy: (value: Parameters<typeof setCompletionPolicy>[0]) =>
+          setCompletionPolicy(value, home),
         list: () => listSenderos(home),
         get: (id: string, version?: number) => getSenderoGraph(id, version, home),
         versions: {
@@ -150,5 +167,5 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
       retryExecution: (value: { goalId: string; workingPath?: string }) =>
         missionControlRetryExecution({ ...value, home }),
     },
-  };
+  }, executionContextId);
 }

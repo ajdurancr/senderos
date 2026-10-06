@@ -1,3 +1,4 @@
+import { plan as nextPlan } from "../planning/plan";
 import { expect, test } from "bun:test";
 import { activateGoal, createGoal } from "../../index";
 import { createProjectFixture, initHome } from "../../test-support/runtime";
@@ -12,7 +13,8 @@ test("reviewRunAttempt records the operator decision", async () => {
     (await createGoal({ home, projectId: project.id, title: "Review" })).id,
     home,
   ))!;
-  const transition = (await listAgentTransitions(home))[0]!;
+  const planned = (await nextPlan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
   const dispatched = await dispatchRun(
     {
       goalId: goal.id,

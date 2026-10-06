@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 import { resolveRuntime } from "../shared/config";
 import * as schema from "./schema";
@@ -17,11 +18,34 @@ export function databaseConnectionFromEnvironment(): DatabaseConnection {
 }
 
 /** Opens a local or remote libSQL connection from environment-only config. */
-export function openRuntimeDb(home?: string) {
+function connectRuntimeDb(home?: string) {
   const connection = home
     ? connectionFromRuntimeConfig(home)
     : databaseConnectionFromEnvironment();
   return drizzle({ client: createClient(connection), schema });
+}
+
+type RuntimeDb = ReturnType<typeof connectRuntimeDb>;
+const transactions = new AsyncLocalStorage<{ db: RuntimeDb; home?: string }>();
+export function openRuntimeDb(home?: string): RuntimeDb {
+  const current = transactions.getStore();
+  if (current && current.home === home) return current.db;
+  return connectRuntimeDb(home);
+}
+
+/** Nested commands share the same write transaction, including their events. */
+export async function atomic<T>(home: string | undefined, work: () => Promise<T>): Promise<T> {
+  const current = transactions.getStore();
+  if (current) {
+    if (current.home !== home) throw new Error("Cannot mix runtimes in one transaction");
+    return work();
+  }
+  const db = connectRuntimeDb(home);
+  try {
+    return await db.transaction((tx) => transactions.run(
+      { db: tx as unknown as RuntimeDb, home }, work,
+    ), { behavior: "immediate" });
+  } finally { db.$client.close(); }
 }
 
 export function describeCurrentDb(home?: string) {

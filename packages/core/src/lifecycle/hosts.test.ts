@@ -1,0 +1,27 @@
+import { expect, test } from 'bun:test';
+import { eq } from 'drizzle-orm';
+import { initHome, createProjectFixture } from '../test-support/runtime';
+import { createGoal, activateGoal, dispatchRun, cancelGoal, getGoal, updateRunAttempt } from '../index';
+import { claimAttempt, heartbeatAttempt, abandonAttempt } from './hosts';
+import { openRuntimeDb } from '../db/client';
+import { attemptClaims } from '../db/schema';
+test('hosts validate leases, renew, and explicitly recover stopped external work', async () => {
+  const home = await initHome(); const project = await createProjectFixture(home);
+  const goal = await createGoal({ home, projectId: project.id, title: 'Lease recovery' });
+  await activateGoal(goal.id, home); const run = await dispatchRun({ goalId: goal.id }, home);
+  await expect(heartbeatAttempt({ attemptId: run.attemptId, token: 'none' }, home)).rejects.toMatchObject({ code: 'CLAIM_REQUIRED' });
+  await expect(claimAttempt({ attemptId: run.attemptId, ownerId: '' }, home)).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  await expect(claimAttempt({ attemptId: run.attemptId, ownerId: 'host', leaseSeconds: 0 }, home)).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  const claim = await claimAttempt({ attemptId: run.attemptId, ownerId: 'host' }, home);
+  expect((await claimAttempt({ attemptId: run.attemptId, ownerId: 'host', token: claim.token }, home)).token).toBe(claim.token);
+  await expect(heartbeatAttempt({ attemptId: run.attemptId, token: claim.token, leaseSeconds: 2 }, home)).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  await openRuntimeDb(home).update(attemptClaims).set({ leaseExpiresAt: '2000-01-01' }).where(eq(attemptClaims.attemptId, run.attemptId));
+  await expect(heartbeatAttempt({ attemptId: run.attemptId, token: claim.token }, home)).rejects.toMatchObject({ code: 'LEASE_EXPIRED' });
+  await expect(abandonAttempt({ attemptId: run.attemptId, reason: 'checked', confirmedStopped: false }, home)).rejects.toMatchObject({ code: 'STOP_CONFIRMATION_REQUIRED' });
+  expect((await abandonAttempt({ attemptId: run.attemptId, reason: 'Session no longer exists', confirmedStopped: true }, home))?.status).toBe('failed');
+  const retry = await dispatchRun({ goalId: goal.id }, home);
+  await claimAttempt({ attemptId: retry.attemptId, ownerId: 'gone-host' }, home);
+  await cancelGoal(goal.id, home);
+  await abandonAttempt({ attemptId: retry.attemptId, reason: 'Killed process', confirmedStopped: true }, home);
+  expect((await getGoal(goal.id, home))?.status).toBe('canceled');
+});

@@ -20,7 +20,7 @@ test('Mission Control returns an overview and starts a goal through the shared f
 
   expect(started.goal.status).toBe('active');
   expect(started.attempts).toHaveLength(1);
-  expect(started.attempts[0]?.status).toBe('running');
+  expect(started.attempts[0]?.status).toBe('queued');
   expect(started.events.some((event) => event.entityId === goal.id)).toBe(true);
 
   const overview = await senderos.missionControl.overview();
@@ -85,7 +85,8 @@ test('the shared façade exposes every generic command family', async () => {
   ).toBe('Updated façade');
   await senderos.commands.goals.activate(goal.id);
 
-  const transition = (await senderos.commands.agents.transitions())[0]!;
+  const planned = (await senderos.commands.plan())[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
   expect(await senderos.commands.agents.list()).not.toHaveLength(0);
   expect((await senderos.commands.plan()).map((item) => item.goalId)).toContain(
     goal.id,

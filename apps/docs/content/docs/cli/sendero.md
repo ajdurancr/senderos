@@ -11,7 +11,14 @@ senderos sendero list
 senderos sendero show software-delivery
 senderos sendero show software-delivery --version 1
 senderos sendero version list
+senderos sendero draft software-delivery
+senderos sendero policy software-delivery --agent judge --require-review --evidence-kind ci
+senderos sendero publish software-delivery
 ```
+
+Executable definitions are immutable after publication. Create or reuse a draft,
+make intent-level mutations, then publish it. Publication validates the whole
+linear route atomically; existing goals remain pinned to their original version.
 
 The mutation surface describes intent rather than database records:
 

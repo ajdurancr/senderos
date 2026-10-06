@@ -62,6 +62,11 @@ export function SenderoInspector({
           </span>
         </div>
         <dl className="property-list">
+          <Form method="post">
+            <input type="hidden" name="intent" value={graph.version.status === 'draft' ? 'publish-sendero' : 'draft-sendero'} />
+            <input type="hidden" name="senderoId" value={graph.sendero.id} />
+            <button>{graph.version.status === 'draft' ? 'Validate & publish draft' : 'Create editable draft'}</button>
+          </Form>
           <div>
             <dt>Sendero ID</dt>
             <dd className="mono">{graph.sendero.id}</dd>
@@ -133,7 +138,7 @@ export function SenderoInspector({
             <button>Save node</button>
           </Form>
         )}
-        {edge && (
+        {edge && graph.version.status === 'draft' && (
           <Form className="compact-form" method="post">
             <input type="hidden" name="intent" value="update-sendero-edge" />
             <input type="hidden" name="edgeId" value={edge.id} />
@@ -155,6 +160,8 @@ export function SenderoInspector({
               <option value="archived">Archived</option>
             </select>
             <button>Save arc</button>
+            <label><input type="checkbox" name="requireReview" defaultChecked={JSON.parse(edge.conditionJson).completion?.requireReview ?? false} /> Require approval</label>
+            <label>Required evidence kinds (comma separated)<input name="evidenceKinds" defaultValue={(JSON.parse(edge.conditionJson).completion?.evidenceKinds ?? []).join(', ')} /></label>
           </Form>
         )}
       </section>

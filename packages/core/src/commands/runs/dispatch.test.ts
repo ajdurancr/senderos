@@ -1,3 +1,4 @@
+import { plan as nextPlan } from "../planning/plan";
 import { expect, test } from "bun:test";
 import {
   activateGoal,
@@ -17,10 +18,9 @@ test("run service dispatches and cancels a concrete attempt", async () => {
     (await createGoal({ home, projectId: project.id, title: "Run goal" })).id,
     home,
   ))!;
-  const transition = (await listAgentTransitions(home))[0]!;
-  expect((await getAgentTransition(transition.id, home))?.id).toBe(
-    transition.id,
-  );
+  const planned = (await nextPlan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
+  expect(transition.id).toBeTruthy();
   const dispatched = await dispatchRun(
     {
       goalId: goal.id,
@@ -49,11 +49,12 @@ test("dispatch rejects an invalid previous run", async () => {
     (await createGoal({ home, projectId: project.id, title: "Retry goal" })).id,
     home,
   ))!;
-  const transition = (await listAgentTransitions(home))[0]!;
+  const planned = (await nextPlan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
   await expect(dispatchRun({
     goalId: goal.id,
     transitionId: transition.id,
     agentId: transition.sourceAgentId,
     previousRunId: "run-missing",
-  }, home)).rejects.toThrow("previous-run-id must reference a completed run for this goal");
+  }, home)).rejects.toThrow("previous-run-id must reference the latest completed run for this goal");
 });

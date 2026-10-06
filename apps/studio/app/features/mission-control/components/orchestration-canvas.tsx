@@ -47,7 +47,7 @@ export function OrchestrationCanvas({
       };
   const graph =
     data.senderoGraphs.find((item) => item.sendero.id === senderoId) ??
-    data.senderoGraphs.find(
+    (data.historyGraphs ?? data.senderoGraphs).find(
       (item) => item.version.id === goal?.senderoVersionId,
     ) ??
     data.senderoGraphs[0];

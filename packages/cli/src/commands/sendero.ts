@@ -6,18 +6,25 @@ import {
   listSenderos,
   listSenderoVersions,
   removeAgentFromSendero,
+  draftSendero,
+  publishSendero,
+  setCompletionPolicy,
 } from '@senderos/core';
 
 import type { CliOptionValue } from '../args';
 import { requirePositional } from '../shared';
+import { optionStrings } from '../shared';
 
 export const senderoCommandHelp = {
   command: 'sendero',
   summary: 'Inspect and change versioned Senderos through intent-level actions.',
   agentDescription:
     'Use these commands to express graph intent. Refer to agents by slug or ID and to boundary nodes as start or end. Do not attempt low-level node or edge updates.',
-  usage: ['senderos sendero <list|show|version|agent|connect|disconnect> ...'],
+  usage: ['senderos sendero <list|show|draft|publish|policy|version|agent|connect|disconnect> ...'],
   subcommands: [
+    { command: 'draft', summary: 'Create or reuse an editable copy of the published version.', usage: ['senderos sendero draft <sendero>'] },
+    { command: 'publish', summary: 'Validate and publish the current draft.', usage: ['senderos sendero publish <sendero>'] },
+    { command: 'policy', summary: 'Set completion gates on an agent in the draft.', usage: ['senderos sendero policy <sendero> --agent <agent> [--require-review] [--evidence-kind test]'] },
     { command: 'list', summary: 'List Senderos.', usage: ['senderos sendero list'] },
     {
       command: 'show',
@@ -71,6 +78,9 @@ export async function handleSendero(
   home: string,
 ) {
   switch (subcommand) {
+    case 'draft': return draftSendero(requirePositional(positionals[2], 'sendero'), home);
+    case 'publish': return publishSendero(requirePositional(positionals[2], 'sendero'), home);
+    case 'policy': return setCompletionPolicy({ senderoId: requirePositional(positionals[2], 'sendero'), agent: option(options, 'agent', true)!, requireReview: options['require-review'] === true, evidenceKinds: optionStrings(options['evidence-kind']) }, home);
     case 'list':
       return listSenderos(home);
     case 'show': {

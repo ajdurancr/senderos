@@ -35,8 +35,8 @@ test("filters Studio records by execution context and project", () => {
         { attempt: attemptB, review: { status: "pending" } },
       ],
       dispatchable: [
-        { goalId: goalA.id, transitionId: "edge-a", agentId: "agent-a", previousRunId: null },
-        { goalId: goalB.id, transitionId: "edge-b", agentId: "agent-b", previousRunId: null },
+        { goalId: goalA.id, transitionId: "edge-a", agentId: "agent-a", revision: 0, previousRunId: null },
+        { goalId: goalB.id, transitionId: "edge-b", agentId: "agent-b", revision: 0, previousRunId: null },
       ],
     },
   };
