@@ -10,6 +10,7 @@ on:
       - 'packages/cli/**'
       - 'apps/studio/**'
       - 'scripts/**'
+      - 'examples/external-host/**'
       - '.github/workflows/senderos-ci.yml'
       - 'package.json'
       - 'bun.lock'
@@ -81,6 +82,64 @@ jobs:
           node-version: '24'
       - run: bun install --frozen-lockfile
       - run: bun run --cwd packages/cli release:check
+
+  host-contract-integration:
+    name: External host contract integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      HOST_CONTRACT_TIMEOUT: 180s
+    steps:
+      - name: Prepare retained diagnostics
+        run: |
+          artifacts="$RUNNER_TEMP/senderos-host-contract-artifacts"
+          mkdir -p "$artifacts"
+          printf '%s\n' '{"schemaVersion":1,"success":false,"message":"Host contract setup did not complete; see job logs."}' > "$artifacts/report.json"
+          printf '%s\n' 'Waiting for host contract setup.' > "$artifacts/run.log"
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies
+        shell: bash
+        run: bun install --frozen-lockfile 2>&1 | tee "$RUNNER_TEMP/senderos-host-contract-artifacts/install.log"
+      - name: Run external-host integration contract
+        shell: bash
+        run: |
+          artifacts="$RUNNER_TEMP/senderos-host-contract-artifacts"
+          runtime=$(mktemp -d "$RUNNER_TEMP/senderos-host-contract.XXXXXX")
+          cleanup() {
+            result=$?
+            printf 'Runner exit code: %s\n' "$result" >> "$artifacts/run.log"
+            if [ ! -s "$artifacts/report.json" ]; then
+              printf '{"schemaVersion":1,"success":false,"exitCode":%s,"message":"Host contract exited before writing a report (timeout or startup failure); see run.log."}\n' "$result" > "$artifacts/report.json"
+            fi
+            rm -rf "$runtime"
+          }
+          trap cleanup EXIT
+          rm "$artifacts/report.json"
+          # This disposable fixture uses a hard process-group deadline. A TERM
+          # grace can hang if the controller exits while a child ignores TERM.
+          # Do not use --foreground: it would leave children outside the timeout.
+          timeout --signal=KILL "$HOST_CONTRACT_TIMEOUT" \
+            bun scripts/external-host-simulation.ts \
+              --runtime-root "$runtime" --output "$artifacts/report.json" \
+            2>&1 | tee "$artifacts/run.log"
+          test -s "$artifacts/report.json"
+      - name: Retain host contract report and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-contract-integration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/senderos-host-contract-artifacts/report.json
+            ${{ runner.temp }}/senderos-host-contract-artifacts/*.log
+          if-no-files-found: error
+          retention-days: 7
 
   studio:
     name: Studio tests and coverage

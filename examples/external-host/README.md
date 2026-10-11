@@ -20,6 +20,28 @@ bun run simulate:host --keep --output .tmp/external-host-report.json
 bun test packages/cli/src/integration/external-host-processes.integration.test.ts
 ```
 
+## Dedicated CI integration job
+
+The `External host contract integration` job in `senderos-ci` runs this same
+simulator on pull requests, including changes under `examples/external-host/`.
+It uses the repository-pinned Bun version, a fresh local libSQL file, and
+isolated temporary host homes/workspaces. The CLI initializes the real schema
+and synthetic fixture data; no database server is started. No service credentials
+or model calls are needed. A 180-second hard process-group timeout bounds the
+disposable controller and descendant workers; runtime directories are cleaned up.
+
+The job retains a JSON report and logs for seven days, including failures and
+timeouts. If the simulator cannot write its own report, the runner supplies a
+clearly marked failure report. The log records the outer runner exit code, which
+also covers failures after scenario reporting during worker cleanup. Only reports
+and logs are uploaded, never the database, workspaces, session input, or claim
+tokens. Runner shutdown or infrastructure loss
+can still prevent artifact upload.
+
+This contract already runs indirectly through CLI coverage. That regression stays
+in place: the dedicated job adds a visible CI result, bounded isolated execution,
+and retained diagnostics, rather than claiming previously absent coverage.
+
 ## What is being simulated
 
 | Context | Tool identity | Capabilities | Workspace |
