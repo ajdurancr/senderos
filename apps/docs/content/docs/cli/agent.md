@@ -1,14 +1,29 @@
 ---
 title: agent
-description: "Inspect the persisted agent definitions used by planning and dispatch."
+description: "Create, import, update, and inspect custom agent definitions."
 ---
 
-`senderos agent` is a read-only inspection surface.
+Agent definitions contain instructions, a name, and optional descriptive metadata.
+They do not launch a model or require any particular harness.
 
 ```bash
+senderos agent create --slug researcher --name Researcher \
+  --instructions "Gather sources and report the configured outcome."
+senderos agent create --slug editor --name Editor --instructions-file ./editor.txt
+senderos agent update researcher --instructions "Use primary sources and explain uncertainty."
+senderos agent import --file ./agent.json
 senderos agent list
-senderos agent show <agent-id>
+senderos agent show researcher
 ```
 
-Agents are runtime records. A plan selects an agent through an active agent
-transition; inspecting an agent does not launch work.
+Import JSON uses `slug`, `name`, and `instructions` (or `definitionBody`), with
+optional `description`, `status`, and `defaultGoal`. Updates accept an ID or slug
+and preserve fields you do not change. Inspect command help for all options.
+
+Published sendero versions snapshot their agent instructions. Editing a global
+agent definition changes future publications; it does not mutate packets for goals
+pinned to an existing published version. Bundled agents are editable examples,
+not a required software-development workflow. Ordinary runtime initialization
+preserves edits and renamed built-in agents. On upgrade, old publications snapshot
+then-current instructions; original historical instructions cannot be reconstructed
+if the earlier version never stored them.

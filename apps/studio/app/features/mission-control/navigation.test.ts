@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   attemptPath,
   canvasAgentPath,
+  canvasNodePath,
   canvasEntityPath,
   goalPath,
   parseStudioPath,
@@ -97,4 +98,16 @@ describe("Studio entity routes", () => {
     })).toBe("/goals?context=context+alpha&project=project%2Fone");
     expect(withScopeFilters("/goals", {})).toBe("/goals");
   });
+  it("distinguishes authoring routes from entity identifiers", () => {
+    expect(parseStudioPath('/agents/new')).toMatchObject({ view: 'agents', create: true, agentId: undefined });
+    expect(parseStudioPath('/agents/my-agent')).toMatchObject({ view: 'agents', create: false, agentId: 'my-agent' });
+    expect(parseStudioPath('/senderos/new')).toMatchObject({ view: 'senderos', create: true, senderoId: undefined });
+  });
+
+  it("keeps repeated-agent node and attempt identities in monitoring URLs", () => {
+    expect(canvasNodePath('p', 'g', 'node/a', 'attempt/one')).toBe('/projects/p/canvas/goals/g/nodes/node%2Fa/attempts/attempt%2Fone');
+    expect(canvasNodePath('p', 'g', 'node-a')).toBe('/projects/p/canvas/goals/g/nodes/node-a');
+    expect(parseStudioPath('/projects/p/canvas/goals/g/nodes/node-a/attempts/attempt-a')).toMatchObject({ workflowNodeId: 'node-a', attemptId: 'attempt-a', goalId: 'g' });
+  });
+
 });

@@ -3,7 +3,7 @@ import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 
-import { openRuntimeDb } from "../db/client";
+import { atomic, openRuntimeDb } from "../db/client";
 import {
   agents,
   senderoEdges,
@@ -64,12 +64,22 @@ function loadDefinitions(directory = builtInSenderoSeedDir()) {
 }
 
 export async function seedBuiltInSenderos(home?: string) {
+  return atomic(home, async () => {
   const db = openRuntimeDb(home);
   const agentRows = await db.select().from(agents);
   const agentsBySlug = new Map(agentRows.map((agent) => [agent.slug, agent]));
   const seeded: string[] = [];
 
   for (const definition of loadDefinitions()) {
+    const existing = (
+      await db.select().from(senderos).where(eq(senderos.id, definition.id))
+    )[0];
+    // Treat existing examples as user-owned definitions, including their historic published graphs.
+    // Check this before resolving seed slugs: an existing agent may have been renamed.
+    if (existing) {
+      seeded.push(definition.id);
+      continue;
+    }
     const missingAgent = definition.nodes
       .map((node) => node.agentSlug)
       .find((slug) => slug && !agentsBySlug.has(slug));
@@ -80,55 +90,40 @@ export async function seedBuiltInSenderos(home?: string) {
     }
 
     const versionId = `${definition.id}-v1`;
-    const existing = (
-      await db.select().from(senderos).where(eq(senderos.id, definition.id))
-    )[0];
-
-    if (!existing) {
-      await db.insert(senderos).values({
-        id: definition.id,
-        slug: definition.slug,
-        name: definition.name,
-        description: definition.description,
-        status: "active",
-        isDefault: definition.default ?? false,
-        currentVersion: 1,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      });
-      await emitEvent(db, "sendero.seeded", "sendero", definition.id, {
-        version: 1,
-      });
-    }
-
-    if (
-      !(
-        await db
-          .select()
-          .from(senderoVersions)
-          .where(eq(senderoVersions.id, versionId))
-      )[0]
-    ) {
-      await db.insert(senderoVersions).values({
-        id: versionId,
-        senderoId: definition.id,
-        version: 1,
-        status: "published",
-        createdAt: timestamp,
-      });
-    }
+    await db.insert(senderos).values({
+      id: definition.id,
+      slug: definition.slug,
+      name: definition.name,
+      description: definition.description,
+      status: "active",
+      isDefault: definition.default ?? false,
+      currentVersion: 1,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    await emitEvent(db, "sendero.seeded", "sendero", definition.id, { version: 1 });
+    await db.insert(senderoVersions).values({
+      id: versionId,
+      senderoId: definition.id,
+      version: 1,
+      status: "published",
+      protocolVersion: 2,
+      createdAt: timestamp,
+    });
 
     for (const node of definition.nodes) {
       const id = `${versionId}-node-${node.key}`;
-      if (
-        (await db.select().from(senderoNodes).where(eq(senderoNodes.id, id)))[0]
-      )
-        continue;
-
+      const agent = node.agentSlug ? agentsBySlug.get(node.agentSlug)! : undefined;
       await db.insert(senderoNodes).values({
         id,
         senderoVersionId: versionId,
-        agentId: node.agentSlug ? agentsBySlug.get(node.agentSlug)!.id : null,
+        agentId: agent?.id ?? null,
+        agentSnapshotJson: agent ? JSON.stringify({
+          id: agent.id,
+          name: agent.name,
+          instructions: agent.definitionBody,
+          requiredCapabilities: JSON.parse(agent.defaultMetaJson).requiredCapabilities ?? [],
+        }) : null,
         kind: node.kind,
         label: node.label,
         positionX: node.x,
@@ -148,16 +143,6 @@ export async function seedBuiltInSenderos(home?: string) {
         );
       }
       const edgeId = `${versionId}-edge-${edge.key}`;
-      if (
-        (
-          await db
-            .select()
-            .from(senderoEdges)
-            .where(eq(senderoEdges.id, edgeId))
-        )[0]
-      )
-        continue;
-
       await db.insert(senderoEdges).values({
         id: edgeId,
         senderoVersionId: versionId,
@@ -177,4 +162,5 @@ export async function seedBuiltInSenderos(home?: string) {
   }
 
   return seeded;
+  });
 }

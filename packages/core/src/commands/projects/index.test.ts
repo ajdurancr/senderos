@@ -131,3 +131,11 @@ describe("project services", () => {
     ).rejects.toThrow();
   });
 });
+
+test('supports named workspaces without repository metadata', async () => {
+  const home = await initHome();
+  const project = await createProject({ home, name: 'Research workspace' });
+  expect(project).toMatchObject({ name: 'Research workspace', integrationMode: 'none', canonicalPath: '', githubOwner: '', githubRepo: '', githubRemote: '', targetBranch: '' });
+  await expect(createProject({ home, name: 'Incomplete repo', githubOwner: 'example' })).rejects.toThrow('both GitHub');
+  await expect(createProject({ home })).rejects.toThrow('name or workspace');
+});

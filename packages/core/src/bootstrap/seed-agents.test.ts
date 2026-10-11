@@ -21,3 +21,31 @@ test('demo wait agents hard-code their duration by Sendero position', async () =
     expect(JSON.parse(agent!.defaultMetaJson)).toMatchObject({ demo: true, waitMinutes: minutes });
   }
 });
+
+test('reinitializing a runtime preserves edited and renamed bundled agents', async () => {
+  const { updateAgent } = await import('../commands/agents/create');
+  const { getAgent } = await import('../commands/agents/get');
+  const { getAgentBySlug } = await import('../commands/agents/get-by-slug');
+  const { listAgents } = await import('../commands/agents/list');
+  const { initializeRuntime, loadConfig } = await import('../shared/config');
+  const home = await initHome();
+  const updated = await updateAgent({ home, id: 'spec-partner', slug: 'my-research-partner', name: 'Research partner', instructions: 'Use the instructions I authored.', status: 'disabled', defaultGoal: 'Prepare a report.', defaultMeta: { requiredCapabilities: ['browser'] } });
+  await initializeRuntime(home, loadConfig(home));
+  expect(await getAgent(updated.id, home)).toEqual(updated);
+  expect(await getAgentBySlug('spec-partner', home)).toBeNull();
+  expect(await listAgents(home)).toHaveLength(14);
+});
+
+test('explicit definition directories retain intentional upsert semantics', async () => {
+  const { writeFileSync, mkdirSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { updateAgent } = await import('../commands/agents/create');
+  const { getAgentBySlug } = await import('../commands/agents/get-by-slug');
+  const home = await initHome();
+  const old = await updateAgent({ home, id: 'spec-partner', instructions: 'Locally edited.', status: 'disabled' });
+  const definitionsDir = join(home, 'custom-definitions');
+  mkdirSync(definitionsDir);
+  writeFileSync(join(definitionsDir, 'spec-partner.json'), JSON.stringify({ id: 'ignored-new-id', slug: 'spec-partner', name: 'Imported partner', definitionBody: 'Explicitly imported instructions.', status: 'active' }));
+  await seedBuiltInAgents(home, { definitionsDir });
+  expect(await getAgentBySlug('spec-partner', home)).toMatchObject({ id: old.id, name: 'Imported partner', definitionBody: 'Explicitly imported instructions.', status: 'active' });
+});

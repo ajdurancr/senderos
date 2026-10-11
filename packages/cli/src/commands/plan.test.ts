@@ -18,4 +18,7 @@ test('plan command returns active goals as dispatchable work', async () => {
       (item) => item.goalId === goal.id,
     ),
   ).toBe(true);
+  expect(await handlePlan({ explain: true }, home)).toEqual(
+    expect.arrayContaining([expect.objectContaining({ goalId: goal.id, state: 'ready' })]),
+  );
 });

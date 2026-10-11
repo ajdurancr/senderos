@@ -30,8 +30,8 @@ It should not know Senderos' internal operating logic.
 
 ## Harness boundary
 
-Senderos records the selected harness and optional external-session details on a
-run attempt. It does not launch, query, or resume a host-agent session itself.
+Senderos records the registered executing host, harness, ownership lease, local
+workspace, and independent worker/parent session IDs on each protocol-v2 attempt. It does not launch, query, or resume a host-agent session itself.
 
 Examples:
 
@@ -58,5 +58,6 @@ Senderos does not own integrations for:
 - repository hosting,
 - scheduling infrastructure.
 
-When those things are needed, Senderos tells the host agent what to do.
-The host agent executes that instruction using its own capabilities.
+When those things are needed, node requirements and preflight explain the required
+host capability. The host performs the work through its own tools and permissions.
+A missing capability blocks execution; Senderos does not silently implement it.

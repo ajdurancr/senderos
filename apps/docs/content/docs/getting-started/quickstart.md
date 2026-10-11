@@ -1,99 +1,121 @@
 ---
 title: Quickstart
-description: "Register a repository, create a durable goal, and move it through planning and dispatch without hiding the host-agent boundary."
+description: "Create a durable goal, register an eligible host, and report an independent worker through the CLI."
 ---
 
-This walkthrough creates one real planning record from end to end. It assumes you completed [Install & configure](../setup), defined the `senderos` alias, and are inside the repository you want to coordinate.
-
-## 1. Register the project
+For the quickest local demonstration from the source repository, run:
 
 ```bash
-senderos project create \
-  --home ./.senderos \
-  --canonical-path "$PWD" \
-  --github-owner your-org \
-  --github-repo your-repo
+bun run simulate:host --output .tmp/external-host-report.json
 ```
 
-Keep the returned project `id`. A project defines the canonical repository path, GitHub identity, target branch, inferred commands, and integration mode used by its goals.
+This deterministic example needs no API keys. It exercises separate CLI and worker
+processes, three simulated tool/machine contexts, distinct local workspaces, and one
+local libSQL file. See [Worker and Scheduling](../../automation/worker-and-scheduling)
+for what the simulation proves and how to adapt it to a real host.
 
-## 2. Create the outcome
+For your own project, complete [Install & configure](../setup) and use the selected
+CLI build consistently. The examples below assume the `senderos` alias is defined.
+
+## 1. Register the project and host
 
 ```bash
-senderos goal create \
-  --home ./.senderos \
-  --project-id <project-id> \
-  --title "Add a health endpoint" \
-  --kind feature \
+senderos project create --home ./.senderos \
+  --canonical-path "$PWD" --github-owner your-org --github-repo your-repo
+
+senderos host register my-laptop-codex --home ./.senderos \
+  --name "My laptop / Codex" --harness codex \
+  --capability independent_session --capability shell
+
+senderos host grant my-laptop-codex --home ./.senderos \
+  --project-id <project-id> --workspace-ref my-project
+
+senderos host workspace my-laptop-codex --home ./.senderos \
+  --project-id <project-id> --available --working-path "$PWD"
+```
+
+Keep the returned project ID. Declare only capabilities and paths you actually
+verified on this host. A database record cannot create a checkout or a separate
+worker session. A generic project can also be created with only `--name`; repository
+and GitHub metadata are optional when the workflow is not software development.
+Generic projects do not inherit a software workflow: supply an explicit published
+`--sendero-version-id` when creating their goals before activation.
+
+## 2. Create and activate the outcome
+
+```bash
+senderos goal create --home ./.senderos \
+  --id health-endpoint --project-id <project-id> \
+  --title "Add a health endpoint" --kind feature \
   --spec-text "GET /health returns 200 and a JSON status payload."
-```
 
-The goal starts as `draft`. Drafts are durable but not dispatchable, which gives you a clean point to inspect or refine the specification.
-
-## 3. Activate and plan
-
-```bash
-senderos goal activate <goal-id> --home ./.senderos
+senderos goal activate health-endpoint --home ./.senderos
+senderos plan --explain --home ./.senderos
 senderos plan --home ./.senderos
 ```
 
-`plan` is read-only. It evaluates current state and returns the next valid dispatch item:
+A goal starts as a draft. Activation uses its selected published sendero version.
+You can [author your own agents](../../cli/agent) and [senderos](../../cli/sendero);
+the bundled definitions are examples.
 
-```json
-{
-  "goalId": "goal_…",
-  "transitionId": "transition_…",
-  "agentId": "agent_…",
-  "previousRunId": null
-}
-```
+Planning may initialize or reconcile lifecycle state, but does not reserve a run,
+launch a session, or edit your project. Ready items include a goal, activation,
+agent, transition, previous run, and revision. An empty list is not completion;
+inspect the explanation for blockers and terminal state.
 
-Planning does not start a model session or edit the repository.
+## 3. Reserve, preflight, and claim
 
-## 4. Dispatch the run
-
-Use the identifiers returned by `plan`:
+Use the activation and revision returned by planning:
 
 ```bash
-senderos run dispatch \
-  --home ./.senderos \
-  --goal-id <goal-id> \
-  --transition-id <transition-id> \
-  --agent-id <agent-id> \
-  --working-path "$PWD"
+senderos run dispatch --home ./.senderos \
+  --goal-id health-endpoint --activation-id <activation-id> \
+  --request-id health-endpoint-first-dispatch --expected-revision <revision>
+
+senderos attempt preflight <attempt-id> --home ./.senderos \
+  --owner-id my-laptop-codex
+
+senderos attempt claim <attempt-id> --home ./.senderos \
+  --owner-id my-laptop-codex
 ```
 
-Dispatch creates a logical run and its first concrete attempt. The result includes `runId` and `attemptId`.
+Dispatch returns a run and attempt ID. Reuse the same request ID with unchanged
+inputs after an ambiguous dispatch response. Claim returns the execution packet,
+lease, and fencing token. Save the token privately before launching anything.
+Neither a dispatch nor a claim proves that an external worker is running.
 
-## 5. Execute in the host
+## 4. Start an independent host session
 
-Now the host agent—OpenClaw, Codex, Claude Code, or another operator—does the actual engineering work in the working path. Senderos does not launch or supervise that model session itself.
-
-As execution progresses, update the attempt with checkpoints, host-session metadata, results, or failure information:
+Use your host's own API or UI to start a worker separate from the controller
+conversation. Give it the packet and verified local workspace. Then record the
+actual identifiers:
 
 ```bash
-senderos attempt update <attempt-id> \
-  --home ./.senderos \
-  --status succeeded \
-  --result-json '{"summary":"Endpoint implemented and tests passed"}'
+senderos attempt start <attempt-id> --home ./.senderos \
+  --token <claim-token> --external-session-id <worker-session-id> \
+  --parent-session-id <controller-session-id> --working-path "$PWD"
+
+senderos attempt heartbeat <attempt-id> --home ./.senderos --token <claim-token>
 ```
 
-## 6. Inspect what Senderos knows
+The worker and parent session IDs must differ. The host owns real isolation,
+execution, tools, permissions, and process inspection. Heartbeat regularly and
+honor any cancellation request before acknowledging that work has stopped.
+
+## 5. Report and inspect
 
 ```bash
-senderos status --home ./.senderos
-senderos run state <goal-id> --home ./.senderos
+senderos attempt update <attempt-id> --home ./.senderos \
+  --token <claim-token> --status succeeded \
+  --result-json '{"outcome":"accepted","summary":"Endpoint implemented and tests passed"}'
+
+senderos goal explain health-endpoint --home ./.senderos
+senderos run state health-endpoint --home ./.senderos
 senderos attempt show <attempt-id> --home ./.senderos
 ```
 
-If the attempt fails, `plan` can expose a retry path that preserves the previous run and attempt history. If it succeeds and another transition is valid, planning can advance to the next agent.
-
-## The invariant to remember
-
-```text
-Senderos decides and records what should run.
-The host environment performs the run.
-The outcome returns to Senderos as durable state.
-```
-
-Next, read [How it works](../../core/how-senderos-works) for the lifecycle rules behind this flow or use the [Command overview](../../cli/overview) as a reference.
+Core applies configured evidence/review gates and selects every matching outgoing
+edge. Each graph visit has an activation; one branch finishing does not finish
+other branches. Keep asking Core until the goal is explicitly completed or a
+blocker needs attention. If a lease expires, inspect and reconcile the existing
+worker before reclaiming or abandoning it; do not blindly launch a duplicate.

@@ -19,6 +19,8 @@ test("filters Studio records by execution context and project", () => {
   const eventB = { ...eventA, id: "event-b", entityId: goalB.id };
   const data: MissionControlData = {
     ...missionControlFixture,
+    decisions: [{ goalId: goalA.id, state: 'ready', reason: 'ready', nextAction: 'dispatch', activations: [] }, { goalId: goalB.id, state: 'ready', reason: 'ready', nextAction: 'dispatch', activations: [] }],
+    activations: [{ id: 'activation-a', goalId: goalA.id, nodeId: 'node', transitionId: 'edge', parentActivationId: null, previousRunId: null, latestRunId: null, status: 'ready', reason: null, attemptsUsed: 0, maxAttempts: 3, revision: 0, scopesJson: '[]', inputJson: '{}', createdAt: '', updatedAt: '' }],
     executionContexts: [contextA, contextB],
     projects: [projectA, projectB],
     goals: [goalA, goalB],
@@ -27,6 +29,7 @@ test("filters Studio records by execution context and project", () => {
     events: [eventA, eventB],
     queue: {
       ...missionControlFixture.queue,
+      blockedGoals: [goalA, goalB],
       activeRuns: [runA, runB],
       failedAttempts: [attemptA, attemptB],
       staleAttempts: [attemptA, attemptB],
@@ -35,13 +38,16 @@ test("filters Studio records by execution context and project", () => {
         { attempt: attemptB, review: { status: "pending" } },
       ],
       dispatchable: [
-        { goalId: goalA.id, transitionId: "edge-a", agentId: "agent-a", previousRunId: null },
-        { goalId: goalB.id, transitionId: "edge-b", agentId: "agent-b", previousRunId: null },
+        { activationId: "activation-a", goalId: goalA.id, transitionId: "edge-a", agentId: "agent-a", revision: 0, previousRunId: null },
+        { activationId: "activation-b", goalId: goalB.id, transitionId: "edge-b", agentId: "agent-b", revision: 0, previousRunId: null },
       ],
     },
   };
 
   const filtered = filterMissionControlData(data, contextA.id);
+  expect(filtered.decisions).toHaveLength(1);
+  expect(filtered.activations).toHaveLength(1);
+  expect(filtered.queue.blockedGoals).toHaveLength(1);
   expect(filtered.projects.map((item) => item.id)).toEqual([projectA.id]);
   expect(filtered.goals.map((item) => item.id)).toEqual([goalA.id]);
   expect(filtered.runs.map((item) => item.id)).toEqual([runA.id]);

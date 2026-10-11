@@ -10,6 +10,12 @@ describe('cli help metadata', () => {
     );
     expect(resolveHelp('transition').command).toBe('transition');
     expect(resolveHelp('sendero').subcommands?.map((x) => x.command)).toEqual([
+      'create',
+      'import',
+      'replace',
+      'draft',
+      'publish',
+      'policy',
       'list',
       'show',
       'version',
@@ -18,6 +24,7 @@ describe('cli help metadata', () => {
       'disconnect',
     ]);
     expect(resolveHelp('plan').summary).toContain('dispatchable');
+    expect(resolveHelp('db', 'reset').agentDescription).toContain('no --yes or --force');
     expect(resolveHelp('run').subcommands?.map((x) => x.command)).toContain(
       'dispatch',
     );

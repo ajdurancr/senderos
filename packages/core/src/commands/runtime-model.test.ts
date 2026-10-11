@@ -5,7 +5,6 @@ import {
   cancelGoal,
   createAgentTransition,
   createGoal,
-  createRunAttempt,
   getAgent,
   getAgentBySlug,
   getAgentTransition,
@@ -23,9 +22,9 @@ import {
   updateRunAttempt,
 } from '@senderos/core';
 import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/core';
-import { createProjectFixture, initHome } from '../test-support/runtime';
+import { createProjectFixture, initLegacyHome as initHome } from '../test-support/runtime';
 
-describe('goal orchestration runtime model', () => {
+describe('legacy goal orchestration runtime model', () => {
   test('manages goals, transitions, runs, attempts, planning, and status', async () => {
     const home = await initHome();
     const project = await createProjectFixture(home);
@@ -41,7 +40,6 @@ describe('goal orchestration runtime model', () => {
       kind: 'bugfix',
       intakeText: 'Login is broken.',
       specText: 'Users can sign in.',
-      senderoVersionId: null,
     });
     expect(await listGoals(home)).toHaveLength(1);
     expect((await getGoal(goal.id, home))?.kind).toBe('bugfix');
@@ -58,7 +56,8 @@ describe('goal orchestration runtime model', () => {
     await expect(updateGoal({ home, id: 'missing' })).rejects.toThrow('Goal not found');
 
     await activateGoal(goal.id, home);
-    const defaultTransition = (await listAgentTransitions(home))[0]!;
+    const planned = (await plan({ home }))[0]!;
+    const defaultTransition = { id: planned.transitionId, sourceAgentId: planned.agentId };
     const handoff = await createAgentTransition({
       home,
       sourceAgentId: agent.id,
@@ -93,7 +92,7 @@ describe('goal orchestration runtime model', () => {
     const attempt = (await getAttempt(dispatched.attemptId, home))!;
     expect((await resumeAttempt(attempt.id, home)).attempt.id).toBe(attempt.id);
     await expect(resumeAttempt('missing', home)).rejects.toThrow(
-      'Run attempt not found',
+      'Attempt not found in the current execution context',
     );
     expect(
       (await updateRunAttempt(
@@ -110,7 +109,7 @@ describe('goal orchestration runtime model', () => {
       ))?.failureStep,
     ).toBe('test');
     await expect(updateRunAttempt('missing', {}, home)).rejects.toThrow(
-      'Run attempt not found',
+      'Attempt not found in the current execution context',
     );
     expect(await listRunAttempts(dispatched.runId, home)).toHaveLength(1);
     expect((await status(home)).activeGoalIds).toContain(goal.id);
@@ -119,29 +118,19 @@ describe('goal orchestration runtime model', () => {
       (await plan({ home })).some((item) => item.previousRunId === dispatched.runId),
     ).toBe(true);
 
-    const directAttempt = await createRunAttempt({
-      home,
-      runId: dispatched.runId,
-      attemptNumber: 2,
-      agentId: agent.id,
-      executionObjective: 'Investigate the failure.',
-      harness: 'codex',
+    const retried = await dispatchRun({ goalId: goal.id }, home);
+    const directAttempt = await updateRunAttempt(retried.attemptId, {
       externalSessionId: 'external-1',
       resumeCommand: 'resume external-1',
-      heartbeatAt: '2026-08-28T00:00:00.000Z',
-      hostEnvironmentName: 'local',
       workingPath: '/tmp/direct',
       workingPathMode: 'new',
-      retryFromAttemptId: attempt.id,
-      sourceGoalSha: 'abc123',
-      debugMeta: { source: 'test' },
-      startedAt: '2026-08-28T00:00:00.000Z',
-    });
+    }, home);
     expect((await getAttempt(directAttempt.id, home))?.externalSessionId).toBe(
       'external-1',
     );
 
-    expect(await cancelRun(dispatched.runId, home)).toMatchObject({ status: 'canceled' });
+    await expect(cancelRun(dispatched.runId, home)).rejects.toMatchObject({ code: 'TERMINAL_RUN' });
+    expect(await cancelRun(retried.runId, home)).toMatchObject({ status: 'canceled' });
     expect((await cancelGoal(goal.id, home))?.status).toBe('canceled');
     await expect(cancelGoal('missing', home)).rejects.toThrow('Goal not found');
     await expect(

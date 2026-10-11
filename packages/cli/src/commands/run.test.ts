@@ -5,6 +5,7 @@ import {
   createGoal,
   listAgentTransitions,
   listRuns,
+  plan,
 } from '@senderos/core';
 import {
   createProjectFixture,
@@ -18,7 +19,8 @@ test('run command dispatches a planned goal', async () => {
     (await createGoal({ home, projectId: project.id, title: 'CLI run' })).id,
     home,
   ))!;
-  const transition = (await listAgentTransitions(home))[0]!;
+  const planned = (await plan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
   await expect(handleRun(
     'dispatch',
     [],

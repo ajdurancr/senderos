@@ -2,12 +2,14 @@ import type { CommandHelp } from '@senderos/core';
 
 import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
+import { dbCommandHelp } from './commands/db';
 import { goalCommandHelp } from './commands/goal';
 import { initCommandHelp } from './commands/init';
 import { planCommandHelp } from './commands/plan';
 import { projectCommandHelp } from './commands/project';
 import { runCommandHelp } from './commands/run';
 import { attemptCommandHelp } from './commands/attempt';
+import { hostCommandHelp } from './commands/host';
 import { systemCommandsHelp } from './commands/system';
 import { agentCommandHelp } from './commands/agent';
 import { transitionCommandHelp } from './commands/transition';
@@ -44,6 +46,7 @@ export const rootHelp: CommandHelp = {
     initCommandHelp,
     bootstrapAgentSkillCommandHelp,
     configCommandHelp,
+    dbCommandHelp,
     projectCommandHelp,
     agentCommandHelp,
     transitionCommandHelp,
@@ -52,6 +55,7 @@ export const rootHelp: CommandHelp = {
     planCommandHelp,
     runCommandHelp,
     attemptCommandHelp,
+    hostCommandHelp,
     ...systemCommandsHelp,
   ],
 };

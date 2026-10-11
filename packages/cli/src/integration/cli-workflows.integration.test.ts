@@ -25,7 +25,7 @@ async function invokeCli(argv: string[]) {
   return JSON.parse(output.at(-1) ?? '{}');
 }
 
-test('the CLI supports a complete project, goal, dispatch, attempt, and cancellation workflow', async () => {
+test('fresh CLI initialization requires the complete registered-host, independent-session, fenced-report workflow', async () => {
   const home = tempHome();
   const projectPath = tempProjectDir('senderos-cli-workflow');
 
@@ -93,6 +93,19 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
       ])
     ).targetBranch,
   ).toBe('develop');
+
+  const hostId = 'cli-workflow-host';
+  expect(await invokeCli(['host', 'register', hostId, '--name', 'CLI workflow host', '--capability', 'independent_session', '--capability', 'shell', '--home', home])).toMatchObject({ id: hostId, harness: 'codex' });
+  await invokeCli(['host', 'grant', hostId, '--project-id', project.id, '--workspace-ref', project.id, '--home', home]);
+  await invokeCli(['host', 'workspace', hostId, '--project-id', project.id, '--available', '--working-path', projectPath, '--home', home]);
+  const claimAndStart = async (attemptId: string) => {
+    expect(await invokeCli(['attempt', 'preflight', attemptId, '--owner-id', hostId, '--home', home])).toMatchObject({ eligible: true });
+    const claim = await invokeCli(['attempt', 'claim', attemptId, '--owner-id', hostId, '--home', home]);
+    expect(claim).toMatchObject({ ownerId: hostId, started: false });
+    expect(await invokeCli(['attempt', 'show', attemptId, '--home', home])).toMatchObject({ status: 'queued', startedAt: null, protocolVersion: 2 });
+    expect(await invokeCli(['attempt', 'start', attemptId, '--token', claim.token, '--external-session-id', `worker:${attemptId}`, '--parent-session-id', 'workflow-controller', '--working-path', projectPath, '--home', home])).toMatchObject({ status: 'running', workingPath: projectPath });
+    return claim.token as string;
+  };
 
   const agents = await invokeCli(['agent', 'list', '--home', home]);
   expect(
@@ -201,6 +214,12 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     '--home',
     home,
   ]);
+  expect(await invokeCli(['attempt', 'show', run.attemptId, '--home', home])).toMatchObject({ protocolVersion: 2, status: 'queued', ownerId: null, workingPath: null });
+  const priorExitCode = process.exitCode;
+  const unclaimed = await invokeCli(['attempt', 'update', run.attemptId, '--status', 'succeeded', '--home', home]);
+  process.exitCode = priorExitCode ?? 0;
+  expect(unclaimed.code).toBe('CLAIM_REQUIRED');
+  const runToken = await claimAndStart(run.attemptId);
   expect(await invokeCli(['run', 'list', '--home', home])).toEqual(
     expect.arrayContaining([expect.objectContaining({ id: run.runId })]),
   );
@@ -229,6 +248,8 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
         'attempt',
         'update',
         run.attemptId,
+        '--token',
+        runToken,
         '--status',
         'failed',
         '--failure-summary',
@@ -264,12 +285,15 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     home,
   ]);
   expect(retryRun.previousRunId).toBe(run.runId);
+  const retryToken = await claimAndStart(retryRun.attemptId);
   expect(
     (
       await invokeCli([
         'attempt',
         'update',
         retryRun.attemptId,
+        '--token',
+        retryToken,
         '--status',
         'succeeded',
         '--result-json',
@@ -284,8 +308,9 @@ test('the CLI supports a complete project, goal, dispatch, attempt, and cancella
     goal.id,
   );
   expect((await invokeCli(['doctor', '--home', home])).ok).toBe(true);
+  const nextRun = await invokeCli(['run', 'dispatch', '--goal-id', goal.id, '--home', home]);
   expect(
-    (await invokeCli(['run', 'cancel', retryRun.runId, '--home', home])).status,
+    (await invokeCli(['run', 'cancel', nextRun.runId, '--home', home])).status,
   ).toBe('canceled');
   expect(
     (await invokeCli(['goal', 'cancel', goal.id, '--home', home])).status,

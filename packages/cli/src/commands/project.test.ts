@@ -118,3 +118,8 @@ describe('project command', () => {
     );
   });
 });
+
+test('project CLI registers a non-software workspace', async () => {
+  const home = await initHome();
+  expect(await handleProject('create', [], { name: 'Research' }, home)).toMatchObject({ name: 'Research', integrationMode: 'none', githubRemote: '' });
+});

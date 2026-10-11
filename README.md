@@ -1,6 +1,9 @@
 # Senderos
 
-Senderos is an engineering orchestration platform that transforms objectives into verified software outcomes by coordinating humans, AI systems, development tools, organizational knowledge, and continuous feedback loops.
+See the [lifecycle and host integration contract](docs/lifecycle-contract.md) for
+preflight/claim/start/heartbeat/report, graph publication, recovery, and upgrade guidance.
+
+Senderos is a persistent orchestration platform for user-defined agents and directed workflows. It coordinates goals, branching work, host ownership, evidence, and recovery while external hosts perform the actual execution. Software-delivery workflows are bundled examples, not required roles or project types.
 
 This repository contains the Senderos monorepo.
 
@@ -20,7 +23,7 @@ This repository contains the Senderos monorepo.
 
 ## Why Senderos exists
 
-Software teams can generate more code than ever, but generation alone does not guarantee useful outcomes.
+Users and teams can delegate work to many tools and agents, but delegation alone does not guarantee useful outcomes.
 
 The harder problem is coordination:
 
@@ -34,8 +37,7 @@ Senderos exists to make that coordination visible, structured, and repeatable.
 
 ## Product thesis
 
-Software generation is no longer the main bottleneck.
-Coordination is.
+Coordination should remain explicit and durable even when work spans different tools, sessions, and machines.
 
 Senderos exists to orchestrate the path from intent to verified delivery:
 
@@ -46,15 +48,18 @@ Intent → Planning → Context → Execution → Validation → Feedback → Co
 At the runtime level, Senderos acts as a control plane:
 
 - it stores orchestration state through Drizzle on a configurable libSQL connection
+- it derives durable graph activations, outcome branches, bounded cycles, fan-out, and explicit joins
 - it plans the next dispatchable work with `senderos plan`
 - it accepts explicit dispatch requests with `senderos run dispatch ...`
 - it records projects, goals, agent transitions, runs, run attempts, and events
-- it does **not** perform the actual coding work itself
+- projects can organize non-repository work; instructions, completion gates, and agent roles are configurable
+- it does **not** perform the actual work itself
 
 The host agent is the execution plane:
 
 - asks Senderos what is dispatchable next
-- dispatches one run at a time
+- reserves Core-selected activations idempotently, including concurrent branches
+- declares verified capabilities and workspace access, claims work, and starts independent worker sessions
 - executes the real work in its own environment and working path
 - returns later for the next plan/dispatch cycle
 
@@ -70,6 +75,18 @@ The host agent is the execution plane:
 bun install
 ```
 
+### Run the external-host example without API keys
+
+```bash
+bun run simulate:host --output .tmp/external-host-report.json
+```
+
+This runs real CLI subprocesses and independent workers across three simulated
+host contexts, each with its own workspace, sharing one local libSQL database.
+The JSON report covers routing, ownership, races, recovery, and completion gates.
+See [the runnable adapter](examples/external-host/README.md) and
+[acceptance matrix](docs/external-host-acceptance.md) for verified boundaries.
+
 ### Run the apps
 
 ```bash
@@ -83,6 +100,7 @@ bun run dev:studio
 bun run typecheck
 bun run test
 bun run build
+bun run coverage
 ```
 
 For the current runtime model and operator workflow, see `apps/docs` or run

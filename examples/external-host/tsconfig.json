@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "typeRoots": ["../../packages/cli/node_modules/@types"]
+  },
+  "include": ["./*.ts", "../../scripts/external-host-simulation.ts"]
+}

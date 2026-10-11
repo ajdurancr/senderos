@@ -57,6 +57,8 @@ export const senderoVersions = sqliteTable(
     id: text("id").primaryKey(),
     senderoId: text("sendero_id").notNull(),
     version: integer("version").notNull(),
+    maxActivations: integer("max_activations").notNull().default(100),
+    protocolVersion: integer("protocol_version").notNull().default(2),
     status: text("status").notNull(),
     createdAt: text("created_at").notNull(),
   },
@@ -76,6 +78,11 @@ export const senderoNodes = sqliteTable(
     agentId: text("agent_id"),
     kind: text("kind").notNull(),
     label: text("label").notNull(),
+    executionObjective: text("execution_objective"),
+    completionJson: text("completion_json").notNull().default("{}"),
+    requirementsJson: text("requirements_json").notNull().default("[]"),
+    joinForkNodeId: text("join_fork_node_id"),
+    agentSnapshotJson: text("agent_snapshot_json"),
     positionX: integer("position_x").notNull(),
     positionY: integer("position_y").notNull(),
     createdAt: text("created_at").notNull(),
@@ -122,6 +129,7 @@ export const goals = sqliteTable("goals", {
 export const runs = sqliteTable("runs", {
   id: text("id").primaryKey(),
   goalId: text("goal_id").notNull(),
+  activationId: text("activation_id"),
   status: text("status").notNull(),
   branchName: text("branch_name"),
   baseBranch: text("base_branch"),
@@ -215,3 +223,58 @@ export const events = sqliteTable("events", {
   payloadJson: text("payload_json").notNull(),
   createdAt: text("created_at").notNull(),
 });
+
+/** Explicit cursor; existing goals are reconciled lazily on first lifecycle command. */
+export const goalExecutions = sqliteTable("goal_executions", {
+  goalId: text("goal_id").primaryKey(),
+  transitionId: text("transition_id"),
+  latestRunId: text("latest_run_id"),
+  attemptsUsed: integer("attempts_used").notNull().default(0),
+  maxAttempts: integer("max_attempts").notNull().default(3),
+  revision: integer("revision").notNull().default(0),
+  finishedAt: text("finished_at"),
+  maxActivations: integer("max_activations").notNull().default(100),
+  activationsUsed: integer("activations_used").notNull().default(0),
+  cancellationRequestedAt: text("cancellation_requested_at"),
+});
+
+export const attemptClaims = sqliteTable("attempt_claims", {
+  attemptId: text("attempt_id").primaryKey(),
+  ownerId: text("owner_id"),
+  token: text("token"),
+  leaseExpiresAt: text("lease_expires_at"),
+  cancellationRequestedAt: text("cancellation_requested_at"),
+  acknowledgedAt: text("acknowledged_at"),
+  packetJson: text("packet_json").notNull().default("{}"),
+  protocolVersion: integer("protocol_version").notNull().default(1),
+  claimedAt: text("claimed_at"),
+  parentSessionId: text("parent_session_id"),
+  recoveryOutcome: text("recovery_outcome"),
+  recoveryObservedAt: text("recovery_observed_at"),
+  recoveryDetailsJson: text("recovery_details_json").notNull().default("{}"),
+});
+
+export const lifecycleRequests = sqliteTable("lifecycle_requests", {
+  id: text("id").primaryKey(),
+  goalId: text("goal_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  responseJson: text("response_json").notNull(),
+});
+
+/** A unique visit, distinct from its retries and from subsequent cycle visits. */
+export const activations = sqliteTable("activations", {
+  id: text("id").primaryKey(), goalId: text("goal_id").notNull(), nodeId: text("node_id").notNull(),
+  transitionId: text("transition_id").notNull(), parentActivationId: text("parent_activation_id"),
+  previousRunId: text("previous_run_id"), latestRunId: text("latest_run_id"),
+  status: text("status").notNull(), reason: text("reason"), attemptsUsed: integer("attempts_used").notNull().default(0),
+  maxAttempts: integer("max_attempts").notNull().default(3), revision: integer("revision").notNull().default(0),
+  scopesJson: text("scopes_json").notNull().default("[]"), inputJson: text("input_json").notNull().default("{}"),
+  createdAt: text("created_at").notNull(), updatedAt: text("updated_at").notNull(),
+}, table => [index("idx_activations_goal").on(table.goalId)]);
+export const forkGenerations = sqliteTable("fork_generations", {
+  id: text("id").primaryKey(), goalId: text("goal_id").notNull(), forkNodeId: text("fork_node_id").notNull(),
+  forkActivationId: text("fork_activation_id"), status: text("status").notNull().default("open"),
+  createdAt: text("created_at").notNull(),
+}, table => [index("idx_fork_generations_goal").on(table.goalId)]);
+
+export { executionHosts, hostWorkspaces } from "./host-schema";

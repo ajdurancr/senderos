@@ -7,6 +7,7 @@ export type StudioLocation = {
   transitionId?: string;
   senderoId?: string;
   senderoNodeId?: string;
+  workflowNodeId?: string;
   senderoEdgeId?: string;
   create: boolean;
 };
@@ -45,6 +46,10 @@ export function canvasAgentPath(projectId: string, goalId: string, agentId: stri
   return `${goalPath(projectId, goalId)}/agents/${encode(agentId)}`;
 }
 
+export function canvasNodePath(projectId: string, goalId: string, nodeId: string, attemptId?: string) {
+  return `${goalPath(projectId, goalId)}/nodes/${encode(nodeId)}${attemptId ? `/attempts/${encode(attemptId)}` : ''}`;
+}
+
 export function attemptPath(projectId: string | undefined, attemptId: string) {
   return `${projectPath(projectId, "runs")}/attempts/${encode(attemptId)}`;
 }
@@ -62,11 +67,12 @@ export function parseStudioPath(pathname: string): StudioLocation {
     const view = parts[0] ?? "canvas";
     return {
       view,
-      senderoId: view === "senderos" ? parts[1] : undefined,
+      senderoId: view === "senderos" && parts[1] !== "new" ? parts[1] : undefined,
+      agentId: view === "agents" && parts[1] !== "new" ? parts[1] : undefined,
       senderoNodeId: view === "senderos" && parts[2] === "nodes" ? parts[3] : undefined,
       senderoEdgeId: view === "senderos" && parts[2] === "edges" ? parts[3] : undefined,
       attemptId: parts[1] === "attempts" ? parts[2] : undefined,
-      create: view === "goals" && parts[1] === "new",
+      create: ["goals", "agents", "senderos"].includes(view) && parts[1] === "new",
     };
   }
   const projectId = parts[1];
@@ -80,6 +86,7 @@ export function parseStudioPath(pathname: string): StudioLocation {
     projectId,
     goalId: valueAfter("goals"),
     agentId: valueAfter("agents"),
+    workflowNodeId: valueAfter("nodes"),
     transitionId: valueAfter("transitions"),
     attemptId: valueAfter("attempts"),
     create: view === "goals" && parts[3] === "new",

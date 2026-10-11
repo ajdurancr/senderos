@@ -1,0 +1,68 @@
+{
+  "studioSourceSha256": "fa316e12a791d7c96642d03cb4dcbb51a174f50a3445cc295eebcefda39b8d0e",
+  "context": "qa-alpha",
+  "reviewed": [
+    {
+      "goalId": "goal-8879beec-7145-4660-8954-0139fa2b0ebf",
+      "activationId": "activation-699e1340-696c-4613-8311-c0c34ea0c274",
+      "transitionId": "sendero-edge-38fd16d4-750a-4a75-89e4-c8dcc34dcbcf",
+      "agentId": "agent-6cb2ed73-b7c1-4631-817b-b4bdd4490db5",
+      "previousRunId": null,
+      "revision": 0,
+      "title": "Alpha Evidence 5"
+    },
+    {
+      "goalId": "goal-08faa364-5938-48cf-b6b4-b8e08b09811b",
+      "activationId": "activation-52ff5f79-5201-4490-bd2e-c9aadc95f11a",
+      "transitionId": "sendero-edge-38fd16d4-750a-4a75-89e4-c8dcc34dcbcf",
+      "agentId": "agent-6cb2ed73-b7c1-4631-817b-b4bdd4490db5",
+      "previousRunId": null,
+      "revision": 0,
+      "title": "Alpha Evidence 6"
+    },
+    {
+      "goalId": "goal-36462f6c-318e-4ac0-8cfa-781e5d2e9705",
+      "activationId": "activation-8561974d-1120-4388-8485-949f91af5dbd",
+      "transitionId": "sendero-edge-38fd16d4-750a-4a75-89e4-c8dcc34dcbcf",
+      "agentId": "agent-6cb2ed73-b7c1-4631-817b-b4bdd4490db5",
+      "previousRunId": "run-046e74c7-dd31-4d2d-a073-97de1eb513b7",
+      "revision": 2,
+      "title": "Failure Rendering Check"
+    }
+  ],
+  "addedRuns": [
+    {
+      "id": "run-cf94b15c-8e16-45d8-82d3-ee14eef2bb23",
+      "title": "Alpha Evidence 5"
+    },
+    {
+      "id": "run-0d2b1ddd-6093-4877-8a38-3d054a3f1130",
+      "title": "Alpha Evidence 6"
+    },
+    {
+      "id": "run-bfc0432f-fb5e-487e-9498-8904ebcd1a83",
+      "title": "Failure Rendering Check"
+    }
+  ],
+  "remainingReady": [
+    {
+      "goalId": "goal-7cb81d70-e658-4ec4-bfe1-882cdb76d2cf",
+      "activationId": "activation-d5435345-c4b8-4f2c-8779-0e4ba6021e8c",
+      "transitionId": "sendero-edge-38fd16d4-750a-4a75-89e4-c8dcc34dcbcf",
+      "agentId": "agent-6cb2ed73-b7c1-4631-817b-b4bdd4490db5",
+      "previousRunId": null,
+      "revision": 0,
+      "title": "Beta Ready 1"
+    },
+    {
+      "goalId": "goal-722cf96d-5cd5-45e4-b14d-ade2510a887c",
+      "activationId": "activation-b7fcd4e7-7e3c-4bfb-b066-fabf8b260761",
+      "transitionId": "sendero-edge-38fd16d4-750a-4a75-89e4-c8dcc34dcbcf",
+      "agentId": "agent-6cb2ed73-b7c1-4631-817b-b4bdd4490db5",
+      "previousRunId": null,
+      "revision": 0,
+      "title": "Beta Ready 2"
+    }
+  ],
+  "staleReplay": "Rejected with \"A reviewed activation changed; review the refreshed plan\"; no duplicate run was created."
+}

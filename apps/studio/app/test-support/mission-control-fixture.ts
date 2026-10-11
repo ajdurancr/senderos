@@ -3,6 +3,8 @@ import type { MissionControlData } from "../features/mission-control/server";
 export const fixtureTimestamp = "2026-09-17T12:00:00.000Z";
 
 export const fixtureAttempt: MissionControlData["attempts"][number] = {
+  ownerId: null, leaseExpiresAt: null, claimedAt: null, parentSessionId: null, protocolVersion: 1,
+  cancellationRequestedAt: null, recoveryOutcome: null, recoveryObservedAt: null, preflight: null, recoveryDetails: {},
   id: "attempt-1", runId: "run-1", attemptNumber: 1, agentId: "agent-1",
   transitionId: "edge-1", status: "failed", executionObjective: "Deliver",
   harness: "codex", externalSessionId: null, resumeCommand: null,
@@ -17,6 +19,9 @@ export const fixtureAttempt: MissionControlData["attempts"][number] = {
 };
 
 export const missionControlFixture: MissionControlData = {
+  decisions: [], hosts: [], activations: [],
+  draftGraphs: [],
+  historyGraphs: [],
   status: {
     projects: { total: 1, unhealthy: 0 },
     openGoals: 1,
@@ -40,7 +45,7 @@ export const missionControlFixture: MissionControlData = {
     prUrl: null, prNumber: null, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp,
   }],
   runs: [{
-    id: "run-1", goalId: "goal-1", status: "failed", branchName: null,
+    id: "run-1", activationId: "activation-1", goalId: "goal-1", status: "failed", branchName: null,
     baseBranch: "main", maxAttempts: 3, senderoVersionId: "version-1",
     createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp,
   }],
@@ -58,19 +63,20 @@ export const missionControlFixture: MissionControlData = {
     createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp,
   }],
   senderoGraphs: [{
+    revision: "fixture-revision",
     sendero: {
       id: "sendero-1", slug: "demo", name: "Demo Sendero", description: "A demo",
       status: "active", isDefault: true, currentVersion: 1,
       createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp,
     },
     version: {
-      id: "version-1", senderoId: "sendero-1", version: 1, status: "published",
+      id: "version-1", maxActivations: 100, protocolVersion: 1, senderoId: "sendero-1", version: 1, status: "published",
       createdAt: fixtureTimestamp,
     },
     nodes: [
-      { id: "node-start", senderoVersionId: "version-1", agentId: null, kind: "start", label: "Start", positionX: 20, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
-      { id: "node-agent", senderoVersionId: "version-1", agentId: "agent-1", kind: "agent", label: "Agent", positionX: 300, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
-      { id: "node-end", senderoVersionId: "version-1", agentId: null, kind: "end", label: "End", positionX: 580, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
+      { executionObjective: null, completionJson: "{}", requirementsJson: "[]", joinForkNodeId: null, agentSnapshotJson: null, id: "node-start", senderoVersionId: "version-1", agentId: null, kind: "start", label: "Start", positionX: 20, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
+      { executionObjective: null, completionJson: "{}", requirementsJson: "[]", joinForkNodeId: null, agentSnapshotJson: null, id: "node-agent", senderoVersionId: "version-1", agentId: "agent-1", kind: "agent", label: "Agent", positionX: 300, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
+      { executionObjective: null, completionJson: "{}", requirementsJson: "[]", joinForkNodeId: null, agentSnapshotJson: null, id: "node-end", senderoVersionId: "version-1", agentId: null, kind: "end", label: "End", positionX: 580, positionY: 80, createdAt: fixtureTimestamp, updatedAt: fixtureTimestamp },
     ],
     edges: [{
       id: "edge-1", senderoVersionId: "version-1", sourceNodeId: "node-agent",
@@ -86,7 +92,7 @@ export const missionControlFixture: MissionControlData = {
   queue: {
     reviews: [{ attempt: fixtureAttempt, review: { status: "pending" } }],
     failedAttempts: [fixtureAttempt], staleAttempts: [fixtureAttempt], activeRuns: [],
-    dispatchable: [{ goalId: "goal-1", transitionId: "edge-1", agentId: "agent-1", previousRunId: "run-0" }],
+    dispatchable: [{ activationId: "activation-1", goalId: "goal-1", transitionId: "edge-1", agentId: "agent-1", revision: 0, previousRunId: "run-0" }],
     blockedGoals: [],
   },
   runtime: {

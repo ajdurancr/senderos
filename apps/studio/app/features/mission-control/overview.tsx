@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { DurableLink as Link } from "../../components/durable-link";
+import { SenderoCreation, SenderoGraphEditor } from "./components/sendero-authoring";
 import { AttentionRail } from "./components/attention-rail";
 import { ContextualInspector } from "./components/contextual-inspector";
 import { DispatchTray } from "./components/dispatch-tray";
@@ -27,19 +30,25 @@ export function MissionControlOverview({
   search: URLSearchParams;
 }) {
   const { view, goalId, agentId, attemptId, transitionId } = route;
-  const projectId = route.projectId ?? search.get("project") ?? undefined;
+  const [hasUnsavedGraph, setHasUnsavedGraph] = useState(false);
+  useEffect(() => setHasUnsavedGraph(false), [view, route.senderoId]);
+  const projectId = search.get("project") ?? route.projectId;
+
+  if (view === "senderos" && route.create) return <SenderoCreation />;
 
   if (view === "senderos") {
-    const graph =
-      data.senderoGraphs.find((item) => item.sendero.id === route.senderoId) ??
-      data.senderoGraphs[0];
+    data = { ...data, senderoGraphs: [...data.senderoGraphs.map(g => data.draftGraphs?.find(d => d.sendero.id === g.sendero.id) ?? g), ...(data.draftGraphs ?? []).filter(d => !data.senderoGraphs.some(g => g.sendero.id === d.sendero.id))] };
+    const graph = route.senderoId
+      ? data.senderoGraphs.find((item) => item.sendero.id === route.senderoId)
+      : data.senderoGraphs[0];
     if (!graph)
       return (
         <div className="standard-view">
           <div className="empty-state">
             <Icon name="nodes" />
-            <h2>No Senderos available</h2>
-            <p>Create or seed a Sendero definition in the shared database.</p>
+            <h2>{data.senderoGraphs.length ? "Sendero not found" : "No Senderos available"}</h2>
+            <p>Create a custom Sendero or import a definition.</p>
+            <Link className="primary-action" to="/senderos/new">New Sendero</Link>
           </div>
         </div>
       );
@@ -52,13 +61,15 @@ export function MissionControlOverview({
               <h1>{graph.sendero.name}</h1>
               <p>{graph.sendero.description}</p>
             </div>
-            <SenderoSelector data={data} senderoId={graph.sendero.id} />
+            <div className="authoring-actions"><SenderoSelector data={data} senderoId={graph.sendero.id} /><Link className="primary-action" to="/senderos/new">New Sendero</Link></div>
           </header>
-          <OrchestrationCanvas data={data} senderoId={graph.sendero.id} />
+          <OrchestrationCanvas data={data} senderoId={graph.sendero.id} readOnlyLayout={hasUnsavedGraph} />
+          <SenderoGraphEditor graph={graph} agents={data.agents} onDirtyChange={setHasUnsavedGraph} />
         </section>
         <SenderoInspector
           data={data}
           senderoId={graph.sendero.id}
+          hasUnsavedGraph={hasUnsavedGraph}
           nodeId={route.senderoNodeId}
           edgeId={route.senderoEdgeId}
         />
@@ -80,7 +91,7 @@ export function MissionControlOverview({
     );
   if (view === "runs") return <RunsView data={data} attemptId={attemptId} />;
   if (view === "reviews") return <ReviewsView data={data} />;
-  if (view === "agents") return <AgentsView data={data} />;
+  if (view === "agents") return <AgentsView data={data} agentId={route.agentId} create={route.create} />;
   if (view === "events") return <EventsView data={data} />;
   if (view === "settings")
     return <SettingsView data={data} projectId={projectId} />;
@@ -110,12 +121,13 @@ export function MissionControlOverview({
           projectId={canvasProjectId}
           goalId={selectedGoal}
         />
-        {search.get("plan") === "true" && <DispatchTray data={data} />}
+        {search.get("plan") === "true" && <DispatchTray data={data} scope={{ executionContextId: search.get("context") ?? undefined, projectId }} />}
       </section>
       <ContextualInspector
         data={data}
         goalId={selectedGoal}
         agentId={agentId}
+        nodeId={route.workflowNodeId}
         attemptId={attemptId}
         transitionId={transitionId}
       />

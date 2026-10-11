@@ -1,9 +1,11 @@
-import { openRuntimeDb } from "../../db/client";
+import { requireGoal } from "../../lifecycle/scope";
+import { requireLifecycle } from "../../lifecycle/errors";
+import { atomic, openRuntimeDb } from "../../db/client";
 import { emitEvent } from "../../shared/events";
 import { now } from "../../shared/ids";
 import type { GoalKind } from "../../shared/types";
 import { getGoal } from "./get";
-import { goals } from "../../db/schema";
+import { goals, senderoVersions } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export async function updateGoal(input: {
@@ -18,9 +20,17 @@ export async function updateGoal(input: {
   branchName?: string | null;
   senderoVersionId?: string | null;
 }) {
-  const current = await getGoal(input.id, input.home);
+  return atomic(input.home, async () => {
+  const current = await requireGoal(input.id, input.home);
   if (!current) throw new Error(`Goal not found: ${input.id}`);
+  requireLifecycle(input.senderoVersionId === undefined || (current.status === "draft"), "IMMUTABLE_WORKFLOW", "An activated goal cannot switch its pinned Sendero");
   const db = openRuntimeDb(input.home);
+  requireLifecycle(input.title === undefined || input.title.trim().length > 0, 'INVALID_INPUT', 'Goal title must not be empty');
+  requireLifecycle(input.kind === undefined || (typeof input.kind === 'string' && input.kind.trim().length > 0), 'INVALID_INPUT', 'Goal kind must be a nonempty category');
+  if (input.senderoVersionId) {
+    const version = (await db.select().from(senderoVersions).where(eq(senderoVersions.id, input.senderoVersionId)))[0];
+    requireLifecycle(version?.status === 'published', 'INVALID_WORKFLOW', 'Select a published Sendero version');
+  }
   await db
     .update(goals)
     .set({
@@ -40,4 +50,5 @@ export async function updateGoal(input: {
     .where(eq(goals.id, input.id));
   await emitEvent(db, "goal.updated", "goal", input.id, input);
   return getGoal(input.id, input.home);
+  });
 }

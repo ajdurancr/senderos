@@ -1,3 +1,5 @@
+import { startTestWorker } from '../test-support/worker';
+import { plan as nextPlan } from "../commands/planning/plan";
 import { expect, test } from 'bun:test';
 import {
   activateGoal,
@@ -23,7 +25,8 @@ test('a goal moves from approved intent to a persisted execution attempt', async
     })).id,
     home,
   ))!;
-  const transition = (await listAgentTransitions(home))[0]!;
+  const planned = (await nextPlan({ home }))[0]!;
+  const transition = { id: planned.transitionId, sourceAgentId: planned.agentId };
   const dispatched = await dispatchRun(
     {
       goalId: goal.id,
@@ -33,10 +36,11 @@ test('a goal moves from approved intent to a persisted execution attempt', async
     },
     home,
   );
+  const claim = await startTestWorker(home, project.id, dispatched.attemptId, "/tmp/goal-lifecycle");
   expect(
     (await updateRunAttempt(
       dispatched.attemptId,
-      { status: 'succeeded', result: { validated: true } },
+      { status: 'succeeded', token: claim.token, result: { validated: true } },
       home,
     ))?.status,
   ).toBe('succeeded');

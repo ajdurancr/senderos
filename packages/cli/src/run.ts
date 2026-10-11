@@ -2,6 +2,7 @@ import { parseArgs } from './args';
 import { resolveHome } from './shared';
 import { handleBootstrapAgentSkill } from './commands/bootstrap-agent-skill';
 import { handleConfig } from './commands/config';
+import { handleDatabase } from './commands/db';
 import { handleGoal } from './commands/goal';
 import { handleInit } from './commands/init';
 import { handleAgent } from './commands/agent';
@@ -10,10 +11,12 @@ import { handleProject } from './commands/project';
 import { handleRun } from './commands/run';
 import { handleTransition } from './commands/transition';
 import { handleAttempt } from './commands/attempt';
+import { handleHost } from './commands/host';
 import { handleSystemCommand } from './commands/system';
 import { handleSendero } from './commands/sendero';
 import { resolveHelp } from './help';
 import { resolveExecutionContextId } from '@senderos/core';
+import { LifecycleError } from '@senderos/core';
 
 export async function runCli(argv = process.argv.slice(2)) {
   const { positionals, options } = parseArgs(argv);
@@ -43,10 +46,12 @@ export async function runCli(argv = process.argv.slice(2)) {
         return await handleBootstrapAgentSkill(options);
       case 'config':
         return await handleConfig(sub, positionals, home);
+      case 'db':
+        return await handleDatabase(sub, positionals, options, home);
       case 'project':
         return await handleProject(sub, positionals, options, home);
       case 'agent':
-        return await handleAgent(sub, positionals, home);
+        return await handleAgent(sub, positionals, home, options);
       case 'transition':
         return await handleTransition(sub, positionals, options, home);
       case 'sendero':
@@ -57,6 +62,8 @@ export async function runCli(argv = process.argv.slice(2)) {
         return await handlePlan(options, home);
       case 'run':
         return await handleRun(sub, positionals, options, home);
+      case 'host':
+        return await handleHost(sub, positionals, options, home);
       case 'attempt':
         return await handleAttempt(sub, positionals, options, home);
       case 'doctor':
@@ -69,7 +76,9 @@ export async function runCli(argv = process.argv.slice(2)) {
 
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error(JSON.stringify({ error: (error as Error).message }, null, 2));
-    process.exitCode = 1;
+    const lifecycle = error instanceof LifecycleError;
+    const busy = /SQLITE_BUSY|database is locked|TRANSACTION_BUSY/.test((error as Error).message);
+    console.error(JSON.stringify({ error: (error as Error).message, code: lifecycle ? error.code : busy ? 'DATABASE_BUSY' : 'COMMAND_ERROR', retryable: busy || (lifecycle && error.retryable), nextAction: lifecycle ? error.nextAction : busy ? 'Retry with the same request ID' : 'Check command help and inputs', schemaVersion: 1 }, null, 2));
+    process.exitCode = busy || (lifecycle && error.retryable) ? 75 : 1;
   }
 }

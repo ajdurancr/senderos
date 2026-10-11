@@ -11,16 +11,16 @@ export const runCommandHelp = {
   command: 'run',
   summary: 'Dispatch, inspect, and cancel goal runs.',
   agentDescription:
-    'Use planned goal and transition ids to create a concrete execution attempt.',
+    'Use Core planning decisions to reserve one concrete attempt. Dispatch does not start an external session; claim the returned attempt next.',
   usage: ['senderos run <dispatch|state|list|show|cancel> ...'],
   subcommands: [
     {
       command: 'dispatch',
       summary: 'Dispatch a planned goal.',
       agentDescription:
-        'Dispatch exactly one planned goal through its selected transition.',
+        'Reserve exactly one planned step with a stable request id, then claim the returned attempt.',
       usage: [
-        'senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id> [--previous-run-id <run-id>] [--working-path <path>]',
+        'senderos run dispatch --goal-id <goal-id> --request-id <stable-id> [--activation-id <activation-id>] [--expected-revision <revision>] [--transition-id <transition-id>] [--agent-id <agent-id>] [--working-path <path>]',
       ],
     },
     {
@@ -66,14 +66,11 @@ export async function handleRun(
             optionString(options['goal-id']),
             'goal id',
           ),
-          transitionId: requirePositional(
-            optionString(options['transition-id']),
-            'transition id',
-          ),
-          agentId: requirePositional(
-            optionString(options['agent-id']),
-            'agent id',
-          ),
+          activationId: optionString(options['activation-id']),
+          transitionId: optionString(options['transition-id']),
+          agentId: optionString(options['agent-id']),
+          requestId: optionString(options['request-id']),
+          expectedRevision: options['expected-revision'] === undefined ? undefined : Number(options['expected-revision']),
           previousRunId: optionString(options['previous-run-id']),
           workingPath: optionString(options['working-path']),
         },

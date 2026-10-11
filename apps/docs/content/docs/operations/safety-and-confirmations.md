@@ -1,67 +1,46 @@
 ---
 title: Safety and Guardrails
-description: "The hard boundaries that keep Senderos contained, consistent, and safe to operate through a host agent."
+description: "The coordination boundary, ownership contract, and external host's responsibilities."
 ---
 
-Senderos is opinionated about safety.
+## Files and database access
 
-## Filesystem guardrail
+Initialization keeps the default local database and runtime directories under the
+selected Senderos home. Runtime commands use the configured database connection,
+which may point to a shared local file or remote libSQL service. Protect that
+connection as trusted access; context filters and host grants are coordination
+rules, not authentication or tenant-security isolation.
 
-Senderos never modifies anything outside the Senderos directory tree.
+The host owns its workspace. Senderos records grants, availability declarations,
+and actual execution paths; it does not clone, synchronize, clean, inspect, or
+retire those directories. Do not treat another machine's path as locally available.
 
-That includes:
+## Ownership and sessions
 
-- the database
-- config
-- logs
-- artifacts
-- attempt records
+A reservation does not start a worker. Claiming assigns a lease and fence; the host
+must separately start and record an independent worker session. Core enforces the
+declared protocol, including separate worker/parent IDs. The host provides and
+verifies the actual separation, filesystem, capabilities, and process state.
 
-The host agent owns its execution directory. Senderos may record the supplied
-working path on a run attempt, but does not create, lock, clean, or retire it.
+Keep claim tokens private. Stale tokens cannot report authoritative results.
+Lease expiry is not proof that a process stopped. Unknown process state stays
+blocked; explicit stop confirmation is needed before abandonment. Revoking a grant
+blocks new work but allows an existing owner to report or acknowledge shutdown.
+It does not kill the external process.
 
-## Host-session guardrail
+## Explicit operations and host permissions
 
-A host-agent session is not Senderos state.
+Initialization writes require `--approve`. Workflow publication, goal activation,
+cancellation, recovery, budget changes, and host grants are explicit CLI operations;
+they are not inferred from a model's prose. These commands do not replace the
+operator's own authorization policy.
 
-Senderos may record host-session details on an attempt, but it does not trust the live session as the source of truth.
-All meaningful state must be persisted back into Senderos.
+The host must apply its own confirmations and permissions for external actions,
+including scheduling, credentials, messages, API calls, purchases, code pushes,
+merges, and deployments. Senderos never grants authority to perform those effects
+merely because an execution packet mentions them.
 
-## Confirmation policy
-
-Senderos is designed for agent operation, so confirmations happen where they matter.
-
-### No confirmation required
-
-- read-only inspection
-- status queries
-- reports
-- JSON output
-- planning output
-
-### Explicit Senderos confirmation required
-
-- goal cancellation
-- configuration rewrite
-
-### Host-agent confirmation required
-
-If the host agent must do something outside Senderos' own responsibility, the host agent handles that confirmation in its own environment.
-Examples:
-
-- create a cron job
-- push a branch
-- open a pull request
-- call an external API
-- launch external execution work from a dispatched item
-
-### Studio review record
-
-Studio can record evidence and an operator review decision on a run attempt. A
-review is an audit record, not proof that a host action has occurred. The host
-agent remains responsible for confirmations outside Senderos, including pushes,
-pull requests, deployments, and external API calls.
-
-## Why the split matters
-
-This keeps Senderos strict about its own boundaries while still letting the host agent act in the outside world when instructed.
+Planning may initialize or reconcile lifecycle state, but never dispatches or
+launches work. Studio and CLI review/evidence records are audit records. Core does
+not independently verify their truth, authenticate a reviewer, or execute any
+external action implied by an approval.

@@ -5,3 +5,5 @@ export * from "./agents/remove";
 export * from "./connections/connect";
 export * from "./connections/disconnect";
 export * from "./versions/list";
+
+export * from "./create";

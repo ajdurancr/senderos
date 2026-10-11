@@ -1,3 +1,4 @@
+import { draftSendero } from "../../lifecycle/versions";
 import { expect, test } from "bun:test";
 
 import { initHome } from "../../test-support/runtime";
@@ -11,6 +12,7 @@ import {
 
 test("manages agents and connections through Sendero business actions", async () => {
   const home = await initHome();
+  await draftSendero("software-delivery", home);
   const node = await addAgentToSendero({
     home,
     senderoId: "software-delivery",
@@ -56,7 +58,7 @@ test("manages agents and connections through Sendero business actions", async ()
     agentId: "incident-responder",
   });
   expect(
-    (await getSenderoGraph("software-delivery", undefined, home))?.nodes.some(
+    (await getSenderoGraph("software-delivery", 2, home))?.nodes.some(
       (item) => item.id === node.agent.id,
     ),
   ).toBe(false);
@@ -64,6 +66,7 @@ test("manages agents and connections through Sendero business actions", async ()
 
 test("adding the first agent creates a complete one-agent Sendero", async () => {
   const home = await initHome();
+  await draftSendero("software-delivery", home);
   for (const agent of [
     "spec-partner",
     "craftsman-lead",
@@ -83,7 +86,7 @@ test("adding the first agent creates a complete one-agent Sendero", async () => 
     agentId: "incident-responder",
   });
   expect(added.connections).toHaveLength(2);
-  const graph = (await getSenderoGraph("software-delivery", undefined, home))!;
+  const graph = (await getSenderoGraph("software-delivery", 2, home))!;
   expect(graph.nodes.filter((node) => node.kind === "agent")).toHaveLength(1);
   expect(graph.edges).toHaveLength(2);
 });

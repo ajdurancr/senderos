@@ -21,15 +21,17 @@ function collect(directory: string) {
 
 collect(sourceRoot);
 
-const addedSourceFiles = new Set(
-  execFileSync('git', ['diff', '--name-only', '--diff-filter=A', 'origin/main...HEAD'], {
-    cwd: resolve(sourceRoot, '../..'),
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean)
-    .map((path) => resolve(sourceRoot, '../../..', path)),
-);
+// Explicit source snapshots and shallow checkouts can supply their real baseline.
+// Include staged and untracked implementation files, so local validation is as
+// strict as CI even before a commit has been made.
+const repositoryRoot = resolve(sourceRoot, '../../..');
+const base = process.env.SENDEROS_TEST_BASE_REF ?? 'origin/main';
+const gitFiles = (args: string[]) => execFileSync('git', args, { cwd: repositoryRoot, encoding: 'utf8' }).split('\n').filter(Boolean);
+const addedSourceFiles = new Set([
+  ...gitFiles(['diff', '--name-only', '--diff-filter=A', `${base}...HEAD`]),
+  ...gitFiles(['diff', '--name-only', '--diff-filter=A', 'HEAD']),
+  ...gitFiles(['ls-files', '--others', '--exclude-standard']),
+].map(path => resolve(repositoryRoot, path)));
 
 const missingSiblingTests = sourceFiles.filter((sourceFile) => {
   const source = readFileSync(sourceFile, 'utf8');

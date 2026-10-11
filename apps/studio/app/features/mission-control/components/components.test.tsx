@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AttemptInspector } from "./attempt-inspector";
 import { CommandPalette } from "./command-palette";
@@ -13,6 +13,8 @@ import { SenderoInspector } from "./sendero-inspector";
 import { AgentsView, AttentionView, EventsView, GoalsView, ReviewsView, RunsView, SettingsView } from "./workspace-views";
 import { fixtureTimestamp, missionControlFixture } from "../../../test-support/mission-control-fixture";
 import type { MissionControlData } from "../server";
+
+afterEach(cleanup);
 
 const now = fixtureTimestamp;
 const data = missionControlFixture;
@@ -73,7 +75,7 @@ describe("mission-control components", () => {
     inRouter(<OrchestrationCanvas data={data} projectId={goal.projectId} goalId={goal.id} />);
     expect(screen.getAllByText("Demo Sendero").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("Auto layout"));
-    const node = screen.getByLabelText("Inspect agent Agent One");
+    const node = screen.getByLabelText("Inspect agent Agent");
     fireEvent.pointerDown(node, { button: 1, pointerId: 1 });
     Object.assign(node, { setPointerCapture: () => undefined });
     fireEvent.pointerDown(node, { button: 0, pointerId: 2, clientX: 100, clientY: 100 });
@@ -144,16 +146,54 @@ describe("mission-control components", () => {
     expect(screen.getAllByText("Arc ID").length).toBeGreaterThan(0);
   });
 
+  it("renders draft workflow controls, completion policy, and lifecycle guidance", () => {
+    const published = data.senderoGraphs[0]!;
+    const draft = {
+      ...published,
+      version: { ...published.version, id: "version-draft", version: 2, status: "draft" as const },
+      edges: published.edges.map((edge) => ({
+        ...edge,
+        senderoVersionId: "version-draft",
+        conditionJson: JSON.stringify({ completion: { requireReview: true, evidenceKinds: ["test"] } }),
+      })),
+    };
+    const guided = {
+      ...data,
+      decisions: [{ goalId: goal.id, state: "blocked" as const, reason: "retry_limit_reached", nextAction: "increase_retry_budget", revision: 2, activations: [] }],
+      senderoGraphs: [draft],
+      draftGraphs: [draft],
+      historyGraphs: [published],
+    };
+    inRouter(<>
+      <SenderoInspector data={guided} senderoId={draft.sendero.id} edgeId={draft.edges[0]!.id} />
+      <ContextualInspector data={guided} goalId={goal.id} />
+    </>);
+    expect(screen.getByText("Validate & publish draft")).toBeTruthy();
+    expect(screen.getByLabelText(/Require approval/)).toBeTruthy();
+    expect(screen.getByDisplayValue("test")).toBeTruthy();
+    expect(screen.getByText(/retry limit reached/)).toBeTruthy();
+    expect(screen.getByText(/increase retry budget/)).toBeTruthy();
+  });
+
+  it("blocks publication while graph changes are unsaved", () => {
+    const published = data.senderoGraphs[0]!;
+    const draft = { ...published, version: { ...published.version, status: "draft" as const } };
+    inRouter(<SenderoInspector data={{ ...data, senderoGraphs: [draft] }} senderoId={draft.sendero.id} hasUnsavedGraph />);
+    expect(screen.getByRole("button", { name: "Validate & publish draft" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("status").textContent).toContain("Save or cancel graph changes");
+  });
+
   it("renders plural retry dispatch plans with resolved entities", () => {
     const dispatchable = {
+      activationId: "activation-1",
       goalId: goal.id,
       transitionId: data.transitions[0]!.id,
       agentId: agent.id,
-      previousRunId: run.id,
+      revision: 0, previousRunId: run.id,
     };
     inRouter(<DispatchTray data={{
       ...data,
-      queue: { ...data.queue, dispatchable: [dispatchable, { ...dispatchable, transitionId: "second" }] },
+      queue: { ...data.queue, dispatchable: [dispatchable, { ...dispatchable, activationId: "activation-2", transitionId: "second" }] },
     }} />);
     expect(screen.getByText("2 proposed actions")).toBeTruthy();
     expect(screen.getAllByText("retry")).toHaveLength(2);
@@ -164,7 +204,7 @@ describe("mission-control components", () => {
     const fallback: MissionControlData = {
       ...data,
       executionContexts: [], projects: [{ ...data.projects[0]!, id: "settings", name: "Settings project" }], goals: [], runs: [], attempts: [orphan], agents: [{ ...agent, description: "", defaultGoal: "" }], events: [{ ...data.events[0]!, id: "event", eventType: "run.started", entityType: "run", entityId: "missing", payload: {}, createdAt: now }],
-      queue: { reviews: [{ attempt: orphan, review: { status: "pending" } }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ goalId: "missing", transitionId: "missing", agentId: "missing", previousRunId: null }], blockedGoals: [] },
+      queue: { reviews: [{ attempt: orphan, review: { status: "pending" } }], activeRuns: [], failedAttempts: [orphan], staleAttempts: [orphan], dispatchable: [{ activationId: "activation-missing", goalId: "missing", transitionId: "missing", agentId: "missing", revision: 0, previousRunId: null }], blockedGoals: [] },
       runtime: { database: { endpoint: "db.example.test", remote: true, urlEnv: "URL", authTokenEnv: "TOKEN" } },
     };
     inRouter(<>

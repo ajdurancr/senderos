@@ -16,7 +16,7 @@
     "build:cli": "bun run --cwd packages/cli build",
     "build:studio": "bun run --cwd apps/studio build",
     "build:docs": "bun run --cwd apps/docs build",
-    "typecheck": "bun run typecheck:core && bun run typecheck:cli && bun run typecheck:studio && bun run typecheck:docs",
+    "typecheck": "bun run typecheck:core && bun run typecheck:cli && bun run typecheck:studio && bun run typecheck:docs && bun run typecheck:simulation",
     "typecheck:core": "bun run --cwd packages/core typecheck",
     "typecheck:cli": "bun run --cwd packages/cli typecheck",
     "typecheck:studio": "bun run --cwd apps/studio typecheck",
@@ -26,6 +26,8 @@
     "test:core": "bun run --cwd packages/core test",
     "test:cli": "bun run --cwd packages/cli test",
     "test:studio": "bun run --cwd apps/studio test",
-    "coverage": "bun scripts/run-workspace-coverage.ts"
+    "coverage": "bun scripts/run-workspace-coverage.ts",
+    "simulate:host": "bun scripts/external-host-simulation.ts",
+    "typecheck:simulation": "bun run --cwd packages/cli tsc -p ../../examples/external-host/tsconfig.json --noEmit"
   }
 }

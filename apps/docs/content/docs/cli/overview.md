@@ -14,14 +14,16 @@ The `senderos` CLI is the primary public operating surface. It is intentionally 
 | `doctor` | Validate config, storage, paths, schema, and harness readiness | No |
 | `status` | Summarize active goals, runs, and attempts | No |
 | `config` | Inspect or update runtime configuration | `set` only |
-| `project` | Register and manage repository records | `create`, `update` |
+| `db reset` | Rebuild the configured local database with a recovery backup | Exact interactive confirmation only |
+| `project` | Register repository or generic workspaces | `create`, `update` |
 | `goal` | Create and manage durable outcomes | Except `list`, `show` |
-| `agent` | Inspect persisted agent definitions | No |
+| `agent` | Author and inspect custom agents | `create`, `update`, `import` |
 | `transition` | Create and inspect allowed agent handoffs | `create` only |
-| `sendero` | Inspect Senderos and manage agents and connections through intent-level actions | `agent add/remove`, `connect`, `disconnect` |
-| `plan` | Return the next dispatchable work | No |
+| `sendero` | Create, import, edit, and publish directed workflows | Draft edits and publication |
+| `plan` | Explain and return eligible activations | May initialize/reconcile lifecycle state; never reserves or launches |
 | `run` | Dispatch, inspect, or cancel logical executions | `dispatch`, `cancel` |
-| `attempt` | Inspect and update concrete executions | `update` |
+| `host` | Register capabilities, grants, and local workspaces | Except `list`, `discover` |
+| `attempt` | Preflight, claim, start, report, and reconcile workers | Lifecycle operations and reports |
 
 ## Discover commands from the CLI
 
@@ -40,6 +42,9 @@ Help includes usage, arguments, options, subcommands, and agent-focused guidance
 
 Commands print JSON. That default is deliberate: host agents should consume stable fields and render a human explanation appropriate to their own surface.
 
+The interactive-only `db reset` maintenance command also prints its target and
+confirmation prompt on stderr. It is not suitable for unattended host operation.
+
 Errors are also emitted as JSON:
 
 ```json
@@ -48,21 +53,23 @@ Errors are also emitted as JSON:
 }
 ```
 
-A failed command sets a non-zero process exit code.
+Errors also include `schemaVersion`, `code`, `retryable`, and `nextAction`. A failed
+command sets a nonzero process exit code. Retryable database contention exits 75;
+retry the same mutation with its original request ID and unchanged inputs.
 
 ## Common operating sequence
 
-```bash
-senderos init --name "My development workspace" --approve
-senderos doctor
-senderos project create --canonical-path /repo --github-owner owner --github-repo repo
-senderos goal create --project-id <project-id> --title "Outcome" --kind feature
-senderos goal activate <goal-id>
-senderos plan
-senderos run dispatch --goal-id <goal-id> --transition-id <transition-id> --agent-id <agent-id>
-senderos attempt update <attempt-id> --status succeeded --result-json '{"verified":true}'
-senderos status
-```
+Follow [Quickstart](../../getting-started/quickstart) for the complete command sequence:
+
+1. initialize a runtime, register the project and host, and verify its workspace
+2. create/activate a goal with a published workflow
+3. plan, reserve an activation with a request ID, and preflight the chosen host
+4. claim, persist the fence, launch an independent worker, and record `attempt start`
+5. heartbeat, honor cancellation, and report results/evidence with the token
+6. ask Core again until completion or an explicit blocker
+
+For a complete local run without API keys, use `bun run simulate:host` from the
+source repository. It uses the same public CLI with independent worker processes.
 
 ## Global home selection
 

@@ -7,31 +7,29 @@ import {
 import { resolveExecutionContextId } from '@senderos/core';
 import type { IntegrationMode } from '@senderos/core';
 import { enumOption, optionString, requirePositional } from '../shared';
-const integrationModes = ['github_pr', 'local_merge'] as const satisfies readonly IntegrationMode[];
+const integrationModes = ['github_pr', 'local_merge', 'none'] as const satisfies readonly IntegrationMode[];
 
 const projectCreateHelp = {
   command: 'create',
   summary: 'Create a Senderos project.',
   agentDescription:
-    'Use this to register a repository as a Senderos-managed project. It persists canonical repo identity and setup details that later goals and runs depend on.',
+    'Register a workspace or project. GitHub and repository metadata are optional for non-software work.',
   usage: [
+    'senderos project create --name Research [--canonical-path /workspace]',
     'senderos project create --canonical-path /repo --github-owner owner --github-repo repo [--id senderos-ab12cd34] [--name senderos] [--target-branch main] [--integration-mode github_pr]',
   ],
   options: [
     {
       name: '--canonical-path',
-      description: 'Canonical local repository path.',
-      required: true,
+      description: 'Optional canonical workspace or repository path.',
     },
     {
       name: '--github-owner',
-      description: 'GitHub owner or organization.',
-      required: true,
+      description: 'Optional GitHub owner or organization; supply with --github-repo.',
     },
     {
       name: '--github-repo',
-      description: 'GitHub repository name.',
-      required: true,
+      description: 'Optional GitHub repository name; supply with --github-owner.',
     },
     { name: '--id', description: 'Optional explicit project id.' },
     { name: '--name', description: 'Optional project display name.' },
@@ -45,7 +43,7 @@ const projectCreateHelp = {
     },
     {
       name: '--integration-mode',
-      description: 'Integration mode. Defaults to github_pr.',
+      description: 'github_pr, local_merge, or none. Defaults to github_pr with GitHub metadata, otherwise none.',
     },
     {
       name: '--install-command',
@@ -102,7 +100,7 @@ export const projectCommandHelp = {
   command: 'project',
   summary: 'Create and manage Senderos projects.',
   agentDescription:
-    'Use the project command to manage the repository records that Senderos attaches goals and runs to. This surface is for project state only.',
+    'Use the project command to manage the workspace and repository records that Senderos attaches goals and runs to. This surface is for project state only.',
   usage: ['senderos project <create|list|show|update> ...'],
   subcommands: [
     projectCreateHelp,
@@ -134,9 +132,9 @@ function parseProjectCreateOptions(
     home,
     id: optionString(options.id),
     name: optionString(options.name),
-    canonicalPath: String(options['canonical-path'] ?? ''),
-    githubOwner: String(options['github-owner'] ?? ''),
-    githubRepo: String(options['github-repo'] ?? ''),
+    canonicalPath: optionString(options['canonical-path']),
+    githubOwner: optionString(options['github-owner']),
+    githubRepo: optionString(options['github-repo']),
     githubRemote: optionString(options['github-remote']),
     targetBranch: optionString(options['target-branch']),
     integrationMode: enumOption(optionString(options['integration-mode']), integrationModes, 'integration-mode'),

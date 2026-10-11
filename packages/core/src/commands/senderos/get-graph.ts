@@ -1,4 +1,5 @@
-import { asc, eq } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { asc, eq, inArray } from "drizzle-orm";
 
 import { openRuntimeDb } from "../../db/client";
 import {
@@ -6,6 +7,7 @@ import {
   senderoNodes,
   senderos,
   senderoVersions,
+  agents,
 } from "../../db/schema";
 import type {
   SenderoGraph,
@@ -40,7 +42,7 @@ export async function getSenderoGraph(
 
   if (!selected) return null;
 
-  return {
+  const graph: SenderoGraph = {
     sendero,
     version: selected,
     nodes: (await db
@@ -54,4 +56,18 @@ export async function getSenderoGraph(
       .where(eq(senderoEdges.senderoVersionId, selected.id))
       .orderBy(asc(senderoEdges.createdAt))) as SenderoGraph["edges"],
   };
+  // A draft version ID remains the same while its contents change. This token
+  // lets a human-facing client fence the exact definition it reviewed without
+  // requiring a separate mutable revision counter on every editing operation.
+  const agentIds = [...new Set(graph.nodes.flatMap(node => node.agentId ? [node.agentId] : []))];
+  const draftAgents = selected.status === "draft" && agentIds.length
+    ? await db.select({ id: agents.id, name: agents.name, status: agents.status, instructions: agents.definitionBody, metadata: agents.defaultMetaJson }).from(agents).where(inArray(agents.id, agentIds))
+    : [];
+  graph.revision = createHash("sha256").update(JSON.stringify({
+    version: graph.version,
+    nodes: [...graph.nodes].sort((a, b) => a.id.localeCompare(b.id)),
+    edges: [...graph.edges].sort((a, b) => a.id.localeCompare(b.id)),
+    draftAgents: draftAgents.sort((a, b) => a.id.localeCompare(b.id)),
+  })).digest("hex");
+  return graph;
 }
