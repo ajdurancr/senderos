@@ -12,11 +12,15 @@ export function scopedApi<T extends object>(api: T, executionContextId?: string)
       : value && typeof value === "object" ? scopedApi(value, executionContextId) : value,
   ])) as T;
 }
+/** Returns the explicitly selected API scope, falling back to the local runtime. */
+export function currentExecutionContextId(home?: string) {
+  const context = scopes.getStore();
+  return context ? context.executionContextId : home ? resolveExecutionContextId(home) : undefined;
+}
 export async function requireGoal(id: string, home?: string) {
   const db = openRuntimeDb(home);
   const goal = (await db.select().from(goals).where(eq(goals.id, id)))[0];
-  const context = scopes.getStore();
-  const executionContextId = context ? context.executionContextId : home ? resolveExecutionContextId(home) : undefined;
+  const executionContextId = currentExecutionContextId(home);
   const project = goal && (await db.select().from(projects).where(eq(projects.id, goal.projectId)))[0];
   requireLifecycle(goal && project && (!executionContextId || project.executionContextId === executionContextId),
     "NOT_FOUND", `Goal not found in the current execution context: ${id}`);

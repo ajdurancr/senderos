@@ -69,6 +69,9 @@ export function StudioLayout({
             <Link
               className={view === key ? "active" : ""}
               key={key}
+              aria-label={label}
+              title={label}
+              aria-current={view === key ? "page" : undefined}
               to={
                 key === "senderos" && data.senderoGraphs[0]
                   ? senderoPath(data.senderoGraphs[0].sendero.id)
@@ -87,6 +90,9 @@ export function StudioLayout({
           <p className="manage-label">Manage</p>
           <Link
             className={view === "settings" ? "active" : ""}
+            aria-label="Settings"
+            title="Settings"
+            aria-current={view === "settings" ? "page" : undefined}
             to={`/settings${search.size ? `?${search}` : ""}`}
           >
             <Icon name="settings" />

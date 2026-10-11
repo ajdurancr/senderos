@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "success": true,
+  "controllerPid": 17672,
+  "workerProcesses": 65,
+  "controllerCliProcesses": 421,
+  "cliProcesses": 549,
+  "assertionCount": 578,
+  "elapsedMs": 67094,
+  "scenarios": [
+    {
+      "name": "isolated-host-bootstrap",
+      "assertions": 3,
+      "details": {
+        "contexts": [
+          {
+            "id": "context-laptop-codex",
+            "hostId": "host-laptop-codex",
+            "harness": "simulated-codex",
+            "workspace": "/tmp/senderos-external-host-RRLe97/laptop-codex/workspace"
+          },
+          {
+            "id": "context-laptop-cursor",
+            "hostId": "host-laptop-cursor",
+            "harness": "simulated-cursor",
+            "workspace": "/tmp/senderos-external-host-RRLe97/laptop-cursor/workspace"
+          },
+          {
+            "id": "context-vps-shell",
+            "hostId": "host-vps-shell",
+            "harness": "simulated-shell",
+            "workspace": "/tmp/senderos-external-host-RRLe97/vps-shell/workspace"
+          }
+        ],
+        "sharedDatabase": "one local libSQL file",
+        "networkServices": [],
+        "apiKeysRequired": false
+      },
+      "elapsedMs": 1685
+    },
+    {
+      "name": "capability-and-workspace-preflight",
+      "assertions": 19,
+      "details": {
+        "missingCapability": "shell",
+        "missingSessionCapability": "independent_session",
+        "executingHost": "host-vps-shell"
+      },
+      "elapsedMs": 1859
+    },
+    {
+      "name": "process-contention-replay-and-start-contract",
+      "assertions": 18,
+      "details": {
+        "reservationWinners": 1,
+        "claimWinners": 1,
+        "workerPid": 19232,
+        "controllerPid": 17672
+      },
+      "elapsedMs": 1433
+    },
+    {
+      "name": "conditional-backedge-and-bounded-cycles",
+      "assertions": 51,
+      "details": {
+        "backedgeVisits": 4,
+        "boundedVisitsBeforeExplicitIncrease": 2
+      },
+      "elapsedMs": 4987
+    },
+    {
+      "name": "multi-context-fanout-and-explicit-join",
+      "assertions": 34,
+      "details": {
+        "branchPids": [
+          21423,
+          21525
+        ],
+        "branchHosts": [
+          "host-vps-shell",
+          "host-laptop-cursor"
+        ],
+        "joinActivations": 1
+      },
+      "elapsedMs": 3232
+    },
+    {
+      "name": "conditional-rejection-and-unselected-join-paths",
+      "assertions": 27,
+      "details": {
+        "unmatchedCompletionRejected": true,
+        "selectedBranches": 1,
+        "unselectedBranchesAwaited": 0
+      },
+      "elapsedMs": 2442
+    },
+    {
+      "name": "join-retry-and-completion-replay",
+      "assertions": 40,
+      "details": {
+        "failedAttempt": "attempt-e33a99d1-d21e-4f7d-ae8b-3825633f57a3",
+        "retryAttempt": "attempt-56c8520f-314d-4f71-9dd4-1eee6e2f3ca3",
+        "joinActivations": 1
+      },
+      "elapsedMs": 3655
+    },
+    {
+      "name": "nested-forks-convergence-and-join-generations",
+      "assertions": 225,
+      "details": {
+        "nestedCounts": {
+          "Complete outer": 1,
+          "Complete inner": 1,
+          "Complete outer-other": 1,
+          "Complete inner-a": 1,
+          "Complete inner-b": 1,
+          "Complete inner-join": 1,
+          "Complete outer-join": 1
+        },
+        "splitCounts": {
+          "Complete outer": 1,
+          "Complete splitter": 1,
+          "Complete exit-branch": 1,
+          "Complete leaf-a": 1,
+          "Complete leaf-b": 1,
+          "Complete aggregate": 1
+        },
+        "convergenceCounts": {
+          "Complete fork": 1,
+          "Complete a": 1,
+          "Complete b": 1,
+          "Complete merge": 2
+        },
+        "cycleCounts": {
+          "Complete fork": 2,
+          "Complete left": 2,
+          "Complete right": 2,
+          "Complete join": 2
+        },
+        "exitCounts": {
+          "Complete fork": 1,
+          "Complete a": 1,
+          "Complete b": 1
+        }
+      },
+      "elapsedMs": 21491
+    },
+    {
+      "name": "completion-evidence-and-publication-pinning",
+      "assertions": 28,
+      "details": {
+        "originalVersion": "sendero-version-b26819af-3c7a-488c-8dd1-e696877d4b15",
+        "newVersion": "sendero-version-801bc358-61f4-47b3-9da8-5e09e17bfd6c",
+        "gates": [
+          "test",
+          "review"
+        ]
+      },
+      "elapsedMs": 3142
+    },
+    {
+      "name": "crash-orphan-unknown-finished-and-fencing-recovery",
+      "assertions": 95,
+      "details": {
+        "realProcessKill": true,
+        "observedOutcomes": [
+          "active",
+          "missing",
+          "finished",
+          "unknown"
+        ],
+        "unrecordedLaunchBlockedUntilStopped": true,
+        "leasesExpiredWithoutClockMutation": true
+      },
+      "elapsedMs": 18830
+    },
+    {
+      "name": "grant-revocation-drains-owned-worker",
+      "assertions": 11,
+      "details": {
+        "newExecutionBlocked": true,
+        "existingWorkerFinishedWithoutLosingOwnership": true
+      },
+      "elapsedMs": 1390
+    },
+    {
+      "name": "worker-cancellation-acknowledgement",
+      "assertions": 25,
+      "details": {
+        "workerPids": [
+          34671,
+          34743
+        ],
+        "acknowledgedThroughHeartbeat": true
+      },
+      "elapsedMs": 2746
+    }
+  ],
+  "boundaries": {
+    "realCliProcesses": true,
+    "independentWorkerProcesses": true,
+    "physicalMachines": 1,
+    "sharedCoordinationDatabase": "local libSQL",
+    "sharedWorkerFilesRequired": false,
+    "modelCalls": 0,
+    "apiKeysRequired": false
+  }
+}

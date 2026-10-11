@@ -1,3 +1,4 @@
+import { startTestWorker } from '../test-support/worker';
 import { plan as nextPlan } from "../commands/planning/plan";
 import { expect, test } from 'bun:test';
 import {
@@ -35,10 +36,11 @@ test('a goal moves from approved intent to a persisted execution attempt', async
     },
     home,
   );
+  const claim = await startTestWorker(home, project.id, dispatched.attemptId, "/tmp/goal-lifecycle");
   expect(
     (await updateRunAttempt(
       dispatched.attemptId,
-      { status: 'succeeded', result: { validated: true } },
+      { status: 'succeeded', token: claim.token, result: { validated: true } },
       home,
     ))?.status,
   ).toBe('succeeded');

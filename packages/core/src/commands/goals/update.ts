@@ -26,6 +26,7 @@ export async function updateGoal(input: {
   requireLifecycle(input.senderoVersionId === undefined || (current.status === "draft"), "IMMUTABLE_WORKFLOW", "An activated goal cannot switch its pinned Sendero");
   const db = openRuntimeDb(input.home);
   requireLifecycle(input.title === undefined || input.title.trim().length > 0, 'INVALID_INPUT', 'Goal title must not be empty');
+  requireLifecycle(input.kind === undefined || (typeof input.kind === 'string' && input.kind.trim().length > 0), 'INVALID_INPUT', 'Goal kind must be a nonempty category');
   if (input.senderoVersionId) {
     const version = (await db.select().from(senderoVersions).where(eq(senderoVersions.id, input.senderoVersionId)))[0];
     requireLifecycle(version?.status === 'published', 'INVALID_WORKFLOW', 'Select a published Sendero version');

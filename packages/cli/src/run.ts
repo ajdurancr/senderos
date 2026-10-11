@@ -10,6 +10,7 @@ import { handleProject } from './commands/project';
 import { handleRun } from './commands/run';
 import { handleTransition } from './commands/transition';
 import { handleAttempt } from './commands/attempt';
+import { handleHost } from './commands/host';
 import { handleSystemCommand } from './commands/system';
 import { handleSendero } from './commands/sendero';
 import { resolveHelp } from './help';
@@ -47,7 +48,7 @@ export async function runCli(argv = process.argv.slice(2)) {
       case 'project':
         return await handleProject(sub, positionals, options, home);
       case 'agent':
-        return await handleAgent(sub, positionals, home);
+        return await handleAgent(sub, positionals, home, options);
       case 'transition':
         return await handleTransition(sub, positionals, options, home);
       case 'sendero':
@@ -58,6 +59,8 @@ export async function runCli(argv = process.argv.slice(2)) {
         return await handlePlan(options, home);
       case 'run':
         return await handleRun(sub, positionals, options, home);
+      case 'host':
+        return await handleHost(sub, positionals, options, home);
       case 'attempt':
         return await handleAttempt(sub, positionals, options, home);
       case 'doctor':

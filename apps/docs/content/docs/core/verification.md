@@ -38,7 +38,7 @@ Before merging a substantial Senderos change, run:
 bun run typecheck
 bun run test
 bun run build
-bun run --cwd packages/core coverage
+bun run coverage
 ```
 
 Core coverage requires at least 97% overall line and function coverage and 95% per file. The coverage script also verifies that implementation modules with exported behavior have colocated tests.

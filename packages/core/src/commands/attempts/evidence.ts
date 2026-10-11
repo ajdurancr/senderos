@@ -1,4 +1,6 @@
 import { requireAttempt } from "../../lifecycle/scope";
+import { withAttemptHostAccess } from "../../lifecycle/host-access";
+import { verifyOwner } from "../../lifecycle/hosts";
 import { runAttempts } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { settleGate } from "../../lifecycle/gates";
@@ -11,13 +13,14 @@ import type { AttemptEvidence, EvidenceKind } from "../../shared/types";
 
 export async function recordAttemptEvidence(input: {
   attemptId: string;
+  token?: string;
   kind: EvidenceKind;
   label: string;
   url?: string;
   summary?: string;
   home?: string;
 }) {
-  return atomic(input.home, async () => {
+  return withAttemptHostAccess(input.attemptId, input.token, input.home, () => atomic(input.home, async () => {
     const attempt = await requireAttempt(input.attemptId, input.home);
     requireLifecycle(
       ["test", "ci", "pull_request", "artifact", "manual"].includes(
@@ -35,6 +38,7 @@ export async function recordAttemptEvidence(input: {
       string,
       unknown
     >;
+    if (input.token !== undefined) await verifyOwner(input.attemptId, input.token, input.home, snapshot.completionRequested === true);
     const evidence = Array.isArray(snapshot.evidence)
       ? (snapshot.evidence as AttemptEvidence[])
       : [];
@@ -66,5 +70,5 @@ export async function recordAttemptEvidence(input: {
       item,
     );
     return item;
-  });
+  }));
 }

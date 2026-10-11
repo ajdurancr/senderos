@@ -1,50 +1,29 @@
 ---
 title: plan
-description: "Return the next dispatchable work items across Senderos without mutating execution state."
+description: "Explain durable activations and return eligible reservations without starting external work."
 ---
-
-`senderos plan` is the global planning command.
-
-It does **not** dispatch work.
-It returns only the next dispatchable items by default.
-
-## Actions
-
-- top-level only: `senderos plan`
-
-## Examples
 
 ```bash
 senderos plan
-senderos plan --goal-status active
+senderos plan --explain
+senderos goal explain <goal-id>
 senderos plan --goal-status active --goal-status failed
 senderos help plan
 ```
 
-## Output contract
+Planning is scoped to the configured execution context. It may initialize or
+reconcile durable lifecycle state; it never reserves an attempt, launches a worker,
+or performs the goal's external work.
 
-Each planning item currently returns only:
+Each ready item includes `goalId`, `activationId`, `transitionId`, `agentId`,
+`previousRunId`, and `revision`. One goal can produce multiple items after fan-out.
+Use the activation ID to select one and the revision to reject a stale decision
+when dispatching. Core still recomputes eligibility transactionally.
 
-- `goalId`
-- `transitionId`
-- `agentId`
-- `previousRunId`
+`--explain` and `goal explain` include non-ready state, blockers, and suggested next
+actions. An empty ready list does not mean completion: work may be owned, waiting
+for a join or evidence, out of retry/activation budget, canceled, or otherwise blocked.
+A failed attempt retries its existing activation; a backedge creates a new visit.
 
-This is intentionally minimal.
-The host agent uses those ids to decide whether to call `senderos run dispatch ...`.
-
-## Planning rules
-
-By default, Senderos only returns dispatchable items.
-That means it omits work that is still running or otherwise not ready for dispatch.
-
-A goal can be dispatchable when:
-
-- it is active and has no current run
-- its previous run succeeded and the next agent transition can be dispatched
-- its previous run failed and a retry is valid
-
-## Why there is no per-goal plan command
-
-Planning is intentionally global.
-The host agent asks Senderos what is dispatchable now, then dispatches each item separately.
+Cross-context hosts use explicit project grants and `host discover` to see their
+eligible assignments. A shared database does not grant unrestricted execution.

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openRuntimeDb } from "../db/client";
+import { atomic, openRuntimeDb } from "../db/client";
 import { agents, agentTransitions } from "../db/schema";
 import type {
   AgentKind,
@@ -67,6 +67,7 @@ export async function seedBuiltInAgents(
   home?: string,
   options: SeedAgentsOptions = {},
 ) {
+  return atomic(home, async () => {
   const db = openRuntimeDb(home);
   const seeded: AgentRecord[] = [];
   const definitionsDir = options.definitionsDir ?? builtInAgentSeedDir();
@@ -92,9 +93,18 @@ export async function seedBuiltInAgents(
       createdAt: raw.createdAt ?? ts,
       updatedAt: ts,
     };
-    const existing = (
+    const existing = ((
       await db.select().from(agents).where(eq(agents.slug, seed.slug))
-    )[0] as AgentRecord | undefined;
+    )[0] ?? (options.definitionsDir === undefined && seed.id
+      ? (await db.select().from(agents).where(eq(agents.id, seed.id)))[0]
+      : undefined)) as AgentRecord | undefined;
+    // Bundled definitions are first-install examples. Reinitialization must not undo authoring.
+    // An explicitly supplied directory is an intentional import and retains the upsert behavior.
+    if (existing && options.definitionsDir === undefined) {
+      await ensureDefaultTransition(db, existing);
+      seeded.push(existing);
+      continue;
+    }
     if (existing)
       await db
         .update(agents)
@@ -121,4 +131,5 @@ export async function seedBuiltInAgents(
     });
   }
   return seeded;
+  });
 }

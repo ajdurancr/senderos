@@ -1,4 +1,5 @@
-import { Form } from "react-router";
+import { GoalActivations, HostExecutionRecords } from "./execution-records";
+import { Form, useNavigation } from "react-router";
 
 import { StatusBadge } from "../../../components/status-badge";
 import {
@@ -15,25 +16,31 @@ export function ContextualInspector({
   data,
   goalId,
   agentId,
+  nodeId,
   attemptId,
   transitionId,
 }: {
   data: MissionControlData;
   goalId?: string;
   agentId?: string;
+  nodeId?: string;
   attemptId?: string;
   transitionId?: string;
 }) {
+  const pending = useNavigation().state !== "idle";
   const goal = data.goals.find((item) => item.id === goalId);
   if (!goal) return null;
   const execution = goalExecution(data, goal.id);
-  const attempt =
-    data.attempts.find((item) => item.id === attemptId) ??
-    execution.latestAttempt;
+  const senderoGraph = (data.historyGraphs ?? data.senderoGraphs).find(item => item.version.id === goal.senderoVersionId);
+  const selectedNode = senderoGraph?.nodes.find(node => node.id === nodeId);
+  const nodeActivationIds = new Set(data.activations?.filter(activation => activation.goalId === goal.id && activation.nodeId === nodeId).map(activation => activation.id));
+  const matchesSelection = (item: MissionControlData['attempts'][number]) =>
+    (!transitionId || item.transitionId === transitionId) && (!agentId || item.agentId === agentId) &&
+    (!nodeId || nodeActivationIds.has(execution.runs.find(run => run.id === item.runId)?.activationId ?? ''));
+  const attempt = attemptId
+    ? execution.attempts.find(item => item.id === attemptId && matchesSelection(item))
+    : execution.attempts.filter(matchesSelection).at(-1);
   const selectedTransitionId = transitionId ?? attempt?.transitionId;
-  const senderoGraph = (data.historyGraphs ?? data.senderoGraphs).find(
-    (item) => item.version.id === goal.senderoVersionId,
-  );
   const senderoEdge = senderoGraph?.edges.find(
     (item) => item.id === selectedTransitionId,
   );
@@ -41,7 +48,7 @@ export function ContextualInspector({
     (item) => item.id === selectedTransitionId,
   );
   const transition = senderoEdge ?? legacyTransition;
-  const sourceNode = senderoGraph?.nodes.find(
+  const sourceNode = selectedNode ?? senderoGraph?.nodes.find(
     (item) => item.id === senderoEdge?.sourceNodeId,
   );
   const agent = data.agents.find(
@@ -52,12 +59,17 @@ export function ContextualInspector({
         sourceNode?.agentId ??
         legacyTransition?.sourceAgentId),
   );
+  const objective = attempt?.executionObjective ?? sourceNode?.executionObjective ?? transition?.transitionObjective;
+  const goalDecision = data.decisions?.find(decision => decision.goalId === goal.id);
+  const selectedRun = execution.runs.find(run => run.id === attempt?.runId);
+  const attemptDecision = attempt && goalDecision?.activations.find(decision => decision.attemptId === attempt.id || Boolean(selectedRun?.activationId && decision.activationId === selectedRun.activationId));
+  const decision = attemptDecision || goalDecision;
   const snapshot = parseAttemptSnapshot(attempt?.statusSnapshotJson ?? "{}");
   const events = data.events
     .filter((event) =>
       [
         goal.id,
-        execution.latestRun?.id,
+        attempt?.runId,
         attempt?.id,
         agent?.id,
         transition?.id,
@@ -73,7 +85,7 @@ export function ContextualInspector({
       <header>
         <div>
           <span>
-            {agentId
+            {nodeId ? "Workflow node" : agentId
               ? "Agent inspector"
               : transitionId
                 ? "Sendero transition"
@@ -82,7 +94,7 @@ export function ContextualInspector({
                   : "Goal inspector"}
           </span>
           <h2>
-            {agentId
+            {nodeId ? selectedNode?.label ?? nodeId : agentId
               ? (agent?.name ?? agentId)
               : transitionId
                 ? (transition?.name ?? transitionId)
@@ -97,7 +109,8 @@ export function ContextualInspector({
         <span className="active">Execution context</span>
       </div>
       <section className="inspector-section">
-        {data.decisions?.filter(d => d.goalId === goal.id).map(d => <p key={d.goalId} role="status"><strong>{d.state}</strong> · {d.reason.replaceAll('_', ' ')}<br />Next: {d.nextAction.replaceAll('_', ' ')}</p>)}
+        {attemptId && !attempt && <p role="alert">This attempt does not match the selected goal or node, or is no longer available.</p>}
+        {decision && <p role="status"><small>{attemptDecision ? 'Selected activation' : 'Goal summary'}</small><br /><strong>{decision.state}</strong> · {decision.reason.replaceAll('_', ' ')}<br />Next: {decision.nextAction.replaceAll('_', ' ')}</p>}
         <div className="inspector-status">
           <StatusBadge value={attempt?.status ?? goal.status} />
           <span>
@@ -125,10 +138,11 @@ export function ContextualInspector({
               </div>
               <div>
                 <dt>Objective</dt>
-                <dd>{transition.transitionObjective}</dd>
+                <dd>{objective || "Not configured"}</dd>
               </div>
             </>
           )}
+          {!transition && objective && <div><dt>Objective</dt><dd>{objective}</dd></div>}
           <div>
             <dt>Agent</dt>
             <dd>{agent?.name ?? "Not selected"}</dd>
@@ -154,19 +168,24 @@ export function ContextualInspector({
             <dd>{relativeTime(attempt?.heartbeatAt)}</dd>
           </div>
         </dl>
+        {goal.status === 'draft' && <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id}/><button disabled={pending}>Start goal</button></Form>}
+        {data.queue.dispatchable.some(item => item.goalId === goal.id) && <a className="primary-action" href={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</a>}
         {attempt && !terminal && (
           <Form method="post">
             <input type="hidden" name="intent" value="stop" />
             <input type="hidden" name="runId" value={attempt.runId} />
-            <button className="danger-button">Stop execution</button>
+            <button disabled={pending} className="danger-button">Request stop</button>
           </Form>
         )}
       </section>
+      <GoalActivations data={data} goalId={goal.id} attemptId={attempt?.id} />
+      {attempt && <section className="inspector-section"><HostExecutionRecords data={data} attempt={attempt} /></section>}
       <section className="inspector-section">
         <header>
           <h3>Evidence & review</h3>
           <span>{snapshot.evidence?.length ?? 0} items</span>
         </header>
+        {terminal && <p>This attempt is finished. Its evidence and review are read-only.</p>}
         <div className="evidence-list">
           {snapshot.evidence?.map((item) => (
             <article key={item.id}>
@@ -181,16 +200,16 @@ export function ContextualInspector({
             <p>No evidence recorded for this attempt.</p>
           )}
         </div>
-        {attempt && (
+        {attempt && !terminal && (
           <Form className="compact-form" method="post">
             <input type="hidden" name="intent" value="evidence" />
             <input type="hidden" name="attemptId" value={attempt.id} />
             <input name="label" placeholder="Evidence label" required />
             <input name="url" placeholder="Optional URL" />
-            <button>Record evidence</button>
+            <button disabled={pending}>Record evidence</button>
           </Form>
         )}
-        {attempt && (
+        {attempt && !terminal && (
           <Form className="review-form" method="post">
             <input type="hidden" name="intent" value="review" />
             <input type="hidden" name="attemptId" value={attempt.id} />
@@ -202,7 +221,7 @@ export function ContextualInspector({
               </select>
               <input name="rationale" placeholder="Decision rationale" />
             </div>
-            <button>Record decision</button>
+            <button disabled={pending}>Record decision</button>
             {snapshot.review && (
               <p>
                 Current review:{" "}

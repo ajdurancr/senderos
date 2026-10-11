@@ -1,18 +1,26 @@
 ---
 title: project
-description: "Create, inspect, and update Senderos project records."
+description: "Create generic work areas or repository-backed projects for durable goals."
 ---
 
-`senderos project` manages the canonical project records that Senderos uses as the root of all goal and run state.
+A project groups related goals and provides optional workspace/repository metadata.
 
-A Senderos project combines:
+```bash
+senderos project create --name "Research program"
+senderos project create --canonical-path /repo --github-owner owner --github-repo repo
+senderos project list
+senderos project show <project-id>
+senderos project update <project-id> --name "Updated name"
+```
 
-- canonical local repository path
-- canonical GitHub repository identity
-- target branch
-- inferred setup commands
-- health state
+Generic projects need no repository, GitHub identity, or software command setup.
+They do not inherit the default software sendero: select a published workflow
+explicitly when creating their goals. Goal categories can also be domain-specific.
 
-If an explicit `--id` is not provided, Senderos derives a default project id from `package.json.name` when available.
+Repository-backed projects can record a canonical path, GitHub identity, target
+branch, integration mode, inferred commands, and health. None of those records
+creates a checkout or gives another host access to the canonical machine's files.
+Use explicit host grants and host-local workspace declarations for execution.
 
-Senderos needs a durable project record first so it can attach goals, runs, and planning state to a known repository boundary.
+An explicit `--id` is optional. For repository projects, a package name can provide
+a suggested ID. Inspect the created record and keep its returned stable ID.

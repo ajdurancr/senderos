@@ -13,14 +13,15 @@ Senderos plans work by:
 
 1. loading current goal state
 2. checking whether a goal is dispatchable now
-3. reading the goal's explicit execution cursor and pinned Sendero version
+3. reading the goal's durable activations and pinned Sendero version
 4. checking active ownership, completion gates, cancellation, and retry budget
-5. deriving the next transition/agent pair from the validated linear route
+5. deriving eligible activations from the validated directed graph
 6. returning a decision or minimal dispatch payload
 
 The current planning payload is:
 
 - `goalId`
+- `activationId`
 - `transitionId`
 - `agentId`
 - `previousRunId`
@@ -41,7 +42,7 @@ Senderos dispatches work in this order:
 3. reject a stale revision or mismatched optional assertions
 4. create a queued run and attempt
 5. persist its execution packet and unowned claim row
-6. advance the cursor revision
+6. advance the execution revision
 
 ## Dispatch rules
 
@@ -53,13 +54,15 @@ It checks:
 - agent-transition linkage
 - retry conditions
 - retry budget
-- current cursor revision
+- current execution revision
 - duplicate active work
 - pinned workflow validity and agent availability
 
 If those checks fail, Senderos rejects the dispatch instead of forcing execution.
 Dispatch means reservation, not host startup. A host claims the returned attempt,
-heartbeats its lease, and uses its fencing token for updates.
+records an independent session with `attempt start`, heartbeats its lease, and uses
+its fencing token for updates. Planning may initialize/reconcile lifecycle state;
+it never reserves or launches external execution.
 
 ## Why Senderos owns this logic
 

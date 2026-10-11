@@ -27,3 +27,15 @@ Large artifacts remain under the configured home:
 
 An attempt's `working_path` records the checkout selected by the host agent. It
 is audit metadata, not a Senderos-managed workspace.
+
+## Multiple contexts and hosts
+
+Contexts may share the coordination database. Each host still has its own runtime
+home, tools, and independently provisioned workspace. Register a distinct identity
+for each tool/machine, grant project access from the owning context, and declare
+the actual local path from the executing context. A workspace reference is not a
+file transfer, and no checkout or artifact synchronization happens automatically.
+
+Database scoping is a coordination boundary, not authentication. Treat database
+credentials as trusted access and protect them accordingly. Ordinary attempt
+inspection exposes safe ownership and lease metadata, never claim tokens.

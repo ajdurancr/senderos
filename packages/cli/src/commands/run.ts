@@ -20,7 +20,7 @@ export const runCommandHelp = {
       agentDescription:
         'Reserve exactly one planned step with a stable request id, then claim the returned attempt.',
       usage: [
-        'senderos run dispatch --goal-id <goal-id> --request-id <stable-id> [--expected-revision <revision>] [--transition-id <transition-id>] [--agent-id <agent-id>] [--working-path <path>]',
+        'senderos run dispatch --goal-id <goal-id> --request-id <stable-id> [--activation-id <activation-id>] [--expected-revision <revision>] [--transition-id <transition-id>] [--agent-id <agent-id>] [--working-path <path>]',
       ],
     },
     {
@@ -66,6 +66,7 @@ export async function handleRun(
             optionString(options['goal-id']),
             'goal id',
           ),
+          activationId: optionString(options['activation-id']),
           transitionId: optionString(options['transition-id']),
           agentId: optionString(options['agent-id']),
           requestId: optionString(options['request-id']),

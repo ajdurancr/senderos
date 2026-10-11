@@ -1,28 +1,36 @@
 import { DurableLink as Link } from "../../../components/durable-link";
-import { Form } from "react-router";
+import { Form, useNavigation } from "react-router";
 import { StatusBadge } from "../../../components/status-badge";
 import { eventLabel, relativeTime } from "../model";
 import { senderoPath } from "../navigation";
 import type { MissionControlData } from "../server";
 import { Icon } from "./icons";
+import { objectJson } from "../graph-authoring";
 
 export function SenderoInspector({
   data,
   senderoId,
   nodeId,
   edgeId,
+  hasUnsavedGraph = false,
 }: {
   data: MissionControlData;
   senderoId: string;
   nodeId?: string;
   edgeId?: string;
+  hasUnsavedGraph?: boolean;
 }) {
+  const pending = useNavigation().state !== "idle";
   const graph = data.senderoGraphs.find(
     (item) => item.sendero.id === senderoId,
   );
   if (!graph) return null;
   const node = graph.nodes.find((item) => item.id === nodeId);
   const edge = graph.edges.find((item) => item.id === edgeId);
+  const edgeSource = graph.nodes.find(item => item.id === edge?.sourceNodeId);
+  const legacyPolicy = edgeSource?.executionObjective === null;
+  const routingCondition = objectJson(edge?.conditionJson ?? "{}");
+  if (legacyPolicy) delete routingCondition.completion;
   const agent = data.agents.find((item) => item.id === node?.agentId);
   const events = data.events
     .filter((event) =>
@@ -61,11 +69,13 @@ export function SenderoInspector({
             Version {graph.version.version} · {graph.version.status}
           </span>
         </div>
+        {hasUnsavedGraph && <p role="status">Save or cancel graph changes before publishing or editing this inspector.</p>}
         <dl className="property-list">
           <Form method="post">
             <input type="hidden" name="intent" value={graph.version.status === 'draft' ? 'publish-sendero' : 'draft-sendero'} />
             <input type="hidden" name="senderoId" value={graph.sendero.id} />
-            <button>{graph.version.status === 'draft' ? 'Validate & publish draft' : 'Create editable draft'}</button>
+            {graph.version.status === "draft" && <><input type="hidden" name="expectedVersionId" value={graph.version.id} /><input type="hidden" name="expectedRevision" value={graph.revision ?? ""} /></>}
+            <button disabled={pending || hasUnsavedGraph}>{graph.version.status === 'draft' ? 'Validate & publish draft' : 'Create editable draft'}</button>
           </Form>
           <div>
             <dt>Sendero ID</dt>
@@ -126,22 +136,24 @@ export function SenderoInspector({
             </>
           )}
         </dl>
-        {node && (
-          <Form className="compact-form" method="post">
+        {node && graph.version.status === "draft" && (
+          <Form key={`${node?.id ?? edge?.id}:${graph.revision ?? "legacy"}`} className="compact-form" method="post">
             <input type="hidden" name="intent" value="update-sendero-node" />
             <input type="hidden" name="nodeId" value={node.id} />
+            <input type="hidden" name="expectedRevision" value={graph.revision ?? ""} />
             <input
               name="label"
               defaultValue={node.label}
               aria-label="Node label"
             />
-            <button>Save node</button>
+            <button disabled={pending || hasUnsavedGraph}>Save node</button>
           </Form>
         )}
         {edge && graph.version.status === 'draft' && (
-          <Form className="compact-form" method="post">
+          <Form key={`${node?.id ?? edge?.id}:${graph.revision ?? "legacy"}`} className="compact-form" method="post">
             <input type="hidden" name="intent" value="update-sendero-edge" />
             <input type="hidden" name="edgeId" value={edge.id} />
+            <input type="hidden" name="expectedRevision" value={graph.revision ?? ""} />
             <input name="name" defaultValue={edge.name} aria-label="Arc name" />
             <input
               name="description"
@@ -159,9 +171,10 @@ export function SenderoInspector({
               <option value="disabled">Disabled</option>
               <option value="archived">Archived</option>
             </select>
-            <button>Save arc</button>
-            <label><input type="checkbox" name="requireReview" defaultChecked={JSON.parse(edge.conditionJson).completion?.requireReview ?? false} /> Require approval</label>
-            <label>Required evidence kinds (comma separated)<input name="evidenceKinds" defaultValue={(JSON.parse(edge.conditionJson).completion?.evidenceKinds ?? []).join(', ')} /></label>
+            <label>Routing condition JSON<textarea name="conditionJson" defaultValue={JSON.stringify(routingCondition)} /><small>Use an outcome condition here. Completion gates are configured separately.</small></label>
+            <button disabled={pending || hasUnsavedGraph}>Save arc</button>
+            {legacyPolicy ? <><label><input type="checkbox" name="requireReview" defaultChecked={(objectJson(edge.conditionJson).completion as { requireReview?: boolean } | undefined)?.requireReview ?? false} /> Require approval</label>
+            <label>Required evidence kinds (comma separated)<input name="evidenceKinds" defaultValue={((objectJson(edge.conditionJson).completion as { evidenceKinds?: string[] } | undefined)?.evidenceKinds ?? []).join(', ')} /></label></> : <p>Execution objectives and completion gates belong to the source node. Edit them in the graph editor.</p>}
           </Form>
         )}
       </section>

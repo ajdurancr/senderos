@@ -7,11 +7,15 @@ describe("mission-control model helpers", () => {
   it("parses snapshots defensively", () => {
     expect(parseAttemptSnapshot('{"review":{"status":"approved"}}')).toEqual({ review: { status: "approved" } });
     expect(parseAttemptSnapshot("not-json")).toEqual({});
+    expect(parseAttemptSnapshot("null")).toEqual({});
+    expect(parseAttemptSnapshot("[]")).toEqual({});
+    expect(parseAttemptSnapshot('{"evidence":[null,{"id":"bad"}],"review":"invalid"}')).toEqual({ evidence: [], review: undefined });
   });
 
   it("formats every relative-time range and event labels", () => {
     const now = Date.parse("2026-09-17T12:00:00Z");
     expect(relativeTime(undefined, now)).toBe("Never");
+    expect(relativeTime("not-a-date", now)).toBe("Unknown");
     expect(relativeTime("2026-09-17T11:59:30Z", now)).toBe("30s ago");
     expect(relativeTime("2026-09-17T11:30:00Z", now)).toBe("30m ago");
     expect(relativeTime("2026-09-17T09:00:00Z", now)).toBe("3h ago");

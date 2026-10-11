@@ -1,7 +1,7 @@
 # Senderos CLI
 
 The `senderos` command-line interface is the local control surface for the
-Senderos engineering orchestration platform.
+Senderos persistent orchestration platform for user-defined agents and workflows.
 
 ## Requirements
 

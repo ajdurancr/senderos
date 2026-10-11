@@ -1,14 +1,9 @@
 /** A harness identifier. Senderos preserves custom values for forward compatibility. */
 export type HarnessKind = string;
 export type ProjectStatus = "healthy" | "setup_failed" | "broken" | "archived";
-export type IntegrationMode = "github_pr" | "local_merge";
-export type GoalKind =
-  | "feature"
-  | "bugfix"
-  | "refactor"
-  | "maintenance"
-  | "security"
-  | "migration";
+export type IntegrationMode = "github_pr" | "local_merge" | "none";
+/** User-defined work categories; bundled software categories are examples. */
+export type GoalKind = string;
 export type GoalStatus =
   | "draft"
   | "active"
@@ -137,6 +132,8 @@ export type SenderoEdgeRecord = Omit<typeof senderoEdges.$inferSelect, "status">
   status: AgentTransitionStatus;
 };
 export interface SenderoGraph {
+  /** Content fence returned by Core; optional only for older client fixtures. */
+  revision?: string;
   sendero: SenderoRecord;
   version: SenderoVersionRecord;
   nodes: SenderoNodeRecord[];

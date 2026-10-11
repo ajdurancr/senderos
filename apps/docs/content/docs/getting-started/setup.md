@@ -1,16 +1,16 @@
 ---
 title: Install & configure
-description: "Run the current Senderos release from source, initialize its runtime home, and verify that storage and harness detection are healthy."
+description: "Run the Senderos implementation from source, initialize its runtime home, and verify that storage and harness detection are healthy."
 ---
 
-Senderos currently runs from its Bun monorepo. It is not yet published as a registry package, so commands in these docs use the CLI TypeScript entry point directly. This is the supported, honest path for `v0.1`.
+These instructions run the selected source checkout directly. Published registry versions may expose a different contract; use the checked-out CLI consistently when evaluating these graph and host features.
 
 ## Prerequisites
 
 - [Bun](https://bun.sh/) `1.3` or newer
 - Git
 - a host-agent environment such as OpenClaw, Codex, Claude Code, Cursor, or another harness
-- a repository you want Senderos to coordinate
+- a goal or workspace to coordinate; repository integration is optional
 
 ## Install from source
 
@@ -20,18 +20,19 @@ cd senderos
 bun install
 ```
 
-For shorter commands during evaluation, define a shell-local alias:
+For shorter commands that keep working after you change directories, define a shell-local function:
 
 ```bash
-alias senderos='bun run packages/cli/src/index.ts'
+SENDEROS_SOURCE="$PWD"
+senderos() { bun run "$SENDEROS_SOURCE/packages/cli/src/index.ts" "$@"; }
 senderos help
 ```
 
-The alias is only a convenience. It does not install or modify Senderos globally.
+The function is only a convenience. It does not install or modify Senderos globally.
 
 ## Preview initialization
 
-Senderos keeps its own state in a runtime home. From the repository you want to operate, first preview the configuration with the shell alias created above:
+Senderos keeps its own state in a runtime home. From the workspace you want to operate, first preview the configuration with the shell function created above:
 
 ```bash
 senderos init \

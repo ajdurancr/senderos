@@ -25,3 +25,12 @@ test('goal command rejects unknown actions and cross-context goal access', async
     handleGoal('activate', ['goal', 'activate', 'goal-missing'], {}, home),
   ).rejects.toThrow('Goal not found in the current execution context');
 });
+
+test('goal CLI accepts user-defined categories for non-software objectives', async () => {
+  const { createProject } = await import('@senderos/core');
+  const home = await initHome();
+  const project = await createProject({ home, name: 'Research' });
+  expect(await handleGoal('create', [], { 'project-id': project.id, title: 'Explore sources', kind: 'research' }, home)).toMatchObject({ kind: 'research' });
+  expect(await handleGoal('create', [], { 'project-id': project.id, title: 'Plan next steps' }, home)).toMatchObject({ kind: 'task', senderoVersionId: null });
+  await expect(handleGoal('create', [], { 'project-id': project.id, title: 'Invalid kind', kind: ' ' }, home)).rejects.toThrow('nonempty');
+});

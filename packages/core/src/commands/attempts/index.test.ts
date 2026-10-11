@@ -1,3 +1,4 @@
+import { startTestWorker } from '../../test-support/worker';
 import { plan as nextPlan } from "../planning/plan";
 import { expect, test } from "bun:test";
 import { activateGoal, createGoal } from "../../index";
@@ -34,6 +35,7 @@ test("attempt commands read and update a dispatched attempt", async () => {
     home,
   );
 
+  const claim = await startTestWorker(home, project.id, dispatched.attemptId);
   expect(await listRunAttempts(dispatched.runId, home)).toHaveLength(1);
   expect((await getRunAttempt(dispatched.attemptId, home))?.id).toBe(
     dispatched.attemptId,
@@ -42,7 +44,7 @@ test("attempt commands read and update a dispatched attempt", async () => {
     (
       await updateRunAttempt(
         dispatched.attemptId,
-        { checkpoint: "verified" },
+        { checkpoint: "verified", token: claim.token },
         home,
       )
     )?.checkpoint,

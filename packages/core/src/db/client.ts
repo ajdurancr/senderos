@@ -40,12 +40,23 @@ export async function atomic<T>(home: string | undefined, work: () => Promise<T>
     if (current.home !== home) throw new Error("Cannot mix runtimes in one transaction");
     return work();
   }
-  const db = connectRuntimeDb(home);
-  try {
-    return await db.transaction((tx) => transactions.run(
-      { db: tx as unknown as RuntimeDb, home }, work,
-    ), { behavior: "immediate" });
-  } finally { db.$client.close(); }
+  // A shared file can have independent CLI writers. Retry only rolled-back lock
+  // contention, yielding the event loop so an in-process owner can commit too.
+  const deadline = Date.now() + 5000;
+  let delay = 5;
+  for (;;) {
+    const db = connectRuntimeDb(home);
+    try {
+      return await db.transaction((tx) => transactions.run(
+        { db: tx as unknown as RuntimeDb, home }, work,
+      ), { behavior: "immediate" });
+    } catch (error) {
+      const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
+      if (!code?.startsWith("SQLITE_BUSY") || Date.now() >= deadline) throw error;
+    } finally { db.$client.close(); }
+    await new Promise(resolve => setTimeout(resolve, delay));
+    delay = Math.min(delay * 2, 100);
+  }
 }
 
 export function describeCurrentDb(home?: string) {

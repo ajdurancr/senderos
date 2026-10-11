@@ -6,12 +6,21 @@ export type AttemptSnapshot = {
 };
 
 export function parseAttemptSnapshot(value: string): AttemptSnapshot {
-  try { return JSON.parse(value) as AttemptSnapshot; }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const snapshot = parsed as AttemptSnapshot;
+    return {
+      evidence: Array.isArray(snapshot.evidence) ? snapshot.evidence.filter(item => item && typeof item.id === 'string' && typeof item.label === 'string' && typeof item.kind === 'string') : undefined,
+      review: snapshot.review && typeof snapshot.review === 'object' && typeof snapshot.review.status === 'string' ? snapshot.review : undefined,
+    };
+  }
   catch { return {}; }
 }
 
 export function relativeTime(value?: string | null, now = Date.now()) {
   if (!value) return "Never";
+  if (!Number.isFinite(new Date(value).getTime())) return "Unknown";
   const seconds = Math.max(0, Math.floor((now - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);

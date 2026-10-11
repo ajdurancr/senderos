@@ -1,3 +1,4 @@
+import { completionPolicy, jsonObject } from "./definition-input";
 import { requireDraft } from "../../lifecycle/versions";
 import { eq } from "drizzle-orm";
 
@@ -9,9 +10,11 @@ import type { AgentTransitionStatus } from "../../shared/types";
 
 export async function updateSenderoEdge(input: {
   id: string;
+  expectedRevision?: string;
   name?: string;
   description?: string;
   transitionObjective?: string;
+  condition?: Record<string, unknown>;
   completion?: { requireReview?: boolean; evidenceKinds?: string[] };
   status?: AgentTransitionStatus;
   home?: string;
@@ -24,9 +27,11 @@ export async function updateSenderoEdge(input: {
 
   if (!edge) throw new Error(`Sendero edge not found: ${input.id}`);
 
-  await requireDraft(edge.senderoVersionId, input.home);
+    await requireDraft(edge.senderoVersionId, input.home, input.expectedRevision);
+  const condition = jsonObject(input.condition ?? edge.conditionJson, 'Connection condition');
+  if (input.completion !== undefined) condition.completion = completionPolicy(input.completion);
   const changes = {
-    conditionJson: input.completion === undefined ? edge.conditionJson : JSON.stringify({ completion: input.completion }),
+    conditionJson: JSON.stringify(condition),
     name: input.name ?? edge.name,
     description: input.description ?? edge.description,
     transitionObjective: input.transitionObjective ?? edge.transitionObjective,

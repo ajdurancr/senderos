@@ -1,3 +1,4 @@
+import { startTestWorker } from '../test-support/worker';
 import { expect, test } from 'bun:test';
 import { createSenderos, createGoal, activateGoal, dispatchRun } from '../index';
 import { initHome, createProjectFixture } from '../test-support/runtime';
@@ -20,7 +21,7 @@ test('context boundaries apply to every execution mutation and host resume', asy
   await admin.commands.senderos.publish('software-delivery');
   expect((await admin.commands.goals.explain(goal.id)).state).toBe('running');
   await admin.commands.goals.setRetryBudget(goal.id, 4);
-  const claim = await admin.commands.attempts.claim({ attemptId: run.attemptId, ownerId: 'host' });
+  const claim = await startTestWorker(home, project.id, run.attemptId);
   await admin.commands.attempts.heartbeat({ attemptId: run.attemptId, token: claim.token });
   await admin.commands.attempts.abandon({ attemptId: run.attemptId, confirmedStopped: true, reason: 'Stopped' });
 });

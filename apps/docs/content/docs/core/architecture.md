@@ -19,19 +19,21 @@ human or automation
 ```
 
 The runtime is the source of truth for projects, goals, agent definitions,
-transitions, runs, attempts, evidence, review decisions, and events. The CLI is
-the machine-readable control surface. Studio uses `createSenderos({ home })`,
-with `SENDEROS_HOME` when set.
+transitions, activations, runs, attempts, host ownership, evidence, review decisions,
+and events. The CLI is the machine-readable control surface. Studio uses the shared
+`SENDEROS_DATABASE_URL` environment configuration and an all-context Core facade;
+its reviewed dispatch actions validate the requested context/project scope.
 
-Studio is an operational Mission Control, not a workflow builder. Its primary
-surface is a decision queue: dispatchable goals, failed or stale attempts, and
-evidence awaiting a review decision. A goal view keeps outcome-level state
-separate from its logical runs and concrete attempts. Attempt evidence and review
-decisions are persisted in the attempt status snapshot and mirrored in the
-append-only event stream.
+Studio combines agent and graph authoring with operational Mission Control. Draft
+graphs are validated and published through Core. Decision queues show ready
+activations, failed or blocked work, and evidence awaiting review. Goal views keep
+branch visits separate from logical runs and concrete attempts. Attempt evidence
+and review decisions are persisted in the attempt status snapshot and mirrored in
+the append-only event stream.
 
-The host agent performs product-code work. Senderos records harness, session,
-and working-path metadata on attempts, but does not launch or manage that work.
+External hosts perform the configured work. Senderos checks declared capabilities,
+workspace grants, ownership and independent-session start records, but does not
+launch workers, inspect processes, transfer files, or execute tools.
 
 ## Runtime layout
 

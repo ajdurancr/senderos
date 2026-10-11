@@ -110,7 +110,7 @@ try {
   mkdirSync(installRoot);
   writeFileSync(join(installRoot, "package.json"), '{"private":true}');
   const install = Bun.spawnSync(
-    ["bun", "add", join(packageCheckRoot, packResult.filename)],
+    ["bun", "add", `../${packResult.filename}`],
     { cwd: installRoot, env: testEnvironment },
   );
   invariant(install.exitCode === 0, `Packed CLI installation failed:\n${install.stderr.toString()}`);

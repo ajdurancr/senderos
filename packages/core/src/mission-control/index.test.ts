@@ -1,3 +1,4 @@
+import { startTestWorker } from '../test-support/worker';
 import { expect, test } from 'bun:test';
 
 import { createSenderos } from '../index';
@@ -42,7 +43,9 @@ test('Mission Control retries a failed execution and stops the new execution', a
   const started = await senderos.missionControl.startGoal({ goalId: goal.id });
   const firstAttempt = started.attempts[0]!;
 
+  const claim = await startTestWorker(home, project.id, firstAttempt.id);
   await senderos.commands.attempts.update(firstAttempt.id, {
+    token: claim.token,
     status: 'failed',
     failureSummary: 'Validation failed.',
   });
@@ -107,7 +110,9 @@ test('the shared façade exposes every generic command family', async () => {
   expect(
     (await senderos.commands.attempts.resume(dispatched.attemptId)).attempt.id,
   ).toBe(dispatched.attemptId);
+  const claim = await startTestWorker(home, project.id, dispatched.attemptId);
   await senderos.commands.attempts.update(dispatched.attemptId, {
+    token: claim.token,
     checkpoint: 'checked',
   });
   expect(
@@ -125,8 +130,8 @@ test('the shared façade exposes every generic command family', async () => {
     })).status,
   ).toBe('approved');
   expect((await senderos.commands.status()).activeRuns).toBe(1);
-  expect((await senderos.commands.runs.cancel(dispatched.runId))?.status).toBe(
-    'canceled',
-  );
+  expect((await senderos.commands.runs.cancel(dispatched.runId))?.status).toBe('executing');
+  expect((await senderos.commands.goals.get(goal.id))?.status).toBe('blocked');
+  await senderos.commands.attempts.update(dispatched.attemptId, { token: claim.token, status: 'canceled' });
   expect((await senderos.commands.goals.cancel(goal.id))?.status).toBe('canceled');
 });

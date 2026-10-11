@@ -32,7 +32,7 @@ A goal records the requested outcome, its kind, intake context, specification, a
 
 Activation is the explicit signal that the goal is ready for planning.
 
-## 3. Plan without side effects
+## 3. Discover eligible activations
 
 `senderos plan` reads current state and selects the next valid agent transition for each dispatchable goal. It returns identifiers—not an execution session:
 
@@ -45,7 +45,8 @@ Activation is the explicit signal that the goal is ready for planning.
 }
 ```
 
-Planning is read-only. The response includes a cursor revision; `--explain`
+Planning may initialize or reconcile durable lifecycle state. It does not reserve
+or launch work. The response includes an activation ID and revision; `--explain`
 also returns non-ready goals with a reason and next action. Repeating planning
 without a state change does not create duplicate runs.
 
@@ -63,7 +64,9 @@ Dispatch still does not edit code. It creates the durable contract for an extern
 The host claims the attempt first. Core returns a time-limited lease, fencing
 token, and execution packet containing the selected instructions, objective,
 completion policy, goal context, prior result/evidence, and workspace references.
-The host then starts or resumes work in its own environment. That host owns:
+The host first verifies capabilities and its explicitly granted local workspace.
+It starts an independent worker and records distinct worker/parent session IDs
+through `attempt start`; a claim alone is not a started session. That host owns:
 
 - model and session management;
 - repository and worktree operations;
@@ -83,7 +86,8 @@ Evidence is attached to the exact attempt it supports. A review decision can the
 
 Terminal attempt updates finalize the surrounding run and affect goal planning:
 
-- a successful step advances the explicit cursor or completes the goal;
+- a successful activation enables all matching outcome edges, waits for an explicit
+  fork-paired join when configured, or contributes to goal completion;
 - a failed run retries the same step within its configured budget;
 - a blocked goal waits for external context;
 - cancellation ends the selected goal or run explicitly;

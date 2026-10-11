@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { atomic, openRuntimeDb } from "../../db/client";
-import { goals, runs, runAttempts, attemptClaims, goalExecutions } from "../../db/schema";
+import { activations, goals, runs, runAttempts, attemptClaims, goalExecutions } from "../../db/schema";
 import { requireGoal } from "../../lifecycle/scope";
 import { requireLifecycle } from "../../lifecycle/errors";
 import { terminal } from "../../lifecycle/state";
@@ -13,6 +13,10 @@ export async function cancelGoal(id: string, home?: string) {
     requireLifecycle(goal.status !== "completed", "TERMINAL_GOAL", "Completed goals cannot be canceled");
     if (goal.status === "canceled") return getGoal(id, home);
     const db = openRuntimeDb(home); const ts = now(); let pending = false;
+    await db.update(goalExecutions).set({ cancellationRequestedAt: ts }).where(eq(goalExecutions.goalId, id));
+    for (const activation of await db.select().from(activations).where(eq(activations.goalId, id))) {
+      if (["ready", "failed", "blocked", "waiting_join"].includes(activation.status)) await db.update(activations).set({ status: "canceled", reason: null, revision: activation.revision + 1, updatedAt: ts }).where(eq(activations.id, activation.id));
+    }
     for (const run of await db.select().from(runs).where(eq(runs.goalId, id))) {
       if (terminal(run.status)) continue;
       for (const attempt of await db.select().from(runAttempts).where(eq(runAttempts.runId, run.id))) {
@@ -25,6 +29,7 @@ export async function cancelGoal(id: string, home?: string) {
         } else {
           await db.update(runAttempts).set({ status: "canceled", finishedAt: ts, updatedAt: ts }).where(eq(runAttempts.id, attempt.id));
           await db.update(runs).set({ status: "canceled", updatedAt: ts }).where(eq(runs.id, run.id));
+          if (run.activationId) await db.update(activations).set({ status: "canceled", reason: null, updatedAt: ts }).where(eq(activations.id, run.activationId));
         }
       }
     }

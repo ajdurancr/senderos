@@ -22,9 +22,9 @@ import {
   updateRunAttempt,
 } from '@senderos/core';
 import { cancelRun, dispatchRun, resumeAttempt } from '@senderos/core';
-import { createProjectFixture, initHome } from '../test-support/runtime';
+import { createProjectFixture, initLegacyHome as initHome } from '../test-support/runtime';
 
-describe('goal orchestration runtime model', () => {
+describe('legacy goal orchestration runtime model', () => {
   test('manages goals, transitions, runs, attempts, planning, and status', async () => {
     const home = await initHome();
     const project = await createProjectFixture(home);
@@ -92,7 +92,7 @@ describe('goal orchestration runtime model', () => {
     const attempt = (await getAttempt(dispatched.attemptId, home))!;
     expect((await resumeAttempt(attempt.id, home)).attempt.id).toBe(attempt.id);
     await expect(resumeAttempt('missing', home)).rejects.toThrow(
-      'Run attempt not found',
+      'Attempt not found in the current execution context',
     );
     expect(
       (await updateRunAttempt(
@@ -109,7 +109,7 @@ describe('goal orchestration runtime model', () => {
       ))?.failureStep,
     ).toBe('test');
     await expect(updateRunAttempt('missing', {}, home)).rejects.toThrow(
-      'Run attempt not found',
+      'Attempt not found in the current execution context',
     );
     expect(await listRunAttempts(dispatched.runId, home)).toHaveLength(1);
     expect((await status(home)).activeGoalIds).toContain(goal.id);

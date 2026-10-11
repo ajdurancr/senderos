@@ -5,8 +5,8 @@ export function assertConnectedSendero(
   edges: Pick<SenderoEdgeRecord, "sourceNodeId" | "targetNodeId">[],
 ) {
   const start = graph.nodes.find((node) => node.kind === "start");
-  const end = graph.nodes.find((node) => node.kind === "end");
-  if (!start || !end) throw new Error("Sendero must have start and end boundaries");
+  const ends = graph.nodes.filter((node) => node.kind === "end");
+  if (!start || !ends.length) throw new Error("Sendero must have start and end boundaries");
 
   const reachable = new Set([start.id]);
   let changed = true;
@@ -25,7 +25,7 @@ export function assertConnectedSendero(
   if (unreachable.length)
     throw new Error(`Connection would make agents unreachable: ${unreachable.map((node) => node.label).join(", ")}`);
 
-  const reachesEnd = new Set([end.id]);
+  const reachesEnd = new Set(ends.map(node => node.id));
   changed = true;
   while (changed) {
     changed = false;

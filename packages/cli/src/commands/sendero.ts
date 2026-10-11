@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
 import {
+  newSendero,
+  importSendero,
+  replaceSenderoDraft,
   addAgentToSendero,
   connectSenderoAgents,
   disconnectSenderoAgents,
@@ -20,10 +24,13 @@ export const senderoCommandHelp = {
   summary: 'Inspect and change versioned Senderos through intent-level actions.',
   agentDescription:
     'Use these commands to express graph intent. Refer to agents by slug or ID and to boundary nodes as start or end. Do not attempt low-level node or edge updates.',
-  usage: ['senderos sendero <list|show|draft|publish|policy|version|agent|connect|disconnect> ...'],
+  usage: ['senderos sendero <create|import|replace|list|show|draft|publish|policy|version|agent|connect|disconnect> ...'],
   subcommands: [
+    { command: 'create', summary: 'Create a new editable Sendero.', usage: ['senderos sendero create --slug research --name Research [--description ...] [--max-activations 100]'] },
+    { command: 'import', summary: 'Import a new graph from JSON as a draft.', usage: ['senderos sendero import --file sendero.json'] },
+    { command: 'replace', summary: 'Replace a draft topology atomically.', usage: ['senderos sendero replace <sendero> --file graph.json --expected-version-id <version-id> [--expected-revision <revision>]'] },
     { command: 'draft', summary: 'Create or reuse an editable copy of the published version.', usage: ['senderos sendero draft <sendero>'] },
-    { command: 'publish', summary: 'Validate and publish the current draft.', usage: ['senderos sendero publish <sendero>'] },
+    { command: 'publish', summary: 'Validate and publish the current draft.', usage: ['senderos sendero publish <sendero> [--expected-version-id <version-id>] [--expected-revision <revision>]'] },
     { command: 'policy', summary: 'Set completion gates on an agent in the draft.', usage: ['senderos sendero policy <sendero> --agent <agent> [--require-review] [--evidence-kind test]'] },
     { command: 'list', summary: 'List Senderos.', usage: ['senderos sendero list'] },
     {
@@ -43,7 +50,7 @@ export const senderoCommandHelp = {
       command: 'agent',
       summary: 'Add or remove an agent from a Sendero.',
       usage: [
-        'senderos sendero agent add <sendero-id-or-slug> <agent-id-or-slug> [--from <agent>] [--to <agent>] [--label <label>]',
+        'senderos sendero agent add <sendero-id-or-slug> <agent-id-or-slug> [--from <agent>] [--to <agent>] [--label <label>] [--objective <text>] [--require-capability <name>] [--evidence-kind artifact]',
         'senderos sendero agent remove <sendero-id-or-slug> <agent-id-or-slug>',
       ],
       subcommands: [
@@ -54,7 +61,7 @@ export const senderoCommandHelp = {
     {
       command: 'connect',
       summary: 'Connect two nodes in a Sendero.',
-      usage: ['senderos sendero connect <sendero> --from <agent> --to <agent>'],
+      usage: ['senderos sendero connect <sendero> --from <node> --to <node> [--condition \'{"outcome":"accepted"}\']'],
     },
     {
       command: 'disconnect',
@@ -78,8 +85,19 @@ export async function handleSendero(
   home: string,
 ) {
   switch (subcommand) {
+    case 'create': return newSendero({ home, slug: option(options, 'slug', true)!, name: option(options, 'name', true)!, description: option(options, 'description'), maxActivations: options['max-activations'] === undefined ? undefined : Number(options['max-activations']) });
+    case 'import': {
+      const input = JSON.parse(readFileSync(option(options, 'file', true)!, 'utf8'));
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Sendero definition must be a JSON object');
+      return importSendero({ ...input, home });
+    }
+    case 'replace': {
+      const input = JSON.parse(readFileSync(option(options, 'file', true)!, 'utf8'));
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Sendero definition must be a JSON object');
+      return replaceSenderoDraft({ ...input, senderoId: requirePositional(positionals[2], 'sendero'), expectedVersionId: option(options, 'expected-version-id', true)!, expectedRevision: option(options, 'expected-revision'), home });
+    }
     case 'draft': return draftSendero(requirePositional(positionals[2], 'sendero'), home);
-    case 'publish': return publishSendero(requirePositional(positionals[2], 'sendero'), home);
+    case 'publish': return publishSendero(requirePositional(positionals[2], 'sendero'), home, option(options, 'expected-version-id'), option(options, 'expected-revision'));
     case 'policy': return setCompletionPolicy({ senderoId: requirePositional(positionals[2], 'sendero'), agent: option(options, 'agent', true)!, requireReview: options['require-review'] === true, evidenceKinds: optionStrings(options['evidence-kind']) }, home);
     case 'list':
       return listSenderos(home);
@@ -98,7 +116,13 @@ export async function handleSendero(
       const senderoId = requirePositional(positionals[3], 'sendero id or slug');
       const agentId = requirePositional(positionals[4], 'agent id or slug');
       if (action === 'add')
-        return addAgentToSendero({ senderoId, agentId, from: option(options, 'from'), to: option(options, 'to'), label: option(options, 'label'), home });
+        return addAgentToSendero({
+          senderoId, agentId, from: option(options, 'from'), to: option(options, 'to'), label: option(options, 'label'),
+          executionObjective: option(options, 'objective'),
+          completion: options['require-review'] === undefined && options['evidence-kind'] === undefined ? undefined : { requireReview: options['require-review'] === true, evidenceKinds: optionStrings(options['evidence-kind']) },
+          requirements: options['require-capability'] === undefined ? undefined : optionStrings(options['require-capability']),
+          home,
+        });
       if (action === 'remove') return removeAgentFromSendero({ senderoId, agentId, home });
       throw new Error('Unknown sendero agent action');
     }
@@ -107,6 +131,7 @@ export async function handleSendero(
         senderoId: requirePositional(positionals[2], 'sendero id or slug'),
         from: option(options, 'from', true)!,
         to: option(options, 'to', true)!,
+        condition: options.condition === undefined ? undefined : JSON.parse(option(options, 'condition', true)!),
         home,
       });
     case 'disconnect':

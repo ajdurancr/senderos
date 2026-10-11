@@ -5,6 +5,7 @@ import { listRunAttempts } from '../commands/attempts/list';
 import { plan } from '../commands/planning/plan';
 import { status } from '../commands/system/status';
 import type { AttemptReview } from '../shared/types';
+import { goalActivations } from '../lifecycle/activations';
 import { explainGoal } from '../lifecycle/state';
 
 export async function missionControlOverview(home?: string, executionContextId?: string) {
@@ -21,6 +22,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
     status: await status(home, executionContextId),
     projects: await listProjects(home, executionContextId),
     goals,
+    activations: (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat(),
     runs,
     attempts,
     decisions,

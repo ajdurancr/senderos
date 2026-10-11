@@ -10,6 +10,9 @@ describe('cli help metadata', () => {
     );
     expect(resolveHelp('transition').command).toBe('transition');
     expect(resolveHelp('sendero').subcommands?.map((x) => x.command)).toEqual([
+      'create',
+      'import',
+      'replace',
       'draft',
       'publish',
       'policy',

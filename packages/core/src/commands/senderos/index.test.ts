@@ -1,3 +1,4 @@
+import { startTestWorker } from '../../test-support/worker';
 import { expect, test } from "bun:test";
 import { draftSendero } from '../../lifecycle/versions';
 
@@ -36,12 +37,13 @@ test("built-in Sendero is connected, versioned, and reusable", async () => {
         graph.nodes.some((node) => node.id === edge.targetNodeId),
     ),
   ).toBe(true);
+  const draft = (await draftSendero(graph!.sendero.id, home))!;
+  await expect(updateSenderoNode({ home, id: graph!.nodes[1]!.id, label: "Published edit" })).rejects.toThrow("immutable");
   await updateSenderoNode({
     home,
-    id: graph!.nodes[1]!.id,
+    id: draft.nodes[1]!.id,
     label: "Refine intent",
   });
-  const draft = (await draftSendero(graph!.sendero.id, home))!;
   await updateSenderoEdge({
     home,
     id: draft.edges[1]!.id,
@@ -97,7 +99,8 @@ test("Sendero layout is durable and runs reference the assigned version", async 
   );
   const run = await getRun(dispatched.runId, home);
   expect(run?.senderoVersionId).toBe(graph.version.id);
-  await updateRunAttempt(dispatched.attemptId, { status: "succeeded" }, home);
+  const firstClaim = await startTestWorker(home, project.id, dispatched.attemptId);
+  await updateRunAttempt(dispatched.attemptId, { status: "succeeded", token: firstClaim.token }, home);
   const second = (await plan({ home }))[0]!;
   expect(second.agentId).toBe(
     graph.nodes.find((item) => item.label === "Frame handoff")!.agentId!,
@@ -106,6 +109,7 @@ test("Sendero layout is durable and runs reference the assigned version", async 
     { ...second, previousRunId: second.previousRunId ?? undefined },
     home,
   );
-  await updateRunAttempt(secondRun.attemptId, { status: "failed" }, home);
+  const secondClaim = await startTestWorker(home, project.id, secondRun.attemptId);
+  await updateRunAttempt(secondRun.attemptId, { status: "failed", token: secondClaim.token }, home);
   expect((await plan({ home }))[0]?.transitionId).toBe(second.transitionId);
 });

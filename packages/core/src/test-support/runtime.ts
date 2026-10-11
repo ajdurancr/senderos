@@ -1,4 +1,6 @@
 import { afterEach } from 'bun:test';
+import { openRuntimeDb } from '../db/client';
+import { senderoVersions } from '../db/schema';
 import {
   existsSync,
   mkdtempSync,
@@ -82,6 +84,13 @@ export async function initHome(config?: SenderosConfig) {
   const databaseUrl = `file:${join(home, 'senderos.db')}`;
   process.env[runtimeConfig.database.urlEnv] = databaseUrl;
   await initializeRuntime(home, runtimeConfig);
+  return home;
+}
+
+/** Explicit fixture for the pre-upgrade reporting contract. Never used by production initialization. */
+export async function initLegacyHome(config?: SenderosConfig) {
+  const home = await initHome(config);
+  await openRuntimeDb(home).update(senderoVersions).set({ protocolVersion: 1 });
   return home;
 }
 

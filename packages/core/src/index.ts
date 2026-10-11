@@ -1,10 +1,13 @@
 export * from './shared/types';
-export { explainGoal, setRetryBudget } from './lifecycle/state';
-export { claimAttempt, heartbeatAttempt, abandonAttempt } from './lifecycle/hosts';
+export * from './lifecycle/host-registry';
+export { goalActivations } from './lifecycle/activations';
+import { registerHost, listHosts, grantHostWorkspace, declareHostWorkspace, hostPreflight, discoverHostAttempts } from './lifecycle/host-registry';
+export { explainGoal, setRetryBudget, setActivationBudget } from './lifecycle/state';
+export { claimAttempt, heartbeatAttempt, abandonAttempt, startAttempt, reconcileAttempt } from './lifecycle/hosts';
 export { draftSendero, publishSendero, editableGraph, setCompletionPolicy } from './lifecycle/versions';
 export { LifecycleError } from './lifecycle/errors';
-import { explainGoal, setRetryBudget } from './lifecycle/state';
-import { claimAttempt, heartbeatAttempt, abandonAttempt } from './lifecycle/hosts';
+import { explainGoal, setRetryBudget, setActivationBudget } from './lifecycle/state';
+import { claimAttempt, heartbeatAttempt, abandonAttempt, startAttempt, reconcileAttempt } from './lifecycle/hosts';
 import { draftSendero, publishSendero, setCompletionPolicy } from './lifecycle/versions';
 import { scopedApi } from './lifecycle/scope';
 export * from './shared/config';
@@ -22,6 +25,7 @@ export {
 } from './mission-control';
 
 import {
+  createAgent, updateAgent, upsertAgent, newSendero, importSendero, replaceSenderoDraft, dispatchReviewed,
   activateGoal,
   cancelGoal,
   cancelRun,
@@ -57,7 +61,7 @@ import {
 } from './commands';
 import { updateSenderoEdge } from './internal/senderos/update-edge';
 import { updateSenderoNode } from './internal/senderos/update-node';
-import { updateSenderoNodePosition } from './internal/senderos/update-node-position';
+import { updateSenderoNodePosition, updateSenderoLayout } from './internal/senderos/update-node-position';
 import {
   listSenderoGraphs,
   missionControlGoal,
@@ -75,6 +79,14 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
     : input.executionContextId ?? resolveExecutionContextId(home);
   return scopedApi({
     commands: {
+      hosts: {
+        register: (value: Parameters<typeof registerHost>[0]) => registerHost(value, home),
+        list: () => listHosts(home),
+        grant: (value: Parameters<typeof grantHostWorkspace>[0]) => grantHostWorkspace(value, home),
+        workspace: (value: Parameters<typeof declareHostWorkspace>[0]) => declareHostWorkspace(value, home),
+        preflight: (value: Parameters<typeof hostPreflight>[0]) => hostPreflight(value, home),
+        discover: (id: string) => discoverHostAttempts(id, home),
+      },
       projects: {
         create: (value: Parameters<typeof createProject>[0]) =>
           createProject({ ...value, home, executionContextId }),
@@ -88,6 +100,7 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
       },
       goals: {
         explain: (id: string) => explainGoal(id, home),
+        setActivationBudget: (id: string, maxActivations: number) => setActivationBudget(id, maxActivations, home),
         setRetryBudget: (id: string, maxAttempts: number) => setRetryBudget(id, maxAttempts, home),
         create: (value: Parameters<typeof createGoal>[0]) =>
           createGoal({ ...value, home, executionContextId }),
@@ -99,6 +112,7 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
           updateGoal({ ...value, home }),
       },
       runs: {
+        dispatchReviewed: (value: Parameters<typeof dispatchReviewed>[0]) => dispatchReviewed(value, home),
         dispatch: (value: Parameters<typeof dispatchRun>[0]) =>
           dispatchRun(value, home),
         get: (id: string) => getRun(id, home, executionContextId),
@@ -106,6 +120,8 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         cancel: (id: string) => cancelRun(id, home),
       },
       attempts: {
+        start: (value: Parameters<typeof startAttempt>[0]) => startAttempt(value, home),
+        reconcile: (value: Parameters<typeof reconcileAttempt>[0]) => reconcileAttempt(value, home),
         abandon: (value: Parameters<typeof abandonAttempt>[0]) => abandonAttempt(value, home),
         claim: (value: Parameters<typeof claimAttempt>[0]) => claimAttempt(value, home),
         heartbeat: (value: Parameters<typeof heartbeatAttempt>[0]) => heartbeatAttempt(value, home),
@@ -120,12 +136,18 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         resume: (id: string) => resumeAttempt(id, home),
       },
       agents: {
+        create: (value: Parameters<typeof createAgent>[0]) => createAgent({ ...value, home }),
+        update: (value: Parameters<typeof updateAgent>[0]) => updateAgent({ ...value, home }),
+        upsert: (value: Parameters<typeof upsertAgent>[0]) => upsertAgent({ ...value, home }),
         list: () => listAgents(home),
         transitions: () => listAgentTransitions(home),
       },
       senderos: {
+        create: (value: Parameters<typeof newSendero>[0]) => newSendero({ ...value, home }),
+        import: (value: Parameters<typeof importSendero>[0]) => importSendero({ ...value, home }),
+        replaceDraft: (value: Parameters<typeof replaceSenderoDraft>[0]) => replaceSenderoDraft({ ...value, home }),
         draft: (id: string) => draftSendero(id, home),
-        publish: (id: string) => publishSendero(id, home),
+        publish: (id: string, expectedVersionId?: string, expectedRevision?: string) => publishSendero(id, home, expectedVersionId, expectedRevision),
         setCompletionPolicy: (value: Parameters<typeof setCompletionPolicy>[0]) =>
           setCompletionPolicy(value, home),
         list: () => listSenderos(home),
@@ -154,6 +176,8 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
           updateSenderoNode({ ...value, home }),
         updateEdge: (value: Omit<Parameters<typeof updateSenderoEdge>[0], 'home'>) =>
           updateSenderoEdge({ ...value, home }),
+        updateLayout: (value: Omit<Parameters<typeof updateSenderoLayout>[0], 'home'>) =>
+          updateSenderoLayout({ ...value, home }),
         updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
           updateSenderoNodePosition({ ...value, home }),
       },

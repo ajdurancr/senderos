@@ -5,7 +5,9 @@ description: "Install portable, configuration-agnostic guidance for discovering 
 
 `senderos bootstrap-agent-skill` prints or installs a small, portable skill that explains what Senderos is and directs people or agents to discover current workflows and actions through CLI help.
 
-The skill contains no harness, home path, runtime configuration, project layout, or command sequence. It does not initialize or configure Senderos.
+The skill explains the portable host protocol without assuming a specific harness,
+home path, account, or execution environment. It does not initialize or configure
+Senderos or install a scheduler.
 
 ## Preview the generated skill
 
@@ -24,7 +26,10 @@ senderos bootstrap-agent-skill \
 
 The default output path is `./.agents/skills/senderos/SKILL.md`, following the shared agent-skill convention. Existing files are protected unless `--force` is supplied.
 
-The installed skill directs its user to resolve the latest published Senderos CLI once at the beginning of each session with `bunx --bun senderos@latest --help`, then reuse that resolved version for the rest of the session.
+The installed skill directs its user to inspect the selected CLI build once per
+session and reuse it. For published packages, use `bunx --bun senderos@latest --help`
+once. For a source checkout or unreleased change, use that checked-out CLI instead
+of silently switching to a different published version.
 
 ## Options
 

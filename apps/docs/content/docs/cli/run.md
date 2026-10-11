@@ -16,7 +16,7 @@ description: "Dispatch, inspect, and cancel Senderos runs."
 ## Examples
 
 ```bash
-senderos run dispatch --goal-id <goal-id> --request-id <stable-request-id> --expected-revision <revision>
+senderos run dispatch --goal-id <goal-id> --activation-id <activation-id> --request-id <stable-request-id> --expected-revision <revision>
 senderos run list
 senderos run show run-014
 senderos run state <goal-id>
@@ -25,7 +25,7 @@ senderos run cancel run-014
 
 ## `dispatch`
 
-`dispatch` atomically reserves the next Core-approved step. It does not start an
+`dispatch` atomically reserves one Core-approved activation. It does not start an
 external agent session.
 
 Pass a stable `--request-id` so an ambiguous response can be replayed without
@@ -40,7 +40,9 @@ It returns only minimal dispatch result data such as:
 - `runId`
 - `attemptId`
 
-The host must claim `attemptId` before launching real work.
+The host must pass preflight and claim `attemptId` before launching real work, then
+record the independent worker session with `attempt start`. Supply `--activation-id`
+when a goal has several eligible branches; Core does not guess which one you meant.
 
 ## Why it matters
 

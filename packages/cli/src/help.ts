@@ -8,6 +8,7 @@ import { planCommandHelp } from './commands/plan';
 import { projectCommandHelp } from './commands/project';
 import { runCommandHelp } from './commands/run';
 import { attemptCommandHelp } from './commands/attempt';
+import { hostCommandHelp } from './commands/host';
 import { systemCommandsHelp } from './commands/system';
 import { agentCommandHelp } from './commands/agent';
 import { transitionCommandHelp } from './commands/transition';
@@ -52,6 +53,7 @@ export const rootHelp: CommandHelp = {
     planCommandHelp,
     runCommandHelp,
     attemptCommandHelp,
+    hostCommandHelp,
     ...systemCommandsHelp,
   ],
 };

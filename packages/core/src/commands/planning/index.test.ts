@@ -1,3 +1,4 @@
+import { startTestWorker } from '../../test-support/worker';
 import { expect, test } from 'bun:test';
 import { createGoal, activateGoal } from '../goals';
 import { updateRunAttempt } from '../attempts';
@@ -13,11 +14,13 @@ test('planner skips drafts, advances successes and retries the same failed step'
   expect(await plan({ home })).toHaveLength(1);
   const run = await dispatchRun({ goalId: goal.id }, home);
   expect(await plan({ home })).toHaveLength(0);
-  await updateRunAttempt(run.attemptId, { status: 'succeeded' }, home);
+  const firstClaim = await startTestWorker(home, project.id, run.attemptId);
+  await updateRunAttempt(run.attemptId, { status: 'succeeded', token: firstClaim.token }, home);
   const next = (await plan({ home }))[0]!;
   expect(next.agentId).not.toBe(first.agentId);
   const second = await dispatchRun({ goalId: goal.id }, home);
-  await updateRunAttempt(second.attemptId, { status: 'failed' }, home);
+  const secondClaim = await startTestWorker(home, project.id, second.attemptId);
+  await updateRunAttempt(second.attemptId, { status: 'failed', token: secondClaim.token }, home);
   expect((await plan({ home }))[0]?.transitionId).toBe(next.transitionId);
 });
 test('unassigned goals cannot silently use unrelated global transitions', async () => {

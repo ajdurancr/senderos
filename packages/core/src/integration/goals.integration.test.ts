@@ -1,3 +1,4 @@
+import { startTestWorker } from '../test-support/worker';
 import { plan as nextPlan } from "../commands/planning/plan";
 import { describe, expect, test } from 'bun:test';
 import {
@@ -40,6 +41,8 @@ describe('goal orchestration', () => {
       },
       home,
     );
+    expect((await getAttempt(dispatched.attemptId, home))?.workingPath).toBeNull();
+    await startTestWorker(home, project.id, dispatched.attemptId, "/tmp/project");
     expect((await getAttempt(dispatched.attemptId, home))?.workingPath).toBe(
       '/tmp/project',
     );
