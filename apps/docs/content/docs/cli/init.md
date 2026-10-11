@@ -5,6 +5,10 @@ description: "Create the Senderos runtime directory, configuration, and initial 
 
 `senderos init` is a two-step bootstrap command.
 
+Initialization writes `config.json` from the proposed configuration. To rebuild
+an existing local database while preserving customized configuration bytes, use
+the interactive [`db reset`](../db/) command instead, after stopping all writers.
+
 On first run, it previews the exact configuration Senderos will use and requires explicit approval before it creates anything.
 
 ## What it does

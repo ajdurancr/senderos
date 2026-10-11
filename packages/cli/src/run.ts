@@ -2,6 +2,7 @@ import { parseArgs } from './args';
 import { resolveHome } from './shared';
 import { handleBootstrapAgentSkill } from './commands/bootstrap-agent-skill';
 import { handleConfig } from './commands/config';
+import { handleDatabase } from './commands/db';
 import { handleGoal } from './commands/goal';
 import { handleInit } from './commands/init';
 import { handleAgent } from './commands/agent';
@@ -45,6 +46,8 @@ export async function runCli(argv = process.argv.slice(2)) {
         return await handleBootstrapAgentSkill(options);
       case 'config':
         return await handleConfig(sub, positionals, home);
+      case 'db':
+        return await handleDatabase(sub, positionals, options, home);
       case 'project':
         return await handleProject(sub, positionals, options, home);
       case 'agent':

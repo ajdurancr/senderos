@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url';
 
 import { openRuntimeDb } from './client';
 
-export async function migrateRuntimeDb(home?: string) {
+export function runtimeMigrationsFolder() {
   const moduleDirectory = dirname(fileURLToPath(import.meta.url));
   const packagedMigrations = resolve(moduleDirectory, 'drizzle');
   const sourceMigrations = resolve(moduleDirectory, '../../drizzle');
-  await migrate(openRuntimeDb(home), {
-    migrationsFolder: existsSync(packagedMigrations)
-      ? packagedMigrations
-      : sourceMigrations,
-  });
+  return existsSync(packagedMigrations) ? packagedMigrations : sourceMigrations;
+}
+
+export async function migrateRuntimeDb(home?: string) {
+  await migrate(openRuntimeDb(home), { migrationsFolder: runtimeMigrationsFolder() });
 }

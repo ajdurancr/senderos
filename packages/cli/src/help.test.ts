@@ -24,6 +24,7 @@ describe('cli help metadata', () => {
       'disconnect',
     ]);
     expect(resolveHelp('plan').summary).toContain('dispatchable');
+    expect(resolveHelp('db', 'reset').agentDescription).toContain('no --yes or --force');
     expect(resolveHelp('run').subcommands?.map((x) => x.command)).toContain(
       'dispatch',
     );

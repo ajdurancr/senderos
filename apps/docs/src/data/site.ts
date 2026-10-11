@@ -53,6 +53,7 @@ export const NAVIGATION: { section: string; items: NavItem[] }[] = [
       { slug: 'cli/bootstrap-agent-skill', title: 'bootstrap-agent-skill', description: 'Generate a host-agent operator skill.', section: 'CLI reference' },
       { slug: 'cli/doctor', title: 'doctor', description: 'Validate runtime and harness readiness.', section: 'CLI reference' },
       { slug: 'cli/config', title: 'config', description: 'Inspect and update configuration.', section: 'CLI reference' },
+      { slug: 'cli/db', title: 'db', description: 'Confirm and rebuild a local database.', section: 'CLI reference' },
       { slug: 'cli/project', title: 'project', description: 'Register repository boundaries.', section: 'CLI reference' },
       { slug: 'cli/goal', title: 'goal', description: 'Create and manage durable outcomes.', section: 'CLI reference' },
       { slug: 'cli/agent', title: 'agent', description: 'Author and inspect custom agent definitions.', section: 'CLI reference' },

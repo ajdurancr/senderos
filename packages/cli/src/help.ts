@@ -2,6 +2,7 @@ import type { CommandHelp } from '@senderos/core';
 
 import { bootstrapAgentSkillCommandHelp } from './commands/bootstrap-agent-skill';
 import { configCommandHelp } from './commands/config';
+import { dbCommandHelp } from './commands/db';
 import { goalCommandHelp } from './commands/goal';
 import { initCommandHelp } from './commands/init';
 import { planCommandHelp } from './commands/plan';
@@ -45,6 +46,7 @@ export const rootHelp: CommandHelp = {
     initCommandHelp,
     bootstrapAgentSkillCommandHelp,
     configCommandHelp,
+    dbCommandHelp,
     projectCommandHelp,
     agentCommandHelp,
     transitionCommandHelp,

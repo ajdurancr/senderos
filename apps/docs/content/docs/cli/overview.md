@@ -14,6 +14,7 @@ The `senderos` CLI is the primary public operating surface. It is intentionally 
 | `doctor` | Validate config, storage, paths, schema, and harness readiness | No |
 | `status` | Summarize active goals, runs, and attempts | No |
 | `config` | Inspect or update runtime configuration | `set` only |
+| `db reset` | Rebuild the configured local database with a recovery backup | Exact interactive confirmation only |
 | `project` | Register repository or generic workspaces | `create`, `update` |
 | `goal` | Create and manage durable outcomes | Except `list`, `show` |
 | `agent` | Author and inspect custom agents | `create`, `update`, `import` |
@@ -40,6 +41,9 @@ Help includes usage, arguments, options, subcommands, and agent-focused guidance
 ## Output contract
 
 Commands print JSON. That default is deliberate: host agents should consume stable fields and render a human explanation appropriate to their own surface.
+
+The interactive-only `db reset` maintenance command also prints its target and
+confirmation prompt on stderr. It is not suitable for unattended host operation.
 
 Errors are also emitted as JSON:
 

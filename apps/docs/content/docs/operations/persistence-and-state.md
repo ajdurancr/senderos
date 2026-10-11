@@ -17,7 +17,7 @@ for both local and remote connections.
 Large artifacts remain under the configured home:
 
 ```text
-~/.senderos/
+./.senderos/
   config.json
   senderos.db
   artifacts/
@@ -39,3 +39,12 @@ file transfer, and no checkout or artifact synchronization happens automatically
 Database scoping is a coordination boundary, not authentication. Treat database
 credentials as trusted access and protect them accordingly. Ordinary attempt
 inspection exposes safe ownership and lease metadata, never claim tokens.
+
+## Local database reset
+
+For an intentional fresh start, `senderos db reset --home /absolute/path/.senderos`
+reads the configured URL, previews the exact local target and requires terminal
+confirmation. Stop all writers first. The command clears every context in that
+file, restores the selected context and built-in seeds, and retains a private
+recovery backup. Config, repositories and artifact files are not cleared. See
+[the reset operator guide](../../cli/db/) for safeguards and recovery limits.

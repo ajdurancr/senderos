@@ -15,6 +15,7 @@ export * from './commands';
 export * from './shared/harness';
 export { databaseConnectionFromEnvironment, describeCurrentDb } from './db/client';
 export { prepareSharedDatabase } from './db/bootstrap';
+export { previewLocalDatabaseReset, resetLocalDatabase, type LocalDatabaseResetPreview } from './db/reset';
 export { listEvents } from './shared/events';
 export {
   missionControlGoal,

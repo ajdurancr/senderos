@@ -136,6 +136,45 @@ try {
     "Installed CLI did not return the canonical Senderos skill.",
   );
 
+  // Exercise migration/seed discovery from the installed tarball, not source imports.
+  const installedHome = join(packageCheckRoot, 'installed-runtime');
+  const installedEnvironment = {
+    ...testEnvironment,
+    SENDEROS_DATABASE_URL: `file:${join(installedHome, 'senderos.db')}`,
+  };
+  const installedBinary = join(installRoot, 'node_modules/.bin/senderos');
+  const invokeInstalled = (args: string[]) => {
+    const result = Bun.spawnSync([installedBinary, ...args, '--home', installedHome], {
+      cwd: installRoot, env: installedEnvironment, timeout: 10_000,
+    });
+    invariant(result.exitCode === 0, `Installed CLI command failed:\n${result.stderr.toString()}`);
+    return JSON.parse(result.stdout.toString());
+  };
+  invokeInstalled(['init', '--name', 'Installed reset smoke', '--harness', 'codex', '--approve']);
+  invokeInstalled(['project', 'create', '--name', 'Disposable package project']);
+  const originalConfig = readFileSync(join(installedHome, 'config.json'));
+  let resetOutput = '';
+  let confirmed = false;
+  const reset = Bun.spawn([installedBinary, 'db', 'reset', '--home', installedHome], {
+    cwd: installRoot, env: installedEnvironment, timeout: 10_000, killSignal: 'SIGKILL',
+    terminal: { data(terminal, bytes) {
+      resetOutput += new TextDecoder().decode(bytes);
+      if (!confirmed && resetOutput.includes('or press Enter to cancel:')) {
+        confirmed = true;
+        terminal.write(`RESET ${join(installedHome, 'senderos.db')}\n`);
+      }
+    } },
+  });
+  try {
+    const exitCode = await reset.exited;
+    await Bun.sleep(10);
+    invariant(exitCode === 0 && resetOutput.includes('"reset": true'), `Installed CLI reset failed:\n${resetOutput}`);
+  } finally { reset.terminal?.close(); }
+  invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Installed reset changed config bytes.');
+  invariant(invokeInstalled(['project', 'list']).length === 0, 'Installed reset retained old projects.');
+  invariant(invokeInstalled(['sendero', 'list']).length === 5, 'Installed reset did not restore built-in Senderos.');
+  invariant(invokeInstalled(['doctor']).ok === true, 'Installed reset failed runtime health validation.');
+
   console.log(JSON.stringify({ publishedFiles }, null, 2));
 } finally {
   rmSync(packageCheckRoot, { recursive: true, force: true });
