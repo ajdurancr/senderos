@@ -7,6 +7,24 @@ Senderos persistent orchestration platform for user-defined agents and workflows
 
 - Bun 1.3 or newer
 
+Contributors running tests or release checks need **Bun 1.3.14 or newer on
+Linux or macOS**, plus Node.js/npm for the installed tarball check. CI uses the
+repository's pinned Bun 1.3.14 toolchain and Node.js 24. Terminal safety tests
+probe PTY allocation and capture and fail with diagnostics if unavailable;
+they are never skipped. This test prerequisite does not change the CLI engine range.
+
+From the repository root, verify the full `prepublishOnly` / `release:check`
+chain with both kinds of parent terminal:
+
+```bash
+env -u SENDEROS_DATABASE_URL -u SENDEROS_DATABASE_AUTH_TOKEN bun scripts/check-release-terminal.ts pipe
+env -u SENDEROS_DATABASE_URL -u SENDEROS_DATABASE_AUTH_TOKEN bun scripts/check-release-terminal.ts terminal
+```
+
+Both commands include workspace coverage and an installed npm tarball smoke
+test using disposable local databases. The terminal run validates real stdin,
+stdout and stderr TTY descriptors before starting the release chain.
+
 ## Install
 
 ```bash

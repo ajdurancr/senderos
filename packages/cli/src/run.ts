@@ -18,7 +18,7 @@ import { resolveHelp } from './help';
 import { resolveExecutionContextId } from '@senderos/core';
 import { LifecycleError } from '@senderos/core';
 
-export async function runCli(argv = process.argv.slice(2)) {
+export async function runCli(argv = process.argv.slice(2), terminal?: Parameters<typeof handleDatabase>[4]) {
   const { positionals, options } = parseArgs(argv);
   const cmd = positionals[0];
   const sub = positionals[1];
@@ -47,7 +47,7 @@ export async function runCli(argv = process.argv.slice(2)) {
       case 'config':
         return await handleConfig(sub, positionals, home);
       case 'db':
-        return await handleDatabase(sub, positionals, options, home);
+        return await handleDatabase(sub, positionals, options, home, terminal);
       case 'project':
         return await handleProject(sub, positionals, options, home);
       case 'agent':
