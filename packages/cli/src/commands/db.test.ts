@@ -18,6 +18,12 @@ function terminal(answer: string | undefined, tty = true) {
 
 test('confirmation is terminal-only, exact, and defaults to decline on empty input or EOF', async () => {
   await expect(confirmDatabaseReset('RESET target', terminal('RESET target', false))).rejects.toThrow('interactive terminal');
+  for (const inputTTY of [true, false]) {
+    const mixed = terminal('RESET target');
+    mixed.input.isTTY = inputTTY;
+    mixed.output.isTTY = !inputTTY;
+    await expect(confirmDatabaseReset('RESET target', mixed)).rejects.toThrow('interactive terminal');
+  }
   for (const answer of [undefined, '', 'yes', 'RESET other', 'RESET target '])
     expect(await confirmDatabaseReset('RESET target', terminal(answer))).toBe(false);
   expect(await confirmDatabaseReset('RESET target', terminal('RESET target'))).toBe(true);
@@ -69,7 +75,7 @@ test('runCli routes db reset and fails closed without an interactive terminal', 
   const error = console.error;
   console.error = (...values: unknown[]) => { errors.push(values.join(' ')); };
   try {
-    await runCli(['db', 'reset', '--home', home]);
+    await runCli(['db', 'reset', '--home', home], terminal('RESET target', false));
     expect(process.exitCode).toBe(1);
     expect(errors.join('\n')).toContain('interactive terminal');
   } finally {

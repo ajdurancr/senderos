@@ -66,14 +66,21 @@ jobs:
         run: bun run --cwd packages/core coverage
 
   cli:
-    name: SenderOS CLI tests and coverage
-    runs-on: ubuntu-latest
+    name: CLI release (${{ matrix.os }}, ${{ matrix.parent }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        parent: [pipe, terminal]
     steps:
       - uses: actions/checkout@v4
         with:
           # release:check enforces workspace coverage and Core's test-structure
           # policy compares newly added source against origin/main.
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
@@ -81,7 +88,8 @@ jobs:
         with:
           node-version: '24'
       - run: bun install --frozen-lockfile
-      - run: bun run --cwd packages/cli release:check
+      - name: Full release gate and installed tarball with explicit parent terminal mode
+        run: env -u SENDEROS_DATABASE_URL -u SENDEROS_DATABASE_AUTH_TOKEN bun scripts/check-release-terminal.ts ${{ matrix.parent }}
 
   host-contract-integration:
     name: External host contract integration

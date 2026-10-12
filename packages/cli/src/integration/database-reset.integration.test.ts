@@ -1,11 +1,14 @@
-import { expect, test } from 'bun:test';
+import { beforeAll, expect, test } from 'bun:test';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tempHome } from '../../../core/src/test-support/runtime';
+import { runTerminal, testEnvironment, verifyTerminalSupport } from './terminal-fixture';
+
+beforeAll(verifyTerminalSupport);
 
 const entry = resolve(import.meta.dir, '../index.ts');
 function environment(home: string) {
-  return { ...process.env, NO_COLOR: '1', SENDEROS_DATABASE_URL: `file:${join(home, 'senderos.db')}`, RESET_TEST_DATABASE_URL: `file:${join(home, 'senderos.db')}` };
+  return testEnvironment({ SENDEROS_DATABASE_URL: `file:${join(home, 'senderos.db')}`, RESET_TEST_DATABASE_URL: `file:${join(home, 'senderos.db')}` });
 }
 function cli(home: string, args: string[], env = environment(home)) {
   const result = Bun.spawnSync([process.execPath, entry, ...args, '--home', home], {
@@ -29,29 +32,14 @@ async function interactive(home: string, answer: string | null, options: {
   env?: NodeJS.ProcessEnv;
   beforeAnswer?: () => void | Promise<void>;
   rawInput?: string;
+  expectPrompt?: boolean;
 } = {}) {
-  let output = '';
-  let sent = false;
-  const process = Bun.spawn([globalThis.process.execPath, entry, 'db', 'reset', '--home', home], {
-    env: options.env ?? environment(home), timeout: 10_000, killSignal: 'SIGKILL',
-    terminal: { cols: 200, rows: 40, data(terminal, bytes) {
-      output += new TextDecoder().decode(bytes);
-      if (!sent && output.includes('or press Enter to cancel:')) {
-        sent = true;
-        void Promise.resolve(options.beforeAnswer?.()).then(() => {
-          terminal.write(options.rawInput ?? (answer === null ? '\x04' : `${answer}\n`));
-        });
-      }
-    } },
+  return runTerminal([process.execPath, entry, 'db', 'reset', '--home', home], {
+    env: options.env ?? environment(home),
+    prompt: options.expectPrompt === false ? undefined : 'or press Enter to cancel:',
+    beforeInput: options.beforeAnswer,
+    input: options.rawInput ?? (answer === null ? '\x04' : `${answer}\n`),
   });
-  try {
-    const exitCode = await process.exited;
-    await Bun.sleep(10);
-    return { exitCode, output, prompted: sent };
-  } finally {
-    process.terminal?.close();
-    if (process.exitCode === null) process.kill('SIGKILL');
-  }
 }
 
 test('real terminal confirmation resets custom-config DB, retains backup and preserves non-DB files', async () => {
@@ -100,7 +88,7 @@ test('real terminal decline, EOF and piped affirmative input never mutate the ta
   expect(result.stderr.toString()).toContain('interactive terminal');
   expect(snapshot(home)).toEqual(before);
   const interrupted = await interactive(home, '\x03');
-  expect(interrupted.exitCode).not.toBe(0);
+  expect(interrupted.signalCode, interrupted.output).toBe('SIGINT');
   expect(snapshot(home)).toEqual(before);
   const partialEof = await interactive(home, null, { rawInput: `RESET ${join(home, 'senderos.db')}\x04\x04` });
   expect(partialEof.exitCode, partialEof.output).toBe(0);
@@ -111,9 +99,11 @@ test('real terminal decline, EOF and piped affirmative input never mutate the ta
 test('real CLI rejects remote URLs before confirmation and does not disclose credentials', async () => {
   const home = setup();
   const before = snapshot(home);
-  const result = await interactive(home, 'yes', { env: { ...environment(home), SENDEROS_DATABASE_URL: 'libsql://private.example?authToken=do-not-print-me' } });
+  const result = await interactive(home, 'yes', { expectPrompt: false, env: { ...environment(home), SENDEROS_DATABASE_URL: 'libsql://private.example?authToken=do-not-print-me' } });
   expect(result.exitCode).toBe(1);
   expect(result.prompted).toBe(false);
+  expect(result.output).not.toContain('or press Enter to cancel:');
+  expect(result.output).toContain('Reset supports only an explicit absolute local SQLite file URL.');
   expect(result.output).not.toContain('do-not-print-me');
   expect(snapshot(home)).toEqual(before);
 });
@@ -126,7 +116,7 @@ test('real CLI refuses active work instead of deleting coordination state', asyn
   cli(home, ['run', 'dispatch', '--goal-id', goal.id, '--request-id', 'before-reset']);
   const result = await interactive(home, `RESET ${join(home, 'senderos.db')}`);
   expect(result.exitCode, result.output).toBe(1);
-  expect(result.output.toLowerCase()).toContain('active');
+  expect(result.output).toContain('Reset refused: active runs exist across execution contexts.');
   expect(cli(home, ['project', 'list'])).toHaveLength(1);
   expect(cli(home, ['run', 'list'])).toHaveLength(1);
 });
@@ -141,6 +131,7 @@ test('real CLI refuses a target/config change made while confirmation is pending
     },
   });
   expect(result.exitCode, result.output).toBe(1);
+  expect(result.output).toContain('Reset target or configuration changed since confirmation.');
   expect(readFileSync(join(home, 'senderos.db'))).toEqual(database);
 });
 
@@ -150,12 +141,20 @@ test('two confirmed real CLI processes cannot both replace the same approved dat
   let release!: () => void;
   const barrier = new Promise<void>(resolve => { release = resolve; });
   const beforeAnswer = () => { if (++waiting === 2) release(); return barrier; };
-  const results = await Promise.all([
+  // Reap both children before fixture cleanup, including a missing-prompt failure.
+  const settled = await Promise.allSettled([
     interactive(home, `RESET ${join(home, 'senderos.db')}`, { beforeAnswer }),
     interactive(home, `RESET ${join(home, 'senderos.db')}`, { beforeAnswer }),
   ]);
+  const results = settled.map(result => {
+    if (result.status === 'rejected') throw result.reason;
+    return result.value;
+  });
   expect(results.map(result => result.exitCode).sort(), results.map(result => result.output).join('\n')).toEqual([0, 1]);
   expect(results.filter(result => result.output.includes('"reset": true'))).toHaveLength(1);
+  expect(results.every(result => result.prompted)).toBe(true);
+  const refused = results.find(result => result.exitCode === 1)!;
+  expect(refused.output).toMatch(/Database reset lock exists:|Reset target or configuration changed|EEXIST[^\r\n]*senderos-reset\.lock/);
   expect(cli(home, ['doctor']).ok).toBe(true);
   expect(readdirSync(home).some(name => name.endsWith('.senderos-reset.lock'))).toBe(false);
 });

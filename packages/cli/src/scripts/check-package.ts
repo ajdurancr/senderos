@@ -1,5 +1,9 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { runTerminal, testEnvironment as isolatedEnvironment, verifyTerminalSupport } from "../integration/terminal-fixture";
+
+await verifyTerminalSupport();
+if (!Bun.which('node') || !Bun.which('npm')) throw new Error('Package checks require Node.js and npm (CI uses Node.js 24). Install them before running release:check.');
 
 type PackageManifest = {
   private?: boolean;
@@ -31,13 +35,12 @@ process.on("exit", () => {
     rmSync(testRuntimeBase, { recursive: true, force: true });
   }
 });
-const testEnvironment = {
-  ...process.env,
+const testEnvironment = isolatedEnvironment({
   SENDEROS_TEST_RUNTIME_ROOT: testRuntimeRoot,
   TMPDIR: testRuntimeRoot,
   TMP: testRuntimeRoot,
   TEMP: testRuntimeRoot,
-};
+});
 
 const manifest: PackageManifest = JSON.parse(readFileSync("package.json", "utf8"));
 invariant(manifest.private === false, "The CLI package must be public.");
@@ -56,13 +59,13 @@ invariant(
   "The built CLI must contain the canonical Senderos skill.",
 );
 
-const help = Bun.spawnSync(["bun", "dist/index.js", "--help"]);
+const help = Bun.spawnSync(["bun", "dist/index.js", "--help"], { env: testEnvironment });
 invariant(help.exitCode === 0, `Built CLI help failed:\n${help.stderr.toString()}`);
 invariant(help.stdout.toString().includes("senderos"), "Built CLI help did not render the command name.");
 
 const builtSkill = Bun.spawnSync([
   "bun", "dist/index.js", "bootstrap-agent-skill", "--print",
-]);
+], { env: testEnvironment });
 invariant(
   builtSkill.exitCode === 0,
   `Built CLI skill bootstrap failed:\n${builtSkill.stderr.toString()}`,
@@ -77,7 +80,7 @@ try {
   const smoke = Bun.spawnSync([
     "bun", "dist/index.js", "init", "--home", smokeHome,
     "--harness", "codex", "--name", "Package smoke test", "--approve",
-  ], { env: testEnvironment });
+  ], { env: { ...testEnvironment, SENDEROS_DATABASE_URL: `file:${join(smokeHome, "senderos.db")}` } });
   invariant(smoke.exitCode === 0, `Built CLI initialization failed:\n${smoke.stderr.toString()}`);
 } finally {
   rmSync(smokeHome, { recursive: true, force: true });
@@ -146,6 +149,7 @@ try {
   const invokeInstalled = (args: string[]) => {
     const result = Bun.spawnSync([installedBinary, ...args, '--home', installedHome], {
       cwd: installRoot, env: installedEnvironment, timeout: 10_000,
+      stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
     });
     invariant(result.exitCode === 0, `Installed CLI command failed:\n${result.stderr.toString()}`);
     return JSON.parse(result.stdout.toString());
@@ -153,23 +157,26 @@ try {
   invokeInstalled(['init', '--name', 'Installed reset smoke', '--harness', 'codex', '--approve']);
   invokeInstalled(['project', 'create', '--name', 'Disposable package project']);
   const originalConfig = readFileSync(join(installedHome, 'config.json'));
-  let resetOutput = '';
-  let confirmed = false;
-  const reset = Bun.spawn([installedBinary, 'db', 'reset', '--home', installedHome], {
-    cwd: installRoot, env: installedEnvironment, timeout: 10_000, killSignal: 'SIGKILL',
-    terminal: { data(terminal, bytes) {
-      resetOutput += new TextDecoder().decode(bytes);
-      if (!confirmed && resetOutput.includes('or press Enter to cancel:')) {
-        confirmed = true;
-        terminal.write(`RESET ${join(installedHome, 'senderos.db')}\n`);
-      }
-    } },
+  const originalDatabase = readFileSync(join(installedHome, 'senderos.db'));
+  const declined = await runTerminal([installedBinary, 'db', 'reset', '--home', installedHome], {
+    cwd: installRoot, env: installedEnvironment,
+    prompt: 'or press Enter to cancel:', input: '\n',
   });
-  try {
-    const exitCode = await reset.exited;
-    await Bun.sleep(10);
-    invariant(exitCode === 0 && resetOutput.includes('"reset": true'), `Installed CLI reset failed:\n${resetOutput}`);
-  } finally { reset.terminal?.close(); }
+  invariant(declined.exitCode === 0 && declined.output.includes('"reset": false'), `Installed CLI decline failed:\n${declined.output}`);
+  const piped = Bun.spawnSync([installedBinary, 'db', 'reset', '--home', installedHome], {
+    cwd: installRoot, env: installedEnvironment, timeout: 10_000,
+    stdin: Buffer.from(`RESET ${join(installedHome, 'senderos.db')}\n`), stdout: 'pipe', stderr: 'pipe',
+  });
+  invariant(piped.exitCode === 1 && piped.stderr.toString().includes('Database reset requires an interactive terminal on stdin and stderr.'), `Installed CLI accepted piped confirmation:\n${piped.stderr}`);
+  invariant(readFileSync(join(installedHome, 'senderos.db')).equals(originalDatabase), 'Installed decline or piped input changed database bytes.');
+  const reset = await runTerminal([installedBinary, 'db', 'reset', '--home', installedHome], {
+    cwd: installRoot, env: installedEnvironment,
+    prompt: 'or press Enter to cancel:',
+    input: `RESET ${join(installedHome, 'senderos.db')}\n`,
+  });
+  invariant(reset.exitCode === 0 && reset.output.includes('"reset": true'), `Installed CLI reset failed:\n${reset.output}`);
+  const backupMatch = reset.output.match(/"backupPath":\s*"([^"\r\n]+)"/);
+  invariant(Boolean(backupMatch && existsSync(backupMatch[1]!)), 'Installed reset did not retain its recovery backup.');
   invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Installed reset changed config bytes.');
   invariant(invokeInstalled(['project', 'list']).length === 0, 'Installed reset retained old projects.');
   invariant(invokeInstalled(['sendero', 'list']).length === 5, 'Installed reset did not restore built-in Senderos.');
