@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { testEnvironment } from './test-environment';
 
 type PackageManifest = {
   name?: string;
@@ -42,7 +43,7 @@ for (const { manifestPath, manifest } of coveredWorkspaces) {
   console.log(`\n==> ${manifest.name ?? manifestPath}`);
   const result = Bun.spawnSync(['bun', 'run', 'coverage'], {
     cwd,
-    env: process.env,
+    env: testEnvironment(),
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit',

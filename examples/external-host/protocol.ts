@@ -44,6 +44,7 @@ export function cliEnvironment(databaseUrl: string): Record<string, string> {
   // No service credentials or model API keys are needed or forwarded to workers.
   const environment: Record<string, string> = {
     SENDEROS_DATABASE_URL: databaseUrl,
+    BUN_OPTIONS: '--no-env-file',
     PATH: process.env.PATH ?? '',
     HOME: process.env.HOME ?? '/tmp',
     CI: 'true',

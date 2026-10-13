@@ -25,6 +25,11 @@ Both commands include workspace coverage and an installed npm tarball smoke
 test using disposable local databases. The terminal run validates real stdin,
 stdout and stderr TTY descriptors before starting the release chain.
 
+Test and coverage subprocesses discard inherited database URL/auth-token
+settings and disable Bun's automatic `.env` loading. Database fixtures select
+their own disposable local paths. The release matrix checks Bun 1.3.14 and
+1.4.3 on Linux and macOS in both parent terminal modes.
+
 ## Install
 
 ```bash
