@@ -1,10 +1,5 @@
-/** Test infrastructure only: never inherit an operator's database credentials. */
-export function testEnvironment(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
-  const env = { ...process.env };
-  delete env.SENDEROS_DATABASE_URL;
-  delete env.SENDEROS_DATABASE_AUTH_TOKEN;
-  return { ...env, NO_COLOR: '1', ...overrides };
-}
+import { testEnvironment } from '../../../../scripts/test-environment';
+export { testEnvironment };
 
 export function requireTerminalSupport() {
   if (!['linux', 'darwin'].includes(process.platform) ||

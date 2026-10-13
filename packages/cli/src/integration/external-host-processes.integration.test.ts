@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { testEnvironment } from '../../../../scripts/test-environment';
 
 // This suite intentionally does not import Core, runCli, or a database driver.
 // Every state mutation goes through an independently spawned public CLI process.
@@ -17,7 +18,7 @@ test('the public CLI coordinates separate host sessions, graphs, contention, rec
       cwd: root,
       stdout: 'pipe',
       stderr: 'pipe',
-      env: { ...globalThis.process.env },
+      env: testEnvironment(),
     });
     const [exitCode, stdout, stderr] = await Promise.all([process.exited, new Response(process.stdout).text(), new Response(process.stderr).text()]);
     expect(exitCode, `${stdout}\n${stderr}`).toBe(0);

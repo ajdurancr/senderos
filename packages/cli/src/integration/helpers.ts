@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { testEnvironment } from '../../../../scripts/test-environment';
 
 const testRuntimeRoot = resolve(
   process.env.SENDEROS_TEST_RUNTIME_ROOT ??
@@ -71,7 +72,7 @@ export function cli(args: string[], cwd = process.cwd()) {
     cwd,
     stdout: 'pipe',
     stderr: 'pipe',
-    env: { ...process.env },
+    env: testEnvironment(),
   });
 
   const stdout = result.stdout.toString().trim();

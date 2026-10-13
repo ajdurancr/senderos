@@ -8,26 +8,54 @@ import {
   tempProjectDir,
 } from '../../../core/src/test-support/runtime';
 
-async function invokeCli(argv: string[]) {
+async function invokeCli(argv: string[], expectedError?: string) {
   const output: string[] = [];
+  const errors: string[] = [];
   const originalLog = console.log;
   const originalError = console.error;
+  const originalExitCode = process.exitCode;
+  let exitCode = 0;
+  process.exitCode = 0;
   console.log = (...values: Parameters<typeof console.log>) => output.push(values.join(' '));
-  console.error = (...values: Parameters<typeof console.error>) => output.push(values.join(' '));
+  console.error = (...values: Parameters<typeof console.error>) => errors.push(values.join(' '));
 
   try {
     await runCli(argv);
   } finally {
+    exitCode = Number(process.exitCode ?? 0);
+    process.exitCode = originalExitCode ?? 0;
     console.log = originalLog;
     console.error = originalError;
   }
 
-  return JSON.parse(output.at(-1) ?? '{}');
+  if (expectedError) {
+    const result = JSON.parse(errors.at(-1) ?? '{}');
+    expect(exitCode).not.toBe(0);
+    expect(result.code, errors.join('\n')).toBe(expectedError);
+    return result;
+  }
+  if (exitCode !== 0 || errors.length) {
+    // Do not reflect argv: later commands contain ownership tokens.
+    throw new Error(`CLI ${argv[0]} failed (${exitCode}): ${errors.join('\n')}`);
+  }
+  if (output.length !== 1) throw new Error(`CLI ${argv[0]} did not return exactly one JSON response.`);
+  return JSON.parse(output[0]!);
 }
+
+test('workflow command errors retain their diagnostics and do not leak exit status', async () => {
+  const previous = process.exitCode;
+  await expect(invokeCli(['init'])).rejects.toThrow('Missing required option: --name');
+  expect(process.exitCode).toBe(previous ?? 0);
+  expect((await invokeCli(['init'], 'COMMAND_ERROR')).error).toBe('Missing required option: --name');
+  expect(process.exitCode).toBe(previous ?? 0);
+});
 
 test('fresh CLI initialization requires the complete registered-host, independent-session, fenced-report workflow', async () => {
   const home = tempHome();
   const projectPath = tempProjectDir('senderos-cli-workflow');
+  // This file also runs directly, outside the sanitized release/test wrappers.
+  process.env.SENDEROS_DATABASE_URL = `file:${join(home, 'senderos.db')}`;
+  delete process.env.SENDEROS_DATABASE_AUTH_TOKEN;
 
   expect(
     (
@@ -215,9 +243,7 @@ test('fresh CLI initialization requires the complete registered-host, independen
     home,
   ]);
   expect(await invokeCli(['attempt', 'show', run.attemptId, '--home', home])).toMatchObject({ protocolVersion: 2, status: 'queued', ownerId: null, workingPath: null });
-  const priorExitCode = process.exitCode;
-  const unclaimed = await invokeCli(['attempt', 'update', run.attemptId, '--status', 'succeeded', '--home', home]);
-  process.exitCode = priorExitCode ?? 0;
+  const unclaimed = await invokeCli(['attempt', 'update', run.attemptId, '--status', 'succeeded', '--home', home], 'CLAIM_REQUIRED');
   expect(unclaimed.code).toBe('CLAIM_REQUIRED');
   const runToken = await claimAndStart(run.attemptId);
   expect(await invokeCli(['run', 'list', '--home', home])).toEqual(

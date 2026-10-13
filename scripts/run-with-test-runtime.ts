@@ -1,5 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { testEnvironment } from './test-environment';
 
 const command = process.argv.slice(2);
 if (!command.length) {
@@ -14,13 +15,12 @@ const runtimeRoot = mkdtempSync(resolve(runtimeBase, 'run-'));
 try {
   const result = Bun.spawnSync(command, {
     cwd: process.cwd(),
-    env: {
-      ...process.env,
+    env: testEnvironment({
       SENDEROS_TEST_RUNTIME_ROOT: runtimeRoot,
       TMPDIR: runtimeRoot,
       TMP: runtimeRoot,
       TEMP: runtimeRoot,
-    },
+    }),
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit',
