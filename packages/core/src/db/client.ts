@@ -63,7 +63,11 @@ function connectRuntimeDb(home?: string) {
       }
     }
   }
-  const client = createClient(connection);
+  // Accept Turso's URL alias without changing the configured value or other schemes.
+  const client = createClient({
+    ...connection,
+    url: connection.url.replace(/^turso:\/\//i, "libsql://"),
+  });
   scoped?.clients.add(client);
   return drizzle({ client, schema });
 }
