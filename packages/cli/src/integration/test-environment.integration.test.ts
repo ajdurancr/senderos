@@ -8,7 +8,10 @@ import { testEnvironment } from '../../../../scripts/test-environment';
 const root = resolve(import.meta.dir, '../../../..');
 
 function fixture(check: (directory: string, databaseUrl: string) => void) {
-  const directory = mkdtempSync(join(process.env.SENDEROS_TEST_RUNTIME_ROOT ?? tmpdir(), 'environment-regression-'));
+  const base = process.env.SENDEROS_TEST_RUNTIME_ROOT ?? tmpdir();
+  // Another suite may remove the shared runtime root when it becomes empty.
+  mkdirSync(base, { recursive: true });
+  const directory = mkdtempSync(join(base, 'environment-regression-'));
   try {
     const outside = join(directory, 'outside');
     mkdirSync(outside);
