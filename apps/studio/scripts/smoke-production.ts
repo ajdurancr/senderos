@@ -39,11 +39,11 @@ try {
   }
   assert.ok(ready, 'Production server must start within 10 seconds.');
   for (const [path, expected] of [
-    ['/', 'Orchestration topology'], ['/now', 'What needs attention now'],
+    ['/', 'Workflow progress'], ['/now', 'What needs attention now'],
     ['/goals', 'Outcome inventory'], ['/runs', 'Execution history'],
     ['/reviews', 'Evidence reviews'], ['/agents', 'Execution topology'],
     ['/agents/new', 'Create agent'], ['/senderos/new', 'Create draft'],
-    ['/events', 'Append-only history'], ['/settings', 'Project &amp; database settings'],
+    ['/events', 'Append-only history'], ['/settings', 'Project &amp; database'],
     ['/senderos/sendero-software-delivery', 'Verified software delivery'],
     ['/senderos/sendero-timed-wait-demo', 'Timed wait'],
   ]) {

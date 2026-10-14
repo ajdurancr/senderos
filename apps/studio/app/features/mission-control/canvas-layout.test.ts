@@ -20,8 +20,9 @@ describe("Sendero canvas layout", () => {
       Object.values(positions).map(({ x, y }) => `${x}:${y}`),
     );
     expect(distinctPositions.size).toBe(4);
+    expect(positions["agent-1"]!.x - positions.start!.x - 196).toBe(180);
     expect(positions["agent-2"]?.y).toBe(80);
-    expect(canvasBounds(positions)).toEqual({ width: 1084, height: 510 });
-    expect(canvasBounds({ distant: { x: 1_000, y: 700 } })).toEqual({ width: 1224, height: 856 });
+    expect(canvasBounds(positions)).toEqual({ width: 1434, height: 510 });
+    expect(canvasBounds({ distant: { x: 1_000, y: 700 } })).toEqual({ width: 1256, height: 948 });
   });
 });

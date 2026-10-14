@@ -25,7 +25,8 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
   const preflight = 'preflight' in attempt && attempt.preflight && typeof attempt.preflight === 'object' ? attempt.preflight as Record<string, unknown> : undefined;
   const recovery = data.events.filter(event => event.entityId === attempt.id && ['attempt.reconciled', 'attempt.abandoned'].includes(event.eventType)).at(-1);
   return <section className="host-records" aria-label="Host and session records">
-    <h3>Host and session records</h3>
+    <details className="inspector-disclosure">
+    <summary>Host and session records</summary>
     <p>Host-reported records. Senderos does not launch or inspect external processes.</p>
     <dl className="property-list">
       <div><dt>Execution phase</dt><dd>{executionPhase(attempt)}</dd></div>
@@ -41,14 +42,15 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
       <div><dt>Started</dt><dd>{attempt.startedAt ?? 'Not started'}</dd></div>
       <div><dt>Location</dt><dd>{attempt.hostEnvironmentName ?? 'Not recorded'}</dd></div>
       <div><dt>Workspace</dt><dd className="mono">{attempt.workingPath ?? 'Not recorded'}</dd></div>
-      <div><dt>Heartbeat</dt><dd>{relativeTime(attempt.heartbeatAt)}</dd></div>
+      <div><dt>Heartbeat</dt><dd>{relativeTime(attempt.heartbeatAt, data.asOf)}</dd></div>
       <div><dt>Cancellation</dt><dd>{attempt.cancellationRequestedAt ?? 'Not requested'}</dd></div>
       <div><dt>Recovery</dt><dd>{attempt.recoveryOutcome ?? 'No observation'}</dd></div>
       <div><dt>Recovery observed</dt><dd>{attempt.recoveryObservedAt ?? 'Not recorded'}</dd></div>
     </dl>
     {preflight ? <details><summary>Recorded preflight</summary><dl className="property-list">{['eligible', 'checkedAt', 'blockers', 'requiredCapabilities', 'declaredCapabilities', 'missingCapabilities', 'declarationOnly'].map(key => key in preflight ? <div key={key}><dt>{key.replace(/([A-Z])/g, ' $1')}</dt><dd>{Array.isArray(preflight[key]) ? (preflight[key] as unknown[]).filter(value => typeof value === 'string').join(', ') || 'None' : String(preflight[key])}</dd></div> : null)}</dl>{Boolean(preflight.workspace) && typeof preflight.workspace === "object" && <dl className="property-list">{Object.entries(preflight.workspace as Record<string, unknown>).filter(([key]) => ["reference", "workingPath", "path", "available", "verifiedAt"].includes(key)).map(([key, value]) => <div key={key}><dt>Workspace {key}</dt><dd>{String(value ?? "Not recorded")}</dd></div>)}</dl>}</details> : <p>No preflight snapshot recorded for this attempt.</p>}
     {recovery && <p>Recovery observation: {String((recovery.payload as Record<string, unknown>).details ?? (recovery.payload as Record<string, unknown>).reason ?? attempt.recoveryOutcome ?? 'Recorded')}</p>}
-    {attempt.leaseExpiresAt && Date.parse(attempt.leaseExpiresAt) < Date.now() && !['succeeded', 'failed', 'canceled'].includes(attempt.status) && <p role="status">The lease expired. The host must inspect the session before recovery; expiry does not prove the process stopped.</p>}
+    </details>
+    {attempt.leaseExpiresAt && Date.parse(attempt.leaseExpiresAt) < (data.asOf ?? Date.now()) && !['succeeded', 'failed', 'canceled'].includes(attempt.status) && <p role="status">The lease expired. The host must inspect the session before recovery; expiry does not prove the process stopped.</p>}
   </section>;
 }
 
@@ -57,7 +59,7 @@ export function GoalActivations({ data, goalId, attemptId }: { data: MissionCont
   if (!goal) return null;
   const records = activationRecords(data).filter(item => item.goalId === goalId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const execution = goalExecution(data, goalId);
-  return <section className="inspector-section"><header><h3>Activations and branches</h3><span>{records.length || execution.runs.length} visits</span></header><div className="activation-list">
+  return <section className="inspector-section"><header><h3>Activations and branches</h3><span>{records.length || execution.runs.length} {(records.length || execution.runs.length) === 1 ? "visit" : "visits"}</span></header><div className="activation-list">
     {records.map((activation, index) => {
       const graph = [...(data.historyGraphs ?? []), ...data.senderoGraphs].find(graph => graph.version.id === goal.senderoVersionId);
       const node = graph?.nodes.find(node => node.id === activation.nodeId);

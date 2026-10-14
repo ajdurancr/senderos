@@ -1,3 +1,5 @@
+import { useClientReady } from "../../../hooks/use-client-ready";
+import { useLocation, useNavigate } from "react-router";
 import { senderoPath } from "../navigation";
 import type { MissionControlData } from "../server";
 import { Icon } from "./icons";
@@ -9,6 +11,9 @@ export function SenderoSelector({
   data: MissionControlData;
   senderoId: string;
 }) {
+  const clientReady = useClientReady();
+  const navigate = useNavigate();
+  const location = useLocation();
   const selectedIndex = data.senderoGraphs.findIndex(
     (graph) => graph.sendero.id === senderoId,
   );
@@ -20,10 +25,11 @@ export function SenderoSelector({
         {data.senderoGraphs.length}
       </span>
       <select
+        disabled={!clientReady}
         aria-label="Sendero"
         value={senderoId}
         onChange={(event) =>
-          window.location.assign(senderoPath(event.target.value))
+          navigate(`${senderoPath(event.target.value)}${location.search}`)
         }
       >
         {data.senderoGraphs.map((graph) => (
