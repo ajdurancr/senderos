@@ -185,7 +185,7 @@ jobs:
             fi
             sleep 1
           done
-          grep --quiet 'Orchestration topology' "$studio_runtime/studio.html" || {
+          grep --quiet 'Workflow progress' "$studio_runtime/studio.html" || {
             cat "$studio_runtime/studio.log"
             exit 1
           }
