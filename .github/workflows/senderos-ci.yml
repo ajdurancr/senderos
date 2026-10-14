@@ -196,7 +196,7 @@ jobs:
             'runs:Execution history' \
             'agents:Execution topology' \
             'events:Append-only history' \
-            'settings:Project &amp; database settings'; do
+            'settings:Configure your project, agents, workflows, and system settings.'; do
             route=${route_and_copy%%:*}
             copy=${route_and_copy#*:}
             curl --fail --silent "http://127.0.0.1:5173/projects/smoke/$route" |
@@ -221,9 +221,39 @@ jobs:
             'runs:Execution history' \
             'agents:Execution topology' \
             'events:Append-only history' \
-            'settings:Project &amp; database settings'; do
+            'settings:Configure your project, agents, workflows, and system settings.'; do
             route=${route_and_copy%%:*}
             copy=${route_and_copy#*:}
             curl --fail --silent "http://127.0.0.1:5173/$route" |
               grep "$copy" > /dev/null || exit 1
           done
+
+  studio-browser:
+    name: Studio browser-to-database journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: bun install --frozen-lockfile
+      - name: Install Chromium and system dependencies
+        working-directory: apps/studio
+        run: bunx playwright install --with-deps chromium
+      - name: Build and test the real production server
+        run: bun run --cwd apps/studio test:e2e
+      - name: Retain browser reports, screenshots, traces, and persistence evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-browser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/studio/.tmp/studio-e2e/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7

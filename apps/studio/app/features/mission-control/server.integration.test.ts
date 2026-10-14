@@ -39,7 +39,18 @@ describe("Studio server integration", () => {
     const start = new FormData(); start.set("intent", "start"); start.set("goalId", goal.id); await applyMissionControlAction(start);
     const plan = new FormData(); plan.set("intent", "dispatch-plan"); await expect(applyMissionControlAction(plan)).rejects.toThrow("scope");
     data = await missionControlData();
-    const attempt = data.attempts.at(-1)!;
+    expect(data.goals.find(item => item.id === goal.id)?.status).toBe("active");
+    expect(data.runs.filter(run => run.goalId === goal.id)).toHaveLength(0);
+    const { reviewDispatch } = await import("./dispatch-review");
+    const reviewed = data.queue.dispatchable.filter(item => item.goalId === goal.id).map(reviewDispatch);
+    expect(reviewed).toHaveLength(1);
+    plan.set("scope", JSON.stringify({ projectId: project.id }));
+    plan.set("reviewedItems", JSON.stringify(reviewed));
+    await applyMissionControlAction(plan, { projectId: project.id });
+    data = await missionControlData();
+    const run = data.runs.find(run => run.goalId === goal.id)!;
+    const attempt = data.attempts.find(attempt => attempt.runId === run.id)!;
+    expect(attempt).toMatchObject({ status: "queued", externalSessionId: null, startedAt: null, ownerId: null });
 
     const evidence = new FormData(); Object.entries({ intent: "evidence", attemptId: attempt.id, label: "Proof", url: "https://example.test/proof" }).forEach(([key, value]) => evidence.set(key, value)); await applyMissionControlAction(evidence);
     const review = new FormData(); Object.entries({ intent: "review", attemptId: attempt.id, status: "approved", rationale: "Looks good" }).forEach(([key, value]) => review.set(key, value)); await applyMissionControlAction(review);
@@ -69,7 +80,7 @@ describe("Studio server integration", () => {
     const routeUrl = new URL("http://localhost/");
     expect(await homeRoute.loader({ request: new Request(routeUrl), url: routeUrl, pattern: "/", params: {}, context: routeContext })).toMatchObject({ projects: data.projects });
     const noOp = new FormData(); noOp.set("intent", "no-op");
-    expect(await homeRoute.action({ request: new Request(routeUrl, { method: "POST", body: noOp }), url: routeUrl, pattern: "/", params: {}, context: routeContext })).toMatchObject({ ok: true });
+    expect(await homeRoute.action({ request: new Request(routeUrl, { method: "POST", body: noOp }), url: routeUrl, pattern: "/", params: {}, context: routeContext })).toMatchObject({ ok: false, message: expect.stringContaining("not supported") });
     const invalidImport = new FormData(); invalidImport.set('intent', 'import-sendero'); invalidImport.set('definition', '[]');
     expect(await homeRoute.action({ request: new Request(routeUrl, { method: 'POST', body: invalidImport }), url: routeUrl, pattern: '/', params: {}, context: routeContext })).toMatchObject({ ok: false, message: expect.stringContaining('valid JSON') });
     const agentForm = new FormData(); Object.entries({ intent: 'create-agent', name: 'Redirect agent', slug: 'redirect-agent', instructions: 'Follow the task' }).forEach(([key, value]) => agentForm.set(key, value));

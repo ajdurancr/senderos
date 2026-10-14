@@ -11,7 +11,9 @@
     "test:raw": "NODE_ENV=test vitest run --config vitest.config.ts",
     "coverage": "bun ../../scripts/run-with-test-runtime.ts bun run coverage:raw",
     "coverage:raw": "NODE_ENV=test vitest run --config vitest.config.ts --coverage",
-    "smoke:production": "bun scripts/smoke-production.ts"
+    "smoke:production": "bun scripts/smoke-production.ts",
+    "test:e2e": "bun run build && bun run test:e2e:raw",
+    "test:e2e:raw": "playwright test"
   },
   "dependencies": {
     "@senderos/core": "workspace:*",
@@ -25,6 +27,7 @@
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@react-router/dev": "8.0.1",
     "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^7.0.1",

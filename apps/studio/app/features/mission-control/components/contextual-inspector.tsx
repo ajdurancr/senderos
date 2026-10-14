@@ -1,6 +1,7 @@
-import { GoalActivations, HostExecutionRecords } from "./execution-records";
+import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { Form, useNavigation } from "react-router";
 
+import { DurableLink as Link } from "../../../components/durable-link";
 import { StatusBadge } from "../../../components/status-badge";
 import {
   eventLabel,
@@ -10,7 +11,7 @@ import {
 } from "../model";
 import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";
-import { Icon } from "./icons";
+import { EvidenceRecords } from "./evidence-records";
 
 export function ContextualInspector({
   data,
@@ -59,7 +60,7 @@ export function ContextualInspector({
         sourceNode?.agentId ??
         legacyTransition?.sourceAgentId),
   );
-  const objective = attempt?.executionObjective ?? sourceNode?.executionObjective ?? transition?.transitionObjective;
+  const objective = attempt?.executionObjective ?? sourceNode?.executionObjective ?? transition?.transitionObjective ?? goal.specText;
   const goalDecision = data.decisions?.find(decision => decision.goalId === goal.id);
   const selectedRun = execution.runs.find(run => run.id === attempt?.runId);
   const attemptDecision = attempt && goalDecision?.activations.find(decision => decision.attemptId === attempt.id || Boolean(selectedRun?.activationId && decision.activationId === selectedRun.activationId));
@@ -101,112 +102,54 @@ export function ContextualInspector({
                 : goal.title}
           </h2>
         </div>
-        <a href={projectPath(goal.projectId)} aria-label="Close inspector">
-          <Icon name="x" />
-        </a>
+        <Link to={projectPath(goal.projectId)} aria-label="Back to project" title="Back to project">
+          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14" /></svg>
+        </Link>
       </header>
-      <div className="inspector-tabs">
-        <span className="active">Execution context</span>
-      </div>
       <section className="inspector-section">
+        {nodeId && !selectedNode && <p role="alert">This workflow node is not part of the goal's pinned definition.</p>}
+        {transitionId && !transition && <p role="alert">This transition is not part of the goal's pinned definition.</p>}
+        {agentId && !agent && <p role="alert">This agent is unavailable.</p>}
         {attemptId && !attempt && <p role="alert">This attempt does not match the selected goal or node, or is no longer available.</p>}
         {decision && <p role="status"><small>{attemptDecision ? 'Selected activation' : 'Goal summary'}</small><br /><strong>{decision.state}</strong> · {decision.reason.replaceAll('_', ' ')}<br />Next: {decision.nextAction.replaceAll('_', ' ')}</p>}
         <div className="inspector-status">
-          <StatusBadge value={attempt?.status ?? goal.status} />
+          <span>Goal <StatusBadge value={goal.status} /></span>
+          {attempt && <span>Attempt <StatusBadge value={executionPhase(attempt)} /></span>}
           <span>
-            {attempt ? relativeTime(attempt.updatedAt) : "Not dispatched"}
+            {attempt ? relativeTime(attempt.updatedAt, data.asOf) : "Not dispatched"}
           </span>
         </div>
+        {senderoGraph && <p>{senderoGraph.sendero.name} · pinned v{senderoGraph.version.version}</p>}
         <dl className="property-list">
-          {agent && (
-            <>
-              <div>
-                <dt>Agent ID</dt>
-                <dd className="mono">{agent.id}</dd>
-              </div>
-              <div>
-                <dt>Role</dt>
-                <dd>{agent.description || agent.defaultGoal || agent.kind}</dd>
-              </div>
-            </>
-          )}
-          {transition && (
-            <>
-              <div>
-                <dt>Arc ID</dt>
-                <dd className="mono">{transition.id}</dd>
-              </div>
-              <div>
-                <dt>Objective</dt>
-                <dd>{objective || "Not configured"}</dd>
-              </div>
-            </>
-          )}
-          {!transition && objective && <div><dt>Objective</dt><dd>{objective}</dd></div>}
-          <div>
-            <dt>Agent</dt>
-            <dd>{agent?.name ?? "Not selected"}</dd>
-          </div>
-          <div>
-            <dt>Transition</dt>
-            <dd>{transition?.name ?? "Waiting for plan"}</dd>
-          </div>
-          <div>
-            <dt>Harness</dt>
-            <dd>{attempt?.harness ?? "—"}</dd>
-          </div>
-          <div>
-            <dt>Checkpoint</dt>
-            <dd>{attempt?.checkpoint ?? "Waiting for host signal"}</dd>
-          </div>
-          <div>
-            <dt>Working path</dt>
-            <dd className="mono">{attempt?.workingPath ?? "Not recorded"}</dd>
-          </div>
-          <div>
-            <dt>Heartbeat</dt>
-            <dd>{relativeTime(attempt?.heartbeatAt)}</dd>
-          </div>
+          <div><dt>Objective</dt><dd>{objective || "Not configured"}</dd></div>
+          <div><dt>Agent</dt><dd>{agent?.name ?? "Not selected"}</dd></div>
+          <div><dt>Transition</dt><dd>{transition?.name ?? "Waiting for plan"}</dd></div>
         </dl>
-        {goal.status === 'draft' && <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id}/><button disabled={pending}>Start goal</button></Form>}
-        {data.queue.dispatchable.some(item => item.goalId === goal.id) && <a className="primary-action" href={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</a>}
+        {goal.status === 'draft' && <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id}/><button className="button button-primary" disabled={pending}>{pending ? "Starting…" : "Start goal"}</button></Form>}
+        {data.queue.dispatchable.some(item => item.goalId === goal.id) && <Link className="button button-primary" to={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</Link>}
         {attempt && !terminal && (
           <Form method="post">
             <input type="hidden" name="intent" value="stop" />
             <input type="hidden" name="runId" value={attempt.runId} />
-            <button disabled={pending} className="danger-button">Request stop</button>
+            <p>Requests cancellation for this goal and all active branches. External hosts must report when owned sessions stop.</p>
+            <button disabled={pending || Boolean(attempt.cancellationRequestedAt)} className="button button-danger">{pending ? "Requesting…" : attempt.cancellationRequestedAt ? "Stop requested" : "Request stop"}</button>
           </Form>
         )}
       </section>
-      <GoalActivations data={data} goalId={goal.id} attemptId={attempt?.id} />
-      {attempt && <section className="inspector-section"><HostExecutionRecords data={data} attempt={attempt} /></section>}
       <section className="inspector-section">
         <header>
           <h3>Evidence & review</h3>
           <span>{snapshot.evidence?.length ?? 0} items</span>
         </header>
         {terminal && <p>This attempt is finished. Its evidence and review are read-only.</p>}
-        <div className="evidence-list">
-          {snapshot.evidence?.map((item) => (
-            <article key={item.id}>
-              <Icon name="check" />
-              <div>
-                <strong>{item.label}</strong>
-                <span>{item.kind}</span>
-              </div>
-            </article>
-          ))}
-          {!snapshot.evidence?.length && (
-            <p>No evidence recorded for this attempt.</p>
-          )}
-        </div>
+        <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
         {attempt && !terminal && (
           <Form className="compact-form" method="post">
             <input type="hidden" name="intent" value="evidence" />
             <input type="hidden" name="attemptId" value={attempt.id} />
-            <input name="label" placeholder="Evidence label" required />
-            <input name="url" placeholder="Optional URL" />
-            <button disabled={pending}>Record evidence</button>
+            <label>Evidence label<input name="label" placeholder="Evidence label" required /></label>
+            <label>Evidence URL (optional)<input type="url" name="url" placeholder="https://example.com/report" /></label>
+            <button className="button button-primary" disabled={pending}>{pending ? "Recording…" : "Record evidence"}</button>
           </Form>
         )}
         {attempt && !terminal && (
@@ -214,14 +157,14 @@ export function ContextualInspector({
             <input type="hidden" name="intent" value="review" />
             <input type="hidden" name="attemptId" value={attempt.id} />
             <div>
-              <select name="status" defaultValue="approved">
+              <label>Review decision<select name="status" defaultValue="approved">
                 <option value="approved">Approve</option>
                 <option value="changes_requested">Request changes</option>
                 <option value="rejected">Reject</option>
-              </select>
-              <input name="rationale" placeholder="Decision rationale" />
+              </select></label>
+              <label>Decision rationale<input name="rationale" placeholder="Decision rationale" /></label>
             </div>
-            <button disabled={pending}>Record decision</button>
+            <button className="button button-primary" disabled={pending}>{pending ? "Recording…" : "Record decision"}</button>
             {snapshot.review && (
               <p>
                 Current review:{" "}
@@ -231,17 +174,31 @@ export function ContextualInspector({
           </Form>
         )}
       </section>
+      <GoalActivations data={data} goalId={goal.id} attemptId={attempt?.id} />
+      <details className="inspector-section inspector-disclosure">
+        <summary>Technical details</summary>
+        <dl className="property-list">
+          {agent && <div><dt>Role</dt><dd>{agent.description || agent.defaultGoal || agent.kind}</dd></div>}
+          <div><dt>Checkpoint</dt><dd>{attempt?.checkpoint ?? "Waiting for host signal"}</dd></div>
+          <div><dt>Heartbeat</dt><dd>{relativeTime(attempt?.heartbeatAt, data.asOf)}</dd></div>
+          {agent && <div><dt>Agent ID</dt><dd className="mono">{agent.id}</dd></div>}
+          {transition && <div><dt>Arc ID</dt><dd className="mono">{transition.id}</dd></div>}
+          <div><dt>Harness</dt><dd>{attempt?.harness ?? "—"}</dd></div>
+          <div><dt>Working path</dt><dd className="mono">{attempt?.workingPath ?? "Not recorded"}</dd></div>
+        </dl>
+      </details>
+      {attempt && <section className="inspector-section"><HostExecutionRecords data={data} attempt={attempt} /></section>}
       <section className="inspector-section event-preview">
         <header>
           <h3>Recent activity</h3>
-          <a href={projectPath(goal.projectId, "events")}>View all</a>
+          <Link to={projectPath(goal.projectId, "events")}>View all</Link>
         </header>
         {events.map((event) => (
           <div key={event.id}>
             <i />
             <span>
               <strong>{eventLabel(event.eventType)}</strong>
-              <small>{relativeTime(event.createdAt)}</small>
+              <small>{relativeTime(event.createdAt, data.asOf)}</small>
             </span>
           </div>
         ))}

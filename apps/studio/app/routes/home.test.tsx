@@ -13,6 +13,7 @@ describe("home route", () => {
   it("declares metadata and composes loader data with URL filters", async () => {
     expect(meta()).toContainEqual({ title: "Mission Control · Senderos Studio" });
     const data = {
+      ...missionControlFixture,
       executionContexts: [], projects: [], goals: [], runs: [], attempts: [], agents: [], transitions: [], senderoGraphs: [], events: [],
       queue: { reviews: [], activeRuns: [], failedAttempts: [], staleAttempts: [], dispatchable: [], blockedGoals: [] },
       runtime: { database: { endpoint: "Local database", urlEnv: "URL", authTokenEnv: "TOKEN", remote: false } },
@@ -20,7 +21,8 @@ describe("home route", () => {
     const router = createMemoryRouter([{ path: "*", loader: () => data, element: <Home /> }], { initialEntries: ["/goals?context=context&project=project"] });
     render(<RouterProvider router={router} />);
     expect(await screen.findByText("No goals in this scope")).toBeTruthy();
-    expect(screen.getByText("All execution contexts")).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Execution context" })).toHaveProperty("value", "");
+    expect(screen.getByRole("combobox", { name: "Project" })).toHaveProperty("value", "");
   });
   it.each([false, true])("keeps authoring visible with actionable feedback after a %s action", async (ok) => {
     const router = createMemoryRouter([{ path: '*', loader: () => missionControlFixture, action: () => ({ ok, intent: 'create-agent', message: ok ? 'Saved successfully' : 'Name already exists' }), element: <Home /> }], { initialEntries: ['/agents/new'] });

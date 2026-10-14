@@ -1,14 +1,18 @@
+import { useClientReady } from "../../../hooks/use-client-ready";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DurableLink as Link } from "../../../components/durable-link";
 
 import type { MissionControlData } from "../server";
-import { attemptPath, goalPath, projectPath } from "../navigation";
+import { attemptPath, goalPath, projectPath, senderoPath } from "../navigation";
 import { Icon } from "./icons";
 
 export function CommandPalette({ data, projectId }: { data: MissionControlData; projectId?: string }) {
+  const clientReady = useClientReady();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -19,24 +23,54 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
-  useEffect(() => { if (open) requestAnimationFrame(() => input.current?.focus()); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const returnFocus = trigger.current;
+    input.current?.focus();
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusable = dialog.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex="0"]');
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    const keepFocusInside = (event: FocusEvent) => {
+      if (event.target instanceof Node && !dialog.current?.contains(event.target)) input.current?.focus();
+    };
+    document.addEventListener("keydown", trapFocus);
+    document.addEventListener("focusin", keepFocusInside);
+    return () => {
+      document.removeEventListener("keydown", trapFocus);
+      document.removeEventListener("focusin", keepFocusInside);
+      returnFocus?.focus();
+    };
+  }, [open]);
 
   const items = useMemo(() => [
-    { label: "Open orchestration canvas", detail: "Workspace", href: projectPath(projectId), icon: "nodes" },
+    { label: "Open workflow progress", detail: "Workspace", href: projectPath(projectId), icon: "nodes" },
     { label: "Show work needing attention", detail: "Decision queue", href: projectPath(projectId, "now"), icon: "inbox" },
     { label: "Review dispatch plan", detail: `${data.queue.dispatchable.length} ready`, href: `${projectPath(projectId)}?plan=true`, icon: "activity" },
     { label: "Create a new goal", detail: "Action", href: `${projectPath(projectId, "goals")}/new`, icon: "plus" },
     { label: "Open database settings", detail: "Configuration", href: projectPath(projectId, "settings"), icon: "settings" },
+    { label: "Manage agents", detail: "Settings · Roles and instructions", href: "/agents", icon: "spark" },
+    { label: "Manage Senderos", detail: "Settings · Workflow definitions", href: data.senderoGraphs[0] ? senderoPath(data.senderoGraphs[0].sendero.id) : "/senderos", icon: "nodes" },
     ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
     ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: attemptPath(goal?.projectId ?? projectId, attempt.id), icon: "activity" }; }),
   ], [projectId, data]);
   const matches = items.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 9);
 
   return <>
-    <button className="command-trigger" type="button" onClick={() => setOpen(true)}><Icon name="search" /><span>Search or run a command</span><kbd>⌘ K</kbd></button>
+    <button disabled={!clientReady} ref={trigger} className="command-trigger" type="button" aria-label="Search or run a command" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="search" /><span>Search or run a command</span><kbd>⌘ K</kbd></button>
     {open && <div className="command-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
-      <section className="command-dialog" role="dialog" aria-modal="true" aria-label="Command palette">
-        <header><Icon name="search" /><input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a goal, attempt, or action…" /><button onClick={() => setOpen(false)}>Esc</button></header>
+      <section ref={dialog} className="command-dialog" role="dialog" aria-modal="true" aria-label="Command palette">
+        <header><Icon name="search" /><input ref={input} aria-label="Search commands" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a goal, attempt, or action…" /><button className="button button-secondary" type="button" onClick={() => setOpen(false)}>Esc</button></header>
         <div className="command-results">
           <p>Commands and entities</p>
           {matches.map((item) => <Link key={`${item.href}-${item.label}`} to={item.href} onClick={() => setOpen(false)}><Icon name={item.icon} /><span><strong>{item.label}</strong><small>{item.detail}</small></span><Icon name="arrow" /></Link>)}
