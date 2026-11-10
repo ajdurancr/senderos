@@ -1,6 +1,7 @@
 import type { MissionControlData } from './server';
 
 export function filterMissionControlData(data: MissionControlData, executionContextId?: string, projectId?: string): MissionControlData {
+  if (!executionContextId && !projectId) return data;
   const projects = data.projects.filter((project) =>
     (!executionContextId || project.executionContextId === executionContextId) &&
     (!projectId || project.id === projectId));

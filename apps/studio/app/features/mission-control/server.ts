@@ -47,7 +47,7 @@ export async function missionControlData() {
       remote: !database.url.startsWith("file:"),
     },
   };
-  return { ...overview, hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, events, runtime,
+  return { ...overview, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, events, runtime,
     draftGraphs: allGraphs.filter(g => g.version.status === 'draft'),
     historyGraphs: allGraphs.filter(g => g.version.status === 'published') };
 }
@@ -58,6 +58,30 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   await prepareStudioDatabase();
   const senderos = senderosForStudio();
   const intent = String(form.get("intent"));
+  const supported = new Set([
+    'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
+    'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal',
+    'start', 'retry', 'dispatch-plan', 'stop', 'evidence', 'review', 'update-project',
+    'update-sendero-node-position', 'update-sendero-layout', 'update-sendero-node', 'update-sendero-edge',
+  ]);
+  if (!supported.has(intent)) throw new Error('This action is not supported. Refresh Studio and try again.');
+  if (intent === 'update-project') {
+    if (!String(form.get('name') ?? '').trim() || !String(form.get('targetBranch') ?? '').trim()) {
+      throw new Error('Project name and target branch are required.');
+    }
+    if (!['github_pr', 'local_merge', 'none'].includes(String(form.get('integrationMode')))) {
+      throw new Error('Choose a supported integration mode.');
+    }
+  }
+  if (intent === 'evidence') {
+    if (!String(form.get('label') ?? '').trim()) throw new Error('An evidence label is required.');
+    const value = String(form.get('url') ?? '').trim();
+    if (value) {
+      let valid = false;
+      try { valid = ['https:', 'http:'].includes(new URL(value).protocol); } catch { /* Invalid URL. */ }
+      if (!valid) throw new Error('Evidence links must use a valid HTTP or HTTPS URL.');
+    }
+  }
   if (intent === 'create-agent' || intent === 'update-agent') {
     const input = {
       slug: String(form.get('slug') ?? '').trim(), name: String(form.get('name') ?? '').trim(),
@@ -103,9 +127,7 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
     return { redirectTo: `/projects/${encodeURIComponent(goal.projectId)}/canvas/goals/${encodeURIComponent(goal.id)}` };
   }
   if (intent === "start")
-    await senderos.missionControl.startGoal({
-      goalId: String(form.get("goalId")),
-    });
+    await senderos.commands.goals.activate(String(form.get("goalId")));
   if (intent === "retry")
     await senderos.missionControl.retryExecution({
       goalId: String(form.get("goalId")),

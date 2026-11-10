@@ -44,3 +44,22 @@ describe("mission-control model helpers", () => {
     });
   });
 });
+
+it("normalizes malformed optional evidence and review metadata before it reaches React", () => {
+  const snapshot = parseAttemptSnapshot(JSON.stringify({
+    evidence: [{ id: "proof", label: "Retained evidence", kind: "manual", url: { href: "https://example.com" }, summary: { text: "invalid child" }, createdAt: 12 }],
+    review: { status: "approved", rationale: { text: "invalid child" }, reviewer: ["operator"], reviewedAt: false },
+  }));
+  expect(snapshot.evidence).toHaveLength(1);
+  expect(snapshot.evidence![0]).toMatchObject({ id: "proof", label: "Retained evidence", kind: "manual" });
+  for (const field of ["url", "summary", "createdAt"] as const) expect(snapshot.evidence![0]![field]).toBeUndefined();
+  expect(snapshot.review?.status).toBe("approved");
+  for (const field of ["rationale", "reviewer", "reviewedAt"] as const) expect(snapshot.review?.[field]).toBeUndefined();
+});
+
+it("retains valid optional metadata while discarding malformed entries and review status", () => {
+  const evidence = { id: "proof", label: "Evidence", kind: "test", url: "https://example.com/report", summary: "All checks passed", createdAt: "2026-09-17T12:00:00Z" };
+  expect(parseAttemptSnapshot(JSON.stringify({ evidence: [null, "bad", { id: 5, label: "bad", kind: "manual" }, evidence], review: { status: { label: "approved" } } }))).toEqual({ evidence: [evidence], review: undefined });
+  const review = { status: "changes_requested", rationale: "Needs keyboard proof", reviewer: "Studio operator", reviewedAt: "2026-09-17T12:00:00Z" };
+  expect(parseAttemptSnapshot(JSON.stringify({ review })).review).toEqual(review);
+});

@@ -217,7 +217,9 @@ describe("mission-control components", () => {
       <SettingsView data={fallback} />
       <DispatchTray data={{ ...fallback, queue: { ...fallback.queue, dispatchable: [] } }} />
     </>);
-    expect(screen.getAllByText("Project & database settings").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Project" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: /^Name/ })).toHaveProperty("value", "Settings project");
+    expect(screen.getByRole("heading", { name: "Shared database" })).toBeTruthy();
     expect(screen.getAllByText("Execution failed without a summary.").length).toBeGreaterThan(0);
   });
 });

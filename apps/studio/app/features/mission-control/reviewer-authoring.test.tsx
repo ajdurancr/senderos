@@ -19,7 +19,10 @@ function inRouter(element: React.ReactNode) {
 describe('independent Studio audit regressions', () => {
   it('resolves attention links to each record\'s project with no global project filter', () => {
     inRouter(<AttentionView data={base} />);
-    for (const link of screen.getAllByRole('link')) {
+    const rows = screen.getAllByRole('link').filter(link => link.closest('.attention-list'));
+    expect(rows).toHaveLength(4);
+    expect(screen.getByRole('link', { name: 'New goal' }).getAttribute('href')).toBe('/goals/new');
+    for (const link of rows) {
       expect(link.getAttribute('href')).toMatch(/^\/projects\/project-1\//);
     }
   });
@@ -45,7 +48,7 @@ describe('independent Studio audit regressions', () => {
     const unvisited = screen.getByLabelText('Inspect agent Unvisited task');
     expect(visited.getAttribute('href')).toBe('/projects/project-1/canvas/goals/goal-1/nodes/node-agent/attempts/attempt-1');
     expect(unvisited.getAttribute('href')).toBe('/projects/project-1/canvas/goals/goal-1/nodes/node-agent-unvisited');
-    expect(within(visited).getByText('1 visits')).toBeTruthy();
+    expect(within(visited).getByText('1 visit')).toBeTruthy();
     expect(within(unvisited).getByText('0 visits')).toBeTruthy();
     expect(within(unvisited).queryByText('1 active')).toBeNull();
   });
@@ -91,7 +94,16 @@ describe('independent Studio audit regressions', () => {
     expect(container.querySelector<HTMLInputElement>('input[name="expectedRevision"]')!.value).toBe('initial');
     fireEvent.click(screen.getByRole('button', { name: 'Save graph draft' }));
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
-    await screen.findByRole('button', { name: 'Save graph draft' });
+    // Router state can be idle before its React transition commits. Wait for
+    // the actual control to be interactive, otherwise clicking a still-disabled
+    // Cancel button is correctly ignored and does not exercise cancellation.
+    await waitFor(() => {
+      expect(router.state.navigation.state).toBe('idle');
+      expect(screen.getByRole('button', { name: 'Cancel changes' })).toHaveProperty('disabled', false);
+    });
+    expect(Object.values(router.state.actionData ?? {})).toContainEqual({ ok: false, intent: 'replace-sendero-draft' });
+    expect(current.revision).toBe('other-tab');
+    expect(current.nodes.find(node => node.id === 'node-agent')!.label).toBe('Other tab');
     expect(label().value).toBe('Local unsaved');
     expect(container.querySelector<HTMLInputElement>('input[name="expectedRevision"]')!.value).toBe('initial');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel changes' }));
@@ -101,9 +113,14 @@ describe('independent Studio audit regressions', () => {
     for (const name of ['Saved once', 'Saved twice']) {
       fireEvent.change(label(), { target: { value: name } });
       fireEvent.click(screen.getByRole('button', { name: 'Save graph draft' }));
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Save graph draft' })).toHaveProperty('disabled', true));
+      await waitFor(() => {
+        expect(router.state.navigation.state).toBe('idle');
+        expect(screen.getByText('All graph edits are saved.')).toBeTruthy();
+        expect(container.querySelector<HTMLInputElement>('input[name="expectedRevision"]')!.value).toBe(current.revision);
+      });
+      expect(screen.getByRole('button', { name: 'Save graph draft' })).toHaveProperty('disabled', true);
       expect(label().value).toBe(name);
     }
     expect(action).toHaveBeenCalledTimes(3);
-  });
+  }, 15_000);
 });

@@ -33,6 +33,12 @@ export function MissionControlOverview({
   const [hasUnsavedGraph, setHasUnsavedGraph] = useState(false);
   useEffect(() => setHasUnsavedGraph(false), [view, route.senderoId]);
   const projectId = search.get("project") ?? route.projectId;
+  if (!["now", "canvas", "goals", "runs", "reviews", "settings", "agents", "senderos", "events"].includes(view)) {
+    return <div className="standard-view"><section className="empty-state"><h1>Page not found</h1><p>This Studio destination is unavailable.</p><Link className="button button-secondary" to="/now">Return to Studio</Link></section></div>;
+  }
+  if (!route.create && goalId && !data.goals.some(goal => goal.id === goalId)) {
+    return <div className="standard-view"><section className="empty-state"><h1>Goal not found</h1><p>This goal is unavailable in the selected project or context.</p><Link className="button button-secondary" to="/goals">View goals</Link></section></div>;
+  }
 
   if (view === "senderos" && route.create) return <SenderoCreation />;
 
@@ -96,26 +102,24 @@ export function MissionControlOverview({
   if (view === "settings")
     return <SettingsView data={data} projectId={projectId} />;
 
-  const canvasProjectId = projectId ?? data.projects[0]?.id;
-  const selectedGoal =
-    goalId ?? data.goals.find((goal) => goal.projectId === canvasProjectId)?.id;
+  const selectedGoal = goalId ?? data.goals.find((goal) => !projectId || goal.projectId === projectId)?.id;
+  const canvasProjectId = projectId ?? data.goals.find((goal) => goal.id === selectedGoal)?.projectId;
+  if (!selectedGoal) return <div className="standard-view"><header className="view-header"><div><span>Goal execution</span><h1>Workflow progress</h1></div></header><section className="empty-state"><Icon name="target" /><h2>No goal selected</h2><p>Create a goal in this project to follow its workflow, activations, and evidence.</p><Link className="button button-primary" to={`${projectId ? `/projects/${encodeURIComponent(projectId)}` : ""}/goals/new`}>New goal</Link></section>{search.get("plan") === "true" && <DispatchTray data={data} scope={{ executionContextId: search.get("context") ?? undefined, projectId }} />}</div>;
   return (
     <div className={`canvas-workspace ${selectedGoal ? "with-inspector" : ""}`}>
       <section className="canvas-column">
         <header className="canvas-page-header">
           <div>
-            <span>Project canvas</span>
-            <h1>Orchestration topology</h1>
+            <span>Goal execution</span>
+            <h1>Workflow progress</h1>
             <p>
               Follow durable intent through each planned handoff, execution, and
               review.
             </p>
           </div>
-          <button className="view-mode">
-            <Icon name="nodes" /> Goal flow <Icon name="arrow" />
-          </button>
+          <span className="view-mode"><Icon name="nodes" /> Goal flow</span>
         </header>
-        <AttentionRail data={data} projectId={canvasProjectId} />
+        <AttentionRail data={data} projectId={projectId} />
         <OrchestrationCanvas
           data={data}
           projectId={canvasProjectId}

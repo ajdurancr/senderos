@@ -159,12 +159,12 @@ export function OrchestrationCanvas({
           <span className="canvas-label">
             Sendero · v{graph.version.version}
           </span>
-          <strong>{graph.sendero.name}</strong>
+          <strong title={graph.sendero.name}>{graph.sendero.name}</strong>
           <StatusBadge value={graph.sendero.status} />
         </div>
         <div className="canvas-controls">
-          <span>Drag nodes · select nodes and arcs</span>
-          <button type="button" onClick={reset} disabled={fetcher.state !== "idle" || readOnlyLayout}>
+          <span className="canvas-help">Drag to arrange · select to inspect</span>
+          <button className="button button-secondary" type="button" onClick={reset} disabled={fetcher.state !== "idle" || readOnlyLayout}>
             Auto layout
           </button>
         </div>
@@ -265,7 +265,7 @@ export function OrchestrationCanvas({
                 draggable={false}
                 key={node.id}
                 className={`${className} draggable-node`}
-                style={canvasNodeStyle(point)}
+                style={{ ...canvasNodeStyle(point), width: canvasNodeSize.width, height: canvasNodeSize.height }}
                 title={nodeTitle}
                 aria-label={`Inspect ${node.kind} ${node.label}`}
                 onPointerDown={(event) => drag(node.id, event)}
@@ -293,7 +293,7 @@ export function OrchestrationCanvas({
                 {agent && <span className="node-role" title={agent.name}>{agent.name}</span>}
                 {agent && (
                   <footer>
-                    <span>{nodeActivations.length || attempts.length} visits</span>
+                    <span>{nodeActivations.length || attempts.length} {(nodeActivations.length || attempts.length) === 1 ? "visit" : "visits"}</span>
                     <span>
                       {current ? `${currentAttempts.length} active` : nodeAttempt?.status ?? "Ready"}
                     </span>

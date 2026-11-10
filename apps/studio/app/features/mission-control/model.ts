@@ -10,9 +10,10 @@ export function parseAttemptSnapshot(value: string): AttemptSnapshot {
     const parsed: unknown = JSON.parse(value);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
     const snapshot = parsed as AttemptSnapshot;
+    const text = (input: unknown) => typeof input === "string" ? input : undefined;
     return {
-      evidence: Array.isArray(snapshot.evidence) ? snapshot.evidence.filter(item => item && typeof item.id === 'string' && typeof item.label === 'string' && typeof item.kind === 'string') : undefined,
-      review: snapshot.review && typeof snapshot.review === 'object' && typeof snapshot.review.status === 'string' ? snapshot.review : undefined,
+      evidence: Array.isArray(snapshot.evidence) ? snapshot.evidence.filter(item => item && typeof item.id === 'string' && typeof item.label === 'string' && typeof item.kind === 'string').map(item => ({ id: item.id, label: item.label, kind: item.kind, url: text(item.url), summary: text(item.summary), createdAt: text(item.createdAt) })) : undefined,
+      review: snapshot.review && typeof snapshot.review === 'object' && typeof snapshot.review.status === 'string' ? { status: snapshot.review.status, reviewer: text(snapshot.review.reviewer), rationale: text(snapshot.review.rationale), reviewedAt: text(snapshot.review.reviewedAt) } : undefined,
     };
   }
   catch { return {}; }
