@@ -9,12 +9,24 @@ import { eventLabel, goalExecution, parseAttemptSnapshot, relativeTime } from ".
 import { attemptPath, canvasEntityPath, goalPath, projectPath } from "../navigation";
 import type { MissionControlData } from "../server";
 import { Icon } from "./icons";
+import { goalBlockers } from "../goal-blockers";
+import { GoalBlockerCard } from "./goal-blocker-card";
 
 function ViewHeader({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: React.ReactNode }) {
   return <header className="view-header"><div><span>{eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>{action}</header>;
 }
 
 export function AttentionView({ data, filter, projectId }: { data: MissionControlData; filter?: string; projectId?: string }) {
+  const blocked = goalBlockers(data);
+  const filters = [
+    { key: "", label: "All attention" },
+    { key: "blocked", label: `Goal blockers (${blocked.length})` },
+    { key: "review", label: "Reviews" },
+    { key: "failed", label: "Failed attempts" },
+    { key: "stale", label: "Stale hosts" },
+    { key: "dispatchable", label: "Ready to dispatch" },
+  ];
+  const validFilter = filters.some(item => item.key === (filter ?? ""));
   const goalForAttempt = (attempt: MissionControlData['attempts'][number]) => {
     const run = data.runs.find(run => run.id === attempt.runId);
     return data.goals.find(goal => goal.id === run?.goalId);
@@ -33,10 +45,12 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
     }),
   ].filter(item => !filter || item.type === filter);
   return <div className="standard-view"><ViewHeader eyebrow="Decision queue" title="What needs attention now" copy="Exceptions, evidence, and decisions that need an operator." action={<Link className="button button-primary" to={`${projectPath(projectId, "goals")}/new`}><Icon name="plus" />New goal</Link>} />
-    <div className="attention-list">{records.map(item => {
+    <nav className="attention-filters" aria-label="Attention filters">{filters.map(item => <Link key={item.key} to={`${projectPath(projectId, "now")}${item.key ? `?filter=${item.key}` : ""}`} aria-current={(filter ?? "") === item.key ? "page" : undefined}>{item.label}</Link>)}</nav>
+    {!validFilter && <section className="empty-state"><h2>Unknown attention filter</h2><p>Choose a category above or return to all attention.</p><Link className="button button-secondary" to={projectPath(projectId, "now")}>Show all attention</Link></section>}
+    {validFilter && <div className="attention-list">{(!filter || filter === "blocked") && blocked.map(entry => <GoalBlockerCard key={entry.goal.id} data={data} entry={entry} />)}{records.map(item => {
       const body = <><i className={item.type}/><div><span>{item.type}</span><h2>{item.title}</h2><p>{item.body}</p></div><StatusBadge value={item.status}/>{item.href && <Icon name="arrow"/>}</>;
       return item.href ? <Link key={`${item.type}-${item.id}`} to={item.href}>{body}</Link> : <article key={`${item.type}-${item.id}`}>{body}</article>;
-    })}{!records.length && <div className="empty-state"><Icon name="check"/><h2>Queue clear</h2><p>Nothing in this category needs intervention.</p></div>}</div>
+    })}{!records.length && ((filter && filter !== "blocked") || !blocked.length) && <div className="empty-state"><Icon name="check"/><h2>{filter === "blocked" ? "No goal blockers" : filter ? "No matching attention" : "Queue clear"}</h2><p>{filter === "blocked" ? "No blocked activations or unresolved goal errors in this scope." : "Nothing in this category needs intervention."}</p></div>}</div>}
   </div>;
 }
 

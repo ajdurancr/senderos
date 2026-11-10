@@ -3,15 +3,17 @@ import { DurableLink as Link } from "../../../components/durable-link";
 import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";
 import { Icon } from "./icons";
+import { goalBlockers } from "../goal-blockers";
 
 export function AttentionRail({ data, projectId }: { data: MissionControlData; projectId?: string }) {
   const items = [
+    { label: "Goal blockers", count: goalBlockers(data).length, filter: "blocked", tone: "amber" },
     { label: "Reviews waiting", count: data.queue.reviews.length, filter: "review", tone: "violet" },
     { label: "Failed attempts", count: data.queue.failedAttempts.length, filter: "failed", tone: "rose" },
     { label: "Stale heartbeats", count: data.queue.staleAttempts.length, filter: "stale", tone: "amber" },
     { label: "Ready to dispatch", count: data.queue.dispatchable.length, filter: "dispatchable", tone: "mint" },
   ];
   return <aside className="attention-rail" aria-label="Needs attention">
-    <div>{items.map((item) => <Link key={item.filter} to={`${projectPath(projectId, "now")}?filter=${item.filter}`}><i className={item.tone} /><span>{item.label}</span><strong>{item.count}</strong><Icon name="arrow" /></Link>)}</div>
+    <div>{items.map((item) => <Link key={item.filter} aria-label={`${item.label}: ${item.count}`} to={`${projectPath(projectId, "now")}?filter=${item.filter}`}><i className={item.tone} /><span>{item.label}</span><strong>{item.count}</strong><Icon name="arrow" /></Link>)}</div>
   </aside>;
 }

@@ -177,7 +177,7 @@ select option { background: var(--studio-chrome); }
 
 /* Attention summaries and actionable records. */
 .attention-rail { margin-bottom: 20px; }
-.attention-rail > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.attention-rail > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .attention-rail a { min-width: 0; padding: 12px 14px; border: 1px solid var(--studio-border); border-radius: 7px; display: grid; grid-template-columns: 7px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: var(--studio-control); }
 .attention-rail a:hover { border-color: var(--studio-border-strong); background: var(--studio-raised); }
 .attention-rail a > span { color: var(--text-muted); font-size: var(--text-meta); }
@@ -195,6 +195,18 @@ select option { background: var(--studio-chrome); }
 .attention-list > :last-child { border-bottom: 0; }
 .attention-list h2 { margin: 3px 0; font-size: var(--text-title); overflow-wrap: anywhere; }
 .attention-list p, .attention-list span { margin: 0; color: var(--text-muted); font-size: var(--text-body); overflow-wrap: anywhere; }
+.attention-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.attention-filters a { padding: 8px 12px; border: 1px solid var(--studio-border); border-radius: 7px; color: var(--text-muted); }
+.attention-filters a[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: var(--studio-raised); }
+.attention-list > .goal-blocker-card { display: block; }
+.goal-blocker-card > header { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 8px; }
+.goal-blocker-card > header > div { min-width: 0; }
+.goal-blocker-card > header > span { flex-shrink: 0; }
+.goal-blocker-card h2 a:hover { color: var(--accent); }
+.goal-blocker-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 16px; }
+.goal-blocker-list li { border-left: 2px solid var(--warning); padding-left: 14px; min-width: 0; }
+.goal-blocker-list h3 { font-size: var(--text-body); margin: 0 0 6px; overflow-wrap: anywhere; }
+.goal-blocker-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
 /* Workflow topology and interaction surfaces. */
 .canvas-workspace { min-height: calc(100vh - var(--header-height)); display: grid; grid-template-columns: minmax(0, 1fr); }

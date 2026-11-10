@@ -38,6 +38,25 @@ contracts; no remote database or real worker execution was used.
   keyboard/Escape/focus restoration, narrow drawer, configuration tabs, long
   labels, and a real isolated database-open error were inspected.
 
+## Goal blockers in Now
+
+Now and the workflow attention rail derive goal blockers from every current Core
+activation decision. A goal can remain active or have another ready branch while
+one activation is blocked; its aggregate status is not a reliable attention filter.
+Each goal appears once with all of its blocked visits, actual goal status, owning
+scope, reason, next-step guidance, and links to the exact activation/attempt.
+Unavailable agents link to their editor. Recovery, budget changes, and host stop
+acknowledgements remain explicit operator/host actions; viewing a blocker never
+dispatches work or infers that an external process stopped.
+
+Component tests cover partial blockers, missing explanations, safe error text,
+terminal history, scoped counts, unknown filters and filtered empty states.
+Real-database tests disable/re-enable an agent, verify invalid remediation makes
+no writes, and verify readiness changes without creating a run. Production
+browser journeys additionally exercise an independently ready parallel branch,
+scope switching, mobile layout, persisted remediation, and activation-budget
+exhaustion followed by goal-wide cancellation.
+
 Each mutating journey was checked against the local database, including invalid
 and canceled submissions. The external manual journal retains the detailed
 before/after evidence; test fixtures do not rely on that database.
