@@ -3,6 +3,7 @@ import * as libsql from "@libsql/client";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  atomic,
   databaseConnectionFromEnvironment,
   describeCurrentDb,
   healthcheckCurrentDb,
@@ -154,5 +155,25 @@ describe("effective database URL", () => {
 
     expect(() => openRuntimeDb()).toThrow("Database reset lock exists");
     expect(create).not.toHaveBeenCalled();
+  });
+});
+
+
+test("remote connections keep the driver's pinned transaction and rollback contract without network access", async () => {
+  const commit = mock(async () => {}), rollback = mock(async () => {});
+  const transaction = mock(async () => ({ commit, rollback }));
+  const executeMultiple = mock(async () => {}), close = mock(() => {});
+  spyOn(libsql, "createClient").mockReturnValue({
+    protocol: "http", transaction, executeMultiple, close,
+  } as unknown as ReturnType<typeof libsql.createClient>);
+  await withDatabaseConnection({ url: "https://fixture.example.test" }, async () => {
+    expect(await atomic(undefined, async () => 42)).toBe(42);
+    expect(commit).toHaveBeenCalledTimes(1);
+    const failure = new Error("remote fixture failure");
+    await expect(atomic(undefined, async () => { throw failure; })).rejects.toBe(failure);
+    expect(transaction).toHaveBeenCalledTimes(2);
+    expect(rollback).toHaveBeenCalledTimes(1);
+    expect(executeMultiple).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalled();
   });
 });
