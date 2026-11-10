@@ -20,6 +20,40 @@ describe("Studio server integration", () => {
     }
   });
 
+  it("persists budget edits, invalidates reviewed activations, and rejects invalid or inactive goals without writes", async () => {
+    const { missionControlData, applyMissionControlAction } = await import("./server");
+    const core = await import("@senderos/core");
+    const data = await missionControlData();
+    await core.registerExecutionContext({ id: "budget-context", name: "Budget context" });
+    const api = core.createSenderos({ executionContextId: "budget-context" });
+    const project = await api.commands.projects.create({ id: "budget-project", name: "Budget project", canonicalPath: "/tmp/budget-fixture", githubOwner: "fixture", githubRepo: "fixture" });
+    const goal = await api.commands.goals.create({ projectId: project.id, title: "Budget controls", kind: "research", senderoVersionId: data.senderoGraphs[0]!.version.id });
+    const edit = (intent: string, limit: string, id = goal.id) => {
+      const form = new FormData(); Object.entries({ intent, limit, goalId: id }).forEach(([key, value]) => form.set(key, value));
+      return applyMissionControlAction(form);
+    };
+    await expect(edit("set-retry-budget", "4")).rejects.toThrow(/Activate/);
+    await api.commands.goals.activate(goal.id);
+    const before = await missionControlData();
+    for (const invalid of ["", "1.5", "-1", "1e2", "NaN", "9007199254740992", "0", "101"]) await expect(edit("set-retry-budget", invalid)).rejects.toThrow();
+    await expect(edit("set-activation-budget", "10001")).rejects.toThrow();
+    await expect(edit("set-retry-budget", "4", "")).rejects.toThrow(/Choose/);
+    await expect(edit("set-retry-budget", "4", "missing")).rejects.toThrow();
+    expect((await missionControlData()).executions.find(item => item.goalId === goal.id)).toEqual(before.executions.find(item => item.goalId === goal.id));
+    await edit("set-activation-budget", "200");
+    await edit("set-retry-budget", "4");
+    const saved = await missionControlData();
+    expect(saved.executions.find(item => item.goalId === goal.id)).toMatchObject({ maxActivations: 200, maxAttempts: 4 });
+    const activation = saved.activations.find(item => item.goalId === goal.id)!;
+    expect(activation.maxAttempts).toBe(4);
+    expect(activation.revision).toBeGreaterThan(before.activations.find(item => item.id === activation.id)!.revision);
+    expect(saved.runs.filter(item => item.goalId === goal.id)).toHaveLength(0);
+    await api.commands.goals.cancel(goal.id);
+    await expect(edit("set-activation-budget", "300")).rejects.toThrow(/terminal/);
+    await expect(edit("set-retry-budget", "5")).rejects.toThrow(/terminal/);
+    expect((await missionControlData()).executions.find(item => item.goalId === goal.id)).toMatchObject({ maxActivations: 200, maxAttempts: 4 });
+  });
+
   it("loads the shared database and applies every Studio intent", async () => {
     const { missionControlData, applyMissionControlAction } = await import("./server");
     const { senderosForStudio } = await import("../../server/senderos.server");

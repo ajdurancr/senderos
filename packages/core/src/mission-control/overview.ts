@@ -1,3 +1,6 @@
+import { inArray } from 'drizzle-orm';
+import { openRuntimeDb } from '../db/client';
+import { goalExecutions } from '../db/schema';
 import { listGoals } from '../commands/goals/list';
 import { listProjects } from '../commands/projects/list';
 import { listRuns } from '../commands/runs/list';
@@ -22,6 +25,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
     status: await status(home, executionContextId),
     projects: await listProjects(home, executionContextId),
     goals,
+    executions: goals.length ? await openRuntimeDb(home).select().from(goalExecutions).where(inArray(goalExecutions.goalId, goals.map(goal => goal.id))) : [],
     activations: (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat(),
     runs,
     attempts,

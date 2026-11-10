@@ -61,7 +61,7 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   const supported = new Set([
     'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
     'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal',
-    'start', 'retry', 'dispatch-plan', 'stop', 'cancel-goal', 'evidence', 'review', 'update-project',
+    'set-activation-budget', 'set-retry-budget', 'start', 'retry', 'dispatch-plan', 'stop', 'cancel-goal', 'evidence', 'review', 'update-project',
     'update-sendero-node-position', 'update-sendero-layout', 'update-sendero-node', 'update-sendero-edge',
   ]);
   if (!supported.has(intent)) throw new Error('This action is not supported. Refresh Studio and try again.');
@@ -125,6 +125,14 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
       senderoVersionId: String(form.get("senderoVersionId") ?? "") || undefined,
     });
     return { redirectTo: `/projects/${encodeURIComponent(goal.projectId)}/canvas/goals/${encodeURIComponent(goal.id)}` };
+  }
+  if (intent === "set-activation-budget" || intent === "set-retry-budget") {
+    const goalId = String(form.get("goalId") ?? "").trim();
+    const raw = String(form.get("limit") ?? "").trim();
+    if (!goalId) throw new Error("Choose a goal before changing its budget.");
+    if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw))) throw new Error("Enter a whole-number execution limit.");
+    if (intent === "set-activation-budget") await senderos.commands.goals.setActivationBudget(goalId, Number(raw));
+    else await senderos.commands.goals.setRetryBudget(goalId, Number(raw));
   }
   if (intent === "start")
     await senderos.commands.goals.activate(String(form.get("goalId")));

@@ -20,7 +20,7 @@ export const fixtureAttempt: MissionControlData["attempts"][number] = {
 
 export const missionControlFixture: MissionControlData = {
   asOf: Date.parse(fixtureTimestamp),
-  decisions: [], hosts: [], activations: [],
+  decisions: [], hosts: [], activations: [], executions: [],
   draftGraphs: [],
   historyGraphs: [],
   status: {
