@@ -32,3 +32,10 @@ canceling before dispatch creates no runs or attempts, dismissing confirmation
 does not change activations, and canceling an unclaimed reservation survives a
 reload. Real-database integration tests also cover failed-attempt preservation
 and waiting for all parallel host acknowledgements.
+
+Execution budget recovery authors a two-step bounded workflow, exhausts one
+activation's attempt limit through the simulated host contract, raises each limit
+through the real Studio form, and explicitly reviews/dispatches restored work.
+It verifies native form rejection without writes, persisted usage/revisions after
+reload, zero automatic reservations, desktop/mobile overflow, and terminal
+read-only state. No worker/model calls are made.

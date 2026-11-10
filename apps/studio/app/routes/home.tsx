@@ -68,6 +68,8 @@ export default function Home() {
 
 function actionMessage(intent: string) {
   const messages: Record<string, string> = {
+    "set-activation-budget": "Activation limit saved. Review ready activations before dispatching.",
+    "set-retry-budget": "Attempt limit saved. Review ready activations before dispatching.",
     start: "Goal started. Review ready activations before reserving runs.",
     "dispatch-plan": "Runs reserved. External hosts claim and start execution separately.",
     stop: "Stop requested for this goal and all its active branches. Owned attempts await the host's cancellation report.",

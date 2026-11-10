@@ -70,7 +70,23 @@ not included in normal attempt reads or displayed in Studio.
 These are host-reported records, not a claim that Studio independently inspected a
 process or verified filesystem isolation. An expired lease requires actual host
 inspection; it does not prove process death. The CLI remains the interface for
-host registration/grants, session reporting, reconciliation and budget operations.
+host registration/grants, session reporting and reconciliation.
+
+## Adjust execution budgets
+
+The goal inspector shows persisted activations used, the activation limit, and
+attempt usage for each activation. Active goals can change **Activation limit**
+or **Attempt limit per activation** independently. Attempts include the first
+execution; the limit is not a count of additional retries. Completed activation
+records retain their original limits.
+
+Activation limits must cover already-used activations (maximum 10000). Attempt
+limits must be whole numbers from 1 to 100. Core validates each change; terminal
+goals and cancellation awaiting host acknowledgement are read-only. Draft goals
+initialize budgets when started.
+
+Increasing a limit can unblock eligible work, but does not reserve runs or start
+workers. Review ready activations and explicitly dispatch the desired work.
 
 ## Lifecycle decisions and review
 

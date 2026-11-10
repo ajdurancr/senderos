@@ -8,6 +8,8 @@ test('context boundaries apply to every execution mutation and host resume', asy
   await activateGoal(goal.id, home); const run = await dispatchRun({ goalId: goal.id }, home);
   const foreign = createSenderos({ home, executionContextId: 'foreign' });
   for (const action of [
+    () => foreign.commands.goals.setRetryBudget(goal.id, 4),
+    () => foreign.commands.goals.setActivationBudget(goal.id, 200),
     () => foreign.commands.runs.cancel(run.runId),
     () => foreign.commands.attempts.update(run.attemptId, { status: 'failed' }),
     () => foreign.commands.attempts.resume(run.attemptId),
@@ -15,7 +17,9 @@ test('context boundaries apply to every execution mutation and host resume', asy
     () => foreign.commands.attempts.review({ attemptId: run.attemptId, status: 'approved', reviewer: 'No' }),
     () => foreign.missionControl.goal({ goalId: goal.id }),
   ]) await expect(action()).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  expect((await foreign.missionControl.overview()).executions).toEqual([]);
   const admin = createSenderos({ home, allExecutionContexts: true });
+  expect((await admin.missionControl.overview()).executions.some(item => item.goalId === goal.id)).toBe(true);
   await admin.commands.executionContexts.list();
   await admin.commands.senderos.draft('software-delivery');
   await admin.commands.senderos.publish('software-delivery');

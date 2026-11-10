@@ -15,6 +15,7 @@ export type State = {
   nodes: (typeof schema.senderoNodes.$inferSelect)[];
   edges: (typeof schema.senderoEdges.$inferSelect)[];
   goals: (typeof schema.goals.$inferSelect)[];
+  executions: (typeof schema.goalExecutions.$inferSelect)[];
   activations: (typeof schema.activations.$inferSelect)[];
   runs: (typeof schema.runs.$inferSelect)[];
   attempts: (typeof schema.runAttempts.$inferSelect)[];

@@ -12,6 +12,7 @@ import {
 import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";
 import { EvidenceRecords } from "./evidence-records";
+import { GoalBudgets } from "./goal-budgets";
 import { GoalCancellation } from "./goal-cancellation";
 
 export function ContextualInspector({
@@ -170,6 +171,7 @@ export function ContextualInspector({
           </Form>
         )}
       </section>
+      {validSelection && <GoalBudgets data={data} goal={goal} />}
       <GoalActivations data={data} goalId={goal.id} attemptId={attempt?.id} />
       <details className="inspector-section inspector-disclosure">
         <summary>Technical details</summary>

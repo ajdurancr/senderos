@@ -25,6 +25,7 @@ async function snapshot() {
     nodes: await db.select().from(schema.senderoNodes),
     edges: await db.select().from(schema.senderoEdges),
     goals: await db.select().from(schema.goals),
+    executions: await db.select().from(schema.goalExecutions),
     activations: await db.select().from(schema.activations),
     runs: await db.select().from(schema.runs),
     attempts: await db.select().from(schema.runAttempts),
@@ -86,12 +87,13 @@ if (command === 'init') {
   const claim = await host.commands.attempts.claim({ attemptId: id, ownerId: hostId, leaseSeconds: 600 });
   writeFileSync(join(runtime, `${id}.host.json`), JSON.stringify({ token: claim.token, workingPath, context: project!.executionContextId }), { mode: 0o600 });
   result = { eligible: preflight.eligible, claimed: claim.claimed, started: claim.started };
-} else if (['host-start', 'host-complete', 'host-test-evidence', 'host-cancel'].includes(command ?? '') && id) {
+} else if (['host-start', 'host-complete', 'host-test-evidence', 'host-cancel', 'host-fail'].includes(command ?? '') && id) {
   const stored = JSON.parse(readFileSync(join(runtime, `${id}.host.json`), 'utf8')) as { token: string; workingPath: string; context: string };
   const host = createSenderos({ executionContextId: stored.context });
   if (command === 'host-start') result = await host.commands.attempts.start({ attemptId: id, token: stored.token, externalSessionId: `simulated-worker-${id}`, parentSessionId: 'simulated-e2e-controller', workingPath: stored.workingPath });
   if (command === 'host-complete') result = await host.commands.attempts.update(id, { token: stored.token, status: 'succeeded', result: { outcome: 'accepted', summary: 'Deterministic external execution fixture finished.' } });
   if (command === 'host-test-evidence') result = await host.commands.attempts.recordEvidence({ attemptId: id, token: stored.token, kind: 'test', label: 'Host test report', url: 'https://example.com/e2e/host-tests' });
+  if (command === 'host-fail') result = await host.commands.attempts.update(id, { token: stored.token, status: 'failed', failureSummary: 'Deterministic failed worker fixture' });
   if (command === 'host-cancel') result = await host.commands.attempts.update(id, { token: stored.token, status: 'canceled' });
 } else throw new Error(`Unknown test runtime command: ${command}`);
 console.log(JSON.stringify(result));
