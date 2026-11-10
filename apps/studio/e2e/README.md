@@ -26,3 +26,9 @@ forms, project/context isolation, scope-aware keyboard search, focus trapping
 and restoration, narrow desktop/mobile overflow, terminal read-only evidence,
 missing entities, and browser hydration/runtime errors. CI retains Playwright
 reports, failure traces/screenshots, and redacted database assertions.
+
+Cancellation is goal-wide and requires confirmation. The browser suite verifies
+canceling before dispatch creates no runs or attempts, dismissing confirmation
+does not change activations, and canceling an unclaimed reservation survives a
+reload. Real-database integration tests also cover failed-attempt preservation
+and waiting for all parallel host acknowledgements.

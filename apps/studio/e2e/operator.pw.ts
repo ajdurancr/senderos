@@ -328,6 +328,31 @@ test('keyboard palette and mobile drawer preserve scope, focus, and viewport bou
   }
 });
 
+test('cancellation before dispatch requires confirmation and reserves no runs', async ({ page, scenario }, testInfo) => {
+  const goal = await createGoal(page, scenario, `Cancel ready browser goal ${scenario.id.slice(0, 8)}`);
+  await page.getByRole('button', { name: 'Start goal', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Review ready activations' })).toBeVisible();
+  const before = state().activations.filter(item => item.goalId === goal.id);
+  expect(goalRuns(goal.id)).toHaveLength(0);
+  await page.getByRole('button', { name: 'Request stop', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep goal', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Request stop', exact: true })).toBeFocused();
+  expect(state().goals.find(item => item.id === goal.id)?.status).toBe('active');
+  expect(state().activations.filter(item => item.goalId === goal.id)).toEqual(before);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Request stop', exact: true }).click();
+  await expect(page.getByRole('form', { name: 'Confirm goal cancellation' })).toContainText(goal.title);
+  await capture(page, testInfo, 'cancel-ready-goal-mobile-390x844');
+  await page.getByRole('button', { name: 'Confirm stop', exact: true }).click();
+  await expect.poll(() => state().goals.find(item => item.id === goal.id)?.status).toBe('canceled');
+  await reload(page);
+  expect(goalRuns(goal.id)).toHaveLength(0);
+  expect(goalAttempts(goal.id)).toHaveLength(0);
+  expect(state().activations.filter(item => item.goalId === goal.id).every(item => item.status === 'canceled')).toBe(true);
+  await expect(page.getByRole('button', { name: 'Request stop', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Review ready activations' })).toHaveCount(0);
+});
+
 test('unclaimed cancellation is durable and missing entities remain explicit', async ({ page, scenario }, testInfo) => {
   const scope = scenarioScope(scenario);
   const goal = await createGoal(page, scenario, `Cancel unclaimed browser goal ${scenario.id.slice(0, 8)}`);
@@ -337,6 +362,7 @@ test('unclaimed cancellation is durable and missing entities remain explicit', a
   await expect(page.getByRole('button', { name: 'Request stop', exact: true })).toBeVisible();
   await expect(page.locator('.context-inspector')).toContainText('this goal and all active branches');
   await page.getByRole('button', { name: 'Request stop', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm stop', exact: true }).click();
   await expect.poll(() => state().goals.find(item => item.id === goal.id)?.status).toBe('canceled');
   await reload(page);
   expect(goalAttempts(goal.id)).toHaveLength(1);

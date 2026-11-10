@@ -12,6 +12,7 @@ import {
 import type { MissionControlData } from "../server";
 import { projectPath } from "../navigation";
 import { EvidenceRecords } from "./evidence-records";
+import { GoalCancellation } from "./goal-cancellation";
 
 export function ContextualInspector({
   data,
@@ -80,6 +81,8 @@ export function ContextualInspector({
     .reverse();
   const terminal =
     attempt && ["succeeded", "failed", "canceled"].includes(attempt.status);
+  const validSelection = (!nodeId || selectedNode) && (!agentId || agent) && (!transitionId || transition) && (!attemptId || attempt);
+  const cancellationRequested = goalDecision?.reason === "cancellation_requested" || execution.attempts.some(item => item.cancellationRequestedAt && !["succeeded", "failed", "canceled"].includes(item.status));
 
   return (
     <aside className="context-inspector">
@@ -127,14 +130,7 @@ export function ContextualInspector({
         </dl>
         {goal.status === 'draft' && <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id}/><button className="button button-primary" disabled={pending}>{pending ? "Starting…" : "Start goal"}</button></Form>}
         {data.queue.dispatchable.some(item => item.goalId === goal.id) && <Link className="button button-primary" to={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</Link>}
-        {attempt && !terminal && (
-          <Form method="post">
-            <input type="hidden" name="intent" value="stop" />
-            <input type="hidden" name="runId" value={attempt.runId} />
-            <p>Requests cancellation for this goal and all active branches. External hosts must report when owned sessions stop.</p>
-            <button disabled={pending || Boolean(attempt.cancellationRequestedAt)} className="button button-danger">{pending ? "Requesting…" : attempt.cancellationRequestedAt ? "Stop requested" : "Request stop"}</button>
-          </Form>
-        )}
+        {validSelection && <GoalCancellation key={goal.id} goal={goal} requested={cancellationRequested} />}
       </section>
       <section className="inspector-section">
         <header>

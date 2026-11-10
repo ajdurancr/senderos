@@ -71,6 +71,7 @@ function actionMessage(intent: string) {
     start: "Goal started. Review ready activations before reserving runs.",
     "dispatch-plan": "Runs reserved. External hosts claim and start execution separately.",
     stop: "Stop requested for this goal and all its active branches. Owned attempts await the host's cancellation report.",
+    "cancel-goal": "Goal cancellation recorded. Owned sessions remain blocked until every host acknowledges stopping.",
     evidence: "Manual evidence recorded. Required test evidence must be reported separately.",
     review: "Review decision recorded. Completion follows the attempt's evidence and host reports.",
     "publish-sendero": "Sendero published. Existing goals keep their pinned version.",

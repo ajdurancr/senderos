@@ -30,6 +30,10 @@ contracts; no remote database or real worker execution was used.
   with terminal evidence and rationale remaining visible and read-only.
 - Unclaimed cancellation settled immediately. Parallel claimed cancellation kept
   both attempts live and the goal blocked until both hosts acknowledged stopping.
+- Goal cancellation remains available before the first dispatch and after a
+  selected attempt finishes. The confirmation names the goal and covers every
+  branch; dismissing it makes no writes. Ready goals cancel without creating a
+  run, failed attempt history stays intact, and completed goals reject cancellation.
 - Empty scopes, project choice, missing goal/attempt, command search/no results,
   keyboard/Escape/focus restoration, narrow drawer, configuration tabs, long
   labels, and a real isolated database-open error were inspected.

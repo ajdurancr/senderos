@@ -266,7 +266,7 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
       expect(pendingReviews.queue.reviews.find(item => item.attempt.id === attempt.id)).toMatchObject({ attempt: { status: 'running' }, review: { status: 'pending' } });
       expect(JSON.parse(archivedSnapshots.get(attempt.id)!)).toMatchObject({ review: { status: 'pending' }, evidence: [{ kind: 'manual', label: `Pending review for ${attempt.id}`, url: `https://example.test/review/${attempt.id}` }] });
     }
-    await submit({ intent: 'stop', runId: left!.run.id });
+    await submit({ intent: 'cancel-goal', goalId: goal.id });
     let data = await server.missionControlData();
     expect(data.goals.find(item => item.id === goal.id)?.status).toBe('blocked');
     expect(data.queue.dispatchable.filter(item => item.goalId === goal.id)).toHaveLength(0);
@@ -300,9 +300,48 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
     expect(data.activations.filter(item => item.goalId === goal.id).every(item => item.status === 'canceled')).toBe(true);
     expect(data.activations.some(item => item.goalId === goal.id && item.nodeId === graph.nodes.find(node => node.label === 'Join')!.id)).toBe(false);
     const terminal = await persistedSnapshot();
-    await submit({ intent: 'stop', runId: right!.run.id });
+    await submit({ intent: 'cancel-goal', goalId: goal.id });
     expect(await persistedSnapshot()).toEqual(terminal);
   }, 30_000);
+
+  it('cancels ready goals without inventing runs and rejects invalid cancellation without writes', async () => {
+    const { project } = await projectFixture();
+    const agent = await createAgent('Undispatched cancellation');
+    const graph = await importGraph(agent.id);
+    const goal = await createGoal(project.id, graph);
+    await submit({ intent: 'start', goalId: goal.id });
+    const before = await persistedSnapshot();
+    await expect(submit({ intent: 'cancel-goal' })).rejects.toThrow('Choose a goal');
+    await expect(submit({ intent: 'cancel-goal', goalId: 'missing-goal' })).rejects.toThrow();
+    expect(await persistedSnapshot()).toEqual(before);
+    await submit({ intent: 'cancel-goal', goalId: goal.id });
+    const data = await server.missionControlData();
+    expect(data.goals.find(item => item.id === goal.id)?.status).toBe('canceled');
+    expect(data.runs.filter(item => item.goalId === goal.id)).toHaveLength(0);
+    expect(data.activations.filter(item => item.goalId === goal.id).map(item => item.status)).toEqual(['canceled']);
+    expect(data.queue.dispatchable.some(item => item.goalId === goal.id)).toBe(false);
+    const canceled = await persistedSnapshot();
+    await submit({ intent: 'cancel-goal', goalId: goal.id });
+    expect(await persistedSnapshot()).toEqual(canceled);
+  });
+
+  it('cancels after a failed attempt without dispatching a retry or changing its history', async () => {
+    const { project } = await projectFixture();
+    const agent = await createAgent('Failed cancellation');
+    const graph = await importGraph(agent.id);
+    const goal = await createGoal(project.id, graph);
+    await submit({ intent: 'start', goalId: goal.id });
+    const { attempt } = (await reserve(project.id, goal.id)).reservations[0]!;
+    const external = await host(project.id, attempt.id);
+    await external.api.commands.attempts.update(attempt.id, { token: external.claim.token, status: 'failed', failureSummary: 'Worker verification failed.' });
+    const failed = await core.getAttempt(attempt.id);
+    await submit({ intent: 'cancel-goal', goalId: goal.id });
+    const data = await server.missionControlData();
+    expect(data.goals.find(item => item.id === goal.id)?.status).toBe('canceled');
+    expect(data.runs.filter(item => item.goalId === goal.id)).toHaveLength(1);
+    expect(await core.getAttempt(attempt.id)).toEqual(failed);
+    expect(data.queue.dispatchable.some(item => item.goalId === goal.id)).toBe(false);
+  });
 
   it.each(['review-first', 'test-first'] as const)('settles host-completed gates only after both typed test evidence and approval (%s)', async order => {
     const { project } = await projectFixture();
@@ -324,6 +363,9 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
     const data = await server.missionControlData();
     expect(data.attempts.find(item => item.id === attempt.id)?.status).toBe('succeeded');
     expect(data.goals.find(item => item.id === goal.id)?.status).toBe('completed');
+    const completed = await persistedSnapshot();
+    await expect(submit({ intent: 'cancel-goal', goalId: goal.id })).rejects.toThrow('Completed goals cannot be canceled');
+    expect(await persistedSnapshot()).toEqual(completed);
   }, 30_000);
 
   it('rejects invalid forms atomically, isolates project edits and cancels unclaimed reservations immediately', async () => {

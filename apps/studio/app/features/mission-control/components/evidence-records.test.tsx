@@ -61,7 +61,8 @@ describe("EvidenceRecords", () => {
     expect(screen.getByText("This attempt is finished. Its evidence and review are read-only.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Open evidence: Keyboard report" }).getAttribute("href")).toBe("https://example.com/report?run=1");
     expect(screen.getByText(snapshot.review!.rationale!)).toBeTruthy();
-    for (const name of ["Record evidence", "Record decision", "Request stop"]) expect(screen.queryByRole("button", { name })).toBeNull();
+    for (const name of ["Record evidence", "Record decision"]) expect(screen.queryByRole("button", { name })).toBeNull();
+    expect(screen.getByRole("button", { name: "Request stop" })).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "Evidence label" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Review decision" })).toBeNull();
   });

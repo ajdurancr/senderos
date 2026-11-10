@@ -61,7 +61,7 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   const supported = new Set([
     'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
     'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal',
-    'start', 'retry', 'dispatch-plan', 'stop', 'evidence', 'review', 'update-project',
+    'start', 'retry', 'dispatch-plan', 'stop', 'cancel-goal', 'evidence', 'review', 'update-project',
     'update-sendero-node-position', 'update-sendero-layout', 'update-sendero-node', 'update-sendero-edge',
   ]);
   if (!supported.has(intent)) throw new Error('This action is not supported. Refresh Studio and try again.');
@@ -128,6 +128,11 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   }
   if (intent === "start")
     await senderos.commands.goals.activate(String(form.get("goalId")));
+  if (intent === "cancel-goal") {
+    const goalId = String(form.get("goalId") ?? "").trim();
+    if (!goalId) throw new Error("Choose a goal before requesting cancellation.");
+    await senderos.commands.goals.cancel(goalId);
+  }
   if (intent === "retry")
     await senderos.missionControl.retryExecution({
       goalId: String(form.get("goalId")),
