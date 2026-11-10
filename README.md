@@ -72,8 +72,15 @@ The host agent is the execution plane:
 ### Install
 
 ```bash
-bun install
+bun install --frozen-lockfile
 ```
+
+Commit `bun.lock` whenever dependencies change so local verification and CI use
+the same versions. Use `bun install` to update the lockfile intentionally, then
+verify a clean `bun install --frozen-lockfile` before publishing the change.
+An upstream dependency publication gap broke clean CI installs while the
+lockfile was absent; a committed lockfile prevents unrelated runs from silently
+selecting newly published dependency versions.
 
 ### Run the external-host example without API keys
 

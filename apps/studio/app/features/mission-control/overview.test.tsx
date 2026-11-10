@@ -51,7 +51,7 @@ describe("MissionControlOverview", () => {
       projects: [], goals: [], runs: [], attempts: [], agents: [], transitions: [], events: [],
       queue: { reviews: [], activeRuns: [], failedAttempts: [], staleAttempts: [], dispatchable: [], blockedGoals: [] },
     };
-    for (const [path, copy] of [["/now?filter=failed", "Queue clear"], ["/runs", "No execution history"], ["/settings", "Shared database"]]) {
+    for (const [path, copy] of [["/now?filter=failed", "No matching attention"], ["/now", "Queue clear"], ["/runs", "No execution history"], ["/settings", "Shared database"]]) {
       const [pathname, query = ""] = path.split("?");
       const router = createMemoryRouter([{ path: "*", element: <MissionControlOverview data={empty} route={parseStudioPath(pathname)} search={new URLSearchParams(query)} /> }]);
       const view = render(<RouterProvider router={router} />);
@@ -65,13 +65,13 @@ it("keeps global attention counts linked to global records instead of the first 
   renderPath("/canvas?context=context-1");
   const rail = screen.getByRole("complementary", { name: "Needs attention" });
   const links = rail.querySelectorAll("a");
-  expect(links).toHaveLength(4);
+  expect(links).toHaveLength(5);
   for (const link of links) {
     const href = new URL(link.href);
     expect(href.pathname).toBe("/now");
     expect(href.searchParams.get("context")).toBe("context-1");
     expect(href.searchParams.has("project")).toBe(false);
-    expect(href.searchParams.get("filter")).toMatch(/^(review|failed|stale|dispatchable)$/);
+    expect(href.searchParams.get("filter")).toMatch(/^(blocked|review|failed|stale|dispatchable)$/);
   }
 });
 

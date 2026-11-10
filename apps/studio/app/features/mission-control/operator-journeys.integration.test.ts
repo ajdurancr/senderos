@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
 import type { SenderoGraph } from '@senderos/core';
 import { reviewDispatch } from './dispatch-review';
+import { goalBlockers } from './goal-blockers';
 
 // Use a unique real database, never the manual QA preview or mocked persistence.
 const root = resolve(process.env.SENDEROS_TEST_RUNTIME_ROOT ?? resolve(import.meta.dirname, '../../../../../.tmp/test-runtime'), `studio-journeys-${crypto.randomUUID()}`);
@@ -303,6 +304,28 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
     await submit({ intent: 'cancel-goal', goalId: goal.id });
     expect(await persistedSnapshot()).toEqual(terminal);
   }, 30_000);
+
+  it('derives agent blockers from current activation decisions and clears them after persisted remediation', async () => {
+    const { project } = await projectFixture();
+    const agent = await createAgent('Blocked agent');
+    const graph = await importGraph(agent.id);
+    const goal = await createGoal(project.id, graph);
+    await submit({ intent: 'start', goalId: goal.id });
+    await submit({ intent: 'update-agent', agentId: agent.id, slug: agent.slug, name: agent.name, instructions: agent.definitionBody, status: 'disabled' });
+    let data = await server.missionControlData();
+    expect(data.goals.find(item => item.id === goal.id)?.status).toBe('active');
+    expect(data.queue.blockedGoals.some(item => item.id === goal.id)).toBe(false);
+    expect(goalBlockers(data).find(item => item.goal.id === goal.id)?.blockers).toEqual([expect.objectContaining({ state: 'blocked', reason: 'AGENT_UNAVAILABLE' })]);
+    expect(data.queue.dispatchable.some(item => item.goalId === goal.id)).toBe(false);
+    const beforeInvalid = await persistedSnapshot();
+    await expect(submit({ intent: 'update-agent', agentId: agent.id, slug: agent.slug, name: '', instructions: agent.definitionBody, status: 'active' })).rejects.toThrow();
+    expect(await persistedSnapshot()).toEqual(beforeInvalid);
+    await submit({ intent: 'update-agent', agentId: agent.id, slug: agent.slug, name: agent.name, instructions: agent.definitionBody, status: 'active' });
+    data = await server.missionControlData();
+    expect(goalBlockers(data).some(item => item.goal.id === goal.id)).toBe(false);
+    expect(data.queue.dispatchable.some(item => item.goalId === goal.id)).toBe(true);
+    expect(data.runs.filter(item => item.goalId === goal.id)).toHaveLength(0);
+  });
 
   it('cancels ready goals without inventing runs and rejects invalid cancellation without writes', async () => {
     const { project } = await projectFixture();
