@@ -182,3 +182,56 @@ test('operators recover activation and attempt budgets through persisted forms w
   await expect(budgets).toContainText('read-only');
   await expect(budgets.getByRole('spinbutton')).toHaveCount(0);
 });
+
+
+test('failed attention clears recovered visits while preserving parallel failures and run history', async ({ page, scenario }, testInfo) => {
+  const first = await authorAgent(page, scenario, 'failure-first');
+  const second = await authorAgent(page, scenario, 'failure-second');
+  const goal = await authorGoal(page, scenario, first.slug, second.slug, true);
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(2);
+  const initial = state();
+  const attempts = initial.attempts.filter(item => goalRuns(goal.id).some(run => run.id === item.runId));
+  for (const attempt of attempts) { runtime('host-claim', attempt.id); runtime('host-start', attempt.id); }
+  runtime('host-fail', attempts[0]!.id);
+  const failedPath = `/projects/${scenario.launchProject}/now?filter=failed&context=${scenario.productContext}`;
+  await visit(page, failedPath);
+  const cards = page.locator('.attention-list > a');
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toHaveAttribute('href', new RegExp(attempts[0]!.id));
+  await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}${scenarioScope(scenario)}`);
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(3);
+  const retry = state().attempts.find(item => item.retryFromAttemptId === attempts[0]!.id)!;
+  expect(retry).toBeDefined();
+  await visit(page, failedPath);
+  await expect(cards).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'No matching attention' })).toBeVisible();
+  runtime('host-fail', attempts[1]!.id);
+  runtime('host-claim', retry.id); runtime('host-start', retry.id); runtime('host-complete', retry.id);
+  await reload(page);
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toHaveAttribute('href', new RegExp(attempts[1]!.id));
+  await capture(page, testInfo, 'attention-current-failure-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'attention-current-failure-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('link', { name: 'run history', exact: true }).click();
+  await expect(page.locator('.run-list > a')).toHaveCount(3);
+  expect(state().attempts.filter(item => attempts.some(failed => failed.id === item.id) && item.status === 'failed')).toHaveLength(2);
+  await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}${scenarioScope(scenario)}`);
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(4);
+  const final = state().attempts.find(item => item.retryFromAttemptId === attempts[1]!.id)!;
+  runtime('host-claim', final.id); runtime('host-start', final.id); runtime('host-complete', final.id);
+  await visit(page, failedPath);
+  await expect(cards).toHaveCount(0);
+  expect(state().goals.find(item => item.id === goal.id)!.status).toBe('completed');
+  await reload(page);
+  await expect(cards).toHaveCount(0);
+  await capture(page, testInfo, 'attention-recovered-desktop-1440x1000');
+});

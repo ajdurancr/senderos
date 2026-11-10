@@ -39,3 +39,8 @@ through the real Studio form, and explicitly reviews/dispatches restored work.
 It verifies native form rejection without writes, persisted usage/revisions after
 reload, zero automatic reservations, desktop/mobile overflow, and terminal
 read-only state. No worker/model calls are made.
+
+The failure-attention journey verifies that a reserved retry removes only its
+superseded failure from Now, an independently failed sibling remains visible,
+and both failures remain in scoped Runs after recovery and reload. Its host
+reports use the same isolated fixture boundary; it captures desktop/mobile Now.

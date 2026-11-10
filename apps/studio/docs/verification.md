@@ -61,6 +61,23 @@ Each mutating journey was checked against the local database, including invalid
 and canceled submissions. The external manual journal retains the detailed
 before/after evidence; test fixtures do not rely on that database.
 
+## Current failures and recovery history
+
+The failed-attempt attention queue follows each activation independently. A
+reserved retry supersedes its prior failed attempt; successful or canceled
+activations and completed/canceled goals no longer contribute actionable
+failures. A failure in another parallel branch remains visible. All attempts,
+including superseded failures, remain unchanged in Runs. Unexplained missing
+activation associations remain visible instead of being treated as recovery.
+
+Core regressions cover same-activation retries, repeat failure, parallel sibling
+failure, success, cancellation, legacy run associations, newer attempts within a
+run, and context isolation. The production-browser journey authors a parallel
+workflow, reports failures through isolated host contracts, reserves retries
+through Studio, verifies the remaining sibling and persisted history, and
+captures desktop/mobile attention states. The failed filter links to scoped run
+history and explains why recovered attempts disappear from the decision queue.
+
 ## Automated layers
 
 - Component tests cover hierarchy, shared roles, scope links/counts, drawer and

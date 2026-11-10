@@ -8,7 +8,7 @@ import { listRunAttempts } from '../commands/attempts/list';
 import { plan } from '../commands/planning/plan';
 import { status } from '../commands/system/status';
 import type { AttemptReview } from '../shared/types';
-import { goalActivations } from '../lifecycle/activations';
+import { goalActivations, settledActivation } from '../lifecycle/activations';
 import { explainGoal } from '../lifecycle/state';
 
 export async function missionControlOverview(home?: string, executionContextId?: string) {
@@ -17,6 +17,32 @@ export async function missionControlOverview(home?: string, executionContextId?:
   const attempts = await listRunAttempts(undefined, home, executionContextId);
   const decisions: Awaited<ReturnType<typeof explainGoal>>[] = [];
   for (const goal of goals) decisions.push(await explainGoal(goal.id, home));
+  const activations = (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat();
+  const activationById = new Map(activations.map(item => [item.id, item]));
+  const activationByRun = new Map(activations.filter(item => item.latestRunId).map(item => [item.latestRunId!, item]));
+  const runById = new Map(runs.map(item => [item.id, item]));
+  const goalById = new Map(goals.map(item => [item.id, item]));
+  const attemptById = new Map(attempts.map(item => [item.id, item]));
+  const supersededAttempts = new Set(attempts.flatMap(attempt => {
+    const previous = attempt.retryFromAttemptId && attemptById.get(attempt.retryFromAttemptId);
+    const run = runById.get(attempt.runId);
+    return previous && run && run.goalId === runById.get(previous.runId)?.goalId ? [previous.id] : [];
+  }));
+  const latestAttemptByRun = new Map<string, typeof attempts[number]>();
+  for (const attempt of attempts) {
+    const latest = latestAttemptByRun.get(attempt.runId);
+    if (!latest || latest.attemptNumber < attempt.attemptNumber) latestAttemptByRun.set(attempt.runId, attempt);
+  }
+  const failedAttempts = attempts.filter(attempt => {
+    if (attempt.status !== 'failed' || supersededAttempts.has(attempt.id) || latestAttemptByRun.get(attempt.runId)?.id !== attempt.id) return false;
+    const run = runById.get(attempt.runId);
+    const goal = run && goalById.get(run.goalId);
+    if (goal && ['completed', 'canceled'].includes(goal.status)) return false;
+    const activation = run?.activationId ? activationById.get(run.activationId) : activationByRun.get(attempt.runId);
+    // Keep unexplained history visible; only authoritative lifecycle state can
+    // establish that a failure was superseded or settled. Parallel visits are independent.
+    return !activation || (!settledActivation(activation.status) && activation.latestRunId === attempt.runId);
+  });
   const reviews = attempts.flatMap((attempt) => {
     const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
     return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
@@ -26,7 +52,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
     projects: await listProjects(home, executionContextId),
     goals,
     executions: goals.length ? await openRuntimeDb(home).select().from(goalExecutions).where(inArray(goalExecutions.goalId, goals.map(goal => goal.id))) : [],
-    activations: (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat(),
+    activations,
     runs,
     attempts,
     decisions,
@@ -34,7 +60,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
       dispatchable: await plan({ home, executionContextId }),
       reviews,
       blockedGoals: goals.filter((goal) => goal.status === 'blocked'),
-      failedAttempts: attempts.filter((attempt) => attempt.status === 'failed'),
+      failedAttempts,
       staleAttempts: attempts.filter((attempt) => decisions.some(d => d.attemptId === attempt.id && d.reason === 'lease_expired')),
       activeRuns: runs.filter((run) => !['succeeded', 'failed', 'canceled'].includes(run.status)),
     },
