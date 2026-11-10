@@ -78,6 +78,21 @@ through Studio, verifies the remaining sibling and persisted history, and
 captures desktop/mobile attention states. The failed filter links to scoped run
 history and explains why recovered attempts disappear from the decision queue.
 
+## Settings without repository integration
+
+Project names and integration changes can be saved with an empty target branch
+when the mode is `none`. The form and server require a nonempty branch for
+`github_pr` and `local_merge`. Switching modes preserves the current branch value
+so choosing a mode alone does not discard operator input. The form remounts by
+project identity to keep unsaved edits from crossing scope boundaries.
+
+Component and real-database regressions cover the previously rejected empty
+branch, conditional required state, no-write validation failures, valid local
+integration, retained branches, and normalized saved values. The production
+browser journey saves and reloads a standalone project, exercises native and
+server validation, changes modes both ways, verifies another project is
+unchanged, and captures desktop/mobile settings from the actual production app.
+
 ## Automated layers
 
 - Component tests cover hierarchy, shared roles, scope links/counts, drawer and

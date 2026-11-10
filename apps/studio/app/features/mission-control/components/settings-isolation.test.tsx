@@ -41,6 +41,27 @@ describe("project settings isolation", () => {
     expect(screen.getByRole("combobox", { name: /^Integration mode/ })).toHaveProperty("value", "github_pr");
   });
 
+  it("saves a non-repository project without requiring an invented branch", async () => {
+    const submissions: FormData[] = [];
+    const action = vi.fn(async ({ request }: { request: Request }) => { submissions.push(await request.formData()); return { ok: true }; });
+    render(<RouterProvider router={createMemoryRouter([{ path: "*", element: <SettingsView data={data} projectId="project-2" />, action }])} />);
+    const branch = screen.getByRole("textbox", { name: /^Target branch/ }) as HTMLInputElement;
+    expect(branch.required).toBe(false);
+    expect(branch.checkValidity()).toBe(true);
+    fireEvent.change(screen.getByRole("textbox", { name: /^Name/ }), { target: { value: "Campaign research" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+    await waitFor(() => expect(submissions).toHaveLength(1));
+    expect(Object.fromEntries(submissions[0]!)).toEqual({ intent: "update-project", projectId: "project-2", name: "Campaign research", targetBranch: "", integrationMode: "none" });
+    await screen.findByRole("button", { name: "Save project" });
+    fireEvent.change(screen.getByRole("combobox", { name: /^Integration mode/ }), { target: { value: "local_merge" } });
+    expect(branch.required).toBe(true);
+    expect(branch.checkValidity()).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+    expect(submissions).toHaveLength(1);
+    fireEvent.change(screen.getByRole("combobox", { name: /^Integration mode/ }), { target: { value: "none" } });
+    expect(branch.required).toBe(false);
+  });
+
   it("rejects an empty required name before submission and keeps runtime fields read-only", () => {
     const action = vi.fn(() => null);
     render(<RouterProvider router={createMemoryRouter([{ path: "*", element: <SettingsView data={data} projectId="project-1" />, action }])} />);

@@ -20,6 +20,34 @@ describe("Studio server integration", () => {
     }
   });
 
+  it("persists empty branches only when repository integration is disabled and rejects invalid edits atomically", async () => {
+    const { applyMissionControlAction, missionControlData } = await import("./server");
+    const { createSenderos, registerExecutionContext } = await import("@senderos/core");
+    await missionControlData();
+    await registerExecutionContext({ id: "settings-optional-context", name: "Optional branch settings" });
+    const api = createSenderos({ executionContextId: "settings-optional-context" });
+    const project = await api.commands.projects.create({ name: "No repository settings" });
+    const edit = (name: string, integrationMode: string, targetBranch = "") => {
+      const form = new FormData();
+      Object.entries({ intent: "update-project", projectId: project.id, name, integrationMode, targetBranch }).forEach(([key, value]) => form.set(key, value));
+      return applyMissionControlAction(form);
+    };
+    await edit("Renamed research", "none");
+    expect(await api.commands.projects.get(project.id)).toMatchObject({ name: "Renamed research", integrationMode: "none", targetBranch: "" });
+    const saved = await api.commands.projects.get(project.id);
+    for (const mode of ["github_pr", "local_merge"]) {
+      await expect(edit("Must not persist", mode)).rejects.toThrow(/target branch/i);
+      expect(await api.commands.projects.get(project.id)).toEqual(saved);
+    }
+    await expect(edit("", "none")).rejects.toThrow(/name/i);
+    await expect(edit("Must not persist", "invalid")).rejects.toThrow(/integration mode/i);
+    expect(await api.commands.projects.get(project.id)).toEqual(saved);
+    await edit("  Local delivery  ", "local_merge", " preview ");
+    expect(await api.commands.projects.get(project.id)).toMatchObject({ name: "Local delivery", integrationMode: "local_merge", targetBranch: "preview" });
+    await edit("Research again", "none", "preview");
+    expect(await api.commands.projects.get(project.id)).toMatchObject({ integrationMode: "none", targetBranch: "preview" });
+  });
+
   it("persists budget edits, invalidates reviewed activations, and rejects invalid or inactive goals without writes", async () => {
     const { missionControlData, applyMissionControlAction } = await import("./server");
     const core = await import("@senderos/core");

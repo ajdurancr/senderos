@@ -1,0 +1,56 @@
+import { capture, expect, reload, state, test, visit } from './fixtures';
+
+test('non-repository settings persist without a branch and integration changes validate before writing', async ({ page, scenario }, testInfo) => {
+  await visit(page, `/settings?context=${scenario.productContext}&project=${scenario.campaignProject}`);
+  const name = page.getByRole('textbox', { name: /^Name\b/ });
+  const branch = page.getByRole('textbox', { name: /^Target branch\b/ });
+  const mode = page.getByRole('combobox', { name: /^Integration mode\b/ });
+  const save = page.getByRole('button', { name: 'Save project' });
+  const project = () => state().projects.find(item => item.id === scenario.campaignProject)!;
+  const otherProject = state().projects.find(item => item.id === scenario.launchProject)!;
+  await expect(branch).toHaveValue('');
+  await expect(branch).not.toHaveAttribute('required');
+  await expect(page.getByRole('textbox', { name: /^Repository\b/ })).toHaveValue('No repository configured');
+  await name.fill('Standalone research');
+  await save.click();
+  await expect.poll(() => project().name).toBe('Standalone research');
+  await reload(page);
+  expect(project()).toMatchObject({ name: 'Standalone research', targetBranch: '', integrationMode: 'none' });
+  await expect(name).toHaveValue('Standalone research');
+  await expect(branch).toHaveValue('');
+  await capture(page, testInfo, 'settings-optional-branch-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await save.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'settings-optional-branch-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const saved = project();
+  for (const value of ['local_merge', 'github_pr']) {
+    await mode.selectOption(value);
+    await expect(branch).toHaveAttribute('required', '');
+    await save.click();
+    expect(await branch.evaluate((input: HTMLInputElement) => input.validity.valueMissing)).toBe(true);
+    expect(project()).toEqual(saved);
+  }
+  await mode.selectOption('local_merge');
+  await branch.fill('   ');
+  await save.click();
+  await expect(page.getByRole('alert')).toContainText('A target branch is required for repository integration.');
+  expect(project()).toEqual(saved);
+  await branch.fill('preview');
+  await save.click();
+  await expect.poll(() => project().targetBranch).toBe('preview');
+  await reload(page);
+  await expect(mode).toHaveValue('local_merge');
+  await expect(branch).toHaveValue('preview');
+  await mode.selectOption('none');
+  await branch.fill('');
+  await name.fill('Research restored');
+  await save.click();
+  await expect.poll(() => project().name).toBe('Research restored');
+  await reload(page);
+  await expect(mode).toHaveValue('none');
+  await expect(branch).toHaveValue('');
+  expect(project()).toMatchObject({ integrationMode: 'none', targetBranch: '' });
+  expect(state().projects.find(item => item.id === scenario.launchProject)).toEqual(otherProject);
+});
