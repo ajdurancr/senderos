@@ -44,3 +44,9 @@ The failure-attention journey verifies that a reserved retry removes only its
 superseded failure from Now, an independently failed sibling remains visible,
 and both failures remain in scoped Runs after recovery and reload. Its host
 reports use the same isolated fixture boundary; it captures desktop/mobile Now.
+
+`settings.pw.ts` exercises a standalone project with an empty branch, conditional
+requirements when enabling repository integration, a server-rejected whitespace
+branch with no persisted mutation, valid local integration, and returning to no
+integration. Database assertions and reloads verify each successful save and
+scope isolation. Desktop/mobile screenshots capture the real settings form.

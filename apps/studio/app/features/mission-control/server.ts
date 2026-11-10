@@ -66,11 +66,12 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   ]);
   if (!supported.has(intent)) throw new Error('This action is not supported. Refresh Studio and try again.');
   if (intent === 'update-project') {
-    if (!String(form.get('name') ?? '').trim() || !String(form.get('targetBranch') ?? '').trim()) {
-      throw new Error('Project name and target branch are required.');
-    }
+    if (!String(form.get('name') ?? '').trim()) throw new Error('Project name is required.');
     if (!['github_pr', 'local_merge', 'none'].includes(String(form.get('integrationMode')))) {
       throw new Error('Choose a supported integration mode.');
+    }
+    if (form.get('integrationMode') !== 'none' && !String(form.get('targetBranch') ?? '').trim()) {
+      throw new Error('A target branch is required for repository integration.');
     }
   }
   if (intent === 'evidence') {
@@ -175,8 +176,8 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   if (intent === "update-project")
     await senderos.commands.projects.update({
       id: String(form.get("projectId")),
-      name: String(form.get("name")),
-      targetBranch: String(form.get("targetBranch")),
+      name: String(form.get("name") ?? "").trim(),
+      targetBranch: String(form.get("targetBranch") ?? "").trim(),
       integrationMode: String(form.get("integrationMode")) as
         "github_pr" | "local_merge" | "none",
     });

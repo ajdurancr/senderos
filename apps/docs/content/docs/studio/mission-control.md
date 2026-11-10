@@ -7,6 +7,16 @@ Senderos Studio is the human-facing authoring and operational surface over
 `@senderos/core`. It uses the same database, validation, publication, and lifecycle
 operations as the CLI. It does not launch a model or an external worker session.
 
+## Configure a project
+
+In **Settings → Project & database**, choose the project scope before editing its
+name and integration behavior. With **No repository integration**, a target branch
+is optional: leave it empty or keep a branch for later. **GitHub pull request**
+and **Local merge** require a nonempty target branch. Switching modes updates the
+form requirement immediately; invalid saves preserve the stored configuration.
+Changing a project setting does not create a repository, run Git, or deliver an
+outcome. Runtime database connection fields remain read-only.
+
 ## Author agents and senderos
 
 Use **New agent** to define a name, slug, description, and instructions. Existing
