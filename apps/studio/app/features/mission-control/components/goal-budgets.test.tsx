@@ -7,16 +7,21 @@ import type { MissionControlData } from "../server";
 
 afterEach(cleanup);
 const execution = { goalId: "goal-1", activationsUsed: 2, maxActivations: 3, maxAttempts: 2, cancellationRequestedAt: null } as MissionControlData["executions"][number];
-function show(status = "active", record: typeof execution | undefined = execution) {
+function show(status = "active", record: typeof execution | undefined = execution, revalidate?: () => Promise<null>) {
   const action = vi.fn(async ({ request }: { request: Request }) => Object.fromEntries(await request.formData()));
   const goal = { ...fixture.goals[0]!, status } as MissionControlData["goals"][number];
   const data = { ...fixture, executions: record ? [record] : [] };
-  const router = createMemoryRouter([{ path: "*", element: <GoalBudgets data={data} goal={goal} />, action }]);
+  const router = createMemoryRouter([{ id: "budgets", path: "*", element: <GoalBudgets data={data} goal={goal} />, action, ...(revalidate ? { loader: revalidate } : {}) }], revalidate ? { hydrationData: { loaderData: { budgets: null } } } : undefined);
   render(<RouterProvider router={router} />);
   return action;
 }
 it("shows actual usage and submits each limit independently", async () => {
-  const action = show();
+  // Action completion is earlier than router revalidation completion. Hold that
+  // boundary explicitly so this test cannot accidentally depend on a fast router.
+  let finishRevalidation!: (value: null) => void;
+  const revalidated = new Promise<null>(resolve => { finishRevalidation = resolve; });
+  const revalidate = vi.fn(() => revalidated);
+  const action = show("active", execution, revalidate);
   expect(screen.getByText("2 / 3")).toBeTruthy();
   const field = screen.getByRole("spinbutton", { name: "Activation limit" });
   expect(field.getAttribute("min")).toBe("2");
@@ -24,10 +29,17 @@ it("shows actual usage and submits each limit independently", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Save activation limit" }));
   await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
   expect(await action.mock.results[0]!.value).toEqual({ intent: "set-activation-budget", goalId: "goal-1", limit: "8" });
+  await waitFor(() => expect(revalidate).toHaveBeenCalledOnce());
+  await waitFor(() => expect(screen.getAllByRole("button", { name: "Saving…" })).toHaveLength(2));
+  expect(screen.queryByRole("button", { name: "Save attempt limit" })).toBeNull();
+  finishRevalidation(null);
+  const next = await screen.findByRole("button", { name: "Save attempt limit" });
+  expect(next).toHaveProperty("disabled", false);
   fireEvent.change(screen.getByRole("spinbutton", { name: "Attempt limit per activation" }), { target: { value: "4" } });
-  fireEvent.click(screen.getByRole("button", { name: "Save attempt limit" }));
+  fireEvent.click(next);
   await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
   expect(await action.mock.results[1]!.value).toEqual({ intent: "set-retry-budget", goalId: "goal-1", limit: "4" });
+  await screen.findByRole("button", { name: "Save attempt limit" });
 });
 it.each(["completed", "canceled"])("keeps %s budgets visible and read-only", status => {
   show(status); expect(screen.getByText("2 / 3")).toBeTruthy(); expect(screen.queryByRole("spinbutton")).toBeNull();
