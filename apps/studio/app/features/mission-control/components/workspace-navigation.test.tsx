@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { missionControlFixture as data } from "../../../test-support/mission-control-fixture";
 import { CommandPalette } from "./command-palette";
-import { AgentsView, EventsView, GoalsView, ReviewsView } from "./workspace-views";
+import { AgentsView, AttentionView, EventsView, GoalsView, ReviewsView } from "./workspace-views";
 
 afterEach(cleanup);
 function inRouter(element: React.ReactNode, path = "/goals") {
@@ -102,6 +102,13 @@ describe("workspace navigation", () => {
     cleanup();
     inRouter(<GoalsView data={scoped} create={false} />);
     expect(screen.getByText("Context One · Project One · feature")).toBeTruthy();
+  });
+
+  it("explains recovered failure history with a scoped, accessible navigation link", () => {
+    inRouter(<AttentionView data={{ ...data, queue: { ...data.queue, failedAttempts: [] } }} projectId="project-1" filter="failed" />);
+    expect(screen.getByText(/Only unresolved failures/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "run history" }).getAttribute("href")).toBe("/projects/project-1/runs");
+    expect(screen.getByRole("heading", { name: "No matching attention" })).toBeTruthy();
   });
 
   it("provides useful empty states for reviews, events, and agents", () => {
