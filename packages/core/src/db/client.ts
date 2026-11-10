@@ -94,6 +94,22 @@ export async function atomic<T>(home: string | undefined, work: () => Promise<T>
   for (;;) {
     const db = connectRuntimeDb(home);
     try {
+      if (db.$client.protocol === "file") {
+        // libsql's local prepared COMMIT can retain a lock after SQLITE_BUSY,
+        // even after rollback/close. Keep this client attached and commit via
+        // executeMultiple (native exec), which also rolls back a failed commit.
+        // Remote clients still require the driver's pinned transaction below.
+        await db.$client.execute("BEGIN IMMEDIATE");
+        let result: T;
+        try {
+          result = await transactions.run({ db, home }, work);
+        } catch (error) {
+          await db.$client.executeMultiple("ROLLBACK");
+          throw error;
+        }
+        await db.$client.executeMultiple("COMMIT");
+        return result;
+      }
       return await db.transaction((tx) => transactions.run(
         { db: tx as unknown as RuntimeDb, home }, work,
       ), { behavior: "immediate" });

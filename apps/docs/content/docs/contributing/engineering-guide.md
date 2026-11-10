@@ -102,3 +102,28 @@ For non-trivial changes:
 - confirm whether work completed all related docs.
 
 This is your guardrail against shipping control-plane behavior by accident.
+
+## 10. Local database contention regressions
+
+Local files can be shared by Studio and independent CLI hosts. Core's `atomic`
+helper retries only rolled-back SQLite lock contention for up to five seconds;
+it must yield between attempts, preserve one claim winner, and never duplicate
+writes or lifecycle events. An exhausted deadline must return a failure without
+partial state, and subsequent commands must recover when the reader releases.
+
+The installed libSQL 0.5.29 stack can retain a lock after a **prepared** `COMMIT`
+returns `SQLITE_BUSY`, despite rollback and client close. This reproduces below
+Core and Drizzle in both Bun and Node. For local-file transactions Core retains
+the client connection and uses native SQL execution through `executeMultiple`
+for commit; that API also rolls back failed commits. Remote connections retain
+the driver's pinned transaction API. Do not apply local SQL transaction handling
+to HTTP/WebSocket clients, where separate requests may use different sessions.
+
+The regressions in `packages/core/src/db/concurrency.test.ts` cover overlapping
+writers, commit retries, application errors, and recovery after deadline
+exhaustion. `claim-contention.integration.test.ts` combines a held reader,
+competing claims, and an operator overview refresh, asserting one owner and one
+claim event. The external-host simulation retains its strict exactly-one-winner
+assertions and records only allowlisted error codes, exit statuses, and retryable
+flags for each contender. Raw claim replies and stderr must never be included in
+contention diagnostics because they may contain ownership tokens or private data.

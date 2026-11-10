@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { contentionOutcomes } from '../examples/external-host/contention';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -180,7 +181,7 @@ try {
     const commands = [dispatchArguments(goalId, item!, 'race-a'), dispatchArguments(goalId, item!, 'race-b')];
     const raced = await Promise.all(commands.map(command => raw(owner, command)));
     const winners = raced.map((response, index) => ({ ...response, index })).filter(response => response.exitCode === 0);
-    equal(winners.length, 1, 'competing CLI processes reserve at most one activation');
+    equal(winners.length, 1, `competing CLI processes reserve exactly one activation: ${JSON.stringify(contentionOutcomes(raced))}`);
     const winner = winners[0]!;
     const reservation = winner.value;
     equal((await cli(owner, ['run', 'state', goalId])).attempts.length, 1, 'contention creates only one attempt');
@@ -188,7 +189,7 @@ try {
     equal(replay.attemptId, reservation.attemptId, 'dispatch request replay preserves attempt identity');
     await rejected(owner, [...commands[winner.index]!, '--working-path', '/conflicting-input'], 'IDEMPOTENCY_CONFLICT');
     const claims = await Promise.all([raw(owner, ['attempt', 'claim', reservation.attemptId, '--owner-id', owner.hostId]), raw(server, ['attempt', 'claim', reservation.attemptId, '--owner-id', server.hostId])]);
-    equal(claims.filter(response => response.exitCode === 0).length, 1, 'only one competing owner receives a claim');
+    equal(claims.filter(response => response.exitCode === 0).length, 1, `only one competing owner receives a claim: ${JSON.stringify(contentionOutcomes(claims))}`);
     const winningIndex = claims.findIndex(response => response.exitCode === 0);
     const context = winningIndex === 0 ? owner : server;
     const ownership = claims[winningIndex]!.value;
@@ -200,7 +201,7 @@ try {
     const replayResult = await cli(context, ['attempt', 'update', reservation.attemptId, '--token', ownership.token, '--status', 'succeeded', '--result-json', '{"outcome":"accepted","value":42}']);
     equal(replayResult.status, 'succeeded', 'identical terminal report is idempotent');
     await rejected(context, ['attempt', 'update', reservation.attemptId, '--token', ownership.token, '--status', 'succeeded', '--result-json', '{"outcome":"accepted","value":43}'], 'RESULT_CONFLICT');
-    return { reservationWinners: winners.length, claimWinners: 1, workerPid: session.process.pid, controllerPid: process.pid };
+    return { reservationWinners: winners.length, claimWinners: 1, reservationOutcomes: contentionOutcomes(raced), claimOutcomes: contentionOutcomes(claims), workerPid: session.process.pid, controllerPid: process.pid };
   });
 
   await scenario('conditional-backedge-and-bounded-cycles', async () => {
