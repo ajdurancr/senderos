@@ -243,3 +243,7 @@ A mounted-inspector regression reproduces unsaved evidence and rationale carryin
 ### Evidence recording feedback
 
 Evidence success feedback stays accurate for every supported kind: manual, test, CI, pull request and artifact. Route-action integration coverage verifies the returned message and persisted kind. The production operator journey checks typed test and artifact feedback against remaining prerequisites and final settlement, with desktop/mobile captures. Recording evidence does not independently execute tests or verify proof contents.
+
+### Unsaved workflow selection
+
+Mounted overview coverage verifies that editing a graph disables the workflow selector and exposes save-or-cancel guidance, then cancellation restores selection. The production authoring journey checks the same state on desktop and mobile, confirms the unsaved budget remains absent from the database, and verifies selection returns after both cancel and successful save. This covers the explicit workflow selector, not arbitrary browser navigation.

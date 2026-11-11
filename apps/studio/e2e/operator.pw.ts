@@ -75,8 +75,22 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   const version = state().versions.find(item => item.senderoId === workflow.id)!;
   expect(version.status).toBe('draft');
   const editor = page.locator('.graph-editor');
+  const workflowSelector = page.getByRole('combobox', { name: 'Sendero', exact: true });
+  await expect(workflowSelector).toBeEnabled();
   await editor.getByRole('spinbutton', { name: 'Maximum activations per goal' }).fill('999');
+  await expect(workflowSelector).toBeDisabled();
+  const switchHelp = page.getByText('Save or cancel graph edits before switching Senderos.', { exact: true });
+  await expect(workflowSelector).toHaveAttribute('aria-describedby', 'sendero-selection-help');
+  for (const [width, height, name] of [[1440, 1000, 'desktop-1440x1000'], [390, 844, 'mobile-390x844']] as const) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await capture(page, testInfo, `unsaved-workflow-selector-${name}`);
+  }
+  expect(state().versions.find(item => item.id === version.id)?.maxActivations).toBe(20);
   await page.getByRole('button', { name: 'Cancel changes', exact: true }).click();
+  await expect(workflowSelector).toBeEnabled();
+  await expect(switchHelp).toHaveCount(0);
   await expect(editor.getByRole('spinbutton', { name: 'Maximum activations per goal' })).toHaveValue('20');
   expect(state().versions.find(item => item.id === version.id)?.maxActivations).toBe(20);
   await editor.getByRole('spinbutton', { name: 'Maximum activations per goal' }).fill('25');
@@ -85,6 +99,7 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await expect(page.getByRole('button', { name: 'Validate & publish draft' })).toBeDisabled();
   await page.getByRole('button', { name: 'Save graph draft' }).click();
   await expect.poll(() => state().nodes.find(node => node.senderoVersionId === version.id && node.kind === 'agent')?.executionObjective).toBe(objective);
+  await expect(workflowSelector).toBeEnabled();
   await reload(page);
   await expect(editor.getByRole('spinbutton', { name: 'Maximum activations per goal' })).toHaveValue('25');
   await expect(editor.getByRole('textbox', { name: 'Execution objective', exact: true })).toHaveValue(objective);

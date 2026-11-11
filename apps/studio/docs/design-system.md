@@ -68,3 +68,5 @@ persisted-state assertion, including their invalid/cancel/pending paths.
 Evidence review cards label the source of their age: “Evidence added” or “Review recorded” comes from the latest valid proof or review timestamp. Legacy records without those dates explicitly show “Attempt updated”; invalid fallback dates show “Time unavailable”. Use a semantic `time` element for valid dates. Host heartbeat and execution times remain distinct.
 
 Evidence and review form drafts belong to the selected attempt. Changing attempts resets both forms, including decision and evidence-kind selections. Same-attempt loader refreshes and rejected submissions preserve the operator’s inputs. Selection changes do not write evidence or review decisions.
+
+The Sendero selector pauses workflow switching while graph edits are unsaved. Associate the disabled selector with visible save-or-cancel guidance, and restore it after either action. This protects explicit workflow selection; it does not promise draft recovery after unrelated page navigation or browser closure.
