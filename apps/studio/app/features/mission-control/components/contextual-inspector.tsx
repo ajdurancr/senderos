@@ -143,7 +143,7 @@ export function ContextualInspector({
         {attempt?.status === "paused" && snapshot.completionRequested === true && !cancellationRequested && attemptDecision?.completion && <CompletionPrerequisites completion={attemptDecision.completion} />}
         <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
         {attempt && !terminal && (
-          <Form className="compact-form" method="post">
+          <Form key={`evidence:${attempt.id}`} className="compact-form" method="post">
             <input type="hidden" name="intent" value="evidence" />
             <input type="hidden" name="attemptId" value={attempt.id} />
             <label>Evidence kind<select name="kind" defaultValue="manual">
@@ -161,7 +161,7 @@ export function ContextualInspector({
           </Form>
         )}
         {attempt && !terminal && (
-          <Form className="review-form" method="post">
+          <Form key={`review:${attempt.id}`} className="review-form" method="post">
             <input type="hidden" name="intent" value="review" />
             <input type="hidden" name="attemptId" value={attempt.id} />
             <div>

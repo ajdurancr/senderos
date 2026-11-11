@@ -94,3 +94,5 @@ terminal completion and removal of the checklist. Both narrow mobile and desktop
 captures preserve the real read-only guidance.
 
 The operator journey also checks that Reviews identifies newly added evidence using its persisted creation time, including after reload. Desktop and mobile captures preserve the rendered card; the suite checks horizontal overflow at 390 pixels.
+
+The parallel-attempt draft journey checks that selecting another project scope clears unsaved evidence and review inputs without database writes. A rejected HTTP-link submission preserves inputs on the same attempt. Actual proof and review writes remain attached to the selected attempt after reload; desktop/mobile captures preserve the blank second-attempt forms.
