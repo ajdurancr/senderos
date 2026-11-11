@@ -225,3 +225,10 @@ confirmation, validation without writes, a delayed real committed response,
 explicit discard, and interrupted confirmation with one actual POST. Recovery
 retains the editor and advises inspecting saved settings before resubmission.
 All database and access boundaries remain the ordinary isolated fixture paths.
+
+`registration-recovery.pw.ts` covers context and standalone project registration
+at desktop and mobile widths. It holds a real committed response, checks disabled
+identity fields, then drops delivery and verifies retained input and truthful
+recovery guidance. After reload the new identity is selectable, duplicate-name
+validation retains the input, and exactly one identity exists. Route interception
+changes response delivery only; registration and database assertions stay real.

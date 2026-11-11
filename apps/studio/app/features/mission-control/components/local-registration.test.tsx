@@ -24,9 +24,13 @@ it('makes context selection explicit, retains failed input, and disables a pendi
   await waitFor(() => expect(submissions).toHaveLength(1));
   expect(Object.fromEntries(submissions[0]!)).toEqual({ intent: 'register-project', name: 'Notebook', executionContextId: 'another-context' });
   expect(screen.getAllByRole('button', { name: 'Saving…' }).every(button => (button as HTMLButtonElement).disabled)).toBe(true);
+  expect(screen.getByRole('textbox', { name: /^Project name/ }).matches(':disabled')).toBe(true);
+  expect(context.closest('fieldset')).toHaveProperty('disabled', true);
+  expect(screen.getByRole('textbox', { name: /^Context name/ }).matches(':disabled')).toBe(true);
   finish({ ok: false });
   await screen.findByRole('button', { name: 'Add project' });
   expect(screen.getByRole('textbox', { name: /^Project name/ })).toHaveProperty('value', 'Notebook');
+  expect(screen.getByRole('textbox', { name: /^Project name/ })).toHaveProperty('disabled', false);
 });
 it('provides a first-context path and prevents project registration without a context', async () => {
   const action = vi.fn(() => null);
@@ -48,4 +52,17 @@ it('preselects the current project context and remounts unsaved registration on 
   await waitFor(() => expect(screen.getByRole('combobox', { name: /^Project execution context/ })).toHaveProperty('value', 'another-context'));
   expect(screen.getByRole('textbox', { name: /^Project name/ })).not.toBe(input);
   expect(screen.getByRole('textbox', { name: /^Project name/ })).toHaveProperty('value', '');
+});
+
+it.each(['register-context', 'register-project'])('shows %s validation beside the matching registration form', async intent => {
+  const router = createMemoryRouter([{ path: '*', element: <LocalRegistration data={{ ...fixture, projects: [] }} />, action: () => ({ ok: false, intent, message: 'Registration needs attention.' }) }]);
+  render(<RouterProvider router={router} />);
+  if (intent === 'register-context') fireEvent.click(screen.getByText('Add an execution context'));
+  const input = screen.getByRole('textbox', { name: intent === 'register-context' ? /^Context name/ : /^Project name/ });
+  fireEvent.change(input, { target: { value: 'Retained registration' } });
+  fireEvent.click(screen.getByRole('button', { name: intent === 'register-context' ? 'Add context' : 'Add project' }));
+  const feedback = await screen.findByRole('alert');
+  expect(feedback.closest('form')).toBe(input.closest('form'));
+  expect(feedback.textContent).toBe('Registration needs attention.');
+  expect(input).toHaveProperty('value', 'Retained registration');
 });

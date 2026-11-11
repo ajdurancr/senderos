@@ -361,3 +361,14 @@ navigation confirmation. It checks persisted identities and isolation before and
 after saving. `settings-response-loss.pw.ts` lets a real project update commit,
 then drops only its response: the editor must retain input, explain uncertainty,
 and recover persisted values without automatically repeating the write.
+
+## Registration response recovery
+
+The production registration recovery journey delays delivery of a real committed
+context or project registration, then drops that response. At desktop and mobile
+widths it checks that pending identity fields cannot change, the input remains
+visible with an explicit unconfirmed-registration warning, and no automatic
+retry creates another identity. Reload exposes the committed identity in the
+scope selectors; submitting the same name is rejected without another record.
+The original scope, goals and runs remain unchanged. This does not add request
+idempotency or promise recovery after leaving the page.
