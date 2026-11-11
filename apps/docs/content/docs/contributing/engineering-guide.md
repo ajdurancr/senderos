@@ -127,3 +127,17 @@ claim event. The external-host simulation retains its strict exactly-one-winner
 assertions and records only allowlisted error codes, exit statuses, and retryable
 flags for each contender. Raw claim replies and stderr must never be included in
 contention diagnostics because they may contain ownership tokens or private data.
+
+## Project overview query boundaries
+
+An explicitly selected Studio project narrows goal, run and attempt queries in
+SQL before materializing their records. Its status totals reuse those selected
+records. Default programmatic overviews remain complete; context attempt
+inspection still includes granted work and owned sessions after grant revocation.
+A project selector must narrow that visibility, never expand it.
+
+Keep ordering, old-attempt recovery facts, attention state and navigation choices
+unchanged. The Studio context-data regression compares the complete filtered
+snapshot and verifies that unrelated operational IDs are absent from database
+query results, rather than merely hidden from the final HTTP payload. Core
+attempt-query coverage also checks granted and revoked host ownership.

@@ -64,9 +64,19 @@ test('HTTP project loading explains only its goals while preserving filtered rec
   const prototype = Object.getPrototypeOf(client);
   const execute = prototype.execute;
   let explanations = 0;
-  const spy = vi.spyOn(prototype, 'execute').mockImplementation(function(this: unknown, statement: unknown, ...args: unknown[]) {
+  let inspectedSelects = 0;
+  const unrelatedIds = complete.goals.filter(item => item.projectId === unrelated.id).flatMap(goal => [goal.id, ...complete.runs.filter(run => run.goalId === goal.id).flatMap(run => [run.id, ...complete.attempts.filter(attempt => attempt.runId === run.id).map(attempt => attempt.id)])]);
+  const materializedUnrelated = new Set<string>();
+  const spy = vi.spyOn(prototype, 'execute').mockImplementation(async function(this: unknown, statement: unknown, ...args: unknown[]) {
     if (statement === 'BEGIN IMMEDIATE') explanations++;
-    return execute.call(this, statement, ...args);
+    const result = await execute.call(this, statement, ...args);
+    const sql = typeof statement === 'string' ? statement : (statement as { sql?: string }).sql ?? '';
+    if (/from "(goals|runs|run_attempts)"/.test(sql)) {
+      inspectedSelects++;
+      const serialized = JSON.stringify(result.rows);
+      for (const id of unrelatedIds) if (serialized.includes(id)) materializedUnrelated.add(id);
+    }
+    return result;
   });
   let actual;
   try { actual = await missionControlData(new Request(`http://studio.local/goals?context=project-query&project=${selected.id}`)); }
@@ -75,6 +85,8 @@ test('HTTP project loading explains only its goals while preserving filtered rec
   expect(actual.projects).toEqual(complete.projects);
   expect(actual.executionContexts).toEqual(complete.executionContexts);
   expect(explanations).toBe(expected.goals.length);
+  expect(inspectedSelects).toBeGreaterThan(0);
+  expect([...materializedUnrelated]).toEqual([]);
   for (const suffix of [`project=missing`, `context=unrelated&project=${selected.id}`]) {
     const empty = await missionControlData(new Request(`http://studio.local/goals?${suffix}`));
     expect(empty.goals).toEqual([]);

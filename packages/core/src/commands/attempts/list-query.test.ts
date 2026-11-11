@@ -21,11 +21,11 @@ test('attempt listing uses one database query while preserving host visibility a
     await dispatchRun({ goalId: goal.id }, home);
   }
   await openRuntimeDb(home).update(attemptClaims).set({ recoveryOutcome: 'unknown', recoveryDetailsJson: JSON.stringify({ note: 'Keep host recovery facts' }) }).where(eq(attemptClaims.attemptId, attemptId));
-  const read = async (context?: string, selectedRun?: string) => atomic(home, async () => {
+  const read = async (context?: string, selectedRun?: string, selectedProject?: string) => atomic(home, async () => {
     const db = openRuntimeDb(home);
     const execute = spyOn(db.$client, 'execute');
     try {
-      const records = await listRunAttempts(selectedRun, home, context);
+      const records = await listRunAttempts(selectedRun, home, context, selectedProject);
       const queries = execute.mock.calls.length;
       console.log(`Attempt-list fixture: context=${context ?? 'all'}, records=${records.length}, database queries=${queries}`);
       expect(queries).toBe(1);
@@ -39,9 +39,13 @@ test('attempt listing uses one database query while preserving host visibility a
   });
   expect((await read('remote')).map(attempt => attempt.id)).toEqual([attemptId]);
   expect(await read('unrelated')).toEqual([]);
+  expect((await read('remote', undefined, project.id)).map(attempt => attempt.id)).toEqual([attemptId]);
+  expect(await read('unrelated', undefined, project.id)).toEqual([]);
+  expect(await read('remote', undefined, other.id)).toEqual([]);
+  expect(await read(undefined, undefined, 'missing')).toEqual([]);
   expect(await read('remote', 'missing')).toEqual([]);
   await grantHostWorkspace({ hostId: 'host-a', projectId: project.id, workspaceRef: 'repo', revoke: true }, home);
-  const assigned = await read('remote', runId);
+  const assigned = await read('remote', runId, project.id);
   expect(assigned).toHaveLength(1);
   expect(assigned[0]).toMatchObject({ id: attemptId, ownerId: 'host-a', recoveryOutcome: 'unknown', recoveryDetails: { note: 'Keep host recovery facts' } });
   expect(await read(project.executionContextId)).toHaveLength(13);
@@ -60,4 +64,5 @@ test('attempt listing uses one database query while preserving host visibility a
   await openRuntimeDb(home).insert(runAttempts).values({ ...original, id: earlier, attemptNumber: 2, createdAt: '2000-01-01T00:00:00.000Z' });
   expect((await read(undefined, runId)).map(attempt => attempt.id)).toEqual([attemptId, earlier]);
   expect((await read())[0]?.id).toBe(earlier);
+  expect((await read(undefined, undefined, project.id)).map(attempt => attempt.id)).toEqual([earlier, attemptId]);
 });
