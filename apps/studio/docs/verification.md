@@ -352,3 +352,15 @@ Back/Forward use the native unsaved-change confirmation. Explicit Cancel discard
 the draft. Server validation preserves inputs, an in-flight save remains guarded,
 and confirmed create/update redirects do not ask to discard the saved values.
 The pending-save fixture delays only delivery of a real persisted action response.
+
+
+## Workflow creation draft navigation
+
+New workflow details and imported definitions survive method switching without
+being submitted together. The shared dirty-draft boundary protects scope and
+document navigation, including pending save confirmation; explicit Cancel clears
+both method drafts. Rejected JSON imports retain the input, and only the submitted
+intent's confirmed saved destination bypasses the boundary. Production desktop
+and mobile journeys assert persisted identities after real create/import actions.
+A lost response can still require inspection of saved state; these tests do not
+establish a native SQLite lock or resource-lifetime correction.

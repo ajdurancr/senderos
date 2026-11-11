@@ -218,3 +218,11 @@ Back/Forward use the native unsaved-change confirmation. Explicit Cancel discard
 the draft. Server validation preserves inputs, an in-flight save remains guarded,
 and confirmed create/update redirects do not ask to discard the saved values.
 The pending-save fixture delays only delivery of a real persisted action response.
+
+
+`sendero-creation-navigation.pw.ts` retains independently edited creation fields
+and imported JSON while switching authoring methods. Desktop and mobile journeys
+verify scope cancellation, rejected import preservation, navigation during a real
+save with delayed response delivery, successful import/create persistence, native
+document navigation confirmation and explicit Cancel. The database writes are
+real and isolated; only response delivery is delayed.

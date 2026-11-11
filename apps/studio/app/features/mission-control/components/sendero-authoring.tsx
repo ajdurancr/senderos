@@ -12,11 +12,23 @@ export function SenderoCreation() {
   const clientReady = useClientReady();
   const pending = useNavigation().state !== 'idle';
   const [mode, setMode] = useState<'create' | 'import'>('create');
-  return <div className="standard-view"><Form className="create-panel authoring-panel" method="post">
-    <input type="hidden" name="intent" value={mode === 'create' ? 'create-sendero' : 'import-sendero'} />
-    <header><div><span>New Sendero</span><h2>Create a directed workflow</h2></div><Link className="button button-secondary" to="/senderos" onClick={event => { event.currentTarget.closest("form")?.reset(); setMode("create"); }}>Cancel</Link></header>
+  const [values, setValues] = useState({ name: '', slug: '', description: '', definition: '' });
+  const submitted = useRef(false);
+  const feedback = useActionData<{ ok?: boolean }>();
+  const intent = mode === 'create' ? 'create-sendero' : 'import-sendero';
+  const dirty = Object.values(values).some(value => value !== '');
+  useEffect(() => {
+    if (!pending && feedback?.ok === false) submitted.current = false;
+  }, [pending, feedback]);
+  const update = (field: keyof typeof values, value: string) => setValues(previous => ({ ...previous, [field]: value }));
+  return <div className="standard-view"><Form className="create-panel authoring-panel" method="post" onSubmit={() => { submitted.current = true; }} onReset={() => {
+    setValues({ name: '', slug: '', description: '', definition: '' }); setMode('create'); submitted.current = false;
+  }}>
+    <DraftNavigationGuard dirty={dirty} saving={pending} allowNavigation={(pathname, search) => submitted.current && /^\/senderos\/[^/]+$/.test(pathname) && pathname !== '/senderos/new' && new URLSearchParams(search).get('saved') === intent} />
+    <input type="hidden" name="intent" value={intent} />
+    <header><div><span>New Sendero</span><h2>Create a directed workflow</h2></div><Link className="button button-secondary" to="/senderos" onClick={event => { event.currentTarget.closest("form")?.reset(); }}>Cancel</Link></header>
     <fieldset disabled={pending || !clientReady} className="authoring-fields"><legend>Workflow details</legend><label>Method<select aria-label="Authoring method" value={mode} onChange={event => setMode(event.target.value as typeof mode)}><option value="create">Create a new draft</option><option value="import">Import a JSON definition</option></select></label>
-    {mode === 'create' ? <><div className="form-row"><label>Name<input name="name" required maxLength={200} /></label><label>Slug<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="research-workflow" /></label></div><label>Description<textarea name="description" rows={3} /></label><p>The draft begins with start and end nodes. Add agents, directed transitions, outcomes, and a cycle budget before publishing.</p></> : <label>Sendero JSON<textarea name="definition" aria-label="Sendero JSON" rows={16} required spellCheck={false} placeholder={'{"slug":"research","name":"Research","nodes":[{"key":"start","kind":"start","label":"Start"},{"key":"end","kind":"end","label":"End"}],"edges":[{"key":"finish","source":"start","target":"end","name":"Finish"}]}'} /><small>Include slug, name, nodes, and edges. Node keys identify transition sources, targets, and explicit fork/join pairs. Import always creates an unpublished draft.</small></label>}
+    {mode === 'create' ? <><div className="form-row"><label>Name<input name="name" required maxLength={200} value={values.name} onChange={event => update('name', event.target.value)} /></label><label>Slug<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="research-workflow" value={values.slug} onChange={event => update('slug', event.target.value)} /></label></div><label>Description<textarea name="description" rows={3} value={values.description} onChange={event => update('description', event.target.value)} /></label><p>The draft begins with start and end nodes. Add agents, directed transitions, outcomes, and a cycle budget before publishing.</p></> : <label>Sendero JSON<textarea name="definition" aria-label="Sendero JSON" rows={16} required spellCheck={false} value={values.definition} onChange={event => update('definition', event.target.value)} placeholder={'{"slug":"research","name":"Research","nodes":[{"key":"start","kind":"start","label":"Start"},{"key":"end","kind":"end","label":"End"}],"edges":[{"key":"finish","source":"start","target":"end","name":"Finish"}]}'} /><small>Include slug, name, nodes, and edges. Node keys identify transition sources, targets, and explicit fork/join pairs. Import always creates an unpublished draft.</small></label>}
     </fieldset><footer><span>Publishing remains a separate validation step.</span><button className="button button-primary" disabled={pending || !clientReady}>{pending ? 'Saving…' : mode === 'create' ? 'Create draft' : 'Import draft'}</button></footer>
   </Form></div>;
 }
