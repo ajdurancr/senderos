@@ -51,9 +51,11 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   } catch (error) {
     // Router responses (including successful redirects) are not transport loss.
     if (error instanceof Response) throw error;
-    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project'].includes(intent) || request.signal.aborted) throw error;
+    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review'].includes(intent) || request.signal.aborted) throw error;
     const registration = intent === 'register-context' || intent === 'register-project';
-    const message = registration
+    const message = ['evidence', 'review'].includes(intent)
+      ? `Studio could not confirm the ${intent === 'evidence' ? 'evidence' : 'review decision'} submission. Your input is kept here. It may have reached the server. Reload and inspect persisted evidence and the current review before submitting again; recording evidence again adds another record.`
+      : registration
       ? `Studio could not confirm the ${intent === 'register-context' ? 'execution context' : 'project'} registration. Your input is kept here. The registration may have reached the server. Reload and inspect the execution context and project selectors before submitting again.`
       : intent === 'update-project'
       ? 'Studio could not confirm the project settings save. Your edits are kept here. The save may have reached the server. Reload to inspect the saved settings before submitting again.'

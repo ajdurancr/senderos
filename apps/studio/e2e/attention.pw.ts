@@ -305,6 +305,7 @@ test('evidence and review drafts reset when scope selects another parallel attem
     await expect(page.getByRole('combobox', { name: 'Evidence kind', exact: true })).toHaveValue('test');
     await expect(page.getByLabel('Decision rationale', { exact: true })).toHaveValue('First scope only rationale');
     await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+    await page.getByRole('dialog', { name: 'Leave evidence and review editor?' }).getByRole('button', { name: 'Leave editor' }).click();
     await expect(inspector.locator('input[name="attemptId"]').first()).toHaveValue(b.id);
     await expect(page.getByLabel('Evidence label', { exact: true })).toHaveValue('');
     await expect(page.getByRole('combobox', { name: 'Evidence kind', exact: true })).toHaveValue('manual');
