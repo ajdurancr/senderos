@@ -174,6 +174,23 @@ describe("Studio server integration", () => {
     const evidence = new FormData(); Object.entries({ intent: "evidence", attemptId: attempt.id, label: "Proof", url: "https://example.test/proof" }).forEach(([key, value]) => evidence.set(key, value)); await applyMissionControlAction(evidence);
     const review = new FormData(); Object.entries({ intent: "review", attemptId: attempt.id, status: "approved", rationale: "Looks good" }).forEach(([key, value]) => review.set(key, value)); await applyMissionControlAction(review);
     const evidenceWithoutUrl = new FormData(); Object.entries({ intent: "evidence", attemptId: attempt.id, label: "Local proof", url: "" }).forEach(([key, value]) => evidenceWithoutUrl.set(key, value)); await applyMissionControlAction(evidenceWithoutUrl);
+    const submitEvidence = (values: Record<string, string>) => {
+      const form = new FormData();
+      Object.entries({ intent: "evidence", attemptId: attempt.id, label: "Typed proof", ...values }).forEach(([key, value]) => form.set(key, value));
+      return applyMissionControlAction(form);
+    };
+    for (const kind of ["test", "ci", "pull_request", "artifact", "manual"]) {
+      await submitEvidence({ kind, summary: `Recorded ${kind} result` });
+      const saved = (await missionControlData()).attempts.find(item => item.id === attempt.id)!;
+      expect(JSON.parse(saved.statusSnapshotJson).evidence.at(-1)).toMatchObject({ kind, summary: `Recorded ${kind} result` });
+    }
+    const beforeInvalidEvidence = await missionControlData();
+    await expect(submitEvidence({ kind: "unknown" })).rejects.toThrow(/evidence kind/i);
+    const afterInvalidEvidence = await missionControlData();
+    expect(afterInvalidEvidence.attempts).toEqual(beforeInvalidEvidence.attempts);
+    expect(afterInvalidEvidence.events).toEqual(beforeInvalidEvidence.events);
+    const legacyEvidence = JSON.parse(afterInvalidEvidence.attempts.find(item => item.id === attempt.id)!.statusSnapshotJson).evidence;
+    expect(legacyEvidence.slice(0, 2).map((item: { kind: string }) => item.kind)).toEqual(["manual", "manual"]);
     const reviewWithoutRationale = new FormData(); Object.entries({ intent: "review", attemptId: attempt.id, status: "changes_requested", rationale: "" }).forEach(([key, value]) => reviewWithoutRationale.set(key, value)); await applyMissionControlAction(reviewWithoutRationale);
     const stop = new FormData(); stop.set("intent", "stop"); stop.set("runId", attempt.runId); await applyMissionControlAction(stop);
 

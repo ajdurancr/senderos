@@ -201,3 +201,16 @@ explicit host grants, assigned-host reads after grant withdrawal, missing-parent
 exclusion for scoped reads, unscoped inspection and no-claim defaults. Claim
 tokens and dispatch packets remain excluded; durable recovery details remain
 available. This removes per-attempt query calls, not all scans or history growth.
+
+
+### Typed operator evidence
+
+Studio evidence entry defaults to manual observations and supports explicit test,
+CI, pull-request and artifact proof with an optional summary. Server integration
+checks preserve all five kinds and summaries, retain legacy manual submissions,
+and reject unknown kinds without changing attempts or events. The production
+browser journey first proves manual evidence and approval leave a test-required
+completion gate paused, then records test evidence through the actual form and
+verifies durable completion after reload. Desktop/mobile form screenshots and
+read-only terminal proof are preserved. These are operator-supplied records, not
+claims that Studio ran or independently verified the linked tests.

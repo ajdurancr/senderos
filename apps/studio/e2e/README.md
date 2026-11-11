@@ -78,3 +78,11 @@ Navigation choices must remain available when HTTP operational data is scoped.
 Project-only settings paths are also reloaded and captured at desktop/mobile
 sizes before switching to another project. Scoped loading must retain navigation
 choices and saved form values without needing an explicit context query.
+
+The operator acceptance journey records manual evidence first and verifies that
+it cannot satisfy a required test gate. After the simulated host requests
+completion, the operator records explicit test proof and a summary through
+Studio. Reloaded database state proves the gate settled and the terminal record
+retained its kind, URL and summary. Desktop/mobile screenshots show the native
+kind selector and summary form. This does not execute or independently verify
+the operator-supplied test report.

@@ -144,8 +144,17 @@ export function ContextualInspector({
           <Form className="compact-form" method="post">
             <input type="hidden" name="intent" value="evidence" />
             <input type="hidden" name="attemptId" value={attempt.id} />
+            <label>Evidence kind<select name="kind" defaultValue="manual">
+              <option value="manual">Manual observation</option>
+              <option value="test">Test report</option>
+              <option value="ci">CI result</option>
+              <option value="pull_request">Pull request</option>
+              <option value="artifact">Artifact</option>
+            </select></label>
+            <p>Choose the kind that matches your proof. Recording evidence does not run tests or verify its contents.</p>
             <label>Evidence label<input name="label" placeholder="Evidence label" required /></label>
             <label>Evidence URL (optional)<input type="url" name="url" placeholder="https://example.com/report" /></label>
+            <label>Evidence summary (optional)<textarea name="summary" rows={3} placeholder="What was checked and what the result showed" /></label>
             <button className="button button-primary" disabled={pending}>{pending ? "Recording…" : "Record evidence"}</button>
           </Form>
         )}

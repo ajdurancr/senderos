@@ -42,7 +42,10 @@ identities and revisions atomically. Reservation is distinct from external host
 claim/session start. Stop requests cancellation for the entire goal, including
 parallel branches, and owned sessions remain live until host acknowledgement.
 
-Manual evidence keeps kind `manual`; it does not satisfy a required `test` gate.
+Evidence entry defaults to `manual`; manual observations do not satisfy a required
+`test` gate. Operators may explicitly record test, CI, pull-request or artifact proof
+with an optional summary. The selected kind describes the supplied evidence;
+recording it does not execute tests or verify the linked content.
 Review decisions belong to the exact attempt. Terminal evidence and rationale
 remain visible and read-only. Never derive execution completion from UI state.
 

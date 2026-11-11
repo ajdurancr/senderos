@@ -95,3 +95,14 @@ it("renders readable proof when malformed persisted optional metadata is normali
   expect(screen.queryByRole("link")).toBeNull();
   expect(container.textContent).not.toContain("invalid React child");
 });
+
+
+it("offers explicit evidence kinds with a manual default and an optional summary", () => {
+  const fixture = { ...data, attempts: [{ ...data.attempts[0]!, status: "running" as const }] };
+  inRouter(<ContextualInspector data={fixture} goalId="goal-1" attemptId="attempt-1" />);
+  const kind = screen.getByRole("combobox", { name: "Evidence kind" }) as HTMLSelectElement;
+  expect(kind.value).toBe("manual");
+  expect(Array.from(kind.options).map(option => option.value)).toEqual(["manual", "test", "ci", "pull_request", "artifact"]);
+  expect(screen.getByRole("textbox", { name: "Evidence summary (optional)" })).toBeTruthy();
+  expect(screen.getByText(/Recording evidence does not run tests/)).toBeTruthy();
+});
