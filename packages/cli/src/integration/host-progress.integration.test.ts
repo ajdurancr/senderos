@@ -22,6 +22,7 @@ test('an interrupted host simulator retains token-safe scenario and pending CLI 
     child.once('exit', () => resolve());
     child.once('error', reject);
   });
+  let interrupted = false;
   try {
     const deadline = Date.now() + 3_000;
     while (Date.now() < deadline) {
@@ -30,7 +31,9 @@ test('an interrupted host simulator retains token-safe scenario and pending CLI 
     }
     // Kill the disposable controller and all children exactly as the CI deadline does.
     process.kill(-child.pid!, 'SIGKILL');
+    interrupted = true;
     await exited;
+    expect(child.signalCode).toBe('SIGKILL');
     expect(existsSync(output)).toBe(false);
     expect(existsSync(progress)).toBe(true);
     const records = readFileSync(progress, 'utf8').trim().split('\n').map(line => JSON.parse(line));
@@ -39,8 +42,12 @@ test('an interrupted host simulator retains token-safe scenario and pending CLI 
     expect(records.every(record => Object.keys(record).every(key =>
       ['event', 'scenario', 'elapsedMs', 'command', 'id'].includes(key)))).toBe(true);
   } finally {
-    try { process.kill(-child.pid!, 'SIGKILL'); } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
+    // Do not signal an already-interrupted group again after the child exits.
+    // A vanished group can return a platform error, or its ID may be reused.
+    if (!interrupted) {
+      try { process.kill(-child.pid!, 'SIGKILL'); } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
+      }
     }
     await exited;
     rmSync(runtime, { recursive: true, force: true });
