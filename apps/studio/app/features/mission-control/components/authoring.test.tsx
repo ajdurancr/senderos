@@ -254,7 +254,9 @@ describe('Studio authoring interactions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Create agent' })).toHaveProperty('disabled', false));
   });
 
-  it('resets the selected agent editor across newer navigation and Back without saving', async () => {
+  it('preserves agent edits on cancelled navigation and discards only after confirmation', async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
     function Edit() { const { id } = useParams(); return <AgentAuthoring data={base} agentId={id} />; }
     const action = vi.fn(async () => null);
     const router = createMemoryRouter([
@@ -264,6 +266,12 @@ describe('Studio authoring interactions', () => {
     render(<RouterProvider router={router} />);
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Unsaved rename' } });
     await router.navigate('/agents/new');
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Leave agent editor?' })).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Stay here' }));
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Unsaved rename');
+    await router.navigate('/agents/new');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Leave editor' })).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Leave editor' }));
     await waitFor(() => expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe(''));
     await router.navigate(-1);
     await waitFor(() => expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Agent One'));

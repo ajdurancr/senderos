@@ -203,3 +203,14 @@ Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
 probe reproduced the previous raw fixture UPDATE failing while a reader held the
 file; transaction rollback/retry lets that fixture wait without weakening the
 production assertions or changing application mutation behavior.
+
+
+## Unsaved agent navigation
+
+`agent-draft-navigation.pw.ts` exercises new and existing agent editors at desktop
+and mobile widths. Project-scope navigation asks before discarding edits; staying
+retains instructions and leaves persistence unchanged. Browser document links and
+Back/Forward use the native unsaved-change confirmation. Explicit Cancel discards
+the draft. Server validation preserves inputs, an in-flight save remains guarded,
+and confirmed create/update redirects do not ask to discard the saved values.
+The pending-save fixture delays only delivery of a real persisted action response.

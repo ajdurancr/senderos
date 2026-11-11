@@ -332,3 +332,14 @@ identifier. It verifies exact inert text in the inspector and Runs history after
 reload, unchanged persisted state, and desktop/mobile wrapping without horizontal
 overflow. Component regressions also cover invalid and executable schemes,
 escaped markup, and existing HTTP(S) link behavior. No referenced file is read.
+
+
+## Unsaved agent navigation
+
+`agent-draft-navigation.pw.ts` exercises new and existing agent editors at desktop
+and mobile widths. Project-scope navigation asks before discarding edits; staying
+retains instructions and leaves persistence unchanged. Browser document links and
+Back/Forward use the native unsaved-change confirmation. Explicit Cancel discards
+the draft. Server validation preserves inputs, an in-flight save remains guarded,
+and confirmed create/update redirects do not ask to discard the saved values.
+The pending-save fixture delays only delivery of a real persisted action response.
