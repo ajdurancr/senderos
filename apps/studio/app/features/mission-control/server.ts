@@ -1,5 +1,7 @@
 import {
   createSenderos,
+  completeTogether,
+  withRuntimeDatabaseSession,
   registerExecutionContext,
   databaseConnectionFromEnvironment,
   type GoalKind,
@@ -25,13 +27,17 @@ import {
 } from "../../server/senderos.server";
 
 export async function missionControlData(request?: Request) {
+  return withRuntimeDatabaseSession(() => loadMissionControlData(request));
+}
+
+async function loadMissionControlData(request?: Request) {
   await prepareStudioDatabase();
   const url = request ? new URL(request.url) : undefined;
   const executionContextId = url?.searchParams.get('context') || undefined;
   const projectId = url ? url.searchParams.get('project') || parseStudioPath(url.pathname).projectId : undefined;
   const senderos = executionContextId ? createSenderos({ executionContextId }) : senderosForStudio();
   const [completeOverview, executionContexts, agents, transitions, senderoGraphs] =
-    await Promise.all([
+    await completeTogether([
       senderos.missionControl.overview({ projectId }),
       senderos.commands.executionContexts.list(),
       senderos.commands.agents.list(),

@@ -1,3 +1,4 @@
+import { completeTogether } from "../shared/complete-together";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { atomic, openRuntimeDb } from "../db/client";
 import { agents, activations, attemptClaims, goalExecutions, goals, runAttempts, runs } from "../db/schema";
@@ -112,7 +113,7 @@ export async function explainGoal(goalId: string, home?: string): Promise<Activa
     if (["draft", "completed", "canceled"].includes(goal.status)) return { goalId, state: goal.status as "draft" | "completed" | "canceled", reason: goal.status, nextAction: goal.status === "draft" ? "activate" : "none", activations: [] };
     try {
       await cursor(goalId, home);
-      const decisions = await Promise.all((await goalActivations(goalId, home)).map(a => explainActivation(a, home)));
+      const decisions = await completeTogether((await goalActivations(goalId, home)).map(a => explainActivation(a, home)));
       const primary = decisions.find(d => d.state === "ready") ?? decisions.find(d => d.state === "running") ?? decisions.find(d => d.state === "blocked");
       return primary ? { ...primary, activations: decisions } : { goalId, state: "completed", reason: "end_reached", nextAction: "none", activations: decisions };
     } catch (error) { if (!(error instanceof LifecycleError)) throw error; return { goalId, state: "blocked", reason: error.code, nextAction: error.message, activations: [] }; }

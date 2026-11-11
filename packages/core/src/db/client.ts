@@ -47,6 +47,12 @@ export async function withDatabaseConnection<T>(connection: DatabaseConnection, 
   finally { for (const client of clients) client.close(); }
 }
 
+/** Own environment-backed clients until structured work completes; nested scopes and transactions remain borrowed. */
+export async function withRuntimeDatabaseSession<T>(work: () => Promise<T>): Promise<T> {
+  if (connections.getStore() || transactions.getStore()) return work();
+  return withDatabaseConnection(databaseConnectionFromEnvironment(), work);
+}
+
 /** Opens a local or remote libSQL connection from the effective runtime config. */
 function connectRuntimeDb(home?: string, requireExistingFile = false) {
   const scoped = connections.getStore();

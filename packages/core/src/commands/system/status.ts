@@ -1,3 +1,4 @@
+import { completeTogether } from "../../shared/complete-together";
 import { openRuntimeDb } from "../../db/client";
 import { attemptClaims, goals, projects, runAttempts, runs } from "../../db/schema";
 import { and, asc, count, eq, inArray, notInArray } from "drizzle-orm";
@@ -16,7 +17,7 @@ const ACTIVE_RUN_STATUSES = [
 export async function status(home?: string, executionContextId?: string) {
   const db = openRuntimeDb(home);
   if (executionContextId) {
-    const [scopedProjects, scopedGoals, scopedRuns, scopedAttempts] = await Promise.all([
+    const [scopedProjects, scopedGoals, scopedRuns, scopedAttempts] = await completeTogether([
       db.select({ status: projects.status }).from(projects)
         .where(eq(projects.executionContextId, executionContextId)),
       db.select({ id: goals.id, status: goals.status }).from(goals)
@@ -57,7 +58,7 @@ export async function status(home?: string, executionContextId?: string) {
     activeRuns,
     activeGoals,
     runningRuns,
-  ] = await Promise.all([
+  ] = await completeTogether([
     db.select({ count: count() }).from(projects),
     db
       .select({ count: count() })

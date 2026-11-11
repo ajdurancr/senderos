@@ -332,6 +332,17 @@ migration, repeated preparation, persistent lock failure with no partial migrati
 and explicit recovery after release. Unknown errors and migration-batch failures
 are never retried by the metadata preparation policy.
 
+
+## Snapshot connection lifetime
+
+Studio snapshot loading owns its database clients through preparation and all
+nested reads. Parallel groups finish every sibling before a failure escapes and
+cleanup closes clients. Lazy queries execute once, original failures remain
+failures, and nested transactions keep their existing owner. Repeated snapshot
+regressions verify complete results and closed clients; interrupted reads must
+finish before cleanup. This does not establish the cause of the earlier simulator
+stall or promise cleanup for every independent CLI command.
+
 ## Imported artifact references
 
 The evidence-reference production journey loads synthetic retained terminal
