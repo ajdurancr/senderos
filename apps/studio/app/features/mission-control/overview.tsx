@@ -67,7 +67,7 @@ export function MissionControlOverview({
               <h1>{graph.sendero.name}</h1>
               <p>{graph.sendero.description}</p>
             </div>
-            <div className="authoring-actions"><SenderoSelector data={data} senderoId={graph.sendero.id} /><Link className="primary-action" to="/senderos/new">New Sendero</Link></div>
+            <div className="authoring-actions"><SenderoSelector data={data} senderoId={graph.sendero.id} hasUnsavedGraph={hasUnsavedGraph} /><Link className="primary-action" to="/senderos/new">New Sendero</Link></div>
           </header>
           <OrchestrationCanvas data={data} senderoId={graph.sendero.id} readOnlyLayout={hasUnsavedGraph} />
           <SenderoGraphEditor graph={graph} agents={data.agents} onDirtyChange={setHasUnsavedGraph} />

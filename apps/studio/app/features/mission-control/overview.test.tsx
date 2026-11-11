@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -102,4 +102,25 @@ it("leaves an empty scope's requested dispatch plan visible and dismissible", ()
   expect(screen.getByRole("heading", { name: "No activations ready" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Dispatch all" })).toHaveProperty("disabled", true);
   expect(screen.getByRole("link", { name: "Close dispatch plan" }).getAttribute("href")).toBe("/canvas?context=context-1");
+});
+
+it("keeps the workflow selector on the edited draft until edits are saved or canceled", () => {
+  const graph = data.senderoGraphs[0]!;
+  const draft = { ...graph, version: { ...graph.version, status: "draft" as const } };
+  const router = createMemoryRouter([{
+    path: "*",
+    element: <MissionControlOverview data={{ ...data, draftGraphs: [draft] }} route={parseStudioPath(`/senderos/${graph.sendero.id}`)} search={new URLSearchParams()} />,
+  }]);
+  render(<RouterProvider router={router} />);
+  const selector = screen.getByRole("combobox", { name: "Sendero" });
+  expect(selector).toHaveProperty("disabled", false);
+  fireEvent.change(screen.getAllByLabelText("Node label")[1]!, { target: { value: "Unsaved workflow step" } });
+  expect(selector).toHaveProperty("disabled", true);
+  fireEvent.change(selector, { target: { value: "other-workflow" } });
+  expect(router.state.location.pathname).toBe("/");
+  expect((screen.getAllByLabelText("Node label")[1] as HTMLInputElement).value).toBe("Unsaved workflow step");
+  expect(screen.getByText("Save or cancel graph edits before switching Senderos.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel changes" }));
+  expect(selector).toHaveProperty("disabled", false);
+  expect(screen.queryByText("Save or cancel graph edits before switching Senderos.")).toBeNull();
 });

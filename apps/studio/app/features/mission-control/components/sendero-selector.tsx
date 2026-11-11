@@ -7,9 +7,11 @@ import { Icon } from "./icons";
 export function SenderoSelector({
   data,
   senderoId,
+  hasUnsavedGraph = false,
 }: {
   data: MissionControlData;
   senderoId: string;
+  hasUnsavedGraph?: boolean;
 }) {
   const clientReady = useClientReady();
   const navigate = useNavigate();
@@ -25,11 +27,12 @@ export function SenderoSelector({
         {data.senderoGraphs.length}
       </span>
       <select
-        disabled={!clientReady}
+        disabled={!clientReady || hasUnsavedGraph}
+        aria-describedby={hasUnsavedGraph ? "sendero-selection-help" : undefined}
         aria-label="Sendero"
         value={senderoId}
         onChange={(event) =>
-          navigate(`${senderoPath(event.target.value)}${location.search}`)
+          !hasUnsavedGraph && navigate(`${senderoPath(event.target.value)}${location.search}`)
         }
       >
         {data.senderoGraphs.map((graph) => (
@@ -38,6 +41,7 @@ export function SenderoSelector({
           </option>
         ))}
       </select>
+      {hasUnsavedGraph && <small id="sendero-selection-help">Save or cancel graph edits before switching Senderos.</small>}
     </label>
   );
 }
