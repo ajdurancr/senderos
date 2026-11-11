@@ -1,11 +1,8 @@
 import { openRuntimeDb } from "../../db/client";
-import { goals, projects, runAttempts, runs } from "../../db/schema";
-import { asc, count, inArray, notInArray } from "drizzle-orm";
+import { attemptClaims, goals, projects, runAttempts, runs } from "../../db/schema";
+import { and, asc, count, eq, inArray, notInArray } from "drizzle-orm";
 import type { ProjectRecord, GoalRecord, RunRecord, RunAttemptRecord } from "../../shared/types";
-import { listProjects } from '../projects/list';
-import { listGoals } from '../goals/list';
-import { listRuns } from '../runs/list';
-import { listRunAttempts } from '../attempts/list';
+import { attemptInspectionScope } from '../attempts/inspection';
 const ACTIVE_RUN_STATUSES = [
   "queued",
   "preparing",
@@ -17,16 +14,35 @@ const ACTIVE_RUN_STATUSES = [
   "cleaning_up",
 ];
 export async function status(home?: string, executionContextId?: string) {
+  const db = openRuntimeDb(home);
   if (executionContextId) {
     const [scopedProjects, scopedGoals, scopedRuns, scopedAttempts] = await Promise.all([
-      listProjects(home, executionContextId),
-      listGoals(home, executionContextId),
-      listRuns(home, executionContextId),
-      listRunAttempts(undefined, home, executionContextId),
+      db.select({ status: projects.status }).from(projects)
+        .where(eq(projects.executionContextId, executionContextId)),
+      db.select({ id: goals.id, status: goals.status }).from(goals)
+        .innerJoin(projects, eq(goals.projectId, projects.id))
+        .where(and(eq(projects.executionContextId, executionContextId), notInArray(goals.status, ["completed", "canceled"])))
+        .orderBy(asc(goals.createdAt)),
+      db.select({ id: runs.id, status: runs.status }).from(runs)
+        .innerJoin(goals, eq(runs.goalId, goals.id))
+        .innerJoin(projects, eq(goals.projectId, projects.id))
+        .where(and(eq(projects.executionContextId, executionContextId), inArray(runs.status, ACTIVE_RUN_STATUSES)))
+        .orderBy(asc(runs.createdAt)),
+      db.select({ id: runAttempts.id, status: runAttempts.status }).from(runAttempts)
+        .leftJoin(attemptClaims, eq(attemptClaims.attemptId, runAttempts.id))
+        .leftJoin(runs, eq(runAttempts.runId, runs.id))
+        .leftJoin(goals, eq(runs.goalId, goals.id))
+        .leftJoin(projects, eq(goals.projectId, projects.id))
+        .where(and(attemptInspectionScope(db, executionContextId), inArray(runAttempts.status, ["queued", "running", "paused"])))
+        .orderBy(asc(runAttempts.createdAt)),
     ]);
-    return statusFromRecords(scopedProjects, scopedGoals, scopedRuns, scopedAttempts);
+    return statusFromRecords(
+      scopedProjects as Pick<ProjectRecord, 'status'>[],
+      scopedGoals as Pick<GoalRecord, 'id' | 'status'>[],
+      scopedRuns as Pick<RunRecord, 'id' | 'status'>[],
+      scopedAttempts as Pick<RunAttemptRecord, 'id' | 'status'>[],
+    );
   }
-  const db = openRuntimeDb(home);
   const activeAttemptRows = await db
       .select({ id: runAttempts.id })
       .from(runAttempts)

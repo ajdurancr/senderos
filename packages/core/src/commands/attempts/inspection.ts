@@ -1,8 +1,23 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, or } from 'drizzle-orm';
 import { openRuntimeDb } from '../../db/client';
 import { attemptClaims, goals, projects, runs } from '../../db/schema';
 import { executionHosts, hostWorkspaces } from '../../db/host-schema';
 import type { RunAttemptRecord } from '../../shared/types';
+
+/** Shared list/status boundary: revoked grants still allow owned-session inspection. */
+export function attemptInspectionScope(db: ReturnType<typeof openRuntimeDb>, executionContextId?: string) {
+  if (!executionContextId) return undefined;
+  const contextHosts = db.select({ id: executionHosts.id }).from(executionHosts)
+    .where(eq(executionHosts.executionContextId, executionContextId));
+  const grantedProjects = db.select({ id: hostWorkspaces.projectId }).from(hostWorkspaces)
+    .where(and(eq(hostWorkspaces.accessGranted, true), inArray(hostWorkspaces.hostId, contextHosts)));
+  // A valid parent project is required even for assigned hosts.
+  return and(isNotNull(projects.id), or(
+    eq(projects.executionContextId, executionContextId),
+    inArray(projects.id, grantedProjects),
+    inArray(attemptClaims.ownerId, contextHosts),
+  ));
+}
 
 /** Shared allowlist: claim tokens and dispatch packets never enter inspection. */
 export const inspectionClaimFields = {
