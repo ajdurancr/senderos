@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Form, useActionData, useNavigation } from 'react-router';
+import { Form, useActionData, useLocation, useNavigation } from 'react-router';
 import { DraftNavigationGuard } from '../../../components/draft-navigation-guard';
+import { useExecutionSubmission } from '../../../hooks/use-execution-submission';
 import { useClientReady } from '../../../hooks/use-client-ready';
 import type { MissionControlData } from '../server';
 
@@ -9,6 +10,7 @@ const snapshot = (goal: Goal) => ({ title: goal.title, kind: goal.kind, specText
 
 export function GoalPreparation({ goal, graphs, onEditingChange }: { goal: Goal; graphs: MissionControlData['senderoGraphs']; onEditingChange: (editing: boolean) => void }) {
   const formId = useId();
+  const location = useLocation();
   const [editing, setEditing] = useState(false);
   const [original, setOriginal] = useState(() => snapshot(goal));
   const [draft, setDraft] = useState(original);
@@ -17,6 +19,7 @@ export function GoalPreparation({ goal, graphs, onEditingChange }: { goal: Goal;
   const action = useActionData<{ ok?: boolean; intent?: string }>();
   const pending = useNavigation().state !== 'idle';
   const ready = useClientReady();
+  const activation = useExecutionSubmission('start');
   const dirty = JSON.stringify(draft) !== JSON.stringify(original);
   useEffect(() => { onEditingChange(editing); return () => onEditingChange(false); }, [editing, onEditingChange]);
   useEffect(() => {
@@ -31,9 +34,10 @@ export function GoalPreparation({ goal, graphs, onEditingChange }: { goal: Goal;
   }, [pending, action, goal, dirty, original]);
   const published = graphs.filter(graph => graph.version.status === 'published');
   if (!editing) return <div className="goal-preparation">
-    <button type="button" className="button button-secondary" disabled={pending || !ready} onClick={() => { const fresh = snapshot(goal); setOriginal(fresh); setDraft(fresh); setEditing(true); }}>Edit goal</button>
+    <button type="button" className="button button-secondary" disabled={pending || activation.uncertain || !ready} onClick={() => { const fresh = snapshot(goal); setOriginal(fresh); setDraft(fresh); setEditing(true); }}>Edit goal</button>
     {!goal.senderoVersionId && <p>Choose a published Sendero in Edit goal before starting.</p>}
-    <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id} /><button className="button button-primary" disabled={pending || !ready || !goal.senderoVersionId}>{pending ? 'Starting…' : 'Start goal'}</button></Form>
+    <Form method="post" onSubmit={activation.submit}><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id} /><button className="button button-primary" disabled={pending || activation.uncertain || !ready || !goal.senderoVersionId}>{pending ? 'Starting…' : 'Start goal'}</button></Form>
+    {activation.uncertain && <p><a href={`${location.pathname}${location.search}${location.hash}`}>Reload persisted goal and workflow progress</a> before editing or starting again.</p>}
   </div>;
   return <Form method="post" className="compact-form goal-preparation" aria-label="Goal preparation" onSubmit={() => { submitted.current = true; priorAction.current = action; }}>
     <DraftNavigationGuard dirty={dirty} saving={pending} subject="goal" />
