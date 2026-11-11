@@ -55,3 +55,9 @@ scope isolation. Desktop/mobile screenshots capture the real settings form.
 starting with an unrelated selected scope. It verifies whitespace/duplicate
 errors without writes, the new context/project URL, persistence after reload,
 unchanged prior projects/goals/runs/claims, and desktop/mobile onboarding.
+
+`recovery.pw.ts` records unknown, missing, and active session inspections through
+the isolated host fixture. Actual production pages retain observations on reload,
+show outcome-specific next steps, and do not mutate claims or reserve replacement
+work. A real Studio cancellation waits for simulated host acknowledgement before
+the panel presents settled history. Screenshots capture desktop/mobile guidance.

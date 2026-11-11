@@ -122,3 +122,14 @@ goal and run records. The production-browser journey starts in another project,
 creates a context and project through actual forms, reloads persisted settings,
 checks old filters are replaced and duplicate errors retain operator input, and
 captures authentic desktop/mobile screenshots. No host or model is contacted.
+
+## Recorded recovery guidance
+
+Component regressions give current terminal or paused status precedence over old
+host observations and expired leases, and cover unknown, missing, active, and
+cancellation-pending next actions. The production browser journey uses the real
+isolated host contract to record inspections, then verifies their persisted
+read-only guidance after reload. Browsing creates no new runs or claim changes.
+Cancellation stays running until the simulated host acknowledges it; the terminal
+view retains the older active observation as history. Desktop/mobile captures
+show the actual recovery panel. No external process or model is contacted.

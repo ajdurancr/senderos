@@ -31,9 +31,19 @@ It does not kill the external process.
 ## Explicit operations and host permissions
 
 Initialization writes require `--approve`. Workflow publication, goal activation,
-cancellation, recovery, budget changes, and host grants are explicit CLI operations;
-they are not inferred from a model's prose. These commands do not replace the
-operator's own authorization policy.
+cancellation, and budget changes require explicit Studio or CLI actions; they are
+not inferred from a model's prose. Host recovery and grants remain explicit CLI
+or Core operations. These interfaces do not replace the operator's own
+authorization policy.
+
+Studio shows the latest recorded recovery observation and a safe next step in
+Host and session records. Observations are historical host reports, not live
+process checks. Unknown stays blocked; missing requires independent termination
+confirmation before abandonment; active work continues in its existing session.
+Cancellation requests wait for host acknowledgement. A paused completion needs
+its evidence or review, and settled attempts retain observations as history.
+Consult `senderos attempt reconcile --help` on the owning host; never paste claim
+tokens into Studio or shared reports.
 
 The host must apply its own confirmations and permissions for external actions,
 including scheduling, credentials, messages, API calls, purchases, code pushes,
