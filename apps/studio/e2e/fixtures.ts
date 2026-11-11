@@ -8,6 +8,7 @@ import type * as schema from '../../../packages/core/src/db/schema';
 export type Scenario = { id: string; productContext: string; researchContext: string; launchProject: string; campaignProject: string; researchProject: string; prerequisiteVersionId: string };
 export const scenarioScope = (scenario: Scenario) => `?context=${scenario.productContext}&project=${scenario.launchProject}`;
 export type State = {
+  eventCount: number;
   executionContexts: (typeof schema.executionContexts.$inferSelect)[];
   projects: (typeof schema.projects.$inferSelect)[];
   agents: (typeof schema.agents.$inferSelect)[];

@@ -437,7 +437,7 @@ async function legacyHome(count: number) {
 }
 
 describe('recognized legacy migration prefixes', () => {
-  test.each([3, 4, 5])('resets known migration count %i without migrating or altering original backup', async count => {
+  test.each([3, 4, 5, 6])('resets known migration count %i without migrating or altering original backup', async count => {
     const home = await legacyHome(count);
     const preview = previewLocalDatabaseReset(home);
     const original = readFileSync(preview.databasePath);
@@ -446,7 +446,7 @@ describe('recognized legacy migration prefixes', () => {
     expect(result.executionContextName).toBe('Preserved legacy name');
     expect(readFileSync(result.backupPath)).toEqual(original);
     expect(readFileSync(preview.configPath)).toEqual(config);
-    expect((await sql(home, 'SELECT count(*) AS count FROM __drizzle_migrations')).rows[0]!.count).toBe(6);
+    expect((await sql(home, 'SELECT count(*) AS count FROM __drizzle_migrations')).rows[0]!.count).toBe(readMigrationFiles({ migrationsFolder: runtimeMigrationsFolder() }).length);
     expect((await sql(home, 'SELECT count(*) AS count FROM execution_hosts')).rows[0]!.count).toBe(0);
     expect((await sql(home, 'SELECT count(*) AS count FROM senderos')).rows[0]!.count).toBeGreaterThan(0);
   });

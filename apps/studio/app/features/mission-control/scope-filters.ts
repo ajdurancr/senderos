@@ -12,7 +12,7 @@ export function filterMissionControlData(data: MissionControlData, executionCont
   const runIds = new Set(runs.map((run) => run.id));
   const attempts = data.attempts.filter((attempt) => runIds.has(attempt.runId));
   const attemptIds = new Set(attempts.map((attempt) => attempt.id));
-  const visibleIds = new Set([...projectIds, ...goalIds, ...runIds, ...attemptIds]);
+  const visibleIds = new Set([...projectIds, ...goalIds, ...runIds, ...attemptIds, ...(data.activations ?? []).filter(activation => goalIds.has(activation.goalId)).map(activation => activation.id)]);
   return { ...data, projects, goals, runs, attempts,
     decisions: data.decisions?.filter(decision => goalIds.has(decision.goalId)),
     ...("activations" in data && Array.isArray(data.activations) ? { activations: data.activations.filter((activation: { goalId: string }) => goalIds.has(activation.goalId)) } : {}),

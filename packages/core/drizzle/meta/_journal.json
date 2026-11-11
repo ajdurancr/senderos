@@ -43,6 +43,13 @@
       "when": 1791676800001,
       "tag": "0005_hosts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791676800002,
+      "tag": "0006_event_history_indexes",
+      "breakpoints": true
     }
   ]
 }

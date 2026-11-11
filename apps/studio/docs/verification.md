@@ -133,3 +133,19 @@ read-only guidance after reload. Browsing creates no new runs or claim changes.
 Cancellation stays running until the simulated host acknowledges it; the terminal
 view retains the older active observation as history. Desktop/mobile captures
 show the actual recovery panel. No external process or model is contacted.
+
+
+### Bounded activity history
+
+HTTP Studio loaders read at most 50 event records. Activity offers scope-bound
+older/newer keyset links with deterministic timestamp/ID order, a latest link,
+and native keyboard focus at the history heading. Scope changes reset the cursor;
+invalid positions return to latest with a visible status message. Event details
+retain exact IDs, timestamps and full payloads. Legacy Core `listEvents` and
+programmatic `missionControlData()` inspection remain complete reads. Host recovery
+facts come from durable attempt records before the bounded event fallback.
+
+The focused activity regression and production browser journey cover pagination,
+scoping, reloads, keyboard focus, empty/error states and old recovery facts.
+Goals, attempts and workflow graphs still use the existing overview loading path;
+this change bounds event loading only, not the entire overview response.
