@@ -26,11 +26,13 @@ import {
 
 export async function missionControlData(request?: Request) {
   await prepareStudioDatabase();
-  const executionContextId = request ? new URL(request.url).searchParams.get('context') || undefined : undefined;
+  const url = request ? new URL(request.url) : undefined;
+  const executionContextId = url?.searchParams.get('context') || undefined;
+  const projectId = url ? url.searchParams.get('project') || parseStudioPath(url.pathname).projectId : undefined;
   const senderos = executionContextId ? createSenderos({ executionContextId }) : senderosForStudio();
   const [completeOverview, executionContexts, agents, transitions, senderoGraphs] =
     await Promise.all([
-      senderos.missionControl.overview(),
+      senderos.missionControl.overview({ projectId }),
       senderos.commands.executionContexts.list(),
       senderos.commands.agents.list(),
       senderos.commands.agents.transitions(),
@@ -38,9 +40,7 @@ export async function missionControlData(request?: Request) {
     ]);
   // The shell needs all project choices when switching contexts. Operational
   // records and lifecycle decisions come from the selected context above.
-  const projects = executionContextId ? await senderosForStudio().commands.projects.list() : completeOverview.projects;
-  const url = request ? new URL(request.url) : undefined;
-  const projectId = url ? url.searchParams.get('project') || parseStudioPath(url.pathname).projectId : undefined;
+  const projects = executionContextId || projectId ? await senderosForStudio().commands.projects.list() : completeOverview.projects;
   // Apply the same scope before serialization and pinned-definition loading as
   // the client views. Navigation still receives every project choice.
   const overview = filterMissionControlData({ ...completeOverview, events: [] }, executionContextId, projectId);

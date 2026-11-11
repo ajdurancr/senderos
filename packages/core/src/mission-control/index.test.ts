@@ -240,3 +240,32 @@ test('overview derives its dispatch queue from one lifecycle explanation per goa
   expect(overview.attempts.find(attempt => attempt.id === first.id)?.failureSummary).toBe('Retain recovery facts');
   expect(explanations).toBe(overview.goals.length);
 });
+
+
+test('explicit project overview retains recovery history and ordered status while default inspection stays complete', async () => {
+  const home = await initHome();
+  const senderos = createSenderos({ home });
+  const project = await createProjectFixture(home);
+  const other = await senderos.commands.projects.create({ name: 'Other overview project', integrationMode: 'none' });
+  const goal = await senderos.commands.goals.create({ projectId: project.id, title: 'Recover scoped work' });
+  const unrelated = await senderos.commands.goals.create({ projectId: other.id, title: 'Unrelated draft' });
+  const started = await senderos.missionControl.startGoal({ goalId: goal.id });
+  const first = started.attempts[0]!;
+  const claim = await startTestWorker(home, project.id, first.id);
+  await senderos.commands.attempts.update(first.id, { token: claim.token, status: 'failed', failureSummary: 'Project-scoped recovery fact' });
+  const complete = await senderos.missionControl.overview();
+  const scoped = await senderos.missionControl.overview({ projectId: project.id });
+  expect(scoped.goals).toEqual(complete.goals.filter(item => item.projectId === project.id));
+  for (const key of ['runs', 'attempts', 'activations', 'executions', 'queue'] as const) expect(scoped[key]).toEqual(complete[key]);
+  expect(scoped.decisions).toEqual(complete.decisions.filter(item => item.goalId === goal.id));
+  expect(scoped.attempts[0]?.failureSummary).toBe('Project-scoped recovery fact');
+  expect(scoped.status).toEqual({ ...complete.status,
+    projects: { total: 1, unhealthy: project.status === 'healthy' ? 0 : 1 },
+    openGoals: 1, activeGoalIds: [goal.id],
+  });
+  expect(complete.goals.map(item => item.id)).toEqual([goal.id, unrelated.id]);
+  const missing = await senderos.missionControl.overview({ projectId: 'missing' });
+  expect(missing.goals).toEqual([]);
+  expect(missing.attempts).toEqual([]);
+  expect(missing.status).toEqual({ projects: { total: 0, unhealthy: 0 }, openGoals: 0, activeRuns: 0, activeAttemptIds: [], activeGoalIds: [], runningRunIds: [] });
+});

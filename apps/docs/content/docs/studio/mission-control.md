@@ -229,3 +229,10 @@ the exact selection. Evidence and host details belong to the viewed attempt;
 **Goal summary** describes the goal's current state. A missing previous attempt
 is labeled unavailable in the current execution scope. Navigating history does
 not dispatch, resume or change execution state.
+
+Studio project requests narrow goals before lifecycle explanation, so unrelated
+projects do not incur lifecycle transactions. Project and context navigation
+choices remain complete; missing projects or mismatched contexts return an empty
+operational scope. The programmatic `missionControl.overview()` remains complete
+by default; `missionControl.overview({ projectId })` explicitly narrows its
+operational records and status. Existing host inspection permissions are unchanged.

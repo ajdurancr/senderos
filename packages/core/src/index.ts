@@ -183,7 +183,7 @@ export function createSenderos(input: { home?: string; executionContextId?: stri
         updateNodePosition: (value: Omit<Parameters<typeof updateSenderoNodePosition>[0], 'home'>) =>
           updateSenderoNodePosition({ ...value, home }),
       },
-      overview: () => missionControlOverview(home, executionContextId),
+      overview: (options?: { projectId?: string }) => missionControlOverview(home, executionContextId, options?.projectId),
       goal: (value: { goalId: string }) =>
         missionControlGoal({ ...value, home }),
       startGoal: (value: { goalId: string; workingPath?: string }) =>

@@ -11,10 +11,16 @@ import type { AttemptReview } from '../shared/types';
 import { goalActivations, settledActivation } from '../lifecycle/activations';
 import { explainGoal } from '../lifecycle/state';
 
-export async function missionControlOverview(home?: string, executionContextId?: string) {
-  const goals = await listGoals(home, executionContextId);
-  const runs = await listRuns(home, executionContextId);
-  const attempts = await listRunAttempts(undefined, home, executionContextId);
+export async function missionControlOverview(home?: string, executionContextId?: string, projectId?: string) {
+  const projects = (await listProjects(home, executionContextId)).filter(project => !projectId || project.id === projectId);
+  const projectIds = new Set(projects.map(project => project.id));
+  const goals = (await listGoals(home, executionContextId)).filter(goal => !projectId || projectIds.has(goal.projectId));
+  const goalIds = new Set(goals.map(goal => goal.id));
+  const runs = (await listRuns(home, executionContextId)).filter(run => !projectId || goalIds.has(run.goalId));
+  const runIds = new Set(runs.map(run => run.id));
+  // Keep existing context host inspection semantics for complete overviews. An
+  // explicit project narrows operational records to that project's runs.
+  const attempts = (await listRunAttempts(undefined, home, executionContextId)).filter(attempt => !projectId || runIds.has(attempt.runId));
   const decisions: Awaited<ReturnType<typeof explainGoal>>[] = [];
   for (const goal of goals) decisions.push(await explainGoal(goal.id, home));
   const activations = (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat();
@@ -47,9 +53,18 @@ export async function missionControlOverview(home?: string, executionContextId?:
     const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
     return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
   });
+  const summary = await status(home, executionContextId);
+  const attemptIds = new Set(attempts.map(attempt => attempt.id));
+  const activeGoalIds = summary.activeGoalIds.filter(id => goalIds.has(id));
+  const runningRunIds = summary.runningRunIds.filter(id => runIds.has(id));
   return {
-    status: await status(home, executionContextId),
-    projects: await listProjects(home, executionContextId),
+    status: projectId ? {
+      projects: { total: projects.length, unhealthy: projects.filter(project => project.status !== 'healthy').length },
+      openGoals: activeGoalIds.length, activeGoalIds,
+      activeRuns: runningRunIds.length, runningRunIds,
+      activeAttemptIds: summary.activeAttemptIds.filter(id => attemptIds.has(id)),
+    } : summary,
+    projects,
     goals,
     executions: goals.length ? await openRuntimeDb(home).select().from(goalExecutions).where(inArray(goalExecutions.goalId, goals.map(goal => goal.id))) : [],
     activations,
