@@ -239,3 +239,14 @@ explicit per-form discard, onboarding without a selected project and navigation
 while a real committed registration response is held. Cross-form registration
 requires native confirmation before its successful redirect can discard other
 edits. Declining it performs no write. Browser interception delays delivery only.
+
+## Evidence and review draft recovery
+
+`attempt-draft-recovery.pw.ts` protects simultaneous evidence and review inputs
+through scope and history navigation, explicit per-form discard, and pending
+submissions. It holds and then loses real committed responses, checks that both
+forms remain mounted with truthful recovery guidance, and reloads persisted
+records without replaying the write. Confirmed submissions mark only their own form clean; evidence inputs reset,
+while the confirmed review remains the baseline for later edits. An accidental second evidence click cannot replay its cleared required
+label. Existing parallel-attempt coverage still verifies that confirmed scope
+changes never transfer inputs or identity to another attempt.

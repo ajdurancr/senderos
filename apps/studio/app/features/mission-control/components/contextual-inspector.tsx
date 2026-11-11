@@ -2,7 +2,7 @@ import { RetryLineage } from "./retry-lineage";
 import { useState } from "react";
 import { GoalPreparation } from "./goal-preparation";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
-import { Form, useNavigation } from "react-router";
+import { AttemptDrafts } from "./attempt-drafts";
 
 import { DurableLink as Link } from "../../../components/durable-link";
 import { StatusBadge } from "../../../components/status-badge";
@@ -34,7 +34,6 @@ export function ContextualInspector({
   attemptId?: string;
   transitionId?: string;
 }) {
-  const pending = useNavigation().state !== "idle";
   const [preparingGoal, setPreparingGoal] = useState(false);
   const goal = data.goals.find((item) => item.id === goalId);
   if (!goal) return null;
@@ -146,45 +145,7 @@ export function ContextualInspector({
         {terminal && <p>This attempt is finished. Its evidence and review are read-only.</p>}
         {attempt?.status === "paused" && snapshot.completionRequested === true && !cancellationRequested && attemptDecision?.completion && <CompletionPrerequisites completion={attemptDecision.completion} />}
         <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
-        {attempt && !terminal && (
-          <Form key={`evidence:${attempt.id}`} className="compact-form" method="post">
-            <input type="hidden" name="intent" value="evidence" />
-            <input type="hidden" name="attemptId" value={attempt.id} />
-            <label>Evidence kind<select name="kind" defaultValue="manual">
-              <option value="manual">Manual observation</option>
-              <option value="test">Test report</option>
-              <option value="ci">CI result</option>
-              <option value="pull_request">Pull request</option>
-              <option value="artifact">Artifact</option>
-            </select></label>
-            <p>Choose the kind that matches your proof. Recording evidence does not run tests or verify its contents.</p>
-            <label>Evidence label<input name="label" placeholder="Evidence label" required /></label>
-            <label>Evidence URL (optional)<input type="url" name="url" placeholder="https://example.com/report" /></label>
-            <label>Evidence summary (optional)<textarea name="summary" rows={3} placeholder="What was checked and what the result showed" /></label>
-            <button className="button button-primary" disabled={pending}>{pending ? "Recording…" : "Record evidence"}</button>
-          </Form>
-        )}
-        {attempt && !terminal && (
-          <Form key={`review:${attempt.id}`} className="review-form" method="post">
-            <input type="hidden" name="intent" value="review" />
-            <input type="hidden" name="attemptId" value={attempt.id} />
-            <div>
-              <label>Review decision<select name="status" defaultValue="approved">
-                <option value="approved">Approve</option>
-                <option value="changes_requested">Request changes</option>
-                <option value="rejected">Reject</option>
-              </select></label>
-              <label>Decision rationale<input name="rationale" placeholder="Decision rationale" /></label>
-            </div>
-            <button className="button button-primary" disabled={pending}>{pending ? "Recording…" : "Record decision"}</button>
-            {snapshot.review && (
-              <p>
-                Current review:{" "}
-                <strong>{snapshot.review.status.replaceAll("_", " ")}</strong>
-              </p>
-            )}
-          </Form>
-        )}
+        {attempt && !terminal && <AttemptDrafts key={attempt.id} attempt={attempt} disabled={preparingGoal} />}
       </section>
       {validSelection && <GoalBudgets data={data} goal={goal} />}
       <GoalActivations data={data} goalId={goal.id} attemptId={attempt?.id} />

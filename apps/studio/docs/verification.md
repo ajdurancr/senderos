@@ -386,3 +386,21 @@ A registration that would discard another form's edits asks for confirmation
 before submitting, because successful registration selects its new scope. Pending
 real committed responses remain guarded. These checks use isolated database
 identities and do not establish resolution of the retained native lock failure.
+
+## Evidence and review drafts
+
+Evidence and review share a navigation boundary for their selected attempt.
+Scope or router history changes require explicit consent when either draft is
+unsaved; document navigation uses the browser's leave prompt. Each discard action
+resets only its own form. Fields and submission controls freeze while a request
+is pending, and a confirmed response clears only the submitted evidence draft. A confirmed
+review stays selected as its clean baseline, so a second decision click cannot
+silently replace a rejection with approval.
+
+A lost response can follow a committed write. Studio retains both drafts and
+asks the operator to reload and inspect persisted evidence and the current review
+before submitting again. It does not replay the request or claim it failed to
+commit. Recording evidence again adds another record; existing review and
+mutation contracts remain unchanged. Production browser fixtures verify these
+paths against isolated file databases. Passing these journeys does not clear the
+separately retained native database acceptance failures.
