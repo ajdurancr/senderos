@@ -210,3 +210,11 @@ Real-database regressions cover all three terminal outcomes, retry lineage,
 context/project scope and read-only projections. The production browser journey
 records evidence, cancels through Studio, reloads attention and follows the
 retained review back to its exact read-only execution on desktop and mobile.
+
+Legacy cursor migration also bounds its latest-attempt lookup to one row, using
+attempt number descending. Retry usage still counts every matching transition
+across the goal's history, and complete inspection retains every attempt,
+payload and predecessor ID. This limits returned rows for selecting migration
+facts; it does not promise a bounded database scan. Real-database regressions
+measure 1, 50 and 200 retained attempts for failed, canceled, active and successful
+runs, while checking route selection, budget counts and idempotent recovery.

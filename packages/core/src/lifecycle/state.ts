@@ -24,7 +24,7 @@ export async function cursor(goalId: string, home?: string) {
   }
   const history = await db.select().from(runs).where(eq(runs.goalId, goalId)).orderBy(desc(runs.createdAt), desc(runs.id));
   requireLifecycle(history.filter(r => !terminal(r.status)).length <= 1, "INCONSISTENT_HISTORY", "Multiple legacy active runs exist; reconcile them before continuing");
-  const latest = history[0], previous = latest ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, latest.id)).orderBy(desc(runAttempts.attemptNumber)))[0] : undefined;
+  const latest = history[0], previous = latest ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, latest.id)).orderBy(desc(runAttempts.attemptNumber)).limit(1))[0] : undefined;
   let transitionId = current?.transitionId ?? graph.steps[0]!.id, attemptsUsed = current?.attemptsUsed ?? 0;
   if (!current && latest) {
     requireLifecycle(previous?.transitionId, "INCONSISTENT_HISTORY", "Latest run has no transition attempt");

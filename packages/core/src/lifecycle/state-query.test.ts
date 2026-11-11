@@ -61,7 +61,7 @@ for (const status of ['failed', 'canceled', 'executing']) test(`legacy ${status}
   expect(await atomic(home, () => cursor(goal.id, home))).toEqual(recovered);
   expect(await db.select().from(activations).where(eq(activations.goalId, goal.id))).toEqual(visits);
   // Assert the real driver response, not merely SQL text or final cursor parity.
-  expect(attemptResults.map(result => result.rows.length)).toEqual([2, 1]);
+  expect(attemptResults.map(result => result.rows.length)).toEqual([1, 1]);
   expect(attemptResults[1]!.columns).toEqual(['count(*)']);
   expect(Buffer.byteLength(JSON.stringify(attemptResults.map(result => result.rows)))).toBeLessThan(5_000);
 });
