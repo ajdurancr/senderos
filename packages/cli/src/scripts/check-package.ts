@@ -159,6 +159,16 @@ try {
   invokeInstalled(['init', '--name', 'Installed reset smoke', '--harness', 'codex', '--approve']);
   invokeInstalled(['project', 'create', '--name', 'Disposable package project']);
   const originalConfig = readFileSync(join(installedHome, 'config.json'));
+  const retainedProjects = invokeInstalled(['project', 'list']);
+  const rejectedInit = Bun.spawnSync([
+    installedBinary, 'init', '--home', installedHome,
+    '--name', 'Installed reset smoke', '--execution-context-id', 'rejected-package-context',
+    '--harness', 'fixture', '--approve',
+  ], { cwd: installRoot, env: installedEnvironment, timeout: 10_000,
+    stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' });
+  invariant(rejectedInit.exitCode === 1 && JSON.parse(rejectedInit.stderr.toString()).error.includes('name is already in use'), 'Installed initialization did not reject the duplicate name.');
+  invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Rejected installed initialization changed configuration bytes.');
+  invariant(JSON.stringify(invokeInstalled(['project', 'list'])) === JSON.stringify(retainedProjects), 'Rejected installed initialization lost retained project visibility.');
   const originalDatabase = readFileSync(join(installedHome, 'senderos.db'));
   const declined = await runTerminal([installedBinary, 'db', 'reset', '--home', installedHome], {
     cwd: installRoot, env: installedEnvironment,

@@ -5,7 +5,12 @@ description: "Create the Senderos runtime directory, configuration, and initial 
 
 `senderos init` is a two-step bootstrap command.
 
-Initialization writes `config.json` from the proposed configuration. To rebuild
+Initialization publishes `config.json` from the proposed configuration only after
+path validation, database migrations, context registration and seeding succeed.
+A failed setup preserves an existing configuration byte for byte, and a new home
+remains unconfigured. Directories or database setup already completed may remain;
+initialization is not a transaction across the filesystem and database. Retry with
+the same context ID and name after resolving the reported problem. To rebuild
 an existing local database while preserving customized configuration bytes, use
 the interactive [`db reset`](../db/) command instead, after stopping all writers.
 
@@ -17,10 +22,10 @@ On first run, it previews the exact configuration Senderos will use and requires
 - previews the proposed Senderos home, execution context, libSQL environment-variable configuration, harness, and runtime paths,
 - requires explicit approval before writing files,
 - creates the Senderos home directory,
-- writes the configuration file,
 - creates artifact directories,
 - defaults `SENDEROS_DATABASE_URL` to a local `file:` database when no URL is set,
-- runs the Drizzle migrations and seeds built-in agents.
+- runs the Drizzle migrations and seeds built-in agents,
+- publishes the configuration file after setup succeeds.
 
 ## Examples
 
