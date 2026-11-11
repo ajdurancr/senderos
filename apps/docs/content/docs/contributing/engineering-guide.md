@@ -169,3 +169,11 @@ unchanged evidence, recovery details and predecessor IDs. The actual-result
 regression in `lifecycle/state-latest.test.ts` compares guidance against the
 single-attempt baseline while preserving all 200 synthetic retained records.
 This bounds returned attempt rows for guidance, not the database scan cost.
+
+Dispatch also selects the latest numbered attempt when a retained run contains
+multiple retries. Its predecessor packet uses that attempt's result, checkpoint
+and working path. Same-activation retries retain that predecessor ID; a subsequent
+workflow step receives the handoff facts without becoming a retry of the prior
+step. Both protocols retain the complete packet history. The real-database
+regressions in `commands/runs/dispatch-predecessor.test.ts` cover these boundaries,
+request replay and rejection outside the current execution context.

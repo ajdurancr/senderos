@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { atomic, openRuntimeDb } from "../../db/client";
 import { agents, activations, attemptClaims, goalExecutions, goals, lifecycleRequests, projects, runAttempts, runs } from "../../db/schema";
 import { cursor, explainGoal } from "../../lifecycle/state";
@@ -35,7 +35,7 @@ export async function dispatchRun(input: DispatchInput, home?: string) {
     const activation = (await db.select().from(activations).where(eq(activations.id, decision.activationId!)))[0]!;
     const step = graph.steps.find(s => s.nodeId === activation.nodeId)!;
     requireLifecycle((await db.select().from(agents).where(eq(agents.id, step.agentId)))[0]?.status === "active", "AGENT_UNAVAILABLE", "Activation agent is unavailable");
-    const previous = decision.previousRunId ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, decision.previousRunId)))[0] : undefined;
+    const previous = decision.previousRunId ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, decision.previousRunId)).orderBy(desc(runAttempts.attemptNumber)).limit(1))[0] : undefined;
     const run = (await createRunRecord(goal as Parameters<typeof createRunRecord>[0], home))!;
     await db.update(runs).set({ activationId: activation.id, status: "queued", maxAttempts: activation.maxAttempts }).where(eq(runs.id, run.id));
     const configuredHarness = home ? loadConfig(home).defaultHarness : "unknown";
