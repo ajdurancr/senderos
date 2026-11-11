@@ -159,7 +159,7 @@ function connectionFromRuntimeConfig(home: string): DatabaseConnection {
   return { url, ...(authToken ? { authToken } : {}) };
 }
 
-/** Checks required table/column availability, not data integrity or schema constraints. */
+/** Checks schema availability and, for a home, its configured context registration. */
 export async function healthcheckCurrentDb(home?: string) {
   let db: RuntimeDb | undefined;
   let report = { ok: false, issues: [] as string[], warnings: [] as string[] };
@@ -191,6 +191,19 @@ export async function healthcheckCurrentDb(home?: string) {
       if (!columns) issues.push(`missing table:${table.name}`);
       else for (const column of table.columns)
         if (!columns.has(column)) issues.push(`missing column:${table.name}.${column}`);
+    }
+    // A home selects a durable identity, while detached callers only ask about
+    // database availability. Do not mask schema findings with a row-query error.
+    if (home && available.get("execution_contexts")?.has("id")) {
+      try {
+        const contextId = resolveRuntime(home).config.executionContextId;
+        const context = await db.$client.execute({
+          sql: "SELECT id FROM execution_contexts WHERE id = ? LIMIT 1",
+          args: [contextId],
+        });
+        if (context.rows.length === 0)
+          issues.push("missing execution context: configured ID is not registered in this database");
+      } catch (error) { issues.push(diagnosticDatabaseFailure(error)); }
     }
     report = { ok: issues.length === 0, issues, warnings: [] as string[] };
   } catch (error) {
