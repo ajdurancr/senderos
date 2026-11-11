@@ -3,8 +3,6 @@ import {
   registerExecutionContext,
   databaseConnectionFromEnvironment,
   type GoalKind,
-  listSenderoVersions,
-  getSenderoGraph,
   createAgent,
   updateAgent,
   newSendero,
@@ -14,6 +12,7 @@ import {
 } from "@senderos/core";
 
 import { studioEvents } from "./activity";
+import { studioGraphData } from "./graph-data";
 
 import { readDispatchReview, type DispatchScope } from "./dispatch-review";
 
@@ -35,11 +34,7 @@ export async function missionControlData(request?: Request) {
     ]);
   const activity = await studioEvents(overview, request);
   const database = databaseConnectionFromEnvironment();
-  const allGraphs = [];
-  for (const version of await listSenderoVersions()) {
-    const graph = await getSenderoGraph(version.senderoId, version.version);
-    if (graph) allGraphs.push(graph);
-  }
+  const graphs = await studioGraphData(overview.goals, senderoGraphs, request);
   const runtime = {
     database: {
       urlEnv: "SENDEROS_DATABASE_URL",
@@ -51,8 +46,7 @@ export async function missionControlData(request?: Request) {
     },
   };
   return { ...overview, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, ...activity, runtime,
-    draftGraphs: allGraphs.filter(g => g.version.status === 'draft'),
-    historyGraphs: allGraphs.filter(g => g.version.status === 'published') };
+    ...graphs };
 }
 
 export type MissionControlData = Awaited<ReturnType<typeof missionControlData>>;
