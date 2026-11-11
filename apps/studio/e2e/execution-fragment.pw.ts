@@ -69,21 +69,21 @@ for (const committed of [true, false]) for (const width of [1440, 390]) for (con
       expect(state()).toEqual(before);
     } finally {
       await testInfo.attach('fragment-readback-observation', { body: JSON.stringify({ reads, writes, replays, disabled: await repeat.isDisabled(), persistedUnchanged: JSON.stringify(state()) === JSON.stringify(before) }), contentType: 'application/json' });
+      await repeat.scrollIntoViewIfNeeded();
       await capture(page, testInfo, `fragment-readback-${intent}-${committed}-${width}`);
       releaseReads();
     }
     expect(writes).toBe(1);
-    // Exercise the existing production link, then verify authoritative readback.
+    // Exercise the rendered reload control, then verify authoritative readback.
     const scopedUrl = page.url();
     let documents = 0;
     page.on('request', request => { if (request.isNavigationRequest() && request.method() === 'GET') documents++; });
     await page.unroute('**/*.data*');
-    const readback = page.getByRole('link', { name: intent === 'dispatch-plan' ? 'Reload persisted runs and ready activations' : 'Reload cancellation and host acknowledgements', exact: true });
+    const readback = page.getByRole('button', { name: intent === 'dispatch-plan' ? 'Reload persisted runs and ready activations' : 'Reload cancellation and host acknowledgements', exact: true });
     await readback.focus();
     await Promise.all([page.waitForEvent('load'), width === 1440 ? page.keyboard.press('Enter') : readback.click()]);
     await ready(page);
-    const beforeUrl = new URL(scopedUrl), afterUrl = new URL(page.url());
-    expect(`${afterUrl.pathname}${afterUrl.search}`).toBe(`${beforeUrl.pathname}${beforeUrl.search}`);
+    expect(page.url()).toBe(scopedUrl);
     expect(documents).toBe(1);
     expect(state()).toEqual(before);
     await capture(page, testInfo, `fragment-authoritative-readback-${intent}-${committed}-${width}`);

@@ -24,6 +24,9 @@ information, warnings, and destructive actions. Status always includes text.
 - `.button.button-primary`: the next durable action, such as create/save/dispatch.
 - `.button.button-secondary`: navigation, cancel, layout, and secondary actions.
 - `.button.button-danger`: cancellation or destructive intent.
+- `DocumentReloadButton`: explicit persisted-state readback after an uncertain
+  response. Reload is a non-submit action that retains the current scope; use the
+  shared secondary button style so recovery is distinguishable from help text.
 - `.icon-button`: a labeled compact action; always give it an accessible name.
 - Shared labels, help text, validation, pending states, and disabled controls
   apply to every form. Avoid ambiguous icon-only actions and color-only meaning.

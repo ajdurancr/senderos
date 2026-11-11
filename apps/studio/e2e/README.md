@@ -287,3 +287,13 @@ for the mounted action; an explicit document reload reads persisted state before
 resubmission. Production regressions cover committed and unapplied dispatch/stop
 requests on desktop and mobile, zero fragment loader reads, blocked repeated form
 submission, scoped document readback and no automatic mutation replay.
+
+
+Recovery controls use explicit non-submit reload buttons in goal activation,
+dispatch and cancellation. The root error page retains its styled native reload
+link. The production journeys activate
+the rendered controls with Enter on desktop and pointer clicks on mobile, wait
+for a new document load, retain the exact scoped URL, then inspect persisted
+state without replaying the uncertain mutation. Cancellation checks also verify
+that dismissing the native reload confirmation preserves simultaneous drafts. Browser
+`page.reload()` alone is not the recovery-control contract.

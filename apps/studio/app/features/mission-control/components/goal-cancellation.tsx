@@ -1,3 +1,4 @@
+import { DocumentReloadButton } from "../../../components/document-reload-button";
 import { useRef, useState } from "react";
 import { Form } from "react-router";
 import { useExecutionSubmission } from "../../../hooks/use-execution-submission";
@@ -19,7 +20,7 @@ export function GoalCancellation({ goal, requested }: {
     <button ref={trigger} className="button button-danger" type="button" disabled={!clientReady || pending || uncertain || requested} aria-expanded={confirming && !requested} onClick={() => setConfirming(true)}>
       {requested ? "Stop requested" : "Request stop"}
     </button>
-    {uncertain && <p><a href="">Reload cancellation and host acknowledgements</a> before taking another action.</p>}
+    {uncertain && <p><DocumentReloadButton>Reload cancellation and host acknowledgements</DocumentReloadButton> before taking another action.</p>}
     {requested && <p role="status">Waiting for every owning host to acknowledge stopping. Senderos does not terminate external processes.</p>}
     {confirming && !requested && <Form className="compact-form" method="post" aria-label="Confirm goal cancellation" onSubmit={submit}>
       <input type="hidden" name="intent" value="cancel-goal" />

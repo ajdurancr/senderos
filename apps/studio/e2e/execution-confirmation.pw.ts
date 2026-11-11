@@ -10,6 +10,7 @@ for (const committed of [true, false]) for (const width of [1440, 390]) for (con
     await page.getByRole('button', { name: 'Create goal', exact: true }).click();
     await page.getByRole('button', { name: 'Start goal', exact: true }).click();
     await page.getByRole('link', { name: 'Review ready activations' }).click();
+    await expect(page.getByRole('button', { name: 'Dispatch all', exact: true })).toBeVisible();
     const goal = state().goals.find(item => item.title === title)!;
     let attemptId: string | undefined;
     if (intent === 'cancel-goal') {
@@ -17,7 +18,7 @@ for (const committed of [true, false]) for (const width of [1440, 390]) for (con
       await expect.poll(() => goalAttempts(goal.id).length).toBe(1);
       attemptId = goalAttempts(goal.id)[0]!.id;
       runtime('host-claim', attemptId); runtime('host-start', attemptId);
-      await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}/attempts/${attemptId}${scope}`);
+      await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}/attempts/${attemptId}${scope}#recovery`);
       await page.getByRole('button', { name: 'Request stop', exact: true }).click();
     }
     let writes = 0;
@@ -47,7 +48,31 @@ for (const committed of [true, false]) for (const width of [1440, 390]) for (con
     expect(writes).toBe(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.unroute('**/*.data*');
-    await reload(page);
+    const readback = page.getByRole('button', { name: intent === 'dispatch-plan' ? 'Reload persisted runs and ready activations' : 'Reload cancellation and host acknowledgements', exact: true });
+    await expect(readback).toBeVisible();
+    await readback.scrollIntoViewIfNeeded();
+    await capture(page, testInfo, `recovery-control-${intent}-${committed ? 'committed' : 'unapplied'}-${width}`);
+    const currentUrl = page.url();
+    if (intent === 'cancel-goal') {
+      await page.getByRole('spinbutton', { name: 'Activation limit', exact: true }).fill('80');
+      await page.getByLabel('Evidence label', { exact: true }).fill('Keep independent proof');
+      const before = state();
+      await readback.focus();
+      let promptType = '';
+      page.once('dialog', async dialog => { promptType = dialog.type(); await dialog.dismiss(); });
+      await (width === 1440 ? page.keyboard.press('Enter') : readback.click());
+      await expect.poll(() => promptType).toBe('beforeunload');
+      await expect(page.getByRole('spinbutton', { name: 'Activation limit', exact: true })).toHaveValue('80');
+      await expect(page.getByLabel('Evidence label', { exact: true })).toHaveValue('Keep independent proof');
+      expect(state()).toEqual(before);
+      await capture(page, testInfo, `readback-kept-drafts-${committed ? 'committed' : 'unapplied'}-${width}`);
+      page.once('dialog', dialog => dialog.accept());
+    }
+    await readback.focus();
+    await Promise.all([page.waitForEvent('load'), width === 1440 ? page.keyboard.press('Enter') : readback.click()]); await ready(page);
+    expect(page.url()).toBe(currentUrl);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await capture(page, testInfo, `readback-${intent}-${committed ? 'committed' : 'unapplied'}-${width}`);
     expect(writes).toBe(1);
     if (!committed) {
       if (intent === 'dispatch-plan') expect(goalAttempts(goal.id)).toHaveLength(0);
