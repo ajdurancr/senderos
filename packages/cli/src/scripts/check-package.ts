@@ -200,6 +200,22 @@ try {
   }
   invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Installed diagnostics changed configuration bytes.');
 
+  // Diagnose a missing identity through the packed binary, without repairing it.
+  const contextProbeDb = new Database(installedEnvironment.SENDEROS_DATABASE_URL!.slice(5));
+  try {
+    const config = JSON.parse(originalConfig.toString());
+    const context = contextProbeDb.query('SELECT * FROM execution_contexts WHERE id = ?').get(config.executionContextId) as { id: string; name: string; created_at: string; updated_at: string };
+    invariant(Boolean(context), 'Installed context fixture was not registered.');
+    contextProbeDb.query('DELETE FROM execution_contexts WHERE id = ?').run(context.id);
+    const databaseBytes = readFileSync(installedEnvironment.SENDEROS_DATABASE_URL!.slice(5));
+    const report = invokeInstalled(['doctor']);
+    invariant(report.ok === false && report.issues.includes('missing execution context: configured ID is not registered in this database'), 'Installed doctor accepted a missing configured context.');
+    invariant(readFileSync(installedEnvironment.SENDEROS_DATABASE_URL!.slice(5)).equals(databaseBytes), 'Installed doctor repaired missing context data.');
+    invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Installed doctor rewrote context configuration.');
+    contextProbeDb.query('INSERT INTO execution_contexts (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)').run(context.id, context.name, context.created_at, context.updated_at);
+    invariant(invokeInstalled(['doctor']).ok === true, 'Installed doctor did not recognize restored context identity.');
+  } finally { contextProbeDb.close(); }
+
   const rejectInstalled = (args: string[], code: string) => {
     const result = Bun.spawnSync([installedBinary, ...args, '--home', installedHome], {
       cwd: installRoot, env: installedEnvironment, timeout: 10_000,

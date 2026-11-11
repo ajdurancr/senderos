@@ -9,6 +9,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 
 - configuration validity,
 - configured libSQL connection health,
+- registration of the configured execution-context ID in that database,
 - directory integrity,
 - managed home-directory accessibility,
 - the configured harness label (not real host or model readiness),
@@ -79,3 +80,17 @@ files, lock contention and file access failures; other connection failures guide
 you to check the URL, credentials, access and connectivity. Missing environment
 variables, local files, reset locks and required schema names retain specific
 actionable findings. An unhealthy report never certifies connectivity.
+
+## Configured execution context
+
+For an initialized home, `doctor` checks that its configured execution-context ID
+is registered in the selected database. A missing registration reports
+`missing execution context: configured ID is not registered in this database`.
+A different registered context does not satisfy this prerequisite. Projects and
+history can still retain the missing ID, so inspect the selected database and
+restore the original registration or configuration from trusted records. Preserve
+the ID: initializing with a new identity does not reconnect retained projects.
+
+Diagnostics do not register a context, rewrite IDs or repair records. Missing
+schema findings remain available when the registration cannot be inspected.
+Detached database availability checks do not require a home-specific context.

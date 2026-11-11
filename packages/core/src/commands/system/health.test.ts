@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { defaultConfigForHome } from '../../shared/config';
@@ -75,4 +75,87 @@ test('doctor retains home guardrails and reports inaccessible directory ancestry
   expect(result.ok).toBe(false);
   expect(result.issues).toContain(`unreadable dir:${config.logRoot}`);
   expect(result.issues).toContain(`Guardrail violation: path outside Senderos home: ${config.artifactRoot}`);
+});
+
+test('doctor diagnoses a missing configured context without repairing identity or retained projects', async () => {
+  const home = await initHome();
+  const { loadConfig } = await import('../../shared/config');
+  const { openRuntimeDb, healthcheckCurrentDb } = await import('../../db/client');
+  const { createProject } = await import('../projects/create');
+  const { listProjects } = await import('../projects/list');
+  const { listExecutionContexts } = await import('../execution-contexts/list');
+  const { registerExecutionContext } = await import('../execution-contexts/register');
+  const config = loadConfig(home);
+  const project = await createProject({ home, name: 'Retained project' });
+  await registerExecutionContext({ home, id: 'unrelated-context', name: 'Unrelated context' });
+  const db = openRuntimeDb(home);
+  try {
+    expect((await db.$client.execute({ sql: 'DELETE FROM execution_contexts WHERE id = ?', args: [config.executionContextId] })).rowsAffected).toBe(1);
+    // Scope navigation cannot offer the missing identity, even though its project remains.
+    expect((await listExecutionContexts(home)).map(context => context.id)).toEqual(['unrelated-context']);
+    expect((await listProjects(home, config.executionContextId)).map(project => project.id)).toEqual([project.id]);
+    const before = readFileSync(join(home, 'config.json'));
+    const database = readFileSync(join(home, 'senderos.db'));
+    const result = await doctor(home);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain('missing execution context: configured ID is not registered in this database');
+    expect(readFileSync(join(home, 'config.json'))).toEqual(before);
+    expect(readFileSync(join(home, 'senderos.db'))).toEqual(database);
+    expect((await listExecutionContexts(home)).map(context => context.id)).toEqual(['unrelated-context']);
+    expect((await listProjects(home, config.executionContextId)).map(project => project.id)).toEqual([project.id]);
+    // Global database availability has no home-specific identity prerequisite.
+    expect((await healthcheckCurrentDb()).ok).toBe(true);
+    await registerExecutionContext({ home, id: config.executionContextId, name: 'Restored identity' });
+    expect((await doctor(home)).ok).toBe(true);
+    expect((await listProjects(home, config.executionContextId)).map(project => project.id)).toEqual([project.id]);
+  } finally { db.$client.close(); }
+});
+
+test('doctor preserves schema findings when context registration cannot be queried', async () => {
+  const home = await initHome();
+  const { openRuntimeDb } = await import('../../db/client');
+  const db = openRuntimeDb(home);
+  try {
+    await db.$client.execute('DROP TABLE execution_contexts');
+    const result = await doctor(home);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain('missing table:execution_contexts');
+    expect(result.issues).not.toContain('missing execution context: configured ID is not registered in this database');
+  } finally { db.$client.close(); }
+});
+
+test('doctor retains missing context and unrelated schema findings together', async () => {
+  const home = await initHome();
+  const { openRuntimeDb } = await import('../../db/client');
+  const db = openRuntimeDb(home);
+  try {
+    await db.$client.execute('DELETE FROM execution_contexts');
+    await db.$client.execute('DROP TABLE run_attempts');
+    const result = await doctor(home);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain('missing table:run_attempts');
+    expect(result.issues).toContain('missing execution context: configured ID is not registered in this database');
+  } finally { db.$client.close(); }
+});
+
+test('a failed context probe preserves schema findings and omits driver credentials', async () => {
+  const home = await initHome();
+  const { openRuntimeDb } = await import('../../db/client');
+  const libsql = await import('@libsql/client');
+  const db = openRuntimeDb(home);
+  await db.$client.execute('DROP TABLE run_attempts');
+  const execute = db.$client.execute.bind(db.$client);
+  const probe = spyOn(db.$client, 'execute').mockImplementation(async statement => {
+    if (typeof statement !== 'string' && statement.sql.startsWith('SELECT id FROM execution_contexts'))
+      throw new Error('synthetic-context-probe-credential');
+    return execute(statement);
+  });
+  const create = spyOn(libsql, 'createClient').mockReturnValue(db.$client);
+  try {
+    const result = await doctor(home);
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContain('missing table:run_attempts');
+    expect(result.issues.join(' ')).toContain('Database health check failed');
+    expect(JSON.stringify(result)).not.toContain('synthetic');
+  } finally { probe.mockRestore(); create.mockRestore(); db.$client.close(); }
 });
