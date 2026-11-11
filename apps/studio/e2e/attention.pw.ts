@@ -151,6 +151,7 @@ test('operators recover activation and attempt budgets through persisted forms w
   expect(state().activations.find(item => item.goalId === goal.id)!.revision).toBeGreaterThan(oldRevision);
   expect(goalRuns(goal.id)).toHaveLength(1);
   await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await expect(page.locator('.dispatch-items article').getByText('retry', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Dispatch all' }).click();
   await expect.poll(() => goalRuns(goal.id).length).toBe(2);
   const retry = state().attempts.find(item => item.id !== first.id && item.runId === goalRuns(goal.id)[1]!.id)!;
@@ -394,6 +395,16 @@ test('recovers a missing execution cursor without losing the ready successor bud
   expect(state().runs).toEqual(before.runs);
   expect(state().activations.filter(item => item.goalId === goal.id).sort((a, b) => a.id.localeCompare(b.id))).toEqual(before.activations.filter(item => item.goalId === goal.id).sort((a, b) => a.id.localeCompare(b.id)));
   await reload(page);
+  const tray = page.locator('.dispatch-tray');
+  await expect(tray.locator('article').getByText('new run', { exact: true })).toBeVisible();
+  await expect(tray.locator('article').getByText('retry', { exact: true })).toHaveCount(0);
+  await tray.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'dispatch-successor-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await tray.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'dispatch-successor-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await budgets.scrollIntoViewIfNeeded();
   await capture(page, testInfo, 'cursor-recovery-desktop-1440x1000');
   await page.setViewportSize({ width: 390, height: 844 });

@@ -18,7 +18,9 @@ export function DispatchTray({ data, scope = {} }: { data: MissionControlData; s
     <div className="dispatch-items">{data.queue.dispatchable.map((item) => {
       const goal = data.goals.find((value) => value.id === item.goalId);
       const agent = data.agents.find((value) => value.id === item.agentId);
-      return <article key={item.activationId}><span className="dispatch-goal">{goal?.title ?? item.goalId}</span><Icon name="arrow"/><strong>{agent?.name ?? item.agentId}</strong><small>{item.previousRunId ? "retry" : "new run"}</small><small className="mono">{item.activationId} · revision {item.revision}</small></article>;
+      const activation = data.activations.find(value => value.id === item.activationId && value.goalId === item.goalId);
+      const kind = activation ? activation.attemptsUsed > 0 ? "retry" : "new run" : "run";
+      return <article key={item.activationId}><span className="dispatch-goal">{goal?.title ?? item.goalId}</span><Icon name="arrow"/><strong>{agent?.name ?? item.agentId}</strong><small>{kind}</small><small className="mono">{item.activationId} · revision {item.revision}</small></article>;
     })}</div>
     <footer><p>This plan includes all ready activations in the selected scope. Senderos will reserve one validated run per item; external hosts start sessions separately.</p><Form method="post"><input type="hidden" name="intent" value="dispatch-plan"/><input type="hidden" name="scope" value={JSON.stringify(scope)}/><input type="hidden" name="reviewedItems" value={JSON.stringify(data.queue.dispatchable.map(reviewDispatch))}/><button className="button button-primary" disabled={pending || !data.queue.dispatchable.length}>{pending ? "Reserving…" : "Dispatch all"} <Icon name="arrow"/></button></Form></footer>
   </section>;

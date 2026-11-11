@@ -194,6 +194,7 @@ describe("mission-control components", () => {
     inRouter(<DispatchTray data={{
       ...data,
       queue: { ...data.queue, dispatchable: [dispatchable, { ...dispatchable, activationId: "activation-2", transitionId: "second" }] },
+      activations: ["activation-1", "activation-2"].map(id => ({ id, goalId: goal.id, nodeId: "node-agent", transitionId: dispatchable.transitionId, parentActivationId: null, previousRunId: null, latestRunId: run.id, status: "failed", reason: null, attemptsUsed: 1, maxAttempts: 3, revision: 0, scopesJson: "[]", inputJson: "{}", createdAt: now, updatedAt: now })),
     }} />);
     expect(screen.getByText("2 proposed actions")).toBeTruthy();
     expect(screen.getAllByText("retry")).toHaveLength(2);
