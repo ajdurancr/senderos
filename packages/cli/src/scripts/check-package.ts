@@ -1,3 +1,4 @@
+import { Database } from 'bun:sqlite';
 import { checkInstalledLifecycle } from './check-installed-lifecycle';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -192,7 +193,16 @@ try {
     const error = JSON.parse(result.stderr.toString());
     invariant(error.code === code, `Installed CLI rejection expected ${code}, received ${error.code}: ${error.error}`);
   };
-  const lifecycle = checkInstalledLifecycle(invokeInstalled, rejectInstalled, installRoot);
+  const expireLease = (attemptId: string) => {
+    // Fixture-only clock control: never alter a developer or remote database.
+    const db = new Database(join(installedHome, 'senderos.db'));
+    try {
+      const result = db.query('UPDATE attempt_claims SET lease_expires_at = ? WHERE attempt_id = ?')
+        .run(new Date(Date.now() - 1).toISOString(), attemptId);
+      invariant(result.changes === 1, 'Lease fixture must update exactly one isolated claim.');
+    } finally { db.close(); }
+  };
+  const lifecycle = checkInstalledLifecycle(invokeInstalled, rejectInstalled, installRoot, expireLease);
   console.log(JSON.stringify({ publishedFiles, lifecycle }, null, 2));
 } finally {
   rmSync(packageCheckRoot, { recursive: true, force: true });

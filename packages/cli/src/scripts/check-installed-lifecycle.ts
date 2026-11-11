@@ -12,7 +12,7 @@ function check(condition: unknown, message: string): asserts condition {
 }
 
 /** Execute only the installed binary, once per command; no Core/source imports. */
-export function checkInstalledLifecycle(invoke: Invoke, reject: (args: string[], message: string) => void, directory: string) {
+export function checkInstalledLifecycle(invoke: Invoke, reject: (args: string[], message: string) => void, directory: string, expireLease: (attemptId: string) => void) {
   const project = invoke<{ id: string }>(['project', 'create', '--name', 'Installed lifecycle fixture', '--integration-mode', 'none']);
   const agent = invoke<{ id: string }>(['agent', 'create', '--slug', 'package-worker', '--name', 'Package worker', '--instructions', 'Synthetic offline contract only; do not launch any tools or model.']);
   const definitionPath = join(directory, 'installed-workflow.json');
@@ -84,7 +84,7 @@ export function checkInstalledLifecycle(invoke: Invoke, reject: (args: string[],
   check(original.status === 'failed' && original.failureSummary === 'Synthetic failure retained across package processes', 'retry must retain original failure facts');
   check(attempts().length === 2 && invoke<unknown[]>(['run', 'list']).length === 2, 'replay and rejected operations must not add runs or attempts');
   check(invoke<{ id: string }>(['agent', 'show', agent.id]).id === agent.id, 'custom agent must remain readable after process restarts');
-  const recovery = checkInstalledRecovery(invoke, reject, { projectId: project.id, versionId: published.version.id, directory });
+  const recovery = checkInstalledRecovery(invoke, reject, { projectId: project.id, versionId: published.version.id, directory, expireLease });
   check(attempts().length === 6 && invoke<unknown[]>(['run', 'list']).length === 6, 'recovery, replay and cancellation must preserve exact reservation counts');
   return { attempts: 6, runs: 6, goal: finalGoal.status, recovery, offline: true, realHostExecution: false };
 }

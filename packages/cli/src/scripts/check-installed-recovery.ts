@@ -6,7 +6,7 @@ function check(condition: unknown, message: string): asserts condition {
 }
 
 /** Fresh installed-binary processes only; synthetic observations never launch workers. */
-export function checkInstalledRecovery(invoke: Invoke, reject: (args: string[], code: string) => void, fixture: { projectId: string; versionId: string; directory: string }) {
+export function checkInstalledRecovery(invoke: Invoke, reject: (args: string[], code: string) => void, fixture: { projectId: string; versionId: string; directory: string; expireLease: (attemptId: string) => void }) {
   const read = (id: string) => invoke<Attempt>(['attempt', 'show', id]);
   const reserve = (goalId: string, request: string) => {
     const ready = invoke<Array<{ goalId: string; activationId: string; revision: number }>>(['plan']).filter(item => item.goalId === goalId);
@@ -25,7 +25,7 @@ export function checkInstalledRecovery(invoke: Invoke, reject: (args: string[], 
   };
   const reconcile = (id: string, token: string, outcome: string, extras: string[] = []) => invoke<{ status: string; nextAction: string }>(['attempt', 'reconcile', id, '--owner-id', 'package-host', '--token', token, '--outcome', outcome, '--details', 'Synthetic durable registry observation; no real worker', ...extras]);
   const recover = create('package-recovery-goal');
-  const token = start(recover.attemptId, 'fixture-recovery-worker');
+  let token = start(recover.attemptId, 'fixture-recovery-worker');
   const beforeResume = JSON.stringify(read(recover.attemptId));
   const resume = invoke<unknown>(['attempt', 'resume', recover.attemptId]);
   check(!JSON.stringify(resume).includes(token), 'resume must not expose the ownership token');
@@ -37,6 +37,27 @@ export function checkInstalledRecovery(invoke: Invoke, reject: (args: string[], 
   const beforeConflict = JSON.stringify(read(recover.attemptId));
   reject(['attempt', 'reconcile', recover.attemptId, '--owner-id', 'package-host', '--token', token, '--outcome', 'active', '--details', 'Synthetic wrong session', '--external-session-id', 'wrong-session'], 'SESSION_CONFLICT');
   check(JSON.stringify(read(recover.attemptId)) === beforeConflict, 'rejected session inspection must preserve recovery facts');
+  // Only the disposable fixture's lease clock changes; every policy action uses
+  // a fresh installed CLI process and the recorded external session remains live.
+  reconcile(recover.attemptId, token, 'active', ['--external-session-id', 'fixture-recovery-worker']);
+  fixture.expireLease(recover.attemptId);
+  const expired = JSON.stringify(read(recover.attemptId));
+  reject(['attempt', 'heartbeat', recover.attemptId, '--token', token], 'LEASE_EXPIRED');
+  reject(['attempt', 'update', recover.attemptId, '--token', token, '--status', 'failed'], 'LEASE_EXPIRED');
+  reject(['attempt', 'claim', recover.attemptId, '--owner-id', 'package-host'], 'RECLAIM_REQUIRED');
+  reject(['attempt', 'claim', recover.attemptId, '--owner-id', 'package-host', '--reclaim'], 'RECOVERY_REQUIRED');
+  check(JSON.stringify(read(recover.attemptId)) === expired, 'expired reporting and unsafe reclaim must not change recovery history');
+  reconcile(recover.attemptId, token, 'active', ['--external-session-id', 'fixture-recovery-worker']);
+  const oldToken = token;
+  const reclaimed = invoke<{ token: string; started: boolean }>(['attempt', 'claim', recover.attemptId, '--owner-id', 'package-host', '--reclaim']);
+  check(reclaimed.token !== oldToken && reclaimed.started, 'explicit reclaim must rotate ownership for the existing started session');
+  token = reclaimed.token;
+  const beforeStale = JSON.stringify(read(recover.attemptId));
+  reject(['attempt', 'heartbeat', recover.attemptId, '--token', oldToken], 'STALE_OWNER');
+  reject(['attempt', 'update', recover.attemptId, '--token', oldToken, '--status', 'failed'], 'STALE_OWNER');
+  check(JSON.stringify(read(recover.attemptId)) === beforeStale, 'fenced owner reports must not mutate the recovered attempt');
+  invoke(['attempt', 'heartbeat', recover.attemptId, '--token', token]);
+  check(read(recover.attemptId).externalSessionId === 'fixture-recovery-worker', 'reclaim must preserve the recorded external session');
   reconcile(recover.attemptId, token, 'active', ['--external-session-id', 'fixture-recovery-worker']);
   check(read(recover.attemptId).recoveryOutcome === 'active', 'active observation must persist across processes');
   const finishedArgs = ['--external-session-id', 'fixture-recovery-worker', '--status', 'failed', '--result-json', '{"reason":"Synthetic recovered failure"}'];
@@ -78,5 +99,5 @@ export function checkInstalledRecovery(invoke: Invoke, reject: (args: string[], 
   check(invoke<{ status: string }>(['goal', 'show', 'package-queued-cancellation-goal']).status === 'canceled', 'queued cancellation must persist');
   check(!invoke<Array<{ goalId: string }>>(['plan']).some(item => ['package-cancellation-goal', 'package-queued-cancellation-goal'].includes(item.goalId)), 'canceled goals must never return to the dispatch plan');
   check(JSON.stringify(read(recover.attemptId)) === finished, 'later recovery and cancellation must retain the original recovered failure');
-  return { finished: 1, abandoned: 1, cancellationAcknowledged: 1, queuedCancellation: 1, leaseExpiryTested: false };
+  return { finished: 1, abandoned: 1, cancellationAcknowledged: 1, queuedCancellation: 1, leaseExpiryTested: true };
 }
