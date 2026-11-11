@@ -366,3 +366,48 @@ test('stale attention retains both expired parallel branches and exact recovery 
   await expect(cards).toHaveCount(2);
   expect(state()).toEqual(before);
 });
+
+
+test('recovers a missing execution cursor without losing the ready successor budget or history', async ({ page, scenario }, testInfo) => {
+  const agent = await authorAgent(page, scenario, 'cursor-recovery');
+  const goal = await authorGoal(page, scenario, agent.slug, agent.slug, false);
+  const budgets = page.getByRole('region', { name: 'Execution budgets', exact: true });
+  await budgets.getByRole('spinbutton', { name: 'Activation limit' }).fill('3');
+  await budgets.getByRole('button', { name: 'Save activation limit' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Activation limit saved' })).toBeVisible();
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(1);
+  const first = state().attempts.find(item => item.runId === goalRuns(goal.id)[0]!.id)!;
+  runtime('host-claim', first.id); runtime('host-start', first.id); runtime('host-complete', first.id);
+  await reload(page);
+  await budgets.getByRole('spinbutton', { name: 'Attempt limit per activation' }).fill('5');
+  await budgets.getByRole('button', { name: 'Save attempt limit' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Attempt limit saved' })).toBeVisible();
+  const before = state();
+  runtime('remove-fixture-cursor', goal.id);
+  await reload(page);
+  await expect(budgets.getByRole('spinbutton', { name: 'Attempt limit per activation' })).toHaveValue('5');
+  expect(state().executions.find(item => item.goalId === goal.id)).toMatchObject({ maxAttempts: 5, latestRunId: first.runId, activationsUsed: 2 });
+  expect(state().attempts).toEqual(before.attempts);
+  expect(state().runs).toEqual(before.runs);
+  expect(state().activations.filter(item => item.goalId === goal.id).sort((a, b) => a.id.localeCompare(b.id))).toEqual(before.activations.filter(item => item.goalId === goal.id).sort((a, b) => a.id.localeCompare(b.id)));
+  await reload(page);
+  await budgets.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'cursor-recovery-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await budgets.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'cursor-recovery-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(2);
+  const nextRun = goalRuns(goal.id).find(item => item.id !== first.runId)!;
+  expect(nextRun.maxAttempts).toBe(5);
+  const next = state().attempts.find(item => item.runId === nextRun.id)!;
+  runtime('host-claim', next.id); runtime('host-start', next.id); runtime('host-complete', next.id);
+  await reload(page);
+  expect(state().goals.find(item => item.id === goal.id)?.status).toBe('completed');
+  expect(state().attempts.find(item => item.id === first.id)).toEqual(before.attempts.find(item => item.id === first.id));
+});
