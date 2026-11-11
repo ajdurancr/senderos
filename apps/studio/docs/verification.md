@@ -231,3 +231,7 @@ artifact remains, then records the artifact and verifies terminal completion
 and removal of the guidance. Desktop/mobile screenshots preserve the real
 checklist. Component tests reject borrowing another activation's prerequisites
 and keep absent facts from being presented as successful completion.
+
+### Evidence review recency
+
+Review cards use the latest valid evidence creation or review decision time, rather than presenting an older execution update as the age of newly recorded proof. Deterministic UI regressions cover out-of-order evidence, later review, legacy dates and malformed timestamps. The production operator journey checks the card’s semantic time against persisted browser-submitted evidence before and after reload, with authentic desktop and mobile captures. No Core lifecycle timestamp is changed.

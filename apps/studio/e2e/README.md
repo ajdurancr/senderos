@@ -92,3 +92,5 @@ browser checks the exact missing prerequisites, records test evidence, reloads
 with only artifact still missing, and records artifact proof before confirming
 terminal completion and removal of the checklist. Both narrow mobile and desktop
 captures preserve the real read-only guidance.
+
+The operator journey also checks that Reviews identifies newly added evidence using its persisted creation time, including after reload. Desktop and mobile captures preserve the rendered card; the suite checks horizontal overflow at 390 pixels.

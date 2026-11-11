@@ -64,3 +64,5 @@ real-database integration tests for durable identities and lifecycle invariants;
 and production-browser journeys for complete operator workflows. See the Studio
 README for browser test setup. New UI actions must have visible feedback and a
 persisted-state assertion, including their invalid/cancel/pending paths.
+
+Evidence review cards label the source of their age: “Evidence added” or “Review recorded” comes from the latest valid proof or review timestamp. Legacy records without those dates explicitly show “Attempt updated”; invalid fallback dates show “Time unavailable”. Use a semantic `time` element for valid dates. Host heartbeat and execution times remain distinct.
