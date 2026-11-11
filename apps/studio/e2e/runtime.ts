@@ -58,6 +58,18 @@ if (command === 'init') {
 } else if (command === 'prepare-draft-goal' && id) {
   const product = createSenderos({ executionContextId: `product-${id}` });
   result = await product.commands.goals.create({ projectId: `campaign-${id}`, title: `Unassigned draft ${id}`, senderoVersionId: null });
+} else if (command === 'prepare-run-history' && id) {
+  // Synthetic terminal history tests browsing scale, never real host execution.
+  const product = createSenderos({ executionContextId: `product-${id}` });
+  const goal = await product.commands.goals.create({ projectId: `launch-${id}`, title: `Archived executions ${id}`, senderoVersionId: null });
+  await product.commands.goals.cancel(goal.id);
+  const db = openRuntimeDb();
+  const agent = (await db.select().from(schema.agents))[0]!;
+  const timestamp = new Date(Date.now() + 60_000).toISOString();
+  const records = Array.from({ length: 125 }, (_, i) => ({ id: `run-history-${id}-${String(i).padStart(3, '0')}`, goalId: goal.id, status: 'canceled', createdAt: timestamp, updatedAt: timestamp }));
+  await db.insert(schema.runs).values(records);
+  await db.insert(schema.runAttempts).values(records.map((run, i) => ({ id: `attempt-history-${id}-${String(i).padStart(3, '0')}`, runId: run.id, attemptNumber: 1, agentId: agent.id, status: 'canceled', executionObjective: `Archived fixture ${i}`, harness: 'history-fixture', statusSnapshotJson: JSON.stringify({ evidence: [{ id: `history-proof-${i}`, kind: 'artifact', label: `Archived proof ${i}`, createdAt: timestamp }] }), finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })));
+  result = { inserted: records.length, goalId: goal.id };
 } else if (command === 'prepare-history' && id) {
   // Synthetic observations are fixture data, never operator mutations.
   const db = openRuntimeDb();

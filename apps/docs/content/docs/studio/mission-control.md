@@ -116,6 +116,23 @@ process or verified filesystem isolation. An expired lease requires actual host
 inspection; it does not prove process death. The CLI remains the interface for
 host registration/grants, session reporting and reconciliation.
 
+## Browse attempt history
+
+**Runs** shows 30 attempts per page, newest first. **Older attempts**, **Newer
+attempts**, and **Latest attempts** keep the selected context/project in the URL.
+Recorded creation time and attempt identity provide stable ordering when several
+attempts share a timestamp. Page position survives reloads; an invalid position
+or one from another scope returns to the latest page with an explanation.
+
+An exact link to an older attempt opens a page containing it. Selecting an attempt
+keeps the history position and focuses its recorded detail, including evidence
+and host recovery observations. The page count is separate from the complete
+scope total. Paging does not change attempts or establish that a worker stopped.
+
+This bounds the visible list. Studio still loads the complete scoped operational
+snapshot for planning, attention and inspection; database reads, serialized data
+and per-goal activation detail are not yet bounded by this pagination.
+
 ## Adjust execution budgets
 
 The goal inspector shows persisted activations used, the activation limit, and

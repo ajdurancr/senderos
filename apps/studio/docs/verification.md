@@ -272,3 +272,15 @@ assigns an initially unassigned goal, and saves competing proposals from two rea
 editors. Saving does not activate or reserve runs. Separate fault injection drops
 requests before the server and responses after persistence; inputs remain visible
 and a stale retry is rejected. Desktop/mobile captures show the actual form.
+
+## Bounded attempt list
+
+A mounted baseline reproduced 125 rendered attempt links. The Runs list now
+renders at most 30, while retaining the complete operational data for attention,
+planning, evidence and recovery. Pure regressions cover stable ordering for tied
+timestamps, older/newer traversal, new/deleted boundary records, exact old-attempt
+links, malformed positions and scope changes. Mounted tests retain native link
+semantics, selection, empty/missing records, and off-page detail. Production
+browser coverage uses 126 persisted records, keyboard navigation, reloads and
+unchanged database assertions. This is a presentation bound, not a bounded-query
+or bounded-serialization claim. Per-goal activation detail also remains complete.

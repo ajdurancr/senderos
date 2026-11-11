@@ -1,0 +1,66 @@
+import { capture, expect, goalAttempts, ready, runtime, scenarioScope, state, test, visit } from './fixtures';
+
+test('browses bounded attempt history without losing deep-linked evidence or current recovery facts', async ({ page, scenario }, testInfo) => {
+  const scope = scenarioScope(scenario);
+  await visit(page, `/projects/${scenario.launchProject}/goals/new${scope}`);
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill(`History recovery ${scenario.id}`);
+  await page.getByRole('combobox', { name: 'Sendero', exact: true }).selectOption(scenario.prerequisiteVersionId);
+  await page.getByRole('button', { name: 'Create goal', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start goal', exact: true })).toBeVisible();
+  const goal = state().goals.find(item => item.title === `History recovery ${scenario.id}`)!;
+  await page.getByRole('button', { name: 'Start goal', exact: true }).click();
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalAttempts(goal.id).length).toBe(1);
+  const attempt = goalAttempts(goal.id)[0]!;
+  runtime('host-claim', attempt.id); runtime('host-start', attempt.id); runtime('host-reconcile-unknown', attempt.id);
+  runtime('prepare-run-history', scenario.id);
+  const before = state();
+  await visit(page, `/runs${scope}`);
+  const list = page.getByRole('list', { name: 'Run attempts' });
+  await expect(list.getByRole('listitem')).toHaveCount(30);
+  await expect(page.getByText('30 attempts on this page · 126 in this scope · newest first')).toBeVisible();
+  const first = await list.getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('href')));
+  await capture(page, testInfo, 'run-history-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload(); await ready(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'run-history-mobile-390x844');
+  const older = page.getByRole('link', { name: 'Older attempts', exact: true });
+  await older.focus(); await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Attempt history', exact: true })).toBeFocused();
+  await expect(list.getByRole('listitem')).toHaveCount(30);
+  const second = await list.getByRole('link').evaluateAll(links => links.map(link => new URL(link.getAttribute('href')!, location.href).pathname));
+  expect(second.every(path => !first.some(href => new URL(href!, 'http://studio.local').pathname === path))).toBe(true);
+  const olderUrl = page.url();
+  await list.getByRole('link').nth(2).click(); await ready(page);
+  const selectedUrl = page.url();
+  await expect(page.getByRole('complementary', { name: 'Selected attempt details' })).toBeFocused();
+  expect(await list.locator('a[aria-current="true"]').count()).toBe(1);
+  await page.reload(); await ready(page);
+  expect(page.url()).toBe(selectedUrl);
+  await expect(page.getByText('Archived proof 92', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Newer attempts', exact: true }).click(); await ready(page);
+  expect(await list.getByRole('link').evaluateAll(links => links.map(link => new URL(link.getAttribute('href')!, location.href).pathname))).toEqual(first.map(href => new URL(href!, 'http://studio.local').pathname));
+  await visit(page, olderUrl);
+  const seen = new Set<string>();
+  for (;;) {
+    for (const id of await list.getByRole('link').evaluateAll(links => links.map(link => new URL(link.getAttribute('href')!, location.href).pathname))) { expect(seen.has(id)).toBe(false); seen.add(id); }
+    if (!await page.getByRole('link', { name: 'Older attempts', exact: true }).count()) break;
+    await page.getByRole('link', { name: 'Older attempts', exact: true }).click(); await ready(page);
+  }
+  expect(seen.size).toBe(96);
+  await visit(page, `/projects/${scenario.launchProject}/runs/attempts/${attempt.id}${scope}`);
+  await expect(list.locator('a[aria-current="true"]')).toHaveAttribute('href', new RegExp(attempt.id));
+  await page.getByText('Host and session records', { exact: true }).click();
+  await expect(page.getByText('Recovery observation: Deterministic fixture inspection: unknown', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Keep recovery blocked' })).toBeVisible();
+  await visit(page, `/runs${scope}&runCursor=broken&runHistory=older`);
+  await expect(page.getByRole('status')).toContainText('position is invalid');
+  await expect(list.getByRole('listitem')).toHaveCount(30);
+  const mismatch = new URL(olderUrl); mismatch.searchParams.set('project', scenario.campaignProject);
+  await visit(page, mismatch.toString());
+  await expect(page.getByRole('heading', { name: 'No attempts in this scope' })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('another scope');
+  expect(state()).toEqual(before);
+});
