@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { atomic, openRuntimeDb } from "../db/client";
 import { agents, activations, attemptClaims, goalExecutions, goals, runAttempts, runs } from "../db/schema";
 import { now, randomId } from "../shared/ids";
@@ -32,7 +32,12 @@ export async function cursor(goalId: string, home?: string) {
     requireLifecycle(index >= 0, "INCONSISTENT_HISTORY", "Previous transition is missing from the pinned route");
     requireLifecycle(graph.nodes.every(n => graph.edges.filter(e => e.sourceNodeId === n.id).length <= 1), "INCONSISTENT_HISTORY", "Legacy graph history needs explicit reconciliation");
     transitionId = latest.status === "succeeded" ? graph.steps[index + 1]?.id ?? "" : previous.transitionId;
-    if (latest.status !== "succeeded") { const ids = new Set(history.map(r => r.id)); attemptsUsed = (await db.select().from(runAttempts)).filter(a => ids.has(a.runId) && a.transitionId === transitionId).length; }
+    if (latest.status !== "succeeded") {
+      const [retryHistory] = await db.select({ count: count() }).from(runAttempts)
+        .innerJoin(runs, eq(runAttempts.runId, runs.id))
+        .where(and(eq(runs.goalId, goalId), eq(runAttempts.transitionId, transitionId)));
+      attemptsUsed = retryHistory!.count;
+    }
   }
   if (!current) {
     await db.insert(goalExecutions).values({ goalId, transitionId: transitionId || null, latestRunId: latest?.id ?? null, attemptsUsed, maxAttempts: latest?.maxAttempts ?? 3, maxActivations: graph.version.maxActivations });

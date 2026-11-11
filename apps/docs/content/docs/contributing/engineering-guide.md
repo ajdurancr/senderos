@@ -150,3 +150,15 @@ share the same visibility predicate, including granted projects and owned sessio
 after revocation. Complete inspection APIs retain recovery details unchanged.
 The context status regression checks actual driver columns and semantic parity
 with complete lists, including missing parents and unknown contexts.
+
+## Legacy recovery query scope
+
+When a pre-activation goal has no execution cursor, recovery counts attempts for
+the selected transition across that goal's complete run history in SQL. It does
+not materialize unrelated attempt payloads. The latest run still follows creation
+time and ID ordering, and its latest numbered attempt selects the pinned route
+position. Failed and canceled runs retain their retry budget usage; successful
+runs advance to the next step. Complete inspection history and retry predecessor
+IDs remain unchanged. Multiple active legacy runs remain an explicit recovery
+blocker. The actual driver-result regression in `lifecycle/state-query.test.ts`
+checks query scope alongside persisted migration parity and idempotence.
