@@ -9,7 +9,7 @@ import { planFromDecisions } from '../commands/planning/plan';
 import { status, statusFromRecords } from '../commands/system/status';
 import type { AttemptReview } from '../shared/types';
 import { goalActivations, settledActivation } from '../lifecycle/activations';
-import { explainGoal } from '../lifecycle/state';
+import { explainGoal, terminal } from '../lifecycle/state';
 
 export async function missionControlOverview(home?: string, executionContextId?: string, projectId?: string) {
   const projects = (await listProjects(home, executionContextId)).filter(project => !projectId || project.id === projectId);
@@ -53,7 +53,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
     .filter(decision => decision.reason === 'lease_expired').map(decision => decision.attemptId));
   const reviews = attempts.flatMap((attempt) => {
     const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
-    return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
+    return !terminal(attempt.status) && snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
   });
   return {
     status: projectId ? statusFromRecords(projects, goals, runs, attempts) : await status(home, executionContextId),

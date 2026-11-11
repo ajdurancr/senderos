@@ -196,3 +196,17 @@ scope isolation, read-only projection, replacement attempts and retained history
 The production browser journey uses locally simulated claims and starts with an
 explicit lease-clock fixture, then checks both links, recovery guidance, reloads
 and project navigation with unchanged persisted records.
+
+### Actionable reviews and terminal history
+
+Core's review attention queue includes pending reviews only while their attempt
+is nonterminal. Canceled, failed and succeeded attempts keep their exact recorded
+review and evidence for inspection, but cannot accept another review decision.
+A retry contributes its own pending review independently of that history. Studio
+also keeps terminal reviews out of actionable attention while preserving them in
+Reviews, Runs and the read-only execution inspector.
+
+Real-database regressions cover all three terminal outcomes, retry lineage,
+context/project scope and read-only projections. The production browser journey
+records evidence, cancels through Studio, reloads attention and follows the
+retained review back to its exact read-only execution on desktop and mobile.
