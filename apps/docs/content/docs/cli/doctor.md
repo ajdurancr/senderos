@@ -12,7 +12,7 @@ description: "Validate the Senderos runtime, database connectivity, guardrails, 
 - directory integrity,
 - managed home-directory accessibility,
 - the configured harness label (not real host or model readiness),
-- availability of the projects table used by the database probe.
+- availability of every required runtime table and column, including retained attempt history.
 
 ## Examples
 
@@ -45,5 +45,16 @@ reports, inspect `ok` and `issues`; an unhealthy report is valid JSON output, no
 successful runtime validation. A configured harness label does not certify a real
 host, external session or model provider.
 
-The database probe currently reads the projects table. It is not a complete schema
-or database-integrity audit; a healthy result does not certify every history table.
+## Database schema availability
+
+The database probe reads schema metadata and compares table and column names with
+Senderos's current runtime model. Missing tables and columns produce issues such
+as `missing table:run_attempts` or `missing column:run_attempts.result_json`.
+A view cannot replace a required writable table. Extra tables and columns are
+allowed, and inspection does not read retained row payloads, migrate, reset or
+repair the database.
+
+This is an availability check, not a complete integrity audit. It does not verify
+column types, constraints, indexes, stored data consistency or external host
+readiness. Preserve the database and follow the documented upgrade/recovery path
+before operational work; do not delete history to clear a diagnostic.
