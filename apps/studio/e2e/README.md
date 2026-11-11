@@ -16,7 +16,7 @@ Agents, workflow imports and edits, publication, goals, activation, reviewed
 reservation, evidence, review, settings, and cancellation are actual browser
 form submissions to Studio. Each meaningful boundary is verified against the
 real database and fresh page reloads. Successful requests and persistence APIs are
-not mocked; the graph navigation journey below injects transport failures. External execution is deterministic: the fixture uses genuine core host
+not mocked; graph navigation and interrupted-mutation journeys inject transport failures. External execution is deterministic: the fixture uses genuine core host
 registration, workspace grant/declaration, preflight, claim, independent-session
 start, completion, and typed evidence contracts, without contacting any model,
 remote host, repository provider, or deployment service.
@@ -203,3 +203,8 @@ Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
 probe reproduced the previous raw fixture UPDATE failing while a reader held the
 file; transaction rollback/retry lets that fixture wait without weakening the
 production assertions or changing application mutation behavior.
+
+`interrupted-mutation.pw.ts` loses only the response after a real agent creation
+has persisted. It checks truthful recovery guidance, keyboard reload without
+a second write, and saved instructions after navigation at desktop and mobile
+sizes. The action and database writes are real; only response delivery fails.

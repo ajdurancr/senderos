@@ -12,6 +12,13 @@ describe('Studio document root', () => {
     expect(App().type).toBeTruthy();
   });
 
+  it('does not claim a failed response rolled back a mutation', () => {
+    render(<ErrorBoundary error={new TypeError('Failed to fetch')} params={{}} />);
+    expect(screen.getByText(/submitted changes may have been saved/)).toBeTruthy();
+    expect(screen.queryByText(/Your data was not changed/)).toBeNull();
+    expect(screen.getByText('Reload page').getAttribute('href')).toBe('');
+  });
+
   it.each([
     {
       error: {
@@ -37,7 +44,7 @@ describe('Studio document root', () => {
   ])('renders the $title recovery state', ({ error, title }) => {
     render(<ErrorBoundary error={error} params={{}} />);
     expect(screen.getByRole('heading', { name: title })).toBeTruthy();
-    expect(screen.getByText('Try again')).toBeTruthy();
+    expect(screen.getByText('Reload page')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Return to Studio' })).toBeTruthy();
   });
 });
