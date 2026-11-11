@@ -1,6 +1,7 @@
 import type { GoalRecord, GoalStatus } from "../../shared/types";
 import { listGoals } from "../goals/list";
 import { explainGoal } from "../../lifecycle/state";
+import { currentExecutionContextId } from "../../lifecycle/scope";
 
 type Decision = Awaited<ReturnType<typeof explainGoal>>;
 type PlanItem = { goalId: string; activationId: string; transitionId: string; agentId: string; previousRunId: string | null; revision: number };
@@ -21,7 +22,8 @@ export function planFromDecisions(goals: Pick<GoalRecord, "id" | "status">[], de
 }
 
 export async function plan(input: { home?: string; goalStatuses?: GoalStatus[]; executionContextId?: string }) {
-  const goals = (await listGoals(input.home, input.executionContextId)).filter(goal => eligibleStatuses(input.goalStatuses).includes(goal.status));
+  const executionContextId = input.executionContextId ?? currentExecutionContextId(input.home);
+  const goals = (await listGoals(input.home, executionContextId)).filter(goal => eligibleStatuses(input.goalStatuses).includes(goal.status));
   const decisions: Decision[] = [];
   for (const goal of goals) decisions.push(await explainGoal(goal.id, input.home));
   return planFromDecisions(goals, decisions, input.goalStatuses);
