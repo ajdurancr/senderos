@@ -14,6 +14,16 @@ the same context ID and name after resolving the reported problem. To rebuild
 an existing local database while preserving customized configuration bytes, use
 the interactive [`db reset`](../db/) command instead, after stopping all writers.
 
+With the default `restrictToHome` guardrail, initialization validates the decoded
+local `file:` URL path, including case-insensitive schemes and existing or dangling
+symbolic links. Query options are not part of the filename. A local database must
+remain within the canonical Senderos home; encoded traversal and links pointing
+outside it are rejected before opening the database. Encoded filenames and links
+whose destinations stay inside the home remain supported. This initialization
+check does not sandbox other filesystem operations or prevent concurrent changes
+to symbolic links. Explicit `restrictToHome: false` configuration retains its
+existing unrestricted behavior.
+
 On first run, it previews the exact configuration Senderos will use and requires explicit approval before it creates anything.
 
 ## What it does

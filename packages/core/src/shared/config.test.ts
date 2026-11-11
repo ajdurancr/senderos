@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -151,6 +151,75 @@ describe('runtime configuration', () => {
     await expect(initializeRuntime(outsideHome, outsideConfig)).rejects.toThrow(
       'Guardrail violation',
     );
+  });
+
+  for (const variant of ['encoded traversal', 'encoded symlink', 'query symlink', 'dangling symlink', 'uppercase scheme']) {
+    test(`initialization rejects ${variant} before creating a database outside home`, async () => {
+      const parent = tempHome();
+      const home = join(parent, 'home');
+      mkdirSync(home);
+      const outside = join(parent, 'outside.db');
+      symlinkSync(outside, join(home, 'alias.db'));
+      const urls: Record<string, string> = {
+        'encoded traversal': `file:${home}/%2e%2e/outside.db`,
+        'encoded symlink': `file:${home}/%61lias.db`,
+        'query symlink': `file:${home}/alias.db?tls=1`,
+        'dangling symlink': `file:${home}/alias.db`,
+        'uppercase scheme': `FILE:${outside}`,
+      };
+      process.env.SENDEROS_DATABASE_URL = urls[variant];
+      await expect(initializeRuntime(home, defaultConfigForHome(home, 'fixture'))).rejects.toThrow('Guardrail violation');
+      expect(existsSync(outside)).toBe(false);
+      expect(runtimeExists(home)).toBe(false);
+    });
+  }
+
+  test('checks parent segments after following a symlink and rejects symbolic-link cycles', () => {
+    const home = tempHome();
+    const outside = tempHome();
+    mkdirSync(join(outside, 'child'));
+    symlinkSync(join(outside, 'child'), join(home, 'alias'));
+    expect(() => ensureWithinHome(home, `${home}/alias/../outside.db`)).toThrow('Guardrail violation');
+    symlinkSync('cycle', join(home, 'cycle'));
+    expect(() => ensureWithinHome(home, join(home, 'cycle', 'fixture.db'))).toThrow('Guardrail violation');
+  });
+
+  for (const scheme of ['file:', 'file://', 'FILE://localhost']) {
+    test(`allows encoded in-home paths with ${scheme} without changing the URL`, async () => {
+      const parent = tempHome();
+      const home = join(parent, 'fixture home');
+      const databasePath = join(home, 'fixture #?.db');
+      const url = `${scheme}${encodeURI(databasePath).replaceAll('#', '%23').replaceAll('?', '%3F')}`;
+      process.env.SENDEROS_DATABASE_URL = url;
+      await initializeRuntime(home, defaultConfigForHome(home, 'fixture'));
+      expect(existsSync(databasePath)).toBe(true);
+      expect(process.env.SENDEROS_DATABASE_URL).toBe(url);
+      expect((await listProjects(home))).toEqual([]);
+    });
+
+  }
+
+  test('allows in-home dangling symlink chains and explicit unrestricted local databases', async () => {
+    const home = tempHome();
+    symlinkSync('second.db', join(home, 'first.db'));
+    symlinkSync('target.db', join(home, 'second.db'));
+    process.env.SENDEROS_DATABASE_URL = `file:${home}/first.db`;
+    await initializeRuntime(home, defaultConfigForHome(home, 'fixture'));
+    expect(existsSync(join(home, 'target.db'))).toBe(true);
+    const outside = join(tempHome(), 'unrestricted.db');
+    const config = defaultConfigForHome(home, 'fixture');
+    config.guardrails.restrictToHome = false;
+    process.env.SENDEROS_DATABASE_URL = `file:${outside}`;
+    await initializeRuntime(home, config);
+    expect(existsSync(outside)).toBe(true);
+  });
+
+  test('rejects malformed path encoding without publishing configuration', async () => {
+    const home = tempHome();
+    process.env.SENDEROS_DATABASE_URL = `file:${home}/%invalid.db`;
+    await expect(initializeRuntime(home, defaultConfigForHome(home, 'fixture'))).rejects.toThrow();
+    expect(runtimeExists(home)).toBe(false);
+    expect(existsSync(join(home, '%invalid.db'))).toBe(false);
   });
 
   test('compares canonical paths without allowing symlink escapes', () => {
