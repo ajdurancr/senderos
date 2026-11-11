@@ -333,6 +333,15 @@ reload, unchanged persisted state, and desktop/mobile wrapping without horizonta
 overflow. Component regressions also cover invalid and executable schemes,
 escaped markup, and existing HTTP(S) link behavior. No referenced file is read.
 
+## Unconfirmed mutation responses
+
+The interrupted-mutation journey submits a real agent creation, allows the
+production action to persist, then drops its response. Desktop and mobile
+checks verify that the generic error page does not claim a rollback, provides
+a keyboard-accessible reload, and never automatically resubmits the mutation.
+Reloading and opening the persisted agent verifies its exact saved instructions
+and a single record. This transport-failure fixture does not simulate or resolve
+native SQLite contention.
 
 ## Unsaved agent navigation
 
