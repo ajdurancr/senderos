@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { createServer, type AddressInfo } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,9 +36,17 @@ try {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (spawnError) throw spawnError;
     if (child.exitCode !== null) throw new Error(`Production server exited ${child.exitCode}.`);
-    try { await fetch(`${base}/`, { signal: AbortSignal.timeout(1000) }); ready = true; break; } catch { await delay(100); }
+    try { await fetch(`${base}/favicon.svg`, { signal: AbortSignal.timeout(1000) }); ready = true; break; } catch { await delay(100); }
   }
   assert.ok(ready, 'Production server must start within 10 seconds.');
+  const legacyIcon = await fetch(`${base}/favicon.ico`, { redirect: 'manual' });
+  assert.equal(legacyIcon.status, 302, 'Legacy favicon must bypass the operational loader.');
+  assert.equal(legacyIcon.headers.get('location'), '/favicon.svg');
+  const icon = await fetch(`${base}/favicon.svg`);
+  assert.equal(icon.status, 200);
+  assert.match(icon.headers.get('content-type') ?? '', /image\/svg\+xml/);
+  assert.ok((await icon.text()).includes('<svg'), 'The branded icon must be packaged.');
+  assert.equal(existsSync(join(runtime, 'senderos.db')), false, 'Icon requests must not create or migrate the operational database.');
   for (const [path, expected] of [
     ['/', 'Workflow progress'], ['/now', 'What needs attention now'],
     ['/goals', 'Outcome inventory'], ['/runs', 'Execution history'],
@@ -75,7 +84,7 @@ try {
     assert.equal(saved.status, 200);
     assert.ok((await saved.text()).includes(content), 'Created entity must survive the redirect.');
   }
-  console.log(`Studio production smoke passed: ${pages} SSR routes, ${checkedAssets.size} emitted assets, fresh native database migrations/seeds, agent and Sendero creation. No NODE_PATH override.`);
+  console.log(`Studio production smoke passed: ${pages} SSR routes, ${checkedAssets.size} emitted assets, database-free icon resources, fresh native database migrations/seeds, agent and Sendero creation. No NODE_PATH override.`);
 } catch (error) {
   console.error(output);
   throw error;
