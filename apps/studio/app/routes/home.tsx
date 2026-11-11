@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import { type ShouldRevalidateFunctionArgs, redirect, useActionData, useLoaderData, useLocation, useNavigation } from "react-router";
+
+import { SnapshotStatus } from "../features/mission-control/components/snapshot-status";
 
 import { MissionControlOverview } from "../features/mission-control/overview";
 import { applyMissionControlAction, missionControlData } from "../features/mission-control/server";
@@ -56,10 +59,47 @@ export function shouldRevalidate({ actionResult, defaultShouldRevalidate }: Shou
 }
 
 export default function Home() {
-  const data = useLoaderData<typeof loader>();
+  const loaded = useLoaderData<typeof loader>();
   const pending = useNavigation().state !== "idle";
   const feedback = useActionData<typeof action>();
   const location = useLocation();
+  const scope = `${location.pathname}${location.search}`;
+  const [refreshed, setRefreshed] = useState<{ base: typeof loaded; scope: string; data: typeof loaded }>();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
+  const refreshRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    refreshRequest.current?.abort();
+    refreshRequest.current = null;
+    setRefreshing(false);
+    setRefreshError(false);
+    setRefreshed(undefined);
+    return () => refreshRequest.current?.abort();
+  }, [loaded, scope]);
+  const data = refreshed?.base === loaded && refreshed.scope === scope ? refreshed.data : loaded;
+  async function refreshSnapshot() {
+    if (refreshRequest.current || pending) return;
+    const controller = new AbortController();
+    refreshRequest.current = controller;
+    setRefreshing(true);
+    setRefreshError(false);
+    const query = new URLSearchParams(location.search);
+    query.set('_pathname', location.pathname);
+    try {
+      const response = await fetch(`/resources/snapshot?${query}`, { signal: controller.signal, cache: 'no-store' });
+      if (!response.ok) throw new Error('Refresh unavailable');
+      const result = await response.json();
+      if (result.ok !== true || !result.data || !Number.isFinite(result.data.asOf)) throw new Error('Invalid snapshot');
+      if (!controller.signal.aborted) setRefreshed({ base: loaded, scope, data: result.data });
+    } catch {
+      if (!controller.signal.aborted) setRefreshError(true);
+    } finally {
+      if (refreshRequest.current === controller) {
+        refreshRequest.current = null;
+        setRefreshing(false);
+      }
+    }
+  }
   const route = parseStudioPath(location.pathname);
   const search = new URLSearchParams(location.search);
   const savedMessages: Record<string, string> = {
@@ -78,6 +118,7 @@ export default function Home() {
   );
   return (
     <StudioLayout data={data} pending={pending} route={route} search={search}>
+      <SnapshotStatus asOf={data.asOf} pending={pending} refreshing={refreshing} error={refreshError} onRefresh={refreshSnapshot} />
       {savedMessage && !feedback && !pending && <div className="action-feedback" role="status">{savedMessage}</div>}
       {feedback && !pending && <div className={`action-feedback ${feedback.ok ? "" : "error"}`} role={feedback.ok ? "status" : "alert"}>{feedback.message}</div>}
       <MissionControlOverview data={filteredData} route={route} search={search} />

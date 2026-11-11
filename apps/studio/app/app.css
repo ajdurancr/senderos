@@ -602,3 +602,14 @@ ol.event-stream { list-style: none; padding: 0; margin: 0; }
 .retry-lineage nav { display: flex; flex-wrap: wrap; gap: .5rem; }
 .retry-lineage p { margin-block: var(--space-2); color: var(--text-muted); font-size: var(--text-meta); }
 .retry-lineage h3 { margin: 0; font-size: var(--text-body); }
+
+.snapshot-status { margin: 12px var(--page-padding); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--studio-border); border-radius: 8px; background: var(--studio-chrome); }
+.snapshot-status p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.snapshot-status p:first-child { color: var(--text-strong); }
+.snapshot-status .button { flex-shrink: 0; }
+.snapshot-stale { border-color: color-mix(in srgb, var(--warning) 55%, var(--studio-border)); }
+.snapshot-stale p[aria-live] { color: var(--warning); }
+@media (max-width: 600px) { .snapshot-status { align-items: flex-start; flex-direction: column; gap: 10px; } .snapshot-status .button { min-height: 44px; } }
+
+.snapshot-status button[aria-disabled="true"] { opacity: .65; cursor: wait; }
+.snapshot-status p[role="alert"] { color: var(--danger); }

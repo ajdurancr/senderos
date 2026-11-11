@@ -183,3 +183,10 @@ blocked; a later limit of 8 must survive the same recovery and allow a reviewed
 retry with its predecessor intact. Neither recovery changes attempt/claim
 payloads or creates a run. `legacy-retry-policy-desktop-1440x1000` and its mobile
 counterpart capture the restored budget controls before dispatch.
+
+The snapshot freshness journey ages a real active-session observation, expires
+only its isolated fixture lease, and explicitly refreshes the scoped production
+page. It checks updated recovery guidance without new claims, attempts, runs or
+events. An injected refresh transport failure retains the previous timestamp and
+unsaved agent input, presents an error, and allows a successful real-server
+retry. Desktop/mobile captures cover stale, refreshed and failed-refresh states.
