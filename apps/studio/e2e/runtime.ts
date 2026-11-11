@@ -67,6 +67,21 @@ if (command === 'hold-read-lock') {
 } else if (command === 'prepare-draft-goal' && id) {
   const product = createSenderos({ executionContextId: `product-${id}` });
   result = await product.commands.goals.create({ projectId: `campaign-${id}`, title: `Unassigned draft ${id}`, senderoVersionId: null });
+} else if (command === 'prepare-evidence-references' && id) {
+  // Retained imported proof is synthetic history, never an external file read.
+  const product = createSenderos({ executionContextId: `product-${id}` });
+  const goal = await product.commands.goals.create({ projectId: `launch-${id}`, title: `Retained artifact references ${id}`, senderoVersionId: null });
+  await product.commands.goals.cancel(goal.id);
+  const db = openRuntimeDb();
+  try {
+    const agent = (await db.select().from(schema.agents))[0]!;
+    const runId = `evidence-run-${id}`, attemptId = `evidence-attempt-${id}`;
+    const timestamp = '2000-01-01T00:00:00.000Z';
+    await db.insert(schema.runs).values({ id: runId, goalId: goal.id, status: 'canceled', createdAt: timestamp, updatedAt: timestamp });
+    const references = ['file:///isolated/artifacts/desktop%20acceptance.png', '/isolated/artifacts/mobile acceptance report.txt', 'artifact:retained-verification-123'];
+    await db.insert(schema.runAttempts).values({ id: attemptId, runId, attemptNumber: 1, agentId: agent.id, status: 'canceled', executionObjective: 'Inspect retained artifact proof', harness: 'history-fixture', finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp, statusSnapshotJson: JSON.stringify({ evidence: references.map((url, i) => ({ id: `reference-${i}`, label: `Retained artifact ${i + 1}`, kind: 'artifact', url, summary: 'Synthetic imported artifact reference.', createdAt: timestamp })) }) });
+    result = { goalId: goal.id, attemptId, references };
+  } finally { db.$client.close(); }
 } else if (command === 'prepare-tied-run-history' && id) {
   // Synthetic settled records isolate timestamp-tie inspection; no host is invoked.
   const product = createSenderos({ executionContextId: `product-${id}` });

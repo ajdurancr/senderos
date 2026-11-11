@@ -38,6 +38,7 @@ describe("EvidenceRecords", () => {
     expect(screen.getByText("Evidence label")).toBeTruthy();
     expect(screen.getByText("Preserved proof description")).toBeTruthy();
     expect(screen.queryByRole("link")).toBeNull();
+    if (url) expect(screen.getByText(url)).toBeTruthy();
   });
 
   it("allows HTTP evidence while escaping all labels, summaries, and rationales as text", () => {
@@ -105,4 +106,19 @@ it("offers explicit evidence kinds with a manual default and an optional summary
   expect(Array.from(kind.options).map(option => option.value)).toEqual(["manual", "test", "ci", "pull_request", "artifact"]);
   expect(screen.getByRole("textbox", { name: "Evidence summary (optional)" })).toBeTruthy();
   expect(screen.getByText(/Recording evidence does not run tests/)).toBeTruthy();
+});
+
+
+it.each(["file:///isolated/artifacts/acceptance.txt", "/isolated/artifacts/desktop report.png", "artifact:verification-123"])('preserves non-web evidence reference %s as inert review text', reference => {
+  render(<EvidenceRecords snapshot={{ evidence: [{ id: "retained-artifact", label: "Acceptance artifact", kind: "artifact", url: reference }] }} />);
+  expect(screen.getByText(reference)).toBeTruthy();
+  expect(screen.getByText("Recorded reference")).toBeTruthy();
+  expect(screen.queryByRole("link")).toBeNull();
+});
+
+it("escapes an imported reference without creating executable markup", () => {
+  const reference = '<img src=x onerror="alert(1)">';
+  const { container } = render(<EvidenceRecords snapshot={{ evidence: [{ id: "untrusted", label: "Imported reference", kind: "artifact", url: reference }] }} />);
+  expect(screen.getByText(reference)).toBeTruthy();
+  expect(container.querySelector("img, script, a")).toBeNull();
 });
