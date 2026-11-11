@@ -70,3 +70,7 @@ synthetic observations after the real unknown-host recovery observation, so that
 recovery falls outside the bounded latest event page. The attempt inspector must
 still show durable recovery details and guidance. Browsing leaves events, claims,
 attempts and runs unchanged. Desktop/mobile screenshots cover the real history UI.
+
+The settings scope-switch journey also reloads the selected context, captures its
+real desktop/mobile form, and returns to the prior context to choose a project.
+Navigation choices must remain available when HTTP operational data is scoped.

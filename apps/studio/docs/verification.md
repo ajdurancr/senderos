@@ -170,3 +170,15 @@ trigger and verifies the complete original record remains unchanged, then remove
 the trigger and saves successfully. Concurrent saves to different fields preserve
 both edits and record both events. Existing production settings journeys verify
 form validation, context/project isolation and persisted state after reload.
+
+### Execution context loading
+
+HTTP requests with an explicit `context` use the existing context-scoped Core
+overview, including lifecycle decisions, executions, queues and status. All project
+and context choices remain available to the navigation shell. Requests without a
+context and programmatic inspection retain their complete overview contract.
+The regression compares selected activation/execution/dispatch records against the
+complete view and covers switching, empty and unknown contexts. The production
+settings journey switches contexts, reloads, captures desktop/mobile, and returns
+to another context to choose a project. This reduces unrelated operational payload;
+it does not bound selected-context history or all underlying database work.
