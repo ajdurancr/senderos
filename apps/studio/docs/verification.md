@@ -323,3 +323,12 @@ includes a real exclusive-lock regression and the original error on exhaustion;
 the production browser suite exercises a separate process holding the isolated
 database lock. This is a bounded read-availability correction, not evidence that
 the earlier unexplained external-host simulator timeout has been resolved.
+
+## Imported artifact references
+
+The evidence-reference production journey loads synthetic retained terminal
+history with a file URL, a local path containing spaces, and an artifact
+identifier. It verifies exact inert text in the inspector and Runs history after
+reload, unchanged persisted state, and desktop/mobile wrapping without horizontal
+overflow. Component regressions also cover invalid and executable schemes,
+escaped markup, and existing HTTP(S) link behavior. No referenced file is read.

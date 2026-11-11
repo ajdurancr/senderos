@@ -304,6 +304,8 @@ select option { background: var(--studio-chrome); }
 .evidence-list article { margin-top: 10px; padding: 13px; background: var(--studio-raised); border: 1px solid var(--studio-border); border-radius: 7px; display: flex; gap: 10px; }
 .evidence-list svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
 .evidence-list article > div { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.evidence-reference { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.evidence-reference code { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-meta); }
 .evidence-list strong { font-size: var(--text-meta); }
 .evidence-list span, .evidence-list p, .evidence-list small { color: var(--text-muted); font-size: var(--text-meta); }
 .evidence-list a, .review-record a, .external-link { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }

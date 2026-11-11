@@ -117,3 +117,11 @@ successful refresh. Refreshing does not heartbeat, reconcile, stop, or restart a
 worker. Lease expiry never proves that an external process stopped.
 
 Explicit status refresh uses a read-only scoped snapshot request. If it fails, Studio keeps the previous snapshot and unsaved editor inputs mounted, shows a retry message, and does not advance the observation time. Navigation and successful saves still load their own snapshots normally.
+
+## Retained evidence references
+
+Evidence inspection and Runs history keep imported local paths, file URLs and
+other non-web references visible as plain text under **Recorded reference**.
+Studio does not open or fetch those references. HTTP and HTTPS evidence retains
+its explicit **Open evidence** link. Terminal proof stays read-only, and viewing
+or reloading it does not change the recorded evidence.
