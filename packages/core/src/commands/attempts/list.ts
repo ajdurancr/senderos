@@ -5,7 +5,7 @@ import { executionHosts, hostWorkspaces } from '../../db/host-schema';
 import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
 import { inspectedAttempt, inspectionClaimFields } from './inspection';
 
-export async function listRunAttempts(runId?: string, home?: string, executionContextId?: string) {
+export async function listRunAttempts(runId?: string, home?: string, executionContextId?: string, projectId?: string) {
   const db = openRuntimeDb(home);
   const contextHosts = db.select({ id: executionHosts.id }).from(executionHosts)
     .where(eq(executionHosts.executionContextId, executionContextId ?? ''));
@@ -24,7 +24,7 @@ export async function listRunAttempts(runId?: string, home?: string, executionCo
     .leftJoin(goals, eq(runs.goalId, goals.id))
     .leftJoin(projects, eq(goals.projectId, projects.id))
     .where(and(runId ? eq(runAttempts.runId, runId) : undefined,
-      scope))
+      projectId ? eq(goals.projectId, projectId) : undefined, scope))
     .orderBy(runId ? asc(runAttempts.attemptNumber) : asc(runAttempts.createdAt));
   return rows.map(({ attempt, claim }) => inspectedAttempt(attempt as RunAttemptRecord, claim));
 }

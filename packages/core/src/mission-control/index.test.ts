@@ -3,6 +3,8 @@ import { expect, test, spyOn } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { openRuntimeDb } from '../db/client';
 import { runs, runAttempts } from '../db/schema';
+import { listGoals } from '../commands/goals/list';
+import { listRuns } from '../commands/runs/list';
 
 import { createSenderos, createAgent, newSendero, publishSendero } from '../index';
 import { createProjectFixture, initHome } from '../test-support/runtime';
@@ -255,6 +257,14 @@ test('explicit project overview retains recovery history and ordered status whil
   await senderos.commands.attempts.update(first.id, { token: claim.token, status: 'failed', failureSummary: 'Project-scoped recovery fact' });
   const complete = await senderos.missionControl.overview();
   const scoped = await senderos.missionControl.overview({ projectId: project.id });
+  for (const context of [undefined, project.executionContextId]) {
+    expect(await listGoals(home, context, project.id)).toEqual(complete.goals.filter(item => item.projectId === project.id));
+    expect(await listRuns(home, context, project.id)).toEqual(complete.runs);
+    expect(await listGoals(home, context, 'missing')).toEqual([]);
+    expect(await listRuns(home, context, 'missing')).toEqual([]);
+  }
+  expect(await listGoals(home, 'unrelated', project.id)).toEqual([]);
+  expect(await listRuns(home, 'unrelated', project.id)).toEqual([]);
   expect(scoped.goals).toEqual(complete.goals.filter(item => item.projectId === project.id));
   for (const key of ['runs', 'attempts', 'activations', 'executions', 'queue'] as const) expect(scoped[key]).toEqual(complete[key]);
   expect(scoped.decisions).toEqual(complete.decisions.filter(item => item.goalId === goal.id));

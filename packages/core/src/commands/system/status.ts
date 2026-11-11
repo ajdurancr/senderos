@@ -1,6 +1,7 @@
 import { openRuntimeDb } from "../../db/client";
 import { goals, projects, runAttempts, runs } from "../../db/schema";
 import { asc, count, inArray, notInArray } from "drizzle-orm";
+import type { ProjectRecord, GoalRecord, RunRecord, RunAttemptRecord } from "../../shared/types";
 import { listProjects } from '../projects/list';
 import { listGoals } from '../goals/list';
 import { listRuns } from '../runs/list';
@@ -23,34 +24,7 @@ export async function status(home?: string, executionContextId?: string) {
       listRuns(home, executionContextId),
       listRunAttempts(undefined, home, executionContextId),
     ]);
-    const activeRuns: typeof scopedRuns = [];
-    const activeGoals: typeof scopedGoals = [];
-    const activeAttemptIds: string[] = [];
-    const activeGoalIds: string[] = [];
-    const runningRunIds: string[] = [];
-    let unhealthy = 0;
-    for (const project of scopedProjects)
-      if (project.status !== 'healthy') unhealthy++;
-    for (const goal of scopedGoals)
-      if (!['completed', 'canceled'].includes(goal.status)) {
-        activeGoals.push(goal);
-        activeGoalIds.push(goal.id);
-      }
-    for (const run of scopedRuns)
-      if (ACTIVE_RUN_STATUSES.includes(run.status)) {
-        activeRuns.push(run);
-        runningRunIds.push(run.id);
-      }
-    for (const attempt of scopedAttempts)
-      if (['queued', 'running', 'paused'].includes(attempt.status)) activeAttemptIds.push(attempt.id);
-    return {
-      projects: { total: scopedProjects.length, unhealthy },
-      openGoals: activeGoals.length,
-      activeRuns: activeRuns.length,
-      activeAttemptIds,
-      activeGoalIds,
-      runningRunIds,
-    };
+    return statusFromRecords(scopedProjects, scopedGoals, scopedRuns, scopedAttempts);
   }
   const db = openRuntimeDb(home);
   const activeAttemptRows = await db
@@ -108,4 +82,23 @@ export async function status(home?: string, executionContextId?: string) {
     runningRunIds,
   };
   return summary;
+}
+
+/** Summarize already selected records without loading another complete snapshot. */
+export function statusFromRecords(
+  selectedProjects: Pick<ProjectRecord, 'status'>[],
+  selectedGoals: Pick<GoalRecord, 'id' | 'status'>[],
+  selectedRuns: Pick<RunRecord, 'id' | 'status'>[],
+  selectedAttempts: Pick<RunAttemptRecord, 'id' | 'status'>[],
+) {
+  const activeGoalIds = selectedGoals.filter(goal => !['completed', 'canceled'].includes(goal.status)).map(goal => goal.id);
+  const runningRunIds = selectedRuns.filter(run => ACTIVE_RUN_STATUSES.includes(run.status)).map(run => run.id);
+  return {
+    projects: { total: selectedProjects.length, unhealthy: selectedProjects.filter(project => project.status !== 'healthy').length },
+    openGoals: activeGoalIds.length,
+    activeRuns: runningRunIds.length,
+    activeAttemptIds: selectedAttempts.filter(attempt => ['queued', 'running', 'paused'].includes(attempt.status)).map(attempt => attempt.id),
+    activeGoalIds,
+    runningRunIds,
+  };
 }
