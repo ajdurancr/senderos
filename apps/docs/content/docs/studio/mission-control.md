@@ -7,6 +7,22 @@ Senderos Studio is the human-facing authoring and operational surface over
 `@senderos/core`. It uses the same database, validation, publication, and lifecycle
 operations as the CLI. It does not launch a model or an external worker session.
 
+## Register a context and project
+
+Open **Settings → Project & database → Set up a workspace**. An execution
+context identifies a team or environment; a project groups its goals. Add a
+context with a distinct name, then add a project in the selected context. With
+multiple contexts, confirm the project's context before submitting. A successful
+registration selects the new durable scope and survives a reload. Invalid or
+duplicate names show an error without replacing existing records.
+
+Studio creates a named project with repository integration disabled and no
+workspace path. This is enough to organize research, writing or other standalone
+work. Open **Goals → New goal** and choose a published Sendero to define an
+outcome. Registration does not reserve runs or start external execution. Use the
+CLI for repository metadata and explicit host/workspace configuration; registering
+identities in Studio does not create a checkout or grant filesystem access.
+
 ## Configure a project
 
 In **Settings → Project & database**, choose the project scope before editing its

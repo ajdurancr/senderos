@@ -51,7 +51,7 @@ describe("MissionControlOverview", () => {
       projects: [], goals: [], runs: [], attempts: [], agents: [], transitions: [], events: [],
       queue: { reviews: [], activeRuns: [], failedAttempts: [], staleAttempts: [], dispatchable: [], blockedGoals: [] },
     };
-    for (const [path, copy] of [["/now?filter=failed", "No matching attention"], ["/now", "Queue clear"], ["/runs", "No execution history"], ["/settings", "Shared database"]]) {
+    for (const [path, copy] of [["/now?filter=failed", "No matching attention"], ["/now", "No projects in this scope"], ["/runs", "No execution history"], ["/settings", "Shared database"]]) {
       const [pathname, query = ""] = path.split("?");
       const router = createMemoryRouter([{ path: "*", element: <MissionControlOverview data={empty} route={parseStudioPath(pathname)} search={new URLSearchParams(query)} /> }]);
       const view = render(<RouterProvider router={router} />);

@@ -1,5 +1,6 @@
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { EvidenceRecords } from "./evidence-records";
+import { LocalRegistration } from "./local-registration";
 import { ProjectSettings } from "./project-settings";
 import { AgentAuthoring } from "./agent-authoring";
 import { Form, useNavigation, useSearchParams } from "react-router";
@@ -27,6 +28,7 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
     { key: "stale", label: "Stale hosts" },
     { key: "dispatchable", label: "Ready to dispatch" },
   ];
+  const needsSetup = !data.projects.length && !filter;
   const validFilter = filters.some(item => item.key === (filter ?? ""));
   const goalForAttempt = (attempt: MissionControlData['attempts'][number]) => {
     const run = data.runs.find(run => run.id === attempt.runId);
@@ -52,7 +54,7 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
     {validFilter && <div className="attention-list">{(!filter || filter === "blocked") && blocked.map(entry => <GoalBlockerCard key={entry.goal.id} data={data} entry={entry} />)}{records.map(item => {
       const body = <><i className={item.type}/><div><span>{item.type}</span><h2>{item.title}</h2><p>{item.body}</p></div><StatusBadge value={item.status}/>{item.href && <Icon name="arrow"/>}</>;
       return item.href ? <Link key={`${item.type}-${item.id}`} to={item.href}>{body}</Link> : <article key={`${item.type}-${item.id}`}>{body}</article>;
-    })}{!records.length && ((filter && filter !== "blocked") || !blocked.length) && <div className="empty-state"><Icon name="check"/><h2>{filter === "blocked" ? "No goal blockers" : filter ? "No matching attention" : "Queue clear"}</h2><p>{filter === "blocked" ? "No blocked activations or unresolved goal errors in this scope." : "Nothing in this category needs intervention."}</p></div>}</div>}
+    })}{!records.length && ((filter && filter !== "blocked") || !blocked.length) && <div className="empty-state"><Icon name={needsSetup ? "target" : "check"}/><h2>{needsSetup ? "No projects in this scope" : filter === "blocked" ? "No goal blockers" : filter ? "No matching attention" : "Queue clear"}</h2><p>{needsSetup ? "Add a project to organize outcomes, then create a goal and choose its workflow." : filter === "blocked" ? "No blocked activations or unresolved goal errors in this scope." : "Nothing in this category needs intervention."}</p>{needsSetup && <Link className="button button-secondary" to="/settings">Set up a project</Link>}</div>}</div>}
   </div>;
 }
 
@@ -71,7 +73,8 @@ export function GoalsView({ data, projectId, create }: { data: MissionControlDat
       <div className="project-choice-list">{projects.map((project) => <Link className="button button-secondary" key={project.id} to={`${projectPath(project.id, "goals")}/new`}>
         {project.name}{!contextId && <small> · {data.executionContexts.find((context) => context.id === project.executionContextId)?.name}</small>}<Icon name="arrow" />
       </Link>)}</div>
-      {!projects.length && <p>{contextId ? "No projects in this execution context. Change the context filter to choose another project." : "Register a project with Senderos before creating a goal."}</p>}
+      {!projects.length && <p>{contextId ? "No projects in this execution context. Add one in Settings or choose another context." : "Add a project in Settings before creating a goal."}</p>}
+      {!projects.length && <Link className="button button-secondary" to="/settings">Set up a project</Link>}
     </section>}
     {create && projectId && <Form className="create-panel" method="post">
       <input type="hidden" name="intent" value="create-goal" /><input type="hidden" name="projectId" value={projectId} />
@@ -139,7 +142,8 @@ export function AgentsView({data, agentId, create = false}:{data:MissionControlD
 export function EventsView({data}:{data:MissionControlData}){return <div className="standard-view"><ViewHeader eyebrow="Append-only history" title="Activity & events" copy="The durable explanation of who changed what, when, and against which orchestration entity."/><div className="events-layout"><div className="event-stream">{[...data.events].reverse().map(event=><article key={event.id}><i/><time>{relativeTime(event.createdAt, data.asOf)}</time><div><strong>{eventLabel(event.eventType)}</strong><span>{event.entityType} · {event.entityId}</span></div><code>{JSON.stringify(event.payload)}</code></article>)}{!data.events.length && <div className="empty-state"><Icon name="clock"/><h2>No events in this scope</h2><p>Goal, execution, and configuration changes will appear here as they happen. Try another context or project to see more activity.</p></div>}</div><aside className="observability-panel"><header><Icon name="pulse"/><span>Execution signals</span></header><Metric label="Goals" value={data.goals.length}/><Metric label="Runs" value={data.runs.length}/><Metric label="Attempts" value={data.attempts.length}/><Metric label="Retries" value={data.attempts.filter(a=>a.retryFromAttemptId).length}/><Metric label="Evidence" value={data.attempts.reduce((sum,a)=>sum+(parseAttemptSnapshot(a.statusSnapshotJson).evidence?.length??0),0)}/><div className="signal-bars">{["succeeded","running","failed","queued"].map(status=><div key={status}><span>{status}</span><i style={{width:`${Math.max(4,data.attempts.filter(a=>a.status===status).length/Math.max(1,data.attempts.length)*100)}%`}}/></div>)}</div></aside></div></div>}
 function Metric({label,value}:{label:string;value:number}){return <div className="metric-row"><span>{label}</span><strong>{value}</strong></div>}
 
-export function SettingsView({data,projectId}:{data:MissionControlData;projectId?:string}){const project=data.projects.find(p=>p.id===projectId)??data.projects[0];return <div className="settings-content settings-grid">{!project && <section className="settings-section"><h2>No project in this scope</h2><p>Choose another scope or register a project with Senderos to configure it.</p></section>}{project&&<ProjectSettings key={project.id} project={project} />}
+export function SettingsView({data,projectId}:{data:MissionControlData;projectId?:string}){const project=data.projects.find(p=>p.id===projectId)??data.projects[0];return <div className="settings-content settings-grid">{!project && <section className="settings-section settings-empty"><h2>No project in this scope</h2><p>Add a project below or choose another scope to configure an existing project.</p></section>}{project&&<ProjectSettings key={project.id} project={project} />}
+    <LocalRegistration data={data} projectId={projectId} />
     <section className="settings-section"><header><div><Icon name="database"/><span><h2>Shared database</h2><p>Studio connects directly; no local Senderos home or config file is required.</p></span></div><span className="connected-label"><i/> Connected</span></header><div className="settings-fields"><Setting label="Endpoint" value={data.runtime.database.endpoint}/><Setting label="Connection mode" value={data.runtime.database.remote?"Remote libSQL":"Local libSQL"}/><Setting label="Database URL variable" value={data.runtime.database.urlEnv}/><Setting label="Auth token variable" value={data.runtime.database.authTokenEnv}/></div></section>
   </div>}
 function Setting({label,value}:{label:string;value:string}){return <label>{label}<input value={value} disabled/><small>Loaded from the active Senderos runtime.</small></label>}
