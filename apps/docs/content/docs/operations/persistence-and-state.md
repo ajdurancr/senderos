@@ -62,3 +62,11 @@ process holding a long transaction before retrying. Mutation statements and
 reads inside Senderos transactions keep their existing rollback and retry
 policy; remote database calls are unchanged. This handling does not establish
 the cause of an unrelated external-host simulator timeout.
+
+Cold local preparation also yields for up to one second when SQLite contention
+blocks Drizzle's initial `CREATE TABLE IF NOT EXISTS "__drizzle_migrations"`
+statement. Only that exact idempotent metadata statement permits restarting
+preparation, before migration selection or the transactional migration batch.
+Migration writes, seed operations, remote databases, snapshot conflicts and
+unrelated errors retain their existing behavior. Persistent contention remains
+an error; a later explicit request can retry preparation after the lock clears.

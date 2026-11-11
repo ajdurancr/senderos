@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { openRuntimeDb } from './client';
+import { retryMigrationPreparation } from './migration-preparation';
 
 export function runtimeMigrationsFolder() {
   const moduleDirectory = dirname(fileURLToPath(import.meta.url));
@@ -13,5 +14,7 @@ export function runtimeMigrationsFolder() {
 }
 
 export async function migrateRuntimeDb(home?: string) {
-  await migrate(openRuntimeDb(home), { migrationsFolder: runtimeMigrationsFolder() });
+  const db = openRuntimeDb(home);
+  await retryMigrationPreparation(db.$client.protocol, () =>
+    migrate(db, { migrationsFolder: runtimeMigrationsFolder() }));
 }
