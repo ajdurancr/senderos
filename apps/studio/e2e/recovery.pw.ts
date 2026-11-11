@@ -138,16 +138,21 @@ test('production snapshots survive brief isolated SQLite contention on desktop a
   for (const [width, height, label] of [[1440, 1000, 'desktop'], [390, 844, 'mobile']] as const) {
     await page.setViewportSize({ width, height });
     const worker = spawn(process.env.BUN_EXECUTABLE ?? 'bun', [fileURLToPath(new URL('./runtime.ts', import.meta.url)), 'hold-read-lock'], { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '', stderr = '';
+    worker.stdout.on('data', chunk => { stdout += String(chunk); });
+    worker.stderr.on('data', chunk => { stderr += String(chunk); });
     const exited = new Promise<void>((resolve, reject) => {
       worker.once('error', reject);
-      worker.once('exit', code => code === 0 ? resolve() : reject(new Error(`Fixture lock worker exited ${code}`)));
+      worker.once('close', code => code === 0 ? resolve() : reject(new Error(`Fixture lock worker exited ${code}: ${stderr}`)));
     });
-    await new Promise<void>((resolve, reject) => {
-      worker.stdout.once('data', chunk => String(chunk).includes('isolated-read-lock-acquired') ? resolve() : reject(new Error('Fixture lock readiness missing')));
-      worker.once('error', reject);
-      worker.once('exit', code => { if (code !== 0) reject(new Error('Fixture lock failed before readiness')); });
-    });
+    // Observe early rejection while readiness is pending; still await and fail below.
+    void exited.catch(() => {});
     try {
+      await new Promise<void>((resolve, reject) => {
+        worker.stdout.on('data', () => { if (stdout.includes('isolated-read-lock-acquired')) resolve(); });
+        worker.once('error', reject);
+        worker.once('close', code => reject(new Error(`Fixture lock failed before readiness (exit ${code}): ${stderr}`)));
+      });
       // Exercise the mounted UI's real fetch while another process owns the DB.
       const responseReady = page.waitForResponse(response => new URL(response.url()).pathname === '/resources/snapshot');
       await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
@@ -156,7 +161,15 @@ test('production snapshots survive brief isolated SQLite contention on desktop a
       expect((await response.json()).ok).toBe(true);
       await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toBeVisible();
       await expect(page.getByRole('region', { name: 'Snapshot freshness' })).not.toContainText('Status could not be refreshed');
-    } finally { await exited; }
+    } finally {
+      try { await exited; }
+      finally {
+        await testInfo.attach(`snapshot-lock-worker-${label}`, {
+          body: JSON.stringify({ stdout, stderr, exitCode: worker.exitCode, signalCode: worker.signalCode }),
+          contentType: 'application/json',
+        });
+      }
+    }
     await reload(page);
     const freshness = page.getByRole('region', { name: 'Snapshot freshness' });
     await expect(freshness).toContainText('Snapshot loaded');
