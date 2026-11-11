@@ -329,3 +329,40 @@ test('evidence and review drafts reset when scope selects another parallel attem
   expect(JSON.parse(saved.attempts.find(item => item.id === b.id)!.statusSnapshotJson)).toMatchObject({ evidence: [{ label: 'Second scope proof', kind: 'manual' }], review: { status: 'changes_requested', rationale: 'Second scope needs follow-up' } });
   await expect(page.getByRole('region', { name: 'Recorded review' })).toContainText('Second scope needs follow-up');
 });
+
+
+test('stale attention retains both expired parallel branches and exact recovery links', async ({ page, scenario }, testInfo) => {
+  const agent = await authorAgent(page, scenario, 'stale-agent');
+  const goal = await authorGoal(page, scenario, agent.slug, agent.slug, true);
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(2);
+  const runIds = new Set(goalRuns(goal.id).map(item => item.id));
+  const attempts = state().attempts.filter(item => runIds.has(item.runId));
+  for (const attempt of attempts) { runtime('host-claim', attempt.id); runtime('host-start', attempt.id); }
+  runtime('expire-fixture-lease', attempts[0]!.id);
+  await visit(page, `/now${scenarioScope(scenario)}&filter=stale`);
+  const cards = page.locator('.attention-list > a');
+  await expect(cards).toHaveCount(1);
+  runtime('expire-fixture-lease', attempts[1]!.id);
+  const before = state();
+  await reload(page);
+  await expect(cards).toHaveCount(2);
+  for (const attempt of attempts) await expect(cards.filter({ hasText: attempt.executionObjective })).toHaveAttribute('href', new RegExp(attempt.id));
+  await capture(page, testInfo, 'parallel-stale-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await cards.first().scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'parallel-stale-mobile-390x844');
+  await cards.filter({ hasText: attempts[0]!.executionObjective }).click();
+  await expect(page.getByRole('complementary', { name: 'Selected attempt details' })).toContainText(attempts[0]!.executionObjective);
+  await expect(page.getByRole('region', { name: 'Recovery next step' })).toContainText('Inspect the existing session');
+  await expect(page.getByRole('status').filter({ hasText: 'The lease expired.' })).toBeVisible();
+  await page.goBack(); await ready(page);
+  await expect(cards).toHaveCount(2);
+  await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+  await expect(cards).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.launchProject);
+  await expect(cards).toHaveCount(2);
+  expect(state()).toEqual(before);
+});

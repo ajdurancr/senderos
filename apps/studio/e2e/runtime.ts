@@ -118,6 +118,10 @@ if (command === 'init') {
       await new Promise(resolve => setTimeout(resolve, 50));
     }
   }
+} else if (command === 'expire-fixture-lease' && id) {
+  // Explicit clock fixture after a real local claim/start; never an external host call.
+  await openRuntimeDb().update(schema.attemptClaims).set({ leaseExpiresAt: '2000-01-01T00:00:00.000Z' }).where(eq(schema.attemptClaims.attemptId, id));
+  result = { expired: id };
 } else if (command === 'host-claim' && id) {
   const attempt = await all.commands.attempts.get(id);
   if (!attempt) throw new Error('Missing attempt');

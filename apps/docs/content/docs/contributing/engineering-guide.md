@@ -186,3 +186,13 @@ remains read-only and returns every attempt of the selected run in attempt-numbe
 order. The command regression covers both insertion orders, timestamp priority,
 empty history and current-context rejection. Mounted Studio regressions also
 retain exact older-attempt selection and leave the complete input history intact.
+
+Stale-attempt attention is derived from every authoritative activation decision,
+not only the goal's primary decision. An expired parallel branch stays visible
+beside ready or running work, and two expired branches retain distinct recovery
+links. Cancellation and completion prerequisites keep their lifecycle precedence;
+expiry alone never proves that a worker stopped. Real database regressions cover
+scope isolation, read-only projection, replacement attempts and retained history.
+The production browser journey uses locally simulated claims and starts with an
+explicit lease-clock fixture, then checks both links, recovery guidance, reloads
+and project navigation with unchanged persisted records.

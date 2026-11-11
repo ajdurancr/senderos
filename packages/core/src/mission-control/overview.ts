@@ -49,6 +49,8 @@ export async function missionControlOverview(home?: string, executionContextId?:
     // establish that a failure was superseded or settled. Parallel visits are independent.
     return !activation || (!settledActivation(activation.status) && activation.latestRunId === attempt.runId);
   });
+  const staleAttemptIds = new Set(decisions.flatMap(decision => decision.activations)
+    .filter(decision => decision.reason === 'lease_expired').map(decision => decision.attemptId));
   const reviews = attempts.flatMap((attempt) => {
     const snapshot: { review?: AttemptReview } = JSON.parse(attempt.statusSnapshotJson);
     return snapshot.review?.status === 'pending' ? [{ attempt, review: snapshot.review }] : [];
@@ -67,7 +69,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
       reviews,
       blockedGoals: goals.filter((goal) => goal.status === 'blocked'),
       failedAttempts,
-      staleAttempts: attempts.filter((attempt) => decisions.some(d => d.attemptId === attempt.id && d.reason === 'lease_expired')),
+      staleAttempts: attempts.filter((attempt) => staleAttemptIds.has(attempt.id)),
       activeRuns: runs.filter((run) => !['succeeded', 'failed', 'canceled'].includes(run.status)),
     },
   };
