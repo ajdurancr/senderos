@@ -24,7 +24,7 @@ export function LocalRegistration({ data, projectId }: { data: MissionControlDat
           </select><small id="registration-context-help">{contexts.length ? "The project belongs to this context. Confirm it before adding." : "Add an execution context below first."}</small></label>
         </fieldset>
         {!pending && feedback?.intent === 'register-project' && !feedback.ok && <div className="action-feedback error" role="alert">{feedback.message}</div>}
-        <footer><span>Starts with no repository integration. Configure delivery later.</span><button className="button button-primary" disabled={pending || contexts.length === 0}>{pending ? "Saving…" : "Add project"}</button></footer>
+        <footer><span>Starts with no repository integration. Configure delivery later.</span><button type="reset" className="button button-secondary" disabled={pending}>Discard project registration</button><button className="button button-primary" disabled={pending || contexts.length === 0}>{pending ? "Saving…" : "Add project"}</button></footer>
       </Form>
     </details>
     <details open={contexts.length === 0}>
@@ -33,7 +33,7 @@ export function LocalRegistration({ data, projectId }: { data: MissionControlDat
         <input type="hidden" name="intent" value="register-context" />
         <fieldset disabled={pending} className="settings-fields"><legend className="visually-hidden">New execution context details</legend><label>Context name<input name="name" required maxLength={200} aria-describedby="registration-new-context-help" /><small id="registration-new-context-help">Choose a distinct team or environment name. Existing contexts remain unchanged.</small></label></fieldset>
         {!pending && feedback?.intent === 'register-context' && !feedback.ok && <div className="action-feedback error" role="alert">{feedback.message}</div>}
-        <footer><span>The new context will be selected so you can add its first project.</span><button className="button button-primary" disabled={pending}>{pending ? "Saving…" : "Add context"}</button></footer>
+        <footer><span>The new context will be selected so you can add its first project.</span><button type="reset" className="button button-secondary" disabled={pending}>Discard context registration</button><button className="button button-primary" disabled={pending}>{pending ? "Saving…" : "Add context"}</button></footer>
       </Form>
     </details>
   </section>;

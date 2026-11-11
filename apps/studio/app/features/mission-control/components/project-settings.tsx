@@ -1,21 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { DraftNavigationGuard } from "../../../components/draft-navigation-guard";
 import { Form, useActionData, useNavigation } from "react-router";
 import { StatusBadge } from "../../../components/status-badge";
 import type { MissionControlData } from "../server";
 import { Icon } from "./icons";
 
-export function ProjectSettings({ project }: { project: MissionControlData["projects"][number] }) {
+export function ProjectSettings({ project, dirty, onDirtyChange: setDirty }: { project: MissionControlData["projects"][number]; dirty: boolean; onDirtyChange: (dirty: boolean) => void }) {
   const pending = useNavigation().state !== "idle";
   const [integrationMode, setIntegrationMode] = useState(project.integrationMode);
-  const [dirty, setDirty] = useState(false);
   const submitted = useRef(false);
   const feedback = useActionData<{ ok?: boolean; intent?: string }>();
   useEffect(() => {
     if (pending || !submitted.current || feedback?.intent !== "update-project") return;
     submitted.current = false;
     if (feedback.ok) setDirty(false);
-  }, [pending, feedback]);
+  }, [pending, feedback, setDirty]);
   const branchRequired = integrationMode !== "none";
   return <Form className="settings-section" method="post" onChange={event => {
     const values = new FormData(event.currentTarget);
@@ -23,7 +21,6 @@ export function ProjectSettings({ project }: { project: MissionControlData["proj
   }} onSubmit={() => { submitted.current = true; }} onReset={() => {
     setIntegrationMode(project.integrationMode); setDirty(false); submitted.current = false;
   }}>
-    <DraftNavigationGuard subject="project settings" dirty={dirty} saving={pending} />
     <input type="hidden" name="intent" value="update-project" />
     <input type="hidden" name="projectId" value={project.id} />
     <header><div><Icon name="target" /><span><h2>Project</h2><p>Project identity and repository integration behavior.</p></span></div><StatusBadge value={project.status} /></header>

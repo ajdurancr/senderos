@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { SettingsDraftBoundary } from "./settings-draft-boundary";
 import { RetryLineage } from "./retry-lineage";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { EvidenceRecords } from "./evidence-records";
@@ -171,8 +173,15 @@ export function AgentsView({data, agentId, create = false}:{data:MissionControlD
 
 export { EventsView } from './activity-history';
 
-export function SettingsView({data,projectId}:{data:MissionControlData;projectId?:string}){const project=data.projects.find(p=>p.id===projectId)??data.projects[0];return <div className="settings-content settings-grid">{!project && <section className="settings-section settings-empty"><h2>No project in this scope</h2><p>Add a project below or choose another scope to configure an existing project.</p></section>}{project&&<ProjectSettings key={project.id} project={project} />}
+export function SettingsView(props:{data:MissionControlData;projectId?:string}) {
+  const location = useLocation();
+  return <SettingsEditor key={`${props.projectId ?? ""}:${location.search}`} {...props} />;
+}
+function SettingsEditor({data,projectId}:{data:MissionControlData;projectId?:string}) {
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const project=data.projects.find(p=>p.id===projectId)??data.projects[0];
+  return <SettingsDraftBoundary settingsDirty={settingsDirty}><div className="settings-content settings-grid">{!project && <section className="settings-section settings-empty"><h2>No project in this scope</h2><p>Add a project below or choose another scope to configure an existing project.</p></section>}{project&&<ProjectSettings key={project.id} project={project} dirty={settingsDirty} onDirtyChange={setSettingsDirty} />}
     <LocalRegistration data={data} projectId={projectId} />
     <section className="settings-section"><header><div><Icon name="database"/><span><h2>Shared database</h2><p>Studio connects directly; no local Senderos home or config file is required.</p></span></div><span className="connected-label"><i/> Connected</span></header><div className="settings-fields"><Setting label="Endpoint" value={data.runtime.database.endpoint}/><Setting label="Connection mode" value={data.runtime.database.remote?"Remote libSQL":"Local libSQL"}/><Setting label="Database URL variable" value={data.runtime.database.urlEnv}/><Setting label="Auth token variable" value={data.runtime.database.authTokenEnv}/></div></section>
-  </div>}
+  </div></SettingsDraftBoundary>}
 function Setting({label,value}:{label:string;value:string}){return <label>{label}<input value={value} disabled/><small>Loaded from the active Senderos runtime.</small></label>}
