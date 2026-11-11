@@ -3,6 +3,8 @@ import {
   mkdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import {
@@ -20,6 +22,7 @@ import type {
   SeedAgentsOptions,
   SenderosConfig,
 } from '../shared/types';
+import { withDatabaseConnection } from '../db/client';
 import { migrateRuntimeDb } from '../db/migrate';
 import { seedBuiltInAgents } from '../bootstrap/seed-agents';
 import { seedBuiltInSenderos } from '../bootstrap/seed-senderos';
@@ -163,11 +166,6 @@ export async function initializeRuntime(
     ensureDir(dir);
   }
 
-  writeFileSync(
-    configPathForHome(resolvedHome),
-    JSON.stringify(runtimeConfig, null, 2),
-  );
-
   const databaseUrl =
     process.env[runtimeConfig.database.urlEnv] ??
     `file:${join(resolvedHome, 'senderos.db')}`;
@@ -175,14 +173,29 @@ export async function initializeRuntime(
   if (databaseUrl.startsWith('file:') && runtimeConfig.guardrails.restrictToHome)
     ensureWithinHome(resolvedHome, databaseUrl.slice('file:'.length));
 
-  await migrateRuntimeDb(resolvedHome);
-  await registerExecutionContext({
-    home: resolvedHome,
-    id: runtimeConfig.executionContextId,
-    name: executionContextName ?? runtimeConfig.executionContextId,
+  // Setup must use the proposed connection without publishing an unready identity.
+  // Database setup is retryable, but is not one transaction with the config file.
+  const authToken = runtimeConfig.database.authTokenEnv
+    ? process.env[runtimeConfig.database.authTokenEnv]
+    : undefined;
+  await withDatabaseConnection({ url: databaseUrl, ...(authToken ? { authToken } : {}) }, async () => {
+    await migrateRuntimeDb(resolvedHome);
+    await registerExecutionContext({
+      home: resolvedHome,
+      id: runtimeConfig.executionContextId,
+      name: executionContextName ?? runtimeConfig.executionContextId,
+    });
+    await seedBuiltInAgents(resolvedHome, seedOptions);
+    await seedBuiltInSenderos(resolvedHome);
   });
-  await seedBuiltInAgents(resolvedHome, seedOptions);
-  await seedBuiltInSenderos(resolvedHome);
+
+  const pendingConfigPath = join(resolvedHome, `.config-${randomId('init')}.tmp`);
+  try {
+    writeFileSync(pendingConfigPath, JSON.stringify(runtimeConfig, null, 2), { flag: 'wx' });
+    renameSync(pendingConfigPath, configPathForHome(resolvedHome));
+  } finally {
+    rmSync(pendingConfigPath, { force: true });
+  }
 
   return { home: resolvedHome, configPath: configPathForHome(resolvedHome) };
 }

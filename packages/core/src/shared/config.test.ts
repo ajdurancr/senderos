@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { rmSync, symlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
+  configPathForHome,
   defaultConfigForHome,
+  loadConfig,
   defaultHomePath,
   ensureWithinHome,
   initializeRuntime,
@@ -12,6 +14,8 @@ import {
   resolveExecutionContextId,
   runtimeExists,
 } from './config';
+import { createProject } from '../commands/projects/create';
+import { listProjects } from '../commands/projects/list';
 import { initHome, tempHome } from '../test-support/runtime';
 
 describe('runtime configuration', () => {
@@ -43,6 +47,78 @@ describe('runtime configuration', () => {
     delete process.env.SENDEROS_DATABASE_URL;
     await expect(initializeRuntime(home)).resolves.toMatchObject({ home });
     expect(String(process.env.SENDEROS_DATABASE_URL)).toBe(`file:${home}/senderos.db`);
+  });
+
+  test('rejected context registration preserves configuration and retained project identity', async () => {
+    const home = await initHome();
+    const original = loadConfig(home);
+    const before = readFileSync(configPathForHome(home));
+    const project = await createProject({ home, name: 'Retained fixture' });
+    await expect(initializeRuntime(home, {
+      ...original, executionContextId: 'replacement-context',
+    }, undefined, original.executionContextId)).rejects.toThrow('name is already in use');
+    expect(readFileSync(configPathForHome(home))).toEqual(before);
+    expect((await listProjects(home, original.executionContextId)).map(item => item.id)).toEqual([project.id]);
+  });
+
+  test('rejected database guardrail preserves existing configuration bytes', async () => {
+    const home = await initHome();
+    const before = readFileSync(configPathForHome(home));
+    process.env.SENDEROS_DATABASE_URL = `file:${join(tempHome(), 'outside.db')}`;
+    await expect(initializeRuntime(home, {
+      ...loadConfig(home), defaultHarness: 'replacement-fixture',
+    })).rejects.toThrow('Guardrail violation');
+    expect(readFileSync(configPathForHome(home))).toEqual(before);
+  });
+
+  test('database setup failure preserves existing configuration bytes', async () => {
+    const home = await initHome();
+    const before = readFileSync(configPathForHome(home));
+    const invalidDatabase = join(home, 'invalid.db');
+    writeFileSync(invalidDatabase, 'synthetic invalid database');
+    process.env.SENDEROS_DATABASE_URL = `file:${invalidDatabase}`;
+    await expect(initializeRuntime(home, {
+      ...loadConfig(home), defaultHarness: 'replacement-fixture',
+    })).rejects.toThrow();
+    expect(readFileSync(configPathForHome(home))).toEqual(before);
+  });
+
+  test('seed failure preserves existing configuration and leaves new homes unpublished', async () => {
+    const home = await initHome();
+    const before = readFileSync(configPathForHome(home));
+    await expect(initializeRuntime(home, {
+      ...loadConfig(home), defaultHarness: 'replacement-fixture',
+    }, { definitionsDir: join(home, 'missing-seeds') })).rejects.toThrow();
+    expect(readFileSync(configPathForHome(home))).toEqual(before);
+    const newHome = tempHome();
+    process.env.SENDEROS_DATABASE_URL = `file:${join(newHome, 'fixture.db')}`;
+    await expect(initializeRuntime(newHome, undefined, {
+      definitionsDir: join(newHome, 'missing-seeds'),
+    })).rejects.toThrow();
+    expect(runtimeExists(newHome)).toBe(false);
+  });
+
+  test('failed config publication cleans its temporary file', async () => {
+    const home = tempHome();
+    mkdirSync(configPathForHome(home));
+    process.env.SENDEROS_DATABASE_URL = `file:${join(home, 'fixture.db')}`;
+    await expect(initializeRuntime(home)).rejects.toThrow();
+    expect(readdirSync(home).filter(name => name.startsWith('.config-'))).toEqual([]);
+    expect(readdirSync(configPathForHome(home))).toEqual([]);
+  });
+
+  test('successful reinitialization uses the proposed connection before publishing config', async () => {
+    const home = await initHome();
+    const replacement = { ...loadConfig(home), database: { urlEnv: 'SENDEROS_INIT_FIXTURE_URL' }, defaultHarness: 'replacement-fixture' };
+    process.env.SENDEROS_INIT_FIXTURE_URL = `file:${join(home, 'replacement.db')}`;
+    try {
+      await initializeRuntime(home, replacement);
+      expect(loadConfig(home)).toEqual(replacement);
+      const project = await createProject({ home, name: 'Replacement database project' });
+      expect((await listProjects(home, replacement.executionContextId)).map(item => item.id)).toEqual([project.id]);
+    } finally {
+      delete process.env.SENDEROS_INIT_FIXTURE_URL;
+    }
   });
 
   test('resolveRuntime returns persisted configuration and paths', async () => {
