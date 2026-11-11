@@ -331,3 +331,12 @@ and compares complete persisted state. Core regressions additionally cover first
 migration, repeated preparation, persistent lock failure with no partial migration,
 and explicit recovery after release. Unknown errors and migration-batch failures
 are never retried by the metadata preparation policy.
+
+## Imported artifact references
+
+The evidence-reference production journey loads synthetic retained terminal
+history with a file URL, a local path containing spaces, and an artifact
+identifier. It verifies exact inert text in the inspector and Runs history after
+reload, unchanged persisted state, and desktop/mobile wrapping without horizontal
+overflow. Component regressions also cover invalid and executable schemes,
+escaped markup, and existing HTTP(S) link behavior. No referenced file is read.
