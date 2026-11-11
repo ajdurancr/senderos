@@ -191,3 +191,13 @@ status IDs/counts. Integration tests compare against complete persisted records;
 the production browser covers project-only settings reload and cross-project
 navigation with desktop/mobile captures. This reduces payload only; Core still
 loads the selected context (or complete overview for project-only URLs) first.
+
+### Attempt inspection query work
+
+Core attempt listing fetches safe claim inspection fields and project/host
+visibility in one database query. The regression measures actual client query
+calls with unrelated project attempts present, and preserves owner-context reads,
+explicit host grants, assigned-host reads after grant withdrawal, missing-parent
+exclusion for scoped reads, unscoped inspection and no-claim defaults. Claim
+tokens and dispatch packets remain excluded; durable recovery details remain
+available. This removes per-attempt query calls, not all scans or history growth.
