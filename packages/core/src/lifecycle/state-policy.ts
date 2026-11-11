@@ -29,3 +29,20 @@ export async function recoverCursorPolicy(goal: typeof goals.$inferSelect, defau
   const cancellationRequestedAt = signals.sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? null;
   return { maxActivations, cancellationRequestedAt };
 }
+
+/** Legacy histories have no activation carrying edits made after reservation. */
+export async function recoverLegacyRetryBudget(goalId: string, fallback: number, home?: string) {
+  const db = openRuntimeDb(home);
+  const scope = and(eq(events.entityType, 'goal'), eq(events.entityId, goalId), eq(events.eventType, 'goal.retry-budget-updated'));
+  const latestTime = db.select({ value: max(events.createdAt) }).from(events).where(scope);
+  const edits = await db.select({ payload: events.payloadJson }).from(events).where(and(scope, eq(events.createdAt, latestTime)));
+  const limits = edits.map(edit => {
+    let value: unknown;
+    try { value = JSON.parse(edit.payload)?.maxAttempts; } catch { /* Reject without a partial migration. */ }
+    requireLifecycle(typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 100, 'INCONSISTENT_HISTORY', 'Recorded retry budget is invalid; reconcile history before continuing');
+    return value;
+  });
+  const maxAttempts = limits[0] ?? fallback;
+  requireLifecycle(limits.every(limit => limit === maxAttempts), 'INCONSISTENT_HISTORY', 'Recorded retry budgets have ambiguous ordering; reconcile history before continuing');
+  return maxAttempts;
+}

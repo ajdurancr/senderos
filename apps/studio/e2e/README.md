@@ -176,3 +176,10 @@ claims and attempt payloads remain unchanged, the retained run attaches to one
 reconstructed activation, and cancellation still waits for host acknowledgement.
 `legacy-cursor-policy-cancellation-desktop-1440x1000` and its mobile counterpart
 capture the pending guidance after that production reload.
+
+The legacy retry-policy journey saves an attempt limit after the first reservation,
+then reconstructs the legacy cursor. A limit of 1 must keep the failed activation
+blocked; a later limit of 8 must survive the same recovery and allow a reviewed
+retry with its predecessor intact. Neither recovery changes attempt/claim
+payloads or creates a run. `legacy-retry-policy-desktop-1440x1000` and its mobile
+counterpart capture the restored budget controls before dispatch.
