@@ -229,3 +229,13 @@ including a budget changed after a predecessor settled. Broken run associations
 or conflicting unfinished budgets require explicit reconciliation; recovery does
 not fabricate a cursor from inconsistent history. Complete attempt payloads,
 retry lineage and parallel branches remain intact.
+
+
+Cursor recovery also restores the operator activation limit from the latest
+scoped budget event and preserves cancellation from durable goal events,
+retained claims or a settled canceled goal. It does not turn a cancellation
+request into proof that a worker stopped; host acknowledgement is still required.
+Conflicting budget edits at the same timestamp, invalid limits and invalid
+cancellation times require explicit reconciliation. Random event IDs cannot
+establish edit order. Recovery reads policy facts without changing complete
+attempt, claim or activation history.
