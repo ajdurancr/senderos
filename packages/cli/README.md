@@ -21,9 +21,15 @@ env -u SENDEROS_DATABASE_URL -u SENDEROS_DATABASE_AUTH_TOKEN bun scripts/check-r
 env -u SENDEROS_DATABASE_URL -u SENDEROS_DATABASE_AUTH_TOKEN bun scripts/check-release-terminal.ts terminal
 ```
 
-Both commands include workspace coverage and an installed npm tarball smoke
-test using disposable local databases. The terminal run validates real stdin,
-stdout and stderr TTY descriptors before starting the release chain.
+Both commands include workspace coverage and an installed npm tarball check
+using disposable local databases. In addition to initialization and reset, the
+installed binary authors and publishes a workflow, activates a goal, reserves
+work, and exercises host grants, workspace availability, ownership, failure,
+retry lineage and completion evidence/review gates. Each CLI command runs in a
+fresh process to verify persisted behavior. Sessions and evidence are synthetic:
+the check does not launch a real host or call a model provider. The terminal run
+validates real stdin, stdout and stderr TTY descriptors before starting the
+release chain.
 
 Test and coverage subprocesses discard inherited database URL/auth-token
 settings and disable Bun's automatic `.env` loading. Database fixtures select

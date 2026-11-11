@@ -1,3 +1,4 @@
+import { checkInstalledLifecycle } from './check-installed-lifecycle';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { runTerminal, testEnvironment as isolatedEnvironment, verifyTerminalSupport } from "../integration/terminal-fixture";
@@ -182,7 +183,17 @@ try {
   invariant(invokeInstalled(['sendero', 'list']).length === 5, 'Installed reset did not restore built-in Senderos.');
   invariant(invokeInstalled(['doctor']).ok === true, 'Installed reset failed runtime health validation.');
 
-  console.log(JSON.stringify({ publishedFiles }, null, 2));
+  const rejectInstalled = (args: string[], code: string) => {
+    const result = Bun.spawnSync([installedBinary, ...args, '--home', installedHome], {
+      cwd: installRoot, env: installedEnvironment, timeout: 10_000,
+      stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
+    });
+    invariant(result.exitCode !== 0, `Installed CLI accepted an operation expected to fail with ${code}`);
+    const error = JSON.parse(result.stderr.toString());
+    invariant(error.code === code, `Installed CLI rejection expected ${code}, received ${error.code}: ${error.error}`);
+  };
+  const lifecycle = checkInstalledLifecycle(invokeInstalled, rejectInstalled, installRoot);
+  console.log(JSON.stringify({ publishedFiles, lifecycle }, null, 2));
 } finally {
   rmSync(packageCheckRoot, { recursive: true, force: true });
 }
