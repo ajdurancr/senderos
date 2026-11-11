@@ -52,6 +52,13 @@ bun run --cwd packages/core test:integration
 
 The CLI and Studio have their own targeted tests and typechecks. Documentation changes should pass both `bun run --cwd apps/docs typecheck` and `bun run --cwd apps/docs build`.
 
+The installed npm tarball check also exercises expired-lease recovery through
+fresh CLI processes. Its isolated local fixture changes only one claim's expiry;
+all inspection, explicit reclaim, heartbeat and reporting use the installed binary.
+A pre-expiry observation cannot authorize reclaim, expired tokens cannot report,
+and reclaim rotates the token while preserving the recorded session. These are
+synthetic session observations, not verification of a real host or model adapter.
+
 ## What “done” should mean
 
 A completion claim should connect three things:

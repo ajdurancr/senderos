@@ -31,9 +31,12 @@ finished results, require confirmed termination before abandonment, and fence
 stale reports. Cancellation waits for the owned host to acknowledge stopping;
 revoked grants block new claims while still allowing the owner to receive and
 acknowledge cancellation. Queued unclaimed work cancels immediately. Each CLI
-command runs in a fresh process to verify persisted behavior. These installed
-checks do not simulate lease expiry; Core and host integration tests cover
-expired-lease reclaim and fence rotation. Sessions and evidence are synthetic:
+command runs in a fresh process to verify persisted behavior. An isolated lease-clock
+fixture also checks expired-report rejection, fresh active-session inspection,
+explicit reclaim and token rotation. A fenced former owner cannot heartbeat or
+report results, while the recovered owner continues the same session. Only the
+disposable local claim expiry is adjusted; runtime policy is unchanged. Sessions
+and evidence are synthetic:
 the check does not launch a real host or call a model provider. The terminal run
 validates real stdin, stdout and stderr TTY descriptors before starting the
 release chain.
