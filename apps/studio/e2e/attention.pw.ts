@@ -220,7 +220,7 @@ test('failed attention clears recovered visits while preserving parallel failure
   await capture(page, testInfo, 'attention-current-failure-mobile-390x844');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('link', { name: 'run history', exact: true }).click();
-  await expect(page.locator('.run-list > a')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Run attempts' }).getByRole('link')).toHaveCount(3);
   expect(state().attempts.filter(item => attempts.some(failed => failed.id === item.id) && item.status === 'failed')).toHaveLength(2);
   await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}${scenarioScope(scenario)}`);
   await page.getByRole('link', { name: 'Review ready activations' }).click();

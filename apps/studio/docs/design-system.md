@@ -82,3 +82,9 @@ navigation boundary as graph authoring. Save/cancel preparation precedes lifecyc
 actions. Clearly distinguish assigning a published version to a draft from the
 immutable version pinned after activation. Missing workflow choices guide the
 operator to publication; they never offer an executable start without a version.
+
+Run history uses a labeled native list and scope-preserving pagination links.
+Selection is identified with `aria-current`; selecting a row focuses the attempt
+detail anchor, which matters when the mobile layout stacks detail below the list.
+History links focus the page heading. Keep scope totals distinct from page size
+and preserve recorded evidence and recovery detail for exact older links.

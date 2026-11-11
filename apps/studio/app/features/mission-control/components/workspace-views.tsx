@@ -4,15 +4,16 @@ import { ReviewTimestamp } from "./review-timestamp";
 import { LocalRegistration } from "./local-registration";
 import { ProjectSettings } from "./project-settings";
 import { AgentAuthoring } from "./agent-authoring";
-import { Form, useNavigation, useSearchParams } from "react-router";
+import { Form, useNavigation, useSearchParams, useLocation } from "react-router";
 
 import { DurableLink as Link } from "../../../components/durable-link";
 import { StatusBadge } from "../../../components/status-badge";
 import { eventLabel, goalExecution, parseAttemptSnapshot, relativeTime } from "../model";
-import { attemptPath, canvasEntityPath, goalPath, projectPath } from "../navigation";
+import { attemptPath, canvasEntityPath, goalPath, projectPath, parseStudioPath } from "../navigation";
 import type { MissionControlData } from "../server";
 import { Icon } from "./icons";
 import { goalBlockers } from "../goal-blockers";
+import { runHistoryPage } from "../run-history";
 import { GoalBlockerCard } from "./goal-blocker-card";
 
 function ViewHeader({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: React.ReactNode }) {
@@ -97,9 +98,35 @@ export function GoalsView({ data, projectId, create }: { data: MissionControlDat
 }
 
 export function RunsView({ data, attemptId }: { data: MissionControlData; attemptId?: string }) {
-  const attempts = [...data.attempts].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  const location = useLocation();
+  const url = new URL(`${location.pathname}${location.search}`, 'http://studio.local');
+  const page = runHistoryPage(data.attempts, url, attemptId);
+  const projectId = url.searchParams.get('project') || parseStudioPath(location.pathname).projectId;
+  const searchFor = (cursor?: string | null, direction?: string | null) => {
+    const search = new URLSearchParams(location.search);
+    search.delete('runCursor'); search.delete('runHistory');
+    if (cursor && direction) { search.set('runCursor', cursor); search.set('runHistory', direction); }
+    return search.size ? `?${search}` : '';
+  };
+  const destination = (cursor?: string | null, direction?: string) => `${projectPath(projectId ?? undefined, 'runs')}${searchFor(cursor, direction)}#run-history`;
+  const runById = new Map(data.runs.map(run => [run.id, run]));
+  const goalById = new Map(data.goals.map(goal => [goal.id, goal]));
+  const projectById = new Map(data.projects.map(project => [project.id, project]));
+  const contextById = new Map(data.executionContexts.map(context => [context.id, context]));
   return <div className="standard-view"><ViewHeader eyebrow="Execution history" title="Runs & attempts" copy="Every logical execution and concrete host attempt, with retries and results preserved." />
-    <div className="run-layout"><div className="run-list">{attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); const project=data.projects.find(item=>item.id===goal?.projectId); const context=data.executionContexts.find(item=>item.id===project?.executionContextId); return <Link className={attempt.id===attemptId?"selected":""} key={attempt.id} to={attemptPath(goal?.projectId ?? "unknown", attempt.id)}><i className={`run-state ${attempt.status}`}/><div><strong>{goal?.title ?? attempt.executionObjective}</strong><span>{context?.name??"Unknown context"} · {project?.name??"Unknown project"} · attempt {attempt.attemptNumber}</span></div><StatusBadge value={executionPhase(attempt)}/><time>{relativeTime(attempt.updatedAt, data.asOf)}</time></Link>; })}</div><RunDetail data={data} attemptId={attemptId ?? attempts[0]?.id}/></div>
+    <div className="activity-page-header"><h2 id="run-history" tabIndex={-1}>{page.historical ? 'Attempt history' : 'Latest attempts'}</h2><p>{page.items.length} attempts on this page · {page.total} in this scope · newest first</p></div>
+    {page.notice && <p role="status">{page.notice}</p>}
+    <nav className="activity-pagination" aria-label="Run history pagination">
+      {page.newer ? <Link className="button button-secondary" to={destination(page.newer, 'newer')}>Newer attempts</Link> : <span>{page.historical ? 'No newer attempts on this page' : 'At latest attempts'}</span>}
+      {page.older && <Link className="button button-secondary" to={destination(page.older, 'older')}>Older attempts</Link>}
+      {page.historical && <Link to={destination()}>Latest attempts</Link>}
+    </nav>
+    {attemptId && data.attempts.some(attempt => attempt.id === attemptId) && !page.items.some(attempt => attempt.id === attemptId) && <p role="status">The selected attempt is outside this page. Its complete recorded details remain below. <Link to={`${location.pathname}${searchFor()}#run-history`}>Show selected attempt in history</Link></p>}
+    <div className="run-layout"><div className="run-list" role="list" aria-label="Run attempts">{page.items.map(attempt => {
+      const run = runById.get(attempt.runId); const goal = run && goalById.get(run.goalId);
+      const project = goal && projectById.get(goal.projectId); const context = project && contextById.get(project.executionContextId);
+      return <div role="listitem" key={attempt.id}><Link aria-current={attempt.id === (attemptId ?? page.items[0]?.id) ? 'true' : undefined} className={attempt.id === (attemptId ?? page.items[0]?.id) ? 'selected' : ''} to={`${attemptPath(goal?.projectId, attempt.id)}${searchFor(page.current, page.direction)}#run-detail`}><i aria-hidden="true" className={`run-state ${attempt.status}`} /><div><strong>{goal?.title ?? attempt.executionObjective}</strong><span>{context?.name ?? 'Unknown context'} · {project?.name ?? 'Unknown project'} · attempt {attempt.attemptNumber}</span></div><StatusBadge value={executionPhase(attempt)} /><time dateTime={attempt.updatedAt}>{relativeTime(attempt.updatedAt, data.asOf)}</time></Link></div>;
+    })}{!page.items.length && <div className="empty-state"><h3>{page.historical ? 'No attempts at this history position' : 'No attempts in this scope'}</h3><p>{page.historical ? 'Return to latest attempts to continue browsing.' : 'Reserved runs and host-reported attempts will appear here.'}</p></div>}</div><RunDetail data={data} attemptId={attemptId ?? page.items[0]?.id} /></div>
   </div>;
 }
 
@@ -113,7 +140,7 @@ function RunDetail({ data, attemptId }: { data: MissionControlData; attemptId?: 
   const goal = data.goals.find(item => item.id === run?.goalId);
   const snapshot = parseAttemptSnapshot(attempt.statusSnapshotJson);
   const terminal = ["succeeded", "failed", "canceled"].includes(attempt.status);
-  return <aside className="run-detail">
+  return <aside className="run-detail" id="run-detail" tabIndex={-1} aria-label="Selected attempt details">
     <header><span>Attempt detail</span><StatusBadge value={attempt.status} /></header>
     <h2>{goal?.title}</h2><p>{attempt.executionObjective}</p>
     {goal && <Link className="button button-secondary" to={canvasEntityPath({ projectId: goal.projectId, goalId: goal.id, attemptId: attempt.id })}>

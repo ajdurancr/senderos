@@ -122,3 +122,12 @@ with no dispatch. A Core-created unassigned draft exercises assignment and scope
 navigation protection. Transport faults before request delivery and after real
 persistence preserve inputs without manufacturing successful saves. Authentic
 desktop/mobile captures include the form and its actions.
+
+## Attempt history navigation
+
+`run-history.pw.ts` places 125 synthetic terminal records after one real isolated
+reservation/claim/start and unknown-recovery observation. It browses every older
+page, returns newer, reloads selected records, checks exact old-attempt detail,
+invalid/cross-scope positions and empty scopes, and compares persisted state
+before and after browsing. It captures actual desktop/mobile lists and checks
+keyboard focus. Fixture records are synthetic history, not real executions.
