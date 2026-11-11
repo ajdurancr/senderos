@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { resolveRuntime } from "../shared/config";
 import * as schema from "./schema";
+import { DatabaseDiagnosticError, diagnosticDatabaseFailure, diagnosticDatabaseUrl } from "./diagnostics";
 
 export type DatabaseConnection = {
   url: string;
@@ -16,7 +17,7 @@ export type DatabaseConnection = {
 
 export function databaseConnectionFromEnvironment(): DatabaseConnection {
   const url = process.env.SENDEROS_DATABASE_URL;
-  if (!url) throw new Error("Missing env:SENDEROS_DATABASE_URL");
+  if (!url) throw new DatabaseDiagnosticError("Missing env:SENDEROS_DATABASE_URL");
   const authToken = process.env.SENDEROS_DATABASE_AUTH_TOKEN;
   return { url, ...(authToken ? { authToken } : {}) };
 }
@@ -32,7 +33,7 @@ export function assertNoDatabaseReset(databasePath: string) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
     throw error;
   }
-  throw new Error(`Database reset lock exists: ${databaseResetLockPath(databasePath)}. Stop clients and inspect it; locks are never removed automatically.`);
+  throw new DatabaseDiagnosticError(`Database reset lock exists: ${databaseResetLockPath(databasePath)}. Stop clients and inspect it; locks are never removed automatically.`);
 }
 
 const connections = new AsyncLocalStorage<{ connection: DatabaseConnection; clients: Set<ReturnType<typeof createClient>> }>();
@@ -64,9 +65,9 @@ function connectRuntimeDb(home?: string, requireExistingFile = false) {
       }
       if (requireExistingFile) {
         try {
-          if (!statSync(path).isFile()) throw new Error(`not a database file:${path}`);
+          if (!statSync(path).isFile()) throw new DatabaseDiagnosticError(`not a database file:${path}`);
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new Error(`missing database:${path}`);
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new DatabaseDiagnosticError(`missing database:${path}`);
           throw error;
         }
       }
@@ -136,14 +137,14 @@ export function describeCurrentDb(home?: string) {
     const connection = databaseConnectionFromEnvironment();
     return {
       urlEnv: "SENDEROS_DATABASE_URL",
-      url: connection.url,
+      url: diagnosticDatabaseUrl(connection.url),
       authTokenEnv: "SENDEROS_DATABASE_AUTH_TOKEN",
     };
   }
   const { config } = resolveRuntime(home);
   return {
     urlEnv: config.database.urlEnv,
-    url: process.env[config.database.urlEnv] ?? null,
+    url: process.env[config.database.urlEnv] ? diagnosticDatabaseUrl(process.env[config.database.urlEnv]!) : null,
     authTokenEnv: config.database.authTokenEnv ?? null,
   };
 }
@@ -151,7 +152,7 @@ export function describeCurrentDb(home?: string) {
 function connectionFromRuntimeConfig(home: string): DatabaseConnection {
   const { config } = resolveRuntime(home);
   const url = process.env[config.database.urlEnv];
-  if (!url) throw new Error(`Missing env:${config.database.urlEnv}`);
+  if (!url) throw new DatabaseDiagnosticError(`Missing env:${config.database.urlEnv}`);
   const authToken = config.database.authTokenEnv
     ? process.env[config.database.authTokenEnv]
     : undefined;
@@ -161,6 +162,7 @@ function connectionFromRuntimeConfig(home: string): DatabaseConnection {
 /** Checks required table/column availability, not data integrity or schema constraints. */
 export async function healthcheckCurrentDb(home?: string) {
   let db: RuntimeDb | undefined;
+  let report = { ok: false, issues: [] as string[], warnings: [] as string[] };
   try {
     const current = transactions.getStore();
     // The driver creates missing local files on open. Diagnose absence before
@@ -190,14 +192,18 @@ export async function healthcheckCurrentDb(home?: string) {
       else for (const column of table.columns)
         if (!columns.has(column)) issues.push(`missing column:${table.name}.${column}`);
     }
-    return { ok: issues.length === 0, issues, warnings: [] as string[] };
+    report = { ok: issues.length === 0, issues, warnings: [] as string[] };
   } catch (error) {
-    return {
+    report = {
       ok: false,
-      issues: [(error as Error).message],
+      issues: [diagnosticDatabaseFailure(error)],
       warnings: [] as string[],
     };
   } finally {
-    if (db && db !== transactions.getStore()?.db) db.$client.close();
+    if (db && db !== transactions.getStore()?.db) {
+      try { db.$client.close(); }
+      catch (error) { report.ok = false; report.issues.push(diagnosticDatabaseFailure(error)); }
+    }
   }
+  return report;
 }

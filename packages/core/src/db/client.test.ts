@@ -321,7 +321,7 @@ test("schema diagnostics retain memory and remote driver routing without network
     process.env.SENDEROS_DATABASE_URL = url;
     const intercepted = new Error("fixture driver intercepted");
     const create = spyOn(libsql, "createClient").mockImplementation(() => { throw intercepted; });
-    expect(await healthcheckCurrentDb()).toEqual({ ok: false, issues: [intercepted.message], warnings: [] });
+    expect(await healthcheckCurrentDb()).toEqual({ ok: false, issues: [expect.stringContaining("Database health check failed")], warnings: [] });
     expect(create).toHaveBeenCalledWith({ url });
     create.mockRestore();
   }
