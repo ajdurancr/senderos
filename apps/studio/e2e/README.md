@@ -154,3 +154,11 @@ reloads must reconstruct the saved budget without changing runs or attempts.
 Reviewed dispatch uses that budget, simulated host completion settles the goal,
 and desktop/mobile captures retain the operator budget view. No external worker
 or model is contacted.
+
+The cursor-policy journey also checks the saved activation limit. A separate
+pending-cancellation journey requests a stop through Studio while a simulated
+local host owns the attempt, then removes only the aggregate cursor. Reload must
+keep cancellation pending, hide budget edits and dispatch, preserve every claim,
+activation, run and attempt, and wait for host acknowledgement before settling.
+`cursor-policy-cancellation-desktop-1440x1000` and
+`cursor-policy-cancellation-mobile-390x844` capture the recovered guidance.

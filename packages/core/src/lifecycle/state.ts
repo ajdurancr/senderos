@@ -4,6 +4,7 @@ import { agents, activations, attemptClaims, goalExecutions, goals, runAttempts,
 import { now, randomId } from "../shared/ids";
 import { emitEvent } from "../shared/events";
 import { LifecycleError, requireLifecycle } from "./errors";
+import { recoverCursorPolicy } from "./state-policy";
 import { executableGraph } from "./route";
 import { requireGoal } from "./scope";
 import { enableSuccessors, goalActivations, settleGoal, settledActivation, type Activation } from "./activations";
@@ -30,7 +31,8 @@ export async function cursor(goalId: string, home?: string) {
     const pending = persisted.filter(a => !settledActivation(a.status));
     const maxAttempts = pending[0]?.maxAttempts ?? last?.maxAttempts ?? persisted[0]!.maxAttempts;
     requireLifecycle(pending.every(a => a.maxAttempts === maxAttempts), "INCONSISTENT_HISTORY", "Retained activations disagree on retry budget; reconcile history before continuing");
-    await db.insert(goalExecutions).values({ goalId, transitionId: last?.transitionId ?? graph.steps[0]!.id, latestRunId: last?.latestRunId, attemptsUsed: last?.attemptsUsed ?? 0, maxAttempts, maxActivations: Math.max(graph.version.maxActivations, persisted.length), activationsUsed: persisted.length });
+    const policy = await recoverCursorPolicy(goal, { maxActivations: graph.version.maxActivations, activationsUsed: persisted.length }, home);
+    await db.insert(goalExecutions).values({ goalId, transitionId: last?.transitionId ?? graph.steps[0]!.id, latestRunId: last?.latestRunId, attemptsUsed: last?.attemptsUsed ?? 0, maxAttempts, ...policy, activationsUsed: persisted.length });
     await settleGoal(goalId, graph, home);
     return (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goalId)))[0]!;
   }

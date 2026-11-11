@@ -112,6 +112,10 @@ if (command === 'init') {
     await db.delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));
     return { removed: true };
   });
+} else if (command === 'remove-policy-fixture-cursor' && id) {
+  // Isolated partial-state damage only; cancellation uses the real operator form.
+  await openRuntimeDb().delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));
+  result = { removed: true };
 } else if (command === 'snapshot') {
   // Browser navigation can still be finishing its real planning transaction.
   // Retry reads only; never repeat a host command or an operator mutation.
