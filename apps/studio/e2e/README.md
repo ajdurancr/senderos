@@ -261,3 +261,13 @@ cases commit through the actual production server before response delivery is
 aborted; reload then verifies the persisted limit without replaying the write.
 Desktop and mobile screenshots capture the real editor and confirmation dialog.
 The tests wait for a dismissed modal to leave the document before editing again.
+
+
+Execution confirmation recovery covers dispatch and goal cancellation on desktop and mobile.
+The fixture holds a real action response, rejects repeated pending submissions, and then
+loses either a committed response or a request that never reached the server. Studio
+keeps the operator view, explains the uncertain outcome and requires a page reload
+before another submission. Reload verifies persisted runs or cancellation; an unapplied
+request can then be submitted explicitly. Owned attempts remain running until the
+isolated host fixture acknowledges cancellation. No automatic mutation replay, real
+worker execution or external process termination is implied.

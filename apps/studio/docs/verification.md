@@ -422,3 +422,13 @@ before retrying. The production browser journeys exercise both budget intents,
 held and lost responses, independent saves, explicit discard, and persisted
 readback at desktop and mobile widths using isolated file databases. These checks
 do not clear the separately retained native database acceptance failures.
+
+
+Execution confirmation recovery covers dispatch and goal cancellation on desktop and mobile.
+The fixture holds a real action response, rejects repeated pending submissions, and then
+loses either a committed response or a request that never reached the server. Studio
+keeps the operator view, explains the uncertain outcome and requires a page reload
+before another submission. Reload verifies persisted runs or cancellation; an unapplied
+request can then be submitted explicitly. Owned attempts remain running until the
+isolated host fixture acknowledges cancellation. No automatic mutation replay, real
+worker execution or external process termination is implied.

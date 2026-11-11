@@ -1,4 +1,6 @@
-import { Form, useNavigation, useLocation } from "react-router";
+import { Form, useLocation } from "react-router";
+
+import { useExecutionSubmission } from "../../../hooks/use-execution-submission";
 
 import { DurableLink as Link } from "../../../components/durable-link";
 
@@ -11,7 +13,7 @@ export function DispatchTray({ data, scope = {} }: { data: MissionControlData; s
   const search = new URLSearchParams(location.search);
   search.delete("plan");
   const closePath = `${location.pathname}${search.size ? `?${search}` : ""}`;
-  const pending = useNavigation().state !== "idle";
+  const { pending, uncertain, submit } = useExecutionSubmission("dispatch-plan");
   return <section className="dispatch-tray">
     <header><div><Icon name="activity"/><span><strong>Dispatch plan</strong><small>{data.queue.dispatchable.length} proposed {data.queue.dispatchable.length === 1 ? "action" : "actions"}</small></span></div><Link className="button button-secondary" to={closePath} aria-label="Close dispatch plan"><Icon name="x" /> Close</Link></header>
     {!data.queue.dispatchable.length && <div className="empty-state"><h2>No activations ready</h2><p>There is nothing to reserve in the selected scope. Close this plan to continue.</p></div>}
@@ -22,6 +24,6 @@ export function DispatchTray({ data, scope = {} }: { data: MissionControlData; s
       const kind = activation ? activation.attemptsUsed > 0 ? "retry" : "new run" : "run";
       return <article key={item.activationId}><span className="dispatch-goal">{goal?.title ?? item.goalId}</span><Icon name="arrow"/><strong>{agent?.name ?? item.agentId}</strong><small>{kind}</small><small className="mono">{item.activationId} · revision {item.revision}</small></article>;
     })}</div>
-    <footer><p>This plan includes all ready activations in the selected scope. Senderos will reserve one validated run per item; external hosts start sessions separately.</p><Form method="post"><input type="hidden" name="intent" value="dispatch-plan"/><input type="hidden" name="scope" value={JSON.stringify(scope)}/><input type="hidden" name="reviewedItems" value={JSON.stringify(data.queue.dispatchable.map(reviewDispatch))}/><button className="button button-primary" disabled={pending || !data.queue.dispatchable.length}>{pending ? "Reserving…" : "Dispatch all"} <Icon name="arrow"/></button></Form></footer>
+    <footer>{uncertain && <p><a href="">Reload persisted runs and ready activations</a> before reviewing another dispatch plan.</p>}<p>This plan includes all ready activations in the selected scope. Senderos will reserve one validated run per item; external hosts start sessions separately.</p><Form method="post" onSubmit={submit}><input type="hidden" name="intent" value="dispatch-plan"/><input type="hidden" name="scope" value={JSON.stringify(scope)}/><input type="hidden" name="reviewedItems" value={JSON.stringify(data.queue.dispatchable.map(reviewDispatch))}/><button className="button button-primary" disabled={pending || uncertain || !data.queue.dispatchable.length}>{pending ? "Reserving…" : "Dispatch all"} <Icon name="arrow"/></button></Form></footer>
   </section>;
 }
