@@ -2,6 +2,7 @@ import { RetryLineage } from "./retry-lineage";
 import { useState } from "react";
 import { GoalPreparation } from "./goal-preparation";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
+import { InspectorDraftBoundary } from "./inspector-draft-boundary";
 import { AttemptDrafts } from "./attempt-drafts";
 
 import { DurableLink as Link } from "../../../components/durable-link";
@@ -89,7 +90,7 @@ export function ContextualInspector({
   const cancellationRequested = goalDecision?.reason === "cancellation_requested" || execution.attempts.some(item => item.cancellationRequestedAt && !["succeeded", "failed", "canceled"].includes(item.status));
 
   return (
-    <aside className="context-inspector">
+    <InspectorDraftBoundary key={goal.id} disabled={preparingGoal}><aside className="context-inspector">
       <header>
         <div>
           <span>
@@ -177,6 +178,6 @@ export function ContextualInspector({
           </div>
         ))}
       </section>
-    </aside>
+    </aside></InspectorDraftBoundary>
   );
 }

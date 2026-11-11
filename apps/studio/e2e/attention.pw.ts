@@ -128,6 +128,7 @@ test('operators recover activation and attempt budgets through persisted forms w
   await budgets.getByRole('button', { name: 'Save activation limit' }).click();
   expect(await budgets.getByRole('spinbutton', { name: 'Activation limit' }).evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(false);
   expect(state().executions.find(item => item.goalId === goal.id)).toEqual(initial);
+  await budgets.getByRole('button', { name: 'Discard activation limit draft' }).click();
   await reload(page);
   await expect(budgets.getByRole('spinbutton', { name: 'Activation limit' })).toHaveValue('1');
   await budgets.getByRole('spinbutton', { name: 'Attempt limit per activation' }).fill('1');
@@ -280,6 +281,7 @@ test('evidence and review drafts reset when scope selects another parallel attem
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill(`Other scope draft goal ${scenario.id}`);
   await page.getByRole('combobox', { name: 'Sendero', exact: true }).selectOption(goal.senderoVersionId!);
   await page.getByRole('button', { name: 'Create goal', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start goal', exact: true })).toBeVisible();
   const otherGoal = state().goals.find(item => item.title === `Other scope draft goal ${scenario.id}`)!;
   await page.getByRole('button', { name: 'Start goal', exact: true }).click();
   await page.getByRole('link', { name: 'Review ready activations' }).click();

@@ -250,3 +250,14 @@ records without replaying the write. Confirmed submissions mark only their own f
 while the confirmed review remains the baseline for later edits. An accidental second evidence click cannot replay its cleared required
 label. Existing parallel-attempt coverage still verifies that confirmed scope
 changes never transfer inputs or identity to another attempt.
+
+## Execution budget draft recovery
+
+`budget-draft-recovery.pw.ts` checks activation and attempt limits alongside
+simultaneous evidence and review drafts. It verifies one accessible scope/history
+guard, independent discard, frozen pending fields, repeated-post prevention,
+confirmed independent saves and unchanged dispatch records. Both lost-response
+cases commit through the actual production server before response delivery is
+aborted; reload then verifies the persisted limit without replaying the write.
+Desktop and mobile screenshots capture the real editor and confirmation dialog.
+The tests wait for a dismissed modal to leave the document before editing again.

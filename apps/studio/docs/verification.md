@@ -404,3 +404,21 @@ commit. Recording evidence again adds another record; existing review and
 mutation contracts remain unchanged. Production browser fixtures verify these
 paths against isolated file databases. Passing these journeys does not clear the
 separately retained native database acceptance failures.
+
+## Execution budget draft recovery
+
+Activation and attempt limits now share the inspector's single navigation guard
+with evidence and review drafts. Scope and history navigation require consent
+before discarding edits. Each discard restores only its own limit to the latest
+persisted value; clean limits refresh without overwriting another unsaved form.
+The shared guard reads dirty state synchronously, including an edit followed by
+immediate navigation. Fields freeze during a submission, and repeated pending
+posts are suppressed.
+A confirmed save marks only its own budget clean and never dispatches work.
+
+A lost response may follow a committed budget change. The editor preserves all
+inputs and asks the operator to reload and inspect persisted execution budgets
+before retrying. The production browser journeys exercise both budget intents,
+held and lost responses, independent saves, explicit discard, and persisted
+readback at desktop and mobile widths using isolated file databases. These checks
+do not clear the separately retained native database acceptance failures.
