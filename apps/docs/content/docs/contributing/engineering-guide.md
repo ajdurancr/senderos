@@ -177,3 +177,12 @@ workflow step receives the handoff facts without becoming a retry of the prior
 step. Both protocols retain the complete packet history. The real-database
 regressions in `commands/runs/dispatch-predecessor.test.ts` cover these boundaries,
 request replay and rejection outside the current execution context.
+
+Core run-state inspection and Studio’s default goal inspector use the same
+latest-run ordering as lifecycle recovery:
+creation time descending, then ID descending for equal timestamps. The ID is a
+deterministic tiebreaker, not evidence of wall-clock creation order. Inspection
+remains read-only and returns every attempt of the selected run in attempt-number
+order. The command regression covers both insertion orders, timestamp priority,
+empty history and current-context rejection. Mounted Studio regressions also
+retain exact older-attempt selection and leave the complete input history intact.

@@ -12,7 +12,7 @@ export async function latestRunForGoal(
       .select()
       .from(runs)
       .where(eq(runs.goalId, goalId))
-      .orderBy(desc(runs.createdAt))
+      .orderBy(desc(runs.createdAt), desc(runs.id))
       .limit(1)
   )[0];
   return (row as RunRecord | undefined) ?? null;

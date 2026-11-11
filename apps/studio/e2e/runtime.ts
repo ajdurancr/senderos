@@ -58,6 +58,17 @@ if (command === 'init') {
 } else if (command === 'prepare-draft-goal' && id) {
   const product = createSenderos({ executionContextId: `product-${id}` });
   result = await product.commands.goals.create({ projectId: `campaign-${id}`, title: `Unassigned draft ${id}`, senderoVersionId: null });
+} else if (command === 'prepare-tied-run-history' && id) {
+  // Synthetic settled records isolate timestamp-tie inspection; no host is invoked.
+  const product = createSenderos({ executionContextId: `product-${id}` });
+  const goal = await product.commands.goals.create({ projectId: `launch-${id}`, title: `Tied run inspection ${id}`, senderoVersionId: null });
+  await product.commands.goals.cancel(goal.id);
+  const db = openRuntimeDb(), agent = (await db.select().from(schema.agents))[0]!;
+  const timestamp = '2000-01-01T00:00:00.000Z';
+  const records = ['z', 'a'].map(suffix => ({ id: `tied-run-${id}-${suffix}`, goalId: goal.id, status: 'canceled', createdAt: timestamp, updatedAt: timestamp }));
+  await db.insert(schema.runs).values(records);
+  await db.insert(schema.runAttempts).values(records.flatMap(run => [2, 1].map(attemptNumber => ({ id: `${run.id}-attempt-${attemptNumber}`, runId: run.id, attemptNumber, agentId: agent.id, status: 'canceled', executionObjective: `${run.id.endsWith('-z') ? 'Latest' : 'Earlier'} retained objective ${attemptNumber}`, harness: 'history-fixture', finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp }))));
+  result = { goalId: goal.id, latestAttemptId: `${records[0]!.id}-attempt-2`, olderAttemptId: `${records[1]!.id}-attempt-1` };
 } else if (command === 'prepare-run-history' && id) {
   // Synthetic terminal history tests browsing scale, never real host execution.
   const product = createSenderos({ executionContextId: `product-${id}` });
