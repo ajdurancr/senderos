@@ -1,0 +1,76 @@
+import { capture, expect, ready, scenarioScope, state, test, visit } from './fixtures';
+
+for (const width of [1440, 390]) {
+  test(`keeps project settings until scope navigation is confirmed at ${width}px`, async ({ page, scenario }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    await visit(page, `/settings${scenarioScope(scenario)}`);
+    const name = page.getByRole('textbox', { name: /^Name\b/ });
+    const branch = page.getByRole('textbox', { name: /^Target branch\b/ });
+    await name.fill('Carefully edited project');
+    await branch.fill('reviewed-preview');
+    const before = state();
+    await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+    const dialog = page.getByRole('dialog', { name: 'Leave project settings editor?' });
+    await expect(dialog).toBeVisible();
+    await capture(page, testInfo, `settings-navigation-${width}`);
+    await page.keyboard.press('Escape');
+    await expect(name).toHaveValue('Carefully edited project');
+    await expect(branch).toHaveValue('reviewed-preview');
+    await expect(page.getByRole('combobox', { name: 'Project', exact: true })).toHaveValue(scenario.launchProject);
+    expect(state()).toEqual(before);
+    await name.fill('   ');
+    await page.getByRole('button', { name: 'Save project', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Project name is required.');
+    await expect(branch).toHaveValue('reviewed-preview');
+    expect(state()).toEqual(before);
+    await name.fill('Carefully edited project');
+    let releaseSave!: () => void;
+    const saveResponse = new Promise<void>(resolve => { releaseSave = resolve; });
+    await page.route('**/*.data*', async route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      const response = await route.fetch();
+      await saveResponse;
+      await route.fulfill({ response });
+    });
+    await page.getByRole('button', { name: 'Save project', exact: true }).click();
+    await expect.poll(() => state().projects.find(item => item.id === scenario.launchProject)?.name).toBe('Carefully edited project');
+    await expect(name).toBeDisabled();
+    await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+    await expect(dialog).toContainText('The save may still finish');
+    await dialog.getByRole('button', { name: 'Stay here' }).click();
+    releaseSave();
+    await expect(page.getByRole('button', { name: 'Save project', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Discard changes' })).toBeDisabled();
+    await page.unroute('**/*.data*');
+    const saved = state();
+    expect(saved.projects.find(item => item.id === scenario.launchProject)).toMatchObject({ name: 'Carefully edited project', targetBranch: 'reviewed-preview' });
+    expect(saved.projects.find(item => item.id === scenario.campaignProject)).toEqual(before.projects.find(item => item.id === scenario.campaignProject));
+    await page.reload(); await ready(page);
+    await expect(name).toHaveValue('Carefully edited project');
+    await name.fill('Discard this next edit');
+    await branch.fill('discard-this-branch');
+    await page.getByRole('combobox', { name: /^Integration mode\b/ }).selectOption('none');
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await expect(name).toHaveValue('Carefully edited project');
+    await expect(branch).toHaveValue('reviewed-preview');
+    await expect(page.getByRole('combobox', { name: /^Integration mode\b/ })).toHaveValue('github_pr');
+    await visit(page, `/now${scenarioScope(scenario)}`);
+    await visit(page, `/settings${scenarioScope(scenario)}`);
+    await visit(page, `/now${scenarioScope(scenario)}`);
+    await page.goBack(); await ready(page);
+    await name.fill('Retained history draft');
+    for (const direction of ['back', 'forward'] as const) {
+      const confirmation = page.waitForEvent('dialog');
+      await page.evaluate(direction => history[direction](), direction);
+      const prompt = await confirmation;
+      expect(prompt.type()).toBe('beforeunload'); await prompt.dismiss();
+      await expect(name).toHaveValue('Retained history draft');
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+    await dialog.getByRole('button', { name: 'Leave editor' }).click();
+    await ready(page);
+    await expect(name).toHaveValue(before.projects.find(item => item.id === scenario.campaignProject)!.name);
+    expect(state()).toEqual(saved);
+  });
+}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, RouterProvider, useSearchParams } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SettingsView } from "./workspace-views";
 import { missionControlFixture as base } from "../../../test-support/mission-control-fixture";
@@ -39,6 +39,49 @@ describe("project settings isolation", () => {
     expect(screen.getByRole("textbox", { name: /^Name/ })).toHaveProperty("value", "Project One");
     expect(screen.getByRole("textbox", { name: /^Target branch/ })).toHaveProperty("value", "main");
     expect(screen.getByRole("combobox", { name: /^Integration mode/ })).toHaveProperty("value", "github_pr");
+  });
+
+  it("guards real scope navigation and keeps rejected edits until explicit discard", async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(HTMLDialogElement.prototype, "close", { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
+    function ScopedSettings() { const [search] = useSearchParams(); return <SettingsView data={data} projectId={search.get("project") ?? "project-1"} />; }
+    const action = vi.fn(async () => ({ ok: false, intent: "update-project" }));
+    const router = createMemoryRouter([{ path: "/settings", element: <ScopedSettings />, action }], { initialEntries: ["/settings?project=project-1"] });
+    render(<RouterProvider router={router} />);
+    fireEvent.change(screen.getByRole("textbox", { name: /^Name/ }), { target: { value: "Unconfirmed project" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /^Integration mode/ }), { target: { value: "none" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
+    await screen.findByRole("button", { name: "Save project" });
+    await router.navigate("/settings?project=project-2");
+    await screen.findByRole("dialog", { name: "Leave project settings editor?" });
+    fireEvent.click(screen.getByRole("button", { name: "Stay here" }));
+    expect(screen.getByRole("textbox", { name: /^Name/ })).toHaveProperty("value", "Unconfirmed project");
+    expect(router.state.location.search).toBe("?project=project-1");
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    expect(screen.getByRole("textbox", { name: /^Name/ })).toHaveProperty("value", "Project One");
+    expect(screen.getByRole("combobox", { name: /^Integration mode/ })).toHaveProperty("value", "github_pr");
+    await router.navigate("/settings?project=project-2");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: /^Name/ })).toHaveProperty("value", "Next campaign"));
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the form disabled while saving and clears the guard only after confirmed success", async () => {
+    let finish!: (value: { ok: boolean; intent: string }) => void;
+    const action = vi.fn(() => new Promise<{ ok: boolean; intent: string }>(resolve => { finish = resolve; }));
+    const router = createMemoryRouter([{ path: "/settings", element: <SettingsView data={data} projectId="project-1" />, action }, { path: "/done", element: <p>Finished navigation</p> }], { initialEntries: ["/settings"] });
+    render(<RouterProvider router={router} />);
+    const name = screen.getByRole("textbox", { name: /^Name/ });
+    fireEvent.change(name, { target: { value: "Saved title" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+    await waitFor(() => expect(screen.getByRole("group", { name: "Project configuration" })).toHaveProperty("disabled", true));
+    expect(screen.getByRole("button", { name: "Discard changes" })).toHaveProperty("disabled", true);
+    finish({ ok: true, intent: "update-project" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save project" })).toHaveProperty("disabled", false));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Discard changes" })).toHaveProperty("disabled", true));
+    await router.navigate("/done");
+    await screen.findByText("Finished navigation");
+    expect(action).toHaveBeenCalledTimes(1);
   });
 
   it("saves a non-repository project without requiring an invented branch", async () => {

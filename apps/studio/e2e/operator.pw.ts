@@ -296,6 +296,7 @@ test('scope switch remounts project settings and invalid/canceled forms do not w
   await page.getByRole('textbox', { name: /^Name\b/ }).fill('UNSAVED WRONG PROJECT');
   await page.getByRole('textbox', { name: /^Target branch\b/ }).fill('wrong-project-branch');
   await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+  await page.getByRole('dialog', { name: 'Leave project settings editor?' }).getByRole('button', { name: 'Leave editor' }).click();
   await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Next campaign');
   await expect(page.getByRole('textbox', { name: /^Target branch\b/ })).toHaveValue('');
   await page.getByRole('textbox', { name: /^Name\b/ }).fill('Campaign preview');
@@ -313,6 +314,7 @@ test('scope switch remounts project settings and invalid/canceled forms do not w
   expect(await page.getByRole('textbox', { name: /^Name\b/ }).evaluate(input => (input as HTMLInputElement).validity.valueMissing)).toBe(true);
   expect(state().projects.find(item => item.id === scenario.campaignProject)?.name).toBe('Campaign preview');
   await page.getByRole('combobox', { name: 'Execution context', exact: true }).selectOption(scenario.researchContext);
+  await page.getByRole('dialog', { name: 'Leave project settings editor?' }).getByRole('button', { name: 'Leave editor' }).click();
   await expect(page.getByRole('combobox', { name: 'Project', exact: true })).toHaveValue('');
   await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Research project');
   expect(new URL(page.url()).searchParams.has('project')).toBe(false);

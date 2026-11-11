@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router';
 
 /** One boundary for scope/history navigation and document links/reloads. */
-export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNavigation }: { dirty: boolean; saving: boolean; subject?: 'graph' | 'goal' | 'agent'; allowNavigation?: (pathname: string, search: string) => boolean }) {
+export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNavigation }: { dirty: boolean; saving: boolean; subject?: 'graph' | 'goal' | 'agent' | 'project settings'; allowNavigation?: (pathname: string, search: string) => boolean }) {
   const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && !allowNavigation?.(nextLocation.pathname, nextLocation.search) && (
     currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search
   ));

@@ -352,3 +352,12 @@ Back/Forward use the native unsaved-change confirmation. Explicit Cancel discard
 the draft. Server validation preserves inputs, an in-flight save remains guarded,
 and confirmed create/update redirects do not ask to discard the saved values.
 The pending-save fixture delays only delivery of a real persisted action response.
+
+## Project settings recovery
+
+`settings-navigation.pw.ts` exercises real desktop/mobile scope changes, rejected
+whitespace names, pending committed responses, explicit discard, and document
+navigation confirmation. It checks persisted identities and isolation before and
+after saving. `settings-response-loss.pw.ts` lets a real project update commit,
+then drops only its response: the editor must retain input, explain uncertainty,
+and recover persisted values without automatically repeating the write.

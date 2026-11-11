@@ -102,3 +102,11 @@ activation (the same step for legacy records). Label the viewed attempt explicit
 its evidence and host records must not inherit the latest retry's decision. Goal
 summary guidance remains separately labeled. Missing predecessors show an
 unavailable state; never guess a relationship from timestamps or walk a cycle.
+
+Project settings retain the project-ID remount boundary. Dirty configuration
+requires confirmation before scope, page or history navigation; Stay here and
+Escape preserve inputs. Discard changes restores the selected project's loaded
+values without writing. Disable the configuration fieldset during a save, and
+clear the dirty boundary only after confirmed success. A lost response retains
+inputs with guidance to inspect saved settings before submitting again; settings
+do not advertise revision checks that their update API does not provide.

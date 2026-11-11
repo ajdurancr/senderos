@@ -48,8 +48,11 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   try {
     return await serverAction();
   } catch (error) {
-    if (!['replace-sendero-draft', 'update-goal'].includes(intent) || request.signal.aborted) throw error;
-    return { ok: false, intent, transportFailure: true, message: `Studio could not confirm the ${intent === 'update-goal' ? 'goal' : 'graph'} save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.` };
+    if (!['replace-sendero-draft', 'update-goal', 'update-project'].includes(intent) || request.signal.aborted) throw error;
+    const message = intent === 'update-project'
+      ? 'Studio could not confirm the project settings save. Your edits are kept here. The save may have reached the server. Reload to inspect the saved settings before submitting again.'
+      : `Studio could not confirm the ${intent === 'update-goal' ? 'goal' : 'graph'} save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.`;
+    return { ok: false, intent, transportFailure: true, message };
   }
 }
 

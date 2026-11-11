@@ -218,3 +218,10 @@ Back/Forward use the native unsaved-change confirmation. Explicit Cancel discard
 the draft. Server validation preserves inputs, an in-flight save remains guarded,
 and confirmed create/update redirects do not ask to discard the saved values.
 The pending-save fixture delays only delivery of a real persisted action response.
+
+Project settings navigation and response-loss journeys protect unsaved values
+without weakening project identity remounts. Desktop/mobile checks cover scope
+confirmation, validation without writes, a delayed real committed response,
+explicit discard, and interrupted confirmation with one actual POST. Recovery
+retains the editor and advises inspecting saved settings before resubmission.
+All database and access boundaries remain the ordinary isolated fixture paths.
