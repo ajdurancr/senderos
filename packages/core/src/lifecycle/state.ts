@@ -4,7 +4,7 @@ import { agents, activations, attemptClaims, goalExecutions, goals, runAttempts,
 import { now, randomId } from "../shared/ids";
 import { emitEvent } from "../shared/events";
 import { LifecycleError, requireLifecycle } from "./errors";
-import { recoverCursorPolicy } from "./state-policy";
+import { recoverCursorPolicy, recoverLegacyRetryBudget } from "./state-policy";
 import { executableGraph } from "./route";
 import { requireGoal } from "./scope";
 import { enableSuccessors, goalActivations, settleGoal, settledActivation, type Activation } from "./activations";
@@ -55,7 +55,8 @@ export async function cursor(goalId: string, home?: string) {
   }
   if (!current) {
     const policy = await recoverCursorPolicy(goal, { maxActivations: graph.version.maxActivations, activationsUsed: history.length ? 1 : 0 }, home);
-    await db.insert(goalExecutions).values({ goalId, transitionId: transitionId || null, latestRunId: latest?.id ?? null, attemptsUsed, maxAttempts: latest?.maxAttempts ?? 3, ...policy });
+    const maxAttempts = await recoverLegacyRetryBudget(goalId, latest?.maxAttempts ?? 3, home);
+    await db.insert(goalExecutions).values({ goalId, transitionId: transitionId || null, latestRunId: latest?.id ?? null, attemptsUsed, maxAttempts, ...policy });
     current = (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goalId)))[0]!;
   }
   if (!history.length) {

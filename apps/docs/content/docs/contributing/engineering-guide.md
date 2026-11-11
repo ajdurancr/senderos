@@ -245,3 +245,11 @@ retained activation rows. A saved limit or pending stop request survives that
 migration, while run-to-activation attachment remains idempotent. Invalid policy
 blocks before either reconstructed record is saved; migration does not treat a
 cancellation request as acknowledgement or alter retained attempt payloads.
+
+Legacy retry limits also recover the latest scoped `goal.retry-budget-updated`
+policy, including edits made after a run was reserved. Limits remain integers
+from 1 to 100; a lower limit can intentionally prevent further retries. Equivalent
+tied edits agree, conflicting or invalid latest edits block migration atomically,
+and older malformed edits do not supersede a valid later policy. Without a policy
+edit, recovery preserves the recorded run budget. Complete inspection history and
+retry lineage remain unchanged.

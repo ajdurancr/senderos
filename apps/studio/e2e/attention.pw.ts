@@ -486,3 +486,54 @@ for (const history of ['retained', 'legacy'] as const) test(`cursor recovery pre
   expect(state().claims.find(item => item.attemptId === attempt.id)?.acknowledgedAt).toBeTruthy();
   expect(goalRuns(goal.id)).toHaveLength(1);
 });
+
+test('legacy recovery preserves lowered and raised operator retry limits before reserving another run', async ({ page, scenario }, testInfo) => {
+  const agent = await authorAgent(page, scenario, 'legacy-retry');
+  const goal = await authorGoal(page, scenario, agent.slug, agent.slug, false);
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(1);
+  const first = goalRuns(goal.id)[0]!;
+  const attempt = state().attempts.find(item => item.runId === first.id)!;
+  runtime('host-claim', attempt.id); runtime('host-start', attempt.id); runtime('host-fail', attempt.id);
+  const canvas = `/projects/${scenario.launchProject}/canvas/goals/${goal.id}${scenarioScope(scenario)}`;
+  await visit(page, canvas);
+  const budgets = page.getByRole('region', { name: 'Execution budgets', exact: true });
+  for (const limit of [1, 8]) {
+    await budgets.getByRole('spinbutton', { name: 'Attempt limit per activation' }).fill(String(limit));
+    await budgets.getByRole('button', { name: 'Save attempt limit' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Attempt limit saved' })).toBeVisible();
+    const before = state();
+    runtime('remove-legacy-policy-fixture-cursor', goal.id);
+    await reload(page);
+    await expect(budgets.getByRole('spinbutton', { name: 'Attempt limit per activation' })).toHaveValue(String(limit));
+    const rows = state();
+    expect(rows.executions.find(item => item.goalId === goal.id)?.maxAttempts).toBe(limit);
+    expect(rows.activations.filter(item => item.goalId === goal.id)).toHaveLength(1);
+    expect(rows.activations.find(item => item.goalId === goal.id)).toMatchObject({ maxAttempts: limit, attemptsUsed: 1 });
+    expect(rows.runs.map(({ activationId, ...run }) => run)).toEqual(before.runs.map(({ activationId, ...run }) => run));
+    expect(rows.attempts).toEqual(before.attempts);
+    expect(rows.claims).toEqual(before.claims);
+    if (limit === 1) {
+      await expect(page.getByRole('link', { name: 'Review ready activations' })).toHaveCount(0);
+      await expect(page.getByRole('status').filter({ hasText: 'retry limit reached' })).toBeVisible();
+      expect(goalRuns(goal.id)).toHaveLength(1);
+    }
+  }
+  await budgets.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'legacy-retry-policy-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await budgets.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'legacy-retry-policy-mobile-390x844');
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await expect(page.locator('.dispatch-items article').getByText('retry', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalRuns(goal.id).length).toBe(2);
+  const retried = goalRuns(goal.id).find(item => item.id !== first.id)!;
+  expect(retried.maxAttempts).toBe(8);
+  const retryAttempt = state().attempts.find(item => item.runId === retried.id)!;
+  expect(retryAttempt).toMatchObject({ retryFromAttemptId: attempt.id, attemptNumber: 2 });
+  expect(JSON.parse(state().claims.find(item => item.attemptId === retryAttempt.id)!.packetJson).previous.attemptId).toBe(attempt.id);
+  expect(state().attempts.find(item => item.id === attempt.id)?.status).toBe('failed');
+});
