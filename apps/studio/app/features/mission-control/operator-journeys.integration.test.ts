@@ -436,4 +436,32 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
     expect(stopped.attempts.find(item => item.id === attempt.id)).toMatchObject({ status: 'canceled', ownerId: null, externalSessionId: null, startedAt: null, finishedAt: expect.any(String) });
     expect((await db.execute({ sql: 'SELECT owner_id, claimed_at, parent_session_id FROM attempt_claims WHERE attempt_id = ?', args: [attempt.id] })).rows[0]).toMatchObject({ owner_id: null, claimed_at: null, parent_session_id: null });
   }, 30_000);
+  it('prepares scoped draft goals without activation and rejects stale, invalid and started edits atomically', async () => {
+    const { api, project } = await projectFixture();
+    const goal = await api.commands.goals.create({ projectId: project.id, title: 'Unassigned outcome', senderoVersionId: null });
+    const workflow = (await core.getSenderoGraph('timed-wait-demo'))!;
+    const expectedDraft = JSON.stringify({ title: goal.title, kind: goal.kind, specText: goal.specText, senderoVersionId: goal.senderoVersionId });
+    const values = { intent: 'update-goal', goalId: goal.id, expectedDraft, title: 'Prepared outcome', kind: 'research', specText: 'Inspect one recorded wait', senderoVersionId: workflow.version.id };
+    const before = await persistedSnapshot();
+    for (const patch of [{ title: ' ' }, { kind: ' ' }, { expectedDraft: '{}' }, { expectedDraft: 'broken' }, { senderoVersionId: 'missing-version' }]) {
+      await expect(submit({ ...values, ...patch })).rejects.toThrow();
+      expect(await persistedSnapshot()).toEqual(before);
+    }
+    await expect(server.applyMissionControlAction(form(values), { projectId: 'other-project' })).rejects.toThrow('selected scope');
+    await expect(server.applyMissionControlAction(form(values), { executionContextId: 'other-context' })).rejects.toThrow('selected scope');
+    expect(await persistedSnapshot()).toEqual(before);
+    await server.applyMissionControlAction(form(values), { executionContextId: project.executionContextId, projectId: project.id });
+    const saved = (await core.getGoal(goal.id))!;
+    expect(saved).toMatchObject({ status: 'draft', title: values.title, kind: values.kind, specText: values.specText, senderoVersionId: workflow.version.id });
+    expect((await core.listRuns()).filter(run => run.goalId === goal.id)).toEqual([]);
+    const prepared = await persistedSnapshot();
+    await expect(submit({ ...values, title: 'Stale edit' })).rejects.toThrow('changed elsewhere');
+    expect(await persistedSnapshot()).toEqual(prepared);
+    const latest = JSON.stringify({ title: saved.title, kind: saved.kind, specText: saved.specText, senderoVersionId: saved.senderoVersionId });
+    await api.commands.goals.activate(goal.id);
+    const activated = await persistedSnapshot();
+    await expect(submit({ ...values, expectedDraft: latest })).rejects.toThrow('already started');
+    expect(await persistedSnapshot()).toEqual(activated);
+  });
+
 });

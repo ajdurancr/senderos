@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { GoalPreparation } from "./goal-preparation";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { Form, useNavigation } from "react-router";
 
@@ -32,6 +34,7 @@ export function ContextualInspector({
   transitionId?: string;
 }) {
   const pending = useNavigation().state !== "idle";
+  const [preparingGoal, setPreparingGoal] = useState(false);
   const goal = data.goals.find((item) => item.id === goalId);
   if (!goal) return null;
   const execution = goalExecution(data, goal.id);
@@ -124,15 +127,15 @@ export function ContextualInspector({
             {attempt ? relativeTime(attempt.updatedAt, data.asOf) : "Not dispatched"}
           </span>
         </div>
-        {senderoGraph && <p>{senderoGraph.sendero.name} · pinned v{senderoGraph.version.version}</p>}
+        {senderoGraph && <p>{senderoGraph.sendero.name} · {goal.status === 'draft' ? 'assigned' : 'pinned'} v{senderoGraph.version.version}</p>}
         <dl className="property-list">
           <div><dt>Objective</dt><dd>{objective || "Not configured"}</dd></div>
           <div><dt>Agent</dt><dd>{agent?.name ?? "Not selected"}</dd></div>
           <div><dt>Transition</dt><dd>{transition?.name ?? "Waiting for plan"}</dd></div>
         </dl>
-        {goal.status === 'draft' && <Form method="post"><input type="hidden" name="intent" value="start" /><input type="hidden" name="goalId" value={goal.id}/><button className="button button-primary" disabled={pending}>{pending ? "Starting…" : "Start goal"}</button></Form>}
+        {goal.status === 'draft' && validSelection && <GoalPreparation key={`prepare:${goal.id}`} goal={goal} graphs={data.senderoGraphs} onEditingChange={setPreparingGoal} />}
         {data.queue.dispatchable.some(item => item.goalId === goal.id) && <Link className="button button-primary" to={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</Link>}
-        {validSelection && <GoalCancellation key={goal.id} goal={goal} requested={cancellationRequested} />}
+        {validSelection && !preparingGoal && <GoalCancellation key={goal.id} goal={goal} requested={cancellationRequested} />}
       </section>
       <section className="inspector-section">
         <header>

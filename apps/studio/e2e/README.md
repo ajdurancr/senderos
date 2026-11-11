@@ -112,3 +112,13 @@ and the original concurrency revision. A retry after an applied but lost respons
 is rejected as stale; canceling then loads the latest revalidated graph. The
 test verifies saved values again after reload. It does not simulate real external
 hosts, remote database outages, or browser-process crashes.
+
+## Draft goal preparation
+
+`draft-goal.pw.ts` creates a goal through Studio and prepares its title, category,
+specification and published workflow. It checks rejected/canceled saves without
+writes, reload persistence, two-editor stale rejection, and separate activation
+with no dispatch. A Core-created unassigned draft exercises assignment and scope
+navigation protection. Transport faults before request delivery and after real
+persistence preserve inputs without manufacturing successful saves. Authentic
+desktop/mobile captures include the form and its actions.

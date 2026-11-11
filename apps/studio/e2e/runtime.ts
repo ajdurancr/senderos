@@ -55,6 +55,9 @@ if (command === 'init') {
   const prerequisite = await all.commands.senderos.get('sendero-software-delivery');
   if (!prerequisite || prerequisite.version.status !== 'published') throw new Error('Missing built-in published prerequisite');
   result = { id, productContext, researchContext, launchProject, campaignProject, researchProject, prerequisiteVersionId: prerequisite.version.id };
+} else if (command === 'prepare-draft-goal' && id) {
+  const product = createSenderos({ executionContextId: `product-${id}` });
+  result = await product.commands.goals.create({ projectId: `campaign-${id}`, title: `Unassigned draft ${id}`, senderoVersionId: null });
 } else if (command === 'prepare-history' && id) {
   // Synthetic observations are fixture data, never operator mutations.
   const db = openRuntimeDb();

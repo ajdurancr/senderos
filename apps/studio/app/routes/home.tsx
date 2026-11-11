@@ -39,14 +39,14 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 // A lost response is not proof that the server did not apply the save. Keep the
-// graph and its original revision mounted so a retry retains concurrency checks.
+// editor and its reviewed snapshot mounted so a retry retains concurrency checks.
 export async function clientAction({ request, serverAction }: Route.ClientActionArgs) {
   const intent = String((await request.clone().formData()).get('intent'));
   try {
     return await serverAction();
   } catch (error) {
-    if (intent !== 'replace-sendero-draft' || request.signal.aborted) throw error;
-    return { ok: false, intent, transportFailure: true, message: 'Studio could not confirm the graph save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.' };
+    if (!['replace-sendero-draft', 'update-goal'].includes(intent) || request.signal.aborted) throw error;
+    return { ok: false, intent, transportFailure: true, message: `Studio could not confirm the ${intent === 'update-goal' ? 'goal' : 'graph'} save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.` };
   }
 }
 
@@ -87,6 +87,7 @@ export default function Home() {
 
 function actionMessage(intent: string) {
   const messages: Record<string, string> = {
+    "update-goal": "Goal preparation saved. Start remains a separate action.",
     "set-activation-budget": "Activation limit saved. Review ready activations before dispatching.",
     "set-retry-budget": "Attempt limit saved. Review ready activations before dispatching.",
     start: "Goal started. Review ready activations before reserving runs.",

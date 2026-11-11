@@ -66,6 +66,24 @@ metadata, separate from execution semantics.
 
 See [How Core works](../../core/how-senderos-works) for graph and join semantics.
 
+## Prepare a goal before activation
+
+Open a draft goal in **Workflow progress → Edit goal** to revise its title,
+category, specification, or published Sendero. A goal created through Core or the
+CLI without a workflow can be assigned one here. Choose a published version
+before starting; if none are available, publish a Sendero in Settings first.
+
+**Save goal draft** keeps the goal in draft. **Start goal** is a separate action
+that activates its workflow without dispatching runs. After activation its
+published version is pinned. Save or cancel preparation before lifecycle actions.
+
+Rejected saves retain inputs. A concurrent edit or activation since review rejects
+the save atomically. **Cancel preparation** loads the latest known values.
+Dirty preparation uses the same scope/history and document-leave protection as
+graph editing. If a save response is lost, Studio preserves inputs and explains
+that persistence is unconfirmed; retry retains the reviewed snapshot, or reload
+to inspect saved state. Browser crash recovery is not provided.
+
 ## Filter and review dispatch
 
 Studio initially displays every execution context and project. Header filters are
