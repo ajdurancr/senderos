@@ -110,3 +110,8 @@ values without writing. Disable the configuration fieldset during a save, and
 clear the dirty boundary only after confirmed success. A lost response retains
 inputs with guidance to inspect saved settings before submitting again; settings
 do not advertise revision checks that their update API does not provide.
+
+Registration forms freeze their identity fields while a save is pending. An
+unconfirmed response preserves the form and explains that registration may have
+committed. Direct the operator to reload and inspect the scope selectors before
+submitting again; do not imply the database stayed unchanged or retry silently.

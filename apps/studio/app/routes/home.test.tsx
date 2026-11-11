@@ -1,6 +1,6 @@
 import { afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createMemoryRouter, RouterContextProvider, RouterProvider } from "react-router";
+import { createMemoryRouter, redirect, RouterContextProvider, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 import { missionControlFixture } from "../test-support/mission-control-fixture";
@@ -108,7 +108,7 @@ describe("home route", () => {
 
 
 describe('draft save transport recovery', () => {
-  it.each(['replace-sendero-draft', 'update-goal', 'update-project'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
+  it.each(['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
     const form = new FormData(); form.set('intent', intent);
     const result = await clientAction({ url: new URL('http://localhost/senderos/draft'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/senderos/draft', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
@@ -116,7 +116,7 @@ describe('draft save transport recovery', () => {
     expect(result).toMatchObject({ ok: false, intent, transportFailure: true });
     expect(result).toHaveProperty('message', expect.stringContaining('could not confirm'));
     expect(result).toHaveProperty('message', expect.stringContaining('may have reached'));
-    if (intent === 'update-project') {
+    if (['update-project', 'register-context', 'register-project'].includes(intent)) {
       expect(result).toHaveProperty('message', expect.stringContaining('before submitting again'));
       expect(result.message).not.toContain('revision checks');
     }
@@ -128,5 +128,15 @@ describe('draft save transport recovery', () => {
     await expect(clientAction({ url: new URL('http://localhost/goals/new'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/goals/new', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
     } as Parameters<typeof clientAction>[0])).rejects.toThrow('Failed to fetch');
+  });
+});
+
+describe('registration redirect confirmation', () => {
+  it.each(['register-context', 'register-project'])('preserves the successful %s router redirect', async intent => {
+    const form = new FormData(); form.set('intent', intent);
+    const confirmation = redirect('/settings?context=registered&saved=' + intent);
+    await expect(clientAction({ url: new URL('http://localhost/settings'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/settings', { method: 'POST', body: form }),
+      serverAction: async () => { throw confirmation; },
+    } as Parameters<typeof clientAction>[0])).rejects.toBe(confirmation);
   });
 });

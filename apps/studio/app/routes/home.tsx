@@ -42,14 +42,20 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 // A lost response is not proof that the server did not apply the save. Keep the
-// editor and its reviewed snapshot mounted so a retry retains concurrency checks.
+// editor and its reviewed snapshot mounted. Registration requires inspecting
+// identities before resubmission; draft saves retain their concurrency checks.
 export async function clientAction({ request, serverAction }: Route.ClientActionArgs) {
   const intent = String((await request.clone().formData()).get('intent'));
   try {
     return await serverAction();
   } catch (error) {
-    if (!['replace-sendero-draft', 'update-goal', 'update-project'].includes(intent) || request.signal.aborted) throw error;
-    const message = intent === 'update-project'
+    // Router responses (including successful redirects) are not transport loss.
+    if (error instanceof Response) throw error;
+    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project'].includes(intent) || request.signal.aborted) throw error;
+    const registration = intent === 'register-context' || intent === 'register-project';
+    const message = registration
+      ? `Studio could not confirm the ${intent === 'register-context' ? 'execution context' : 'project'} registration. Your input is kept here. The registration may have reached the server. Reload and inspect the execution context and project selectors before submitting again.`
+      : intent === 'update-project'
       ? 'Studio could not confirm the project settings save. Your edits are kept here. The save may have reached the server. Reload to inspect the saved settings before submitting again.'
       : `Studio could not confirm the ${intent === 'update-goal' ? 'goal' : 'graph'} save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.`;
     return { ok: false, intent, transportFailure: true, message };
@@ -123,7 +129,7 @@ export default function Home() {
     <StudioLayout data={data} pending={pending} route={route} search={search}>
       <SnapshotStatus asOf={data.asOf} pending={pending} refreshing={refreshing} error={refreshError} onRefresh={refreshSnapshot} />
       {savedMessage && !feedback && !pending && <div className="action-feedback" role="status">{savedMessage}</div>}
-      {feedback && !pending && <div className={`action-feedback ${feedback.ok ? "" : "error"}`} role={feedback.ok ? "status" : "alert"}>{feedback.message}</div>}
+      {feedback && !pending && !(!feedback.ok && ['register-context', 'register-project'].includes(feedback.intent)) && <div className={`action-feedback ${feedback.ok ? "" : "error"}`} role={feedback.ok ? "status" : "alert"}>{feedback.message}</div>}
       <MissionControlOverview data={filteredData} route={route} search={search} />
     </StudioLayout>
   );
