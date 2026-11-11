@@ -58,3 +58,10 @@ This is an availability check, not a complete integrity audit. It does not verif
 column types, constraints, indexes, stored data consistency or external host
 readiness. Preserve the database and follow the documented upgrade/recovery path
 before operational work; do not delete history to clear a diagnostic.
+
+For a local file database, the probe checks that the configured file exists before
+opening a new connection. An absent file reports `missing database:<path>`; a
+directory reports `not a database file:<path>`. Diagnosing either condition does
+not create a replacement database. Existing reset locks remain authoritative.
+Initialization and operational connections retain their explicit creation behavior;
+this prerequisite applies to diagnostics, not to remote or in-memory connections.

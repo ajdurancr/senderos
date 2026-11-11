@@ -3,8 +3,9 @@ import * as libsql from "@libsql/client";
 import { getTableName } from "drizzle-orm";
 import * as schema from "./schema";
 import { doctor } from "../commands/system/health";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+import { join, relative } from "node:path";
 import {
   atomic,
   databaseConnectionFromEnvironment,
@@ -249,4 +250,79 @@ test("schema health works without a home and leaves a caller's transaction usabl
   const db = openRuntimeDb(home);
   try { expect((await db.$client.execute("SELECT * FROM operator_transaction")).rows).toEqual([]); }
   finally { db.$client.close(); }
+});
+
+
+describe("diagnostics preserve missing local database files", () => {
+  test.each(["plain", "encoded", "relative", "dangling symlink"])("reports a missing %s file without creating it", async kind => {
+    const home = await initHome();
+    const path = join(home, "absent database.db");
+    const link = join(home, "missing-link.db");
+    if (kind === "dangling symlink") symlinkSync(path, link);
+    process.env.SENDEROS_DATABASE_URL = kind === "encoded" ? pathToFileURL(path).href
+      : kind === "relative" ? `file:${relative(process.cwd(), path)}`
+      : `file:${kind === "dangling symlink" ? link : path}`;
+    expect(existsSync(path)).toBe(false);
+    expect(await healthcheckCurrentDb(home)).toMatchObject({ ok: false, issues: [expect.stringContaining("missing database:")] });
+    expect((await doctor(home)).ok).toBe(false);
+    expect(existsSync(path)).toBe(false);
+  });
+
+  test("retains reset-lock guidance when a missing database is fenced", async () => {
+    const home = await initHome();
+    const path = join(home, "absent.db");
+    const lock = `${path}.senderos-reset.lock`;
+    writeFileSync(lock, "operator lock");
+    process.env.SENDEROS_DATABASE_URL = `file:${path}`;
+    expect(await healthcheckCurrentDb(home)).toMatchObject({ ok: false, issues: [expect.stringContaining("Database reset lock exists")] });
+    expect(existsSync(path)).toBe(false);
+    expect(readFileSync(lock, "utf8")).toBe("operator lock");
+  });
+
+  test("operational connections retain explicit database creation", async () => {
+    const home = tempHome();
+    const path = join(home, "new.db");
+    process.env.SENDEROS_DATABASE_URL = `file:${path}`;
+    expect((await healthcheckCurrentDb()).ok).toBe(false);
+    expect(existsSync(path)).toBe(false);
+    const db = openRuntimeDb();
+    try { await db.$client.execute("CREATE TABLE operator_created (id TEXT)"); }
+    finally { db.$client.close(); }
+    expect(existsSync(path)).toBe(true);
+  });
+
+  test("a removed initialized fixture is not recreated by doctor", async () => {
+    const home = await initHome();
+    const path = join(home, "senderos.db");
+    rmSync(path);
+    expect((await doctor(home)).ok).toBe(false);
+    expect(existsSync(path)).toBe(false);
+  });
+});
+
+
+test("schema diagnostics accept an existing encoded local file and reject directories without opening them", async () => {
+  const home = await initHome();
+  const path = join(home, "stored database.db");
+  renameSync(join(home, "senderos.db"), path);
+  process.env.SENDEROS_DATABASE_URL = pathToFileURL(path).href;
+  expect(process.env.SENDEROS_DATABASE_URL).toContain("%20");
+  expect((await healthcheckCurrentDb(home)).ok).toBe(true);
+  const link = join(home, "existing-link.db");
+  symlinkSync(path, link);
+  process.env.SENDEROS_DATABASE_URL = `file:${link}`;
+  expect((await healthcheckCurrentDb(home)).ok).toBe(true);
+  process.env.SENDEROS_DATABASE_URL = pathToFileURL(home).href;
+  expect(await healthcheckCurrentDb(home)).toMatchObject({ ok: false, issues: [expect.stringContaining("not a database file:")] });
+});
+
+test("schema diagnostics retain memory and remote driver routing without network access", async () => {
+  for (const url of ["file::memory:", "file::memory:?cache=shared", "https://fixture.example.test"]) {
+    process.env.SENDEROS_DATABASE_URL = url;
+    const intercepted = new Error("fixture driver intercepted");
+    const create = spyOn(libsql, "createClient").mockImplementation(() => { throw intercepted; });
+    expect(await healthcheckCurrentDb()).toEqual({ ok: false, issues: [intercepted.message], warnings: [] });
+    expect(create).toHaveBeenCalledWith({ url });
+    create.mockRestore();
+  }
 });

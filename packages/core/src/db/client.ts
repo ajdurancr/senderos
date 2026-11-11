@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { lstatSync, realpathSync } from "node:fs";
+import { lstatSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,7 +46,7 @@ export async function withDatabaseConnection<T>(connection: DatabaseConnection, 
 }
 
 /** Opens a local or remote libSQL connection from the effective runtime config. */
-function connectRuntimeDb(home?: string) {
+function connectRuntimeDb(home?: string, requireExistingFile = false) {
   const scoped = connections.getStore();
   const connection = scoped?.connection ?? (home
     ? connectionFromRuntimeConfig(home)
@@ -61,6 +61,14 @@ function connectRuntimeDb(home?: string) {
       try { assertNoDatabaseReset(realpathSync(path)); }
       catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+      if (requireExistingFile) {
+        try {
+          if (!statSync(path).isFile()) throw new Error(`not a database file:${path}`);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new Error(`missing database:${path}`);
+          throw error;
+        }
       }
     }
   }
@@ -154,7 +162,10 @@ function connectionFromRuntimeConfig(home: string): DatabaseConnection {
 export async function healthcheckCurrentDb(home?: string) {
   let db: RuntimeDb | undefined;
   try {
-    db = openRuntimeDb(home);
+    const current = transactions.getStore();
+    // The driver creates missing local files on open. Diagnose absence before
+    // opening a fresh client; operational connections keep creation semantics.
+    db = current && current.home === home ? current.db : connectRuntimeDb(home, true);
     const required = Object.values(schema).map(table => ({
       name: getTableName(table), columns: Object.values(getTableColumns(table)).map(column => column.name),
     }));
