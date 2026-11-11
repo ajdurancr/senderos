@@ -180,7 +180,12 @@ describe("Studio server integration", () => {
       return applyMissionControlAction(form);
     };
     for (const kind of ["test", "ci", "pull_request", "artifact", "manual"]) {
-      await submitEvidence({ kind, summary: `Recorded ${kind} result` });
+      const form = new FormData();
+      Object.entries({ intent: "evidence", attemptId: attempt.id, label: "Typed proof", kind, summary: `Recorded ${kind} result` }).forEach(([key, value]) => form.set(key, value));
+      const { action } = await import("../../routes/home");
+      const url = new URL("http://localhost/canvas");
+      const feedback = await action({ request: new Request(url, { method: "POST", body: form }), url, pattern: "/canvas", params: {}, context: new RouterContextProvider() });
+      expect(feedback).toMatchObject({ ok: true, intent: "evidence", message: "Evidence recorded. Completion follows the workflow's evidence, review and host requirements." });
       const saved = (await missionControlData()).attempts.find(item => item.id === attempt.id)!;
       expect(JSON.parse(saved.statusSnapshotJson).evidence.at(-1)).toMatchObject({ kind, summary: `Recorded ${kind} result` });
     }
