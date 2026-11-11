@@ -315,6 +315,7 @@ select option { background: var(--studio-chrome); }
 .event-preview > div span { display: flex; flex-direction: column; }
 .event-preview strong { font-size: var(--text-meta); }
 .event-preview small { font-size: var(--text-label); color: var(--text-muted); }
+.visit-heading { margin: 20px 0 8px; font-size: var(--text-body); }
 .activation-list { display: grid; gap: 10px; margin-top: 14px; }
 .activation-list a, .activation-list article { display: block; padding: 14px; border: 1px solid var(--studio-border); border-radius: 7px; }
 .activation-list a:hover, .activation-list a.selected { border-color: var(--accent); }

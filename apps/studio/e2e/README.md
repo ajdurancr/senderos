@@ -131,3 +131,11 @@ page, returns newer, reloads selected records, checks exact old-attempt detail,
 invalid/cross-scope positions and empty scopes, and compares persisted state
 before and after browsing. It captures actual desktop/mobile lists and checks
 keyboard focus. Fixture records are synthetic history, not real executions.
+
+`activation-history.pw.ts` checks settled visit browsing alongside unresolved
+recovery work. It reserves/claims/starts/reconciles one isolated attempt, then
+inserts 125 labeled synthetic settled graph visits through
+`prepare-activation-history`. This fixture does not claim real loop executions.
+The browser checks page traversal, exact old selection/evidence, latest and return
+navigation, reload persistence, keyboard focus, mobile layout and an unchanged
+full database snapshot. Desktop/mobile captures preserve the actual UI.

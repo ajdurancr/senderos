@@ -70,6 +70,18 @@ if (command === 'init') {
   await db.insert(schema.runs).values(records);
   await db.insert(schema.runAttempts).values(records.map((run, i) => ({ id: `attempt-history-${id}-${String(i).padStart(3, '0')}`, runId: run.id, attemptNumber: 1, agentId: agent.id, status: 'canceled', executionObjective: `Archived fixture ${i}`, harness: 'history-fixture', statusSnapshotJson: JSON.stringify({ evidence: [{ id: `history-proof-${i}`, kind: 'artifact', label: `Archived proof ${i}`, createdAt: timestamp }] }), finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })));
   result = { inserted: records.length, goalId: goal.id };
+} else if (command === 'prepare-activation-history' && id) {
+  // Synthetic settled graph visits exercise presentation only; no real execution is claimed.
+  const db = openRuntimeDb();
+  const original = (await db.select().from(schema.activations).where(eq(schema.activations.goalId, id)))[0];
+  if (!original) throw new Error('Missing real activation prerequisite');
+  const timestamp = new Date(Date.now() - 60_000).toISOString();
+  const history = Array.from({ length: 125 }, (_, i) => ({ ...original, id: `visit-history-${id}-${String(i).padStart(3, '0')}`, parentActivationId: i ? `visit-history-${id}-${String(i - 1).padStart(3, '0')}` : null, latestRunId: `visit-run-${id}-${i}`, previousRunId: i ? `visit-run-${id}-${i - 1}` : null, status: 'canceled', reason: null, revision: 1, scopesJson: '["fixture-fork-generation"]', createdAt: timestamp, updatedAt: timestamp }));
+  await db.insert(schema.activations).values(history);
+  await db.insert(schema.runs).values(history.map(row => ({ id: row.latestRunId, activationId: row.id, goalId: id, status: 'canceled', createdAt: timestamp, updatedAt: timestamp })));
+  const attempt = (await db.select().from(schema.runAttempts).where(eq(schema.runAttempts.runId, original.latestRunId!)))[0]!;
+  await db.insert(schema.runAttempts).values(history.map((row, i) => ({ id: `visit-attempt-${id}-${i}`, runId: row.latestRunId, attemptNumber: 1, agentId: attempt.agentId, harness: 'history-fixture', status: 'canceled', executionObjective: `Archived visit ${i}`, statusSnapshotJson: JSON.stringify({ evidence: [{ id: `visit-proof-${i}`, kind: 'artifact', label: `Visit proof ${i}`, createdAt: timestamp }] }), finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })));
+  result = { inserted: history.length };
 } else if (command === 'prepare-history' && id) {
   // Synthetic observations are fixture data, never operator mutations.
   const db = openRuntimeDb();

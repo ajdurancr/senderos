@@ -1,6 +1,8 @@
 import { DurableLink as Link } from '../../../components/durable-link';
 import { StatusBadge } from '../../../components/status-badge';
-import { goalExecution, relativeTime } from '../model';
+import { relativeTime } from '../model';
+import { useLocation } from 'react-router';
+import { historyPage } from '../history-page';
 import { attemptPath } from '../navigation';
 import type { MissionControlData } from '../server';
 
@@ -85,21 +87,55 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
 }
 
 export function GoalActivations({ data, goalId, attemptId }: { data: MissionControlData; goalId: string; attemptId?: string }) {
+  const location = useLocation();
   const goal = data.goals.find(item => item.id === goalId);
   if (!goal) return null;
-  const records = activationRecords(data).filter(item => item.goalId === goalId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const execution = goalExecution(data, goalId);
-  return <section className="inspector-section"><header><h3>Activations and branches</h3><span>{records.length || execution.runs.length} {(records.length || execution.runs.length) === 1 ? "visit" : "visits"}</span></header><div className="activation-list">
-    {records.map((activation, index) => {
-      const graph = [...(data.historyGraphs ?? []), ...data.senderoGraphs].find(graph => graph.version.id === goal.senderoVersionId);
-      const node = graph?.nodes.find(node => node.id === activation.nodeId);
-      const attempt = data.attempts.filter(item => item.runId === activation.latestRunId).at(-1);
-      const visit = records.slice(0, index + 1).filter(item => item.nodeId === activation.nodeId).length;
-      const decision = data.decisions?.find(item => item.goalId === goalId)?.activations.find(item => item.activationId === activation.id);
-      const body = <><strong>{node?.label ?? activation.nodeId} · visit {visit}</strong><StatusBadge value={attempt ? executionPhase(attempt) : activation.status} /><small>Activation {activation.id} · revision {activation.revision}</small><small>Parent {activation.parentActivationId ?? 'entry'}</small><small>Fork generations: {stringList(activation.scopesJson).join(', ') || 'none'}</small>{(decision?.reason ?? activation.reason) && <small>{(decision?.reason ?? activation.reason)!.replaceAll('_', ' ')}</small>}{decision?.nextAction && <small>Next: {decision.nextAction.replaceAll('_', ' ')}</small>}</>;
-      return attempt ? <Link key={activation.id} className={attempt.id === attemptId ? 'selected' : ''} to={attemptPath(goal.projectId, attempt.id)}>{body}</Link> : <article key={activation.id}>{body}</article>;
-    })}
-    {!records.length && execution.attempts.map(attempt => <Link key={attempt.id} className={attempt.id === attemptId ? 'selected' : ''} to={attemptPath(goal.projectId, attempt.id)}><strong>{data.agents.find(agent => agent.id === attempt.agentId)?.name ?? attempt.agentId}</strong><StatusBadge value={executionPhase(attempt)} /><small>{attempt.id}</small></Link>)}
-    {!records.length && !execution.attempts.length && <p>No activations yet. Start the goal to discover ready work.</p>}
-  </div></section>;
+  const records = activationRecords(data).filter(item => item.goalId === goalId).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+  const runIds = new Set(data.runs.filter(run => run.goalId === goalId).map(run => run.id));
+  const goalAttempts = data.attempts.filter(attempt => runIds.has(attempt.runId));
+  const graph = [...(data.historyGraphs ?? []), ...data.senderoGraphs].find(graph => graph.version.id === goal.senderoVersionId);
+  const nodes = new Map(graph?.nodes.map(node => [node.id, node]) ?? []);
+  const attempts = new Map<string, Attempt>();
+  for (const attempt of goalAttempts) {
+    if (attempt.attemptNumber >= (attempts.get(attempt.runId)?.attemptNumber ?? -1)) attempts.set(attempt.runId, attempt);
+  }
+  const decisions = new Map(data.decisions?.find(item => item.goalId === goalId)?.activations.map(item => [item.activationId, item]) ?? []);
+  const visits = new Map<string, number>(), nodeCounts = new Map<string, number>();
+  for (const record of records) { const visit = (nodeCounts.get(record.nodeId) ?? 0) + 1; nodeCounts.set(record.nodeId, visit); visits.set(record.id, visit); }
+  const rows = records.length ? records.map(activation => ({ ...activation, attempt: attempts.get(activation.latestRunId ?? ''), activation })) : goalAttempts.map(attempt => ({ ...attempt, attempt, activation: undefined }));
+  // Failed/blocked/waiting activations can still need intervention. Only durable settlement belongs in history.
+  const settled = (row: typeof rows[number]) => row.activation ? ['succeeded', 'joined', 'canceled'].includes(row.status) : ['succeeded', 'failed', 'canceled'].includes(row.status);
+  const current = rows.filter(row => !settled(row));
+  const selected = rows.find(row => row.attempt?.id === attemptId);
+  const search = new URLSearchParams(location.search);
+  const scope = JSON.stringify([search.get('context') || '', goal.projectId, goalId]);
+  const page = historyPage(rows.filter(settled), scope, search.get('visitCursor'), search.get('visitHistory'), search.get('visitHistory') === 'latest' ? undefined : selected?.id);
+  const headingId = `visit-history-${goalId}`;
+  const linkFor = (pathname: string, cursor?: string | null, direction?: string | null, hash = headingId) => {
+    const next = new URLSearchParams(location.search);
+    next.delete('visitCursor'); next.delete('visitHistory');
+    if (cursor && direction) { next.set('visitCursor', cursor); next.set('visitHistory', direction); }
+    else if (direction === 'latest') next.set('visitHistory', 'latest');
+    return `${pathname}${next.size ? `?${next}` : ''}#${hash}`;
+  };
+  const card = (row: typeof rows[number]) => {
+    const activation = row.activation, attempt = row.attempt;
+    const decision = activation && decisions.get(activation.id);
+    const body = activation ? <><strong>{nodes.get(activation.nodeId)?.label ?? activation.nodeId} · visit {visits.get(activation.id)}</strong><StatusBadge value={attempt ? executionPhase(attempt) : activation.status} /><small>Activation {activation.id} · revision {activation.revision}</small><small>Parent {activation.parentActivationId ?? 'entry'}</small><small>Fork generations: {stringList(activation.scopesJson).join(', ') || 'none'}</small>{(decision?.reason ?? activation.reason) && <small>{(decision?.reason ?? activation.reason)!.replaceAll('_', ' ')}</small>}{decision?.nextAction && <small>Next: {decision.nextAction.replaceAll('_', ' ')}</small>}</> : <><strong>{data.agents.find(agent => agent.id === attempt?.agentId)?.name ?? attempt?.agentId}</strong><StatusBadge value={executionPhase(attempt!)} /><small>{attempt?.id}</small></>;
+    return attempt ? <Link key={row.id} aria-current={attempt.id === attemptId ? 'true' : undefined} className={attempt.id === attemptId ? 'selected' : ''} to={linkFor(attemptPath(goal.projectId, attempt.id), page.current, page.direction, 'run-detail')}>{body}</Link> : <article key={row.id}>{body}</article>;
+  };
+  return <section className="inspector-section" aria-label="Activations and branches"><header><h3>Activations and branches</h3><span>{rows.length} {rows.length === 1 ? 'visit' : 'visits'}</span></header>
+    {current.length > 0 && <><h4 className="visit-heading">Current visits ({current.length})</h4><p>All unresolved visits remain visible, including failed branches needing intervention.</p><div className="activation-list" aria-label="Current visits">{current.map(card)}</div></>}
+    <h4 className="visit-heading" id={headingId} tabIndex={-1}>Settled visit history</h4><p>{page.items.length} on this page · {page.total} settled · newest first</p>
+    {page.notice && <p role="status">This visit history position is invalid or belongs to another goal or scope. Showing the latest settled visits.</p>}
+    <nav className="activity-pagination" aria-label="Visit history pagination">
+      {page.newer && <Link className="button button-secondary" to={linkFor(location.pathname, page.newer, 'newer')}>Newer visits</Link>}
+      {page.older && <Link className="button button-secondary" to={linkFor(location.pathname, page.older, 'older')}>Older visits</Link>}
+      {page.historical && <Link className="button button-secondary" to={linkFor(location.pathname, null, 'latest')}>Latest visits</Link>}
+    </nav>
+    {selected && settled(selected) && !page.items.some(row => row.id === selected.id) && <p role="status">The selected attempt is outside this history page. Its recorded details remain available. <Link to={linkFor(location.pathname)}>Show selected visit</Link></p>}
+    <div className="activation-list" aria-label="Settled visits">{page.items.map(card)}</div>
+    {!rows.length && <p>No activations yet. Start the goal to discover ready work.</p>}
+    {rows.length > 0 && !page.total && <p>No settled visits yet.</p>}
+  </section>;
 }

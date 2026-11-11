@@ -88,3 +88,10 @@ Selection is identified with `aria-current`; selecting a row focuses the attempt
 detail anchor, which matters when the mobile layout stacks detail below the list.
 History links focus the page heading. Keep scope totals distinct from page size
 and preserve recorded evidence and recovery detail for exact older links.
+
+Goal detail separates current visits from settled visit history. Keep every
+unresolved branch visible; a failed activation can still require intervention.
+Settled cards use native links, a named history navigation, persistent scoped
+positions, selected-link semantics and a focusable history heading. Pagination
+must preserve original visit numbers, pinned graph labels, parent/fork details
+and selected-attempt records. Reuse the existing history spacing and surfaces.
