@@ -1,7 +1,23 @@
-import { capture, expect, ready, scenarioScope, state, test, visit } from './fixtures';
+import { capture, expect, goalAttempts, ready, runtime, scenarioScope, state, test, visit } from './fixtures';
 
 test('repeated concurrent snapshots retain complete scoped results and remain usable on desktop and mobile', async ({ page, scenario }, testInfo) => {
-  await visit(page, `/goals${scenarioScope(scenario)}`);
+  const scope = scenarioScope(scenario);
+  const title = `Snapshot lifetime ${scenario.id.slice(0, 8)}`;
+  await visit(page, `/projects/${scenario.launchProject}/goals/new${scope}`);
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill(title);
+  await page.getByRole('combobox', { name: 'Sendero', exact: true }).selectOption(scenario.prerequisiteVersionId);
+  await page.getByRole('button', { name: 'Create goal', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start goal', exact: true })).toBeVisible();
+  const goal = state().goals.find(item => item.title === title)!;
+  await page.getByRole('button', { name: 'Start goal', exact: true }).click();
+  await page.getByRole('link', { name: 'Review ready activations' }).click();
+  await page.getByRole('button', { name: 'Dispatch all' }).click();
+  await expect.poll(() => goalAttempts(goal.id).length).toBe(1);
+  const attempt = goalAttempts(goal.id)[0]!;
+  runtime('host-claim', attempt.id);
+  runtime('host-start', attempt.id);
+  runtime('host-reconcile-active', attempt.id);
+  await visit(page, `/goals${scope}`);
   const before = state();
   for (const [width, height, label] of [[1440, 1000, 'desktop'], [390, 844, 'mobile']] as const) {
     await page.setViewportSize({ width, height });
