@@ -4,10 +4,23 @@ import { attemptClaims, goals, projects, runs } from '../../db/schema';
 import { executionHosts, hostWorkspaces } from '../../db/host-schema';
 import type { RunAttemptRecord } from '../../shared/types';
 
+/** Shared allowlist: claim tokens and dispatch packets never enter inspection. */
+export const inspectionClaimFields = {
+  ownerId: attemptClaims.ownerId, leaseExpiresAt: attemptClaims.leaseExpiresAt,
+  claimedAt: attemptClaims.claimedAt, protocolVersion: attemptClaims.protocolVersion,
+  parentSessionId: attemptClaims.parentSessionId, cancellationRequestedAt: attemptClaims.cancellationRequestedAt,
+  recoveryOutcome: attemptClaims.recoveryOutcome, recoveryObservedAt: attemptClaims.recoveryObservedAt,
+  recoveryDetailsJson: attemptClaims.recoveryDetailsJson,
+};
+type InspectionClaim = Pick<typeof attemptClaims.$inferSelect, keyof typeof inspectionClaimFields>;
+
+export function inspectedAttempt(attempt: RunAttemptRecord, claim?: InspectionClaim | null) {
+  return { ...attempt, ownerId: claim?.ownerId ?? null, leaseExpiresAt: claim?.leaseExpiresAt ?? null, claimedAt: claim?.claimedAt ?? null, parentSessionId: claim?.parentSessionId ?? null, protocolVersion: claim?.protocolVersion ?? 1, cancellationRequestedAt: claim?.cancellationRequestedAt ?? null, recoveryOutcome: claim?.recoveryOutcome ?? null, recoveryObservedAt: claim?.recoveryObservedAt ?? null, recoveryDetails: JSON.parse(claim?.recoveryDetailsJson ?? '{}') as Record<string, unknown>, preflight: (JSON.parse(attempt.statusSnapshotJson).hostPreflight ?? null) as Record<string, unknown> | null };
+}
 /** Never include claim tokens in ordinary attempt inspection or Studio payloads. */
 export async function inspectAttempt(attempt: RunAttemptRecord, home?: string) {
-  const claim = (await openRuntimeDb(home).select({ ownerId: attemptClaims.ownerId, leaseExpiresAt: attemptClaims.leaseExpiresAt, claimedAt: attemptClaims.claimedAt, protocolVersion: attemptClaims.protocolVersion, parentSessionId: attemptClaims.parentSessionId, cancellationRequestedAt: attemptClaims.cancellationRequestedAt, recoveryOutcome: attemptClaims.recoveryOutcome, recoveryObservedAt: attemptClaims.recoveryObservedAt, recoveryDetailsJson: attemptClaims.recoveryDetailsJson }).from(attemptClaims).where(eq(attemptClaims.attemptId, attempt.id)))[0];
-  return { ...attempt, ownerId: claim?.ownerId ?? null, leaseExpiresAt: claim?.leaseExpiresAt ?? null, claimedAt: claim?.claimedAt ?? null, parentSessionId: claim?.parentSessionId ?? null, protocolVersion: claim?.protocolVersion ?? 1, cancellationRequestedAt: claim?.cancellationRequestedAt ?? null, recoveryOutcome: claim?.recoveryOutcome ?? null, recoveryObservedAt: claim?.recoveryObservedAt ?? null, recoveryDetails: JSON.parse(claim?.recoveryDetailsJson ?? '{}') as Record<string, unknown>, preflight: (JSON.parse(attempt.statusSnapshotJson).hostPreflight ?? null) as Record<string, unknown> | null };
+  const claim = (await openRuntimeDb(home).select(inspectionClaimFields).from(attemptClaims).where(eq(attemptClaims.attemptId, attempt.id)))[0];
+  return inspectedAttempt(attempt, claim);
 }
 export async function canReadAttempt(attempt: RunAttemptRecord, executionContextId: string, home?: string) {
   const db = openRuntimeDb(home);
