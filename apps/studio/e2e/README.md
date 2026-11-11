@@ -203,3 +203,9 @@ Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
 probe reproduced the previous raw fixture UPDATE failing while a reader held the
 file; transaction rollback/retry lets that fixture wait without weakening the
 production assertions or changing application mutation behavior.
+
+Fixture JSON results use a private temporary file under the configured system
+TMPDIR instead of a subprocess stdout pipe. This retains complete database
+assertions when repeated journeys grow the isolated history beyond the default
+1 MiB pipe limit. Temporary results are removed after success, child failure, or
+invalid JSON; the existing child timeout and all browser assertions remain active.
