@@ -1,4 +1,6 @@
 import {
+  createSenderos,
+  registerExecutionContext,
   databaseConnectionFromEnvironment,
   listEvents,
   type GoalKind,
@@ -59,12 +61,40 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   const senderos = senderosForStudio();
   const intent = String(form.get("intent"));
   const supported = new Set([
-    'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
+    'register-context', 'register-project', 'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
     'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal',
     'set-activation-budget', 'set-retry-budget', 'start', 'retry', 'dispatch-plan', 'stop', 'cancel-goal', 'evidence', 'review', 'update-project',
     'update-sendero-node-position', 'update-sendero-layout', 'update-sendero-node', 'update-sendero-edge',
   ]);
   if (!supported.has(intent)) throw new Error('This action is not supported. Refresh Studio and try again.');
+  if (intent === 'register-context' || intent === 'register-project') {
+    const name = String(form.get('name') ?? '').trim();
+    if (!name) throw new Error(intent === 'register-context' ? 'Execution context name is required.' : 'Project name is required.');
+    if (name.length > 200) throw new Error('Use a name of 200 characters or fewer.');
+    if (intent === 'register-context') {
+      try {
+        const context = await registerExecutionContext({ id: `context-${crypto.randomUUID()}`, name });
+        return { redirectTo: `/settings?context=${encodeURIComponent(context.id)}` };
+      } catch (error) {
+        if (registrationNameConflict(error)) throw new Error('An execution context with this name is already registered. Choose it in the context filter or use a distinct name.');
+        throw error;
+      }
+    }
+    const executionContextId = String(form.get('executionContextId') ?? '').trim();
+    const contexts = await senderos.commands.executionContexts.list();
+    if (!contexts.some(context => context.id === executionContextId)) throw new Error('Choose an existing execution context before adding a project.');
+    const scoped = createSenderos({ executionContextId });
+    if ((await scoped.commands.projects.list()).some(project => project.name === name)) {
+      throw new Error('A project with this name already exists in this context. Choose it in the project filter or use a distinct name.');
+    }
+    try {
+      const project = await scoped.commands.projects.create({ name, integrationMode: 'none' });
+      return { redirectTo: `/settings?context=${encodeURIComponent(executionContextId)}&project=${encodeURIComponent(project.id)}` };
+    } catch (error) {
+      if (registrationNameConflict(error)) throw new Error('A project with this name already exists in this context. Choose it in the project filter or use a distinct name.');
+      throw error;
+    }
+  }
   if (intent === 'update-project') {
     if (!String(form.get('name') ?? '').trim()) throw new Error('Project name is required.');
     if (!['github_pr', 'local_merge', 'none'].includes(String(form.get('integrationMode')))) {
@@ -210,6 +240,17 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
       status: String(form.get("status")) as
         "draft" | "active" | "disabled" | "archived",
     });
+}
+
+/** Translate only the expected name uniqueness conflict; other database errors retain their failure. */
+function registrationNameConflict(error: unknown): boolean {
+  let cause = error;
+  while (cause instanceof Error) {
+    const code = (cause as Error & { code?: string }).code;
+    if (code === 'SQLITE_CONSTRAINT_UNIQUE' || (code === 'SQLITE_CONSTRAINT' && /UNIQUE constraint failed: (execution_contexts\.name|projects\.execution_context_id, projects\.name)/.test(cause.message))) return true;
+    cause = cause.cause;
+  }
+  return false;
 }
 
 function readDefinition(form: FormData): Record<string, unknown> {

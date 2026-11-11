@@ -50,3 +50,8 @@ requirements when enabling repository integration, a server-rejected whitespace
 branch with no persisted mutation, valid local integration, and returning to no
 integration. Database assertions and reloads verify each successful save and
 scope isolation. Desktop/mobile screenshots capture the real settings form.
+
+`registration.pw.ts` creates a context and standalone project through Studio,
+starting with an unrelated selected scope. It verifies whitespace/duplicate
+errors without writes, the new context/project URL, persistence after reload,
+unchanged prior projects/goals/runs/claims, and desktop/mobile onboarding.

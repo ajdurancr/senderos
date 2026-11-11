@@ -19,6 +19,15 @@ On startup, Studio applies the bundled database migrations and idempotently seed
 the built-in agents. The database identity remains the only shared deployment
 dependency.
 
+## First project
+
+In **Settings → Project & database**, use **Set up a workspace** to add an
+execution context and a named standalone project. New projects start without
+repository integration or a workspace path. The resulting scope is selected in
+the URL; create a goal and choose its published Sendero next. This registration
+only records database identities. Repository metadata and host grants remain
+explicit CLI/operator setup.
+
 ## Production verification
 
 From the repository root, with dependencies installed and Node 24 available:

@@ -27,7 +27,7 @@ export async function action({ request }: Route.ActionArgs) {
       const destination = new URL(result.redirectTo, url.origin);
       for (const key of ['context', 'project']) {
         const value = url.searchParams.get(key);
-        if (value) destination.searchParams.set(key, value);
+        if (value && !['register-context', 'register-project'].includes(String(form.get('intent')))) destination.searchParams.set(key, value);
       }
       destination.searchParams.set('saved', String(form.get('intent')));
       return redirect(`${destination.pathname}${destination.search}`);
@@ -50,6 +50,8 @@ export default function Home() {
     'create-sendero': 'New draft created. Validate and publish when ready.',
     'import-sendero': 'Definition imported as a draft. Validate and publish when ready.',
     'create-goal': 'Goal created.',
+    'register-context': 'Execution context added. Add its first project below.',
+    'register-project': 'Project added. Configure it here or open Goals to create its first goal.',
   };
   const savedMessage = savedMessages[search.get('saved') ?? ''];
   const filteredData = filterMissionControlData(

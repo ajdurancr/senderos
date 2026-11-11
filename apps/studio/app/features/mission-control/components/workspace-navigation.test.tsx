@@ -74,9 +74,18 @@ describe("workspace navigation", () => {
     expect(screen.getByRole("link", { name: "Cancel" }).getAttribute("href")).toBe("/goals?context=context-1");
   });
 
+  it("guides an empty attention scope into setup without suggesting existing work is complete", () => {
+    const empty = { ...data, projects: [], goals: [], runs: [], attempts: [], decisions: [], queue: { reviews: [], failedAttempts: [], staleAttempts: [], dispatchable: [], blockedGoals: [], activeRuns: [] } };
+    inRouter(<AttentionView data={empty} />, "/now?context=empty-context");
+    expect(screen.getByRole("heading", { name: "No projects in this scope" })).toBeTruthy();
+    expect(screen.queryByText("Queue clear")).toBeNull();
+    expect(screen.getByRole("link", { name: "Set up a project" }).getAttribute("href")).toBe("/settings?context=empty-context");
+  });
+
   it("explains how to unblock creation with no available project", () => {
     inRouter(<GoalsView data={{ ...data, projects: [] }} create />, "/goals/new");
-    expect(screen.getByText("Register a project with Senderos before creating a goal.")).toBeTruthy();
+    expect(screen.getByText("Add a project in Settings before creating a goal.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Set up a project" }).getAttribute("href")).toBe("/settings");
   });
 
   it("preserves the scoped create form fields and avoids duplicate New goal actions", () => {

@@ -20,6 +20,63 @@ describe("Studio server integration", () => {
     }
   });
 
+  it("registers explicit local-data scopes and rejects invalid or duplicate setup without writes", async () => {
+    const { applyMissionControlAction, missionControlData } = await import("./server");
+    const submit = (values: Record<string, string>) => {
+      const form = new FormData();
+      Object.entries(values).forEach(([key, value]) => form.set(key, value));
+      return applyMissionControlAction(form, { executionContextId: "unrelated-filter", projectId: "unrelated-project" });
+    };
+    const before = await missionControlData();
+    await expect(submit({ intent: "register-context", name: "   " })).rejects.toThrow(/name/i);
+    await expect(submit({ intent: "register-context", name: "x".repeat(201) })).rejects.toThrow(/200/);
+    const result = await submit({ intent: "register-context", name: "  Studio setup  " });
+    const registered = (await missionControlData()).executionContexts.find(item => item.name === "Studio setup")!;
+    expect(registered).toBeTruthy();
+    expect(result).toEqual({ redirectTo: `/settings?context=${encodeURIComponent(registered.id)}` });
+    const afterContext = await missionControlData();
+    expect(afterContext.executionContexts).toHaveLength(before.executionContexts.length + 1);
+    expect(afterContext.projects).toEqual(before.projects);
+    await expect(submit({ intent: "register-context", name: "Studio setup" })).rejects.toThrow(/already/i);
+    for (const values of [
+      { name: "", executionContextId: registered.id },
+      { name: "Invalid scope", executionContextId: "unknown-context" },
+      { name: "Missing scope", executionContextId: "" },
+      { name: "x".repeat(201), executionContextId: registered.id },
+    ]) await expect(submit({ intent: "register-project", ...values })).rejects.toThrow();
+    expect((await missionControlData()).projects).toEqual(before.projects);
+    const created = await submit({ intent: "register-project", name: "  Research notebook  ", executionContextId: registered.id, canonicalPath: "/ignored", githubOwner: "ignored", integrationMode: "github_pr" });
+    const after = await missionControlData();
+    const project = after.projects.find(item => item.name === "Research notebook")!;
+    expect(project).toMatchObject({ executionContextId: registered.id, canonicalPath: "", integrationMode: "none", targetBranch: "", githubOwner: "", githubRepo: "" });
+    expect(created).toEqual({ redirectTo: `/settings?context=${encodeURIComponent(registered.id)}&project=${encodeURIComponent(project.id)}` });
+    expect(after.projects).toHaveLength(before.projects.length + 1);
+    expect(after.runs).toEqual(before.runs);
+    expect(after.hosts).toEqual(before.hosts);
+    expect(after.goals).toEqual(before.goals);
+    await expect(submit({ intent: "register-project", name: "Research notebook", executionContextId: registered.id })).rejects.toThrow(/already/i);
+    expect((await missionControlData()).projects).toEqual(after.projects);
+  });
+
+  it("keeps concurrent duplicate registrations unique and reports a useful conflict", async () => {
+    const { applyMissionControlAction, missionControlData } = await import("./server");
+    const submit = (intent: string, name: string, executionContextId = "") => {
+      const form = new FormData();
+      Object.entries({ intent, name, executionContextId }).forEach(([key, value]) => form.set(key, value));
+      return applyMissionControlAction(form);
+    };
+    const contexts = await Promise.allSettled([submit("register-context", "Concurrent setup"), submit("register-context", "Concurrent setup")]);
+    expect(contexts.filter(item => item.status === "fulfilled")).toHaveLength(1);
+    const contextConflict = contexts.find(item => item.status === "rejected") as PromiseRejectedResult;
+    expect(contextConflict.reason.message).toMatch(/already/i);
+    const context = (await missionControlData()).executionContexts.find(item => item.name === "Concurrent setup")!;
+    const projects = await Promise.allSettled([submit("register-project", "Concurrent notebook", context.id), submit("register-project", "Concurrent notebook", context.id)]);
+    expect(projects.filter(item => item.status === "fulfilled")).toHaveLength(1);
+    const conflict = projects.find(item => item.status === "rejected") as PromiseRejectedResult;
+    expect(conflict.reason.message).toMatch(/already/i);
+    expect((await missionControlData()).projects.filter(item => item.name === "Concurrent notebook" && item.executionContextId === context.id)).toHaveLength(1);
+  });
+
   it("persists empty branches only when repository integration is disabled and rejects invalid edits atomically", async () => {
     const { applyMissionControlAction, missionControlData } = await import("./server");
     const { createSenderos, registerExecutionContext } = await import("@senderos/core");

@@ -18,6 +18,7 @@ const all = createSenderos({ allExecutionContexts: true });
 async function snapshot() {
   const db = openRuntimeDb();
   try { return {
+    executionContexts: await db.select().from(schema.executionContexts),
     projects: await db.select().from(schema.projects),
     agents: await db.select().from(schema.agents),
     senderos: await db.select().from(schema.senderos),

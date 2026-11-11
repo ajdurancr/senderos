@@ -110,3 +110,15 @@ unchanged, and captures desktop/mobile settings from the actual production app.
 See the README for commands. Passing snapshots or component tests alone do not
 establish lifecycle correctness; keep the production-browser and real-database
 layers when modifying these workflows.
+
+## Local-data onboarding
+
+Studio Settings provides explicit execution-context and standalone-project
+registration. Component tests cover required/empty context selection, pending
+submission, retained failed input and remounting unsaved input on scope changes.
+Real-database tests verify trimmed names, known-context validation, duplicate
+rejection, selected-scope redirects, no repository metadata and unchanged host,
+goal and run records. The production-browser journey starts in another project,
+creates a context and project through actual forms, reloads persisted settings,
+checks old filters are replaced and duplicate errors retain operator input, and
+captures authentic desktop/mobile screenshots. No host or model is contacted.
