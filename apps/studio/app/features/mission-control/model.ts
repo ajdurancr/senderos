@@ -36,7 +36,7 @@ export function relativeTime(value?: string | null, now = Date.now()) {
 export function goalExecution(data: MissionControlData, goalId: string) {
   const runs = data.runs
     .filter((run) => run.goalId === goalId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const attempts = runs.flatMap((run) =>
     data.attempts
       .filter((attempt) => attempt.runId === run.id)
