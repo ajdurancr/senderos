@@ -305,3 +305,11 @@ The journey traverses the full history, reloads a selected attempt, returns from
 Latest to an older visit, retains current work and evidence, checks keyboard focus
 and mobile layout, and compares the full database snapshot for unintended writes.
 Database reads and shared serialization remain complete.
+
+Retry history verification compares an original failed attempt with a reserved
+retry through both production detail surfaces. Native links retain scope and
+exact attempt selection across reload and Back/Forward. Mounted regressions
+cover missing, self, cross-goal and cross-activation references, legacy step
+boundaries and branching successors. The isolated host fixture reports failure;
+no external host or model is invoked. Browsing must leave attempts and events
+unchanged, and desktop/mobile captures preserve the actual rendered interface.

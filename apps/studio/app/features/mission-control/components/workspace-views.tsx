@@ -1,3 +1,4 @@
+import { RetryLineage } from "./retry-lineage";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { EvidenceRecords } from "./evidence-records";
 import { ReviewTimestamp } from "./review-timestamp";
@@ -146,6 +147,7 @@ function RunDetail({ data, attemptId }: { data: MissionControlData; attemptId?: 
     {goal && <Link className="button button-secondary" to={canvasEntityPath({ projectId: goal.projectId, goalId: goal.id, attemptId: attempt.id })}>
       {terminal ? "Open execution" : "Review this attempt"}<Icon name="arrow" />
     </Link>}
+    <RetryLineage data={data} attempt={attempt} surface="runs" />
     <div className="detail-summary"><span>Evidence</span><strong>{snapshot.evidence?.length ?? 0}</strong><span>Review</span><strong>{snapshot.review?.status?.replaceAll("_", " ") ?? "none"}</strong></div>
     <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
     <details className="inspector-disclosure"><summary>Technical details</summary>

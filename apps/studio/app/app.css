@@ -597,3 +597,8 @@ ol.event-stream { list-style: none; padding: 0; margin: 0; }
 .goal-preparation { display: grid; gap: 12px; margin-block: 16px; }
 .goal-preparation-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .goal-preparation-field { display: grid; gap: 8px; min-width: 0; }
+
+.retry-lineage { padding: var(--space-4); border-block: 1px solid var(--studio-border); }
+.retry-lineage nav { display: flex; flex-wrap: wrap; gap: .5rem; }
+.retry-lineage p { margin-block: var(--space-2); color: var(--text-muted); font-size: var(--text-meta); }
+.retry-lineage h3 { margin: 0; font-size: var(--text-body); }
