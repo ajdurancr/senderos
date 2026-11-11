@@ -52,6 +52,7 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
   try { completionPending = attempt.status === 'paused' && JSON.parse(attempt.statusSnapshotJson).completionRequested === true; } catch { /* Malformed metadata cannot establish completion. */ }
   const expired = !completionPending && !!attempt.leaseExpiresAt && Date.parse(attempt.leaseExpiresAt) < (data.asOf ?? Date.now()) && !['succeeded', 'failed', 'canceled'].includes(attempt.status);
   const guidance = recoveryGuidance(attempt, expired, completionPending);
+  const recoveryDetails = typeof attempt.recoveryDetails?.details === 'string' ? attempt.recoveryDetails.details : typeof attempt.recoveryDetails?.reason === 'string' ? attempt.recoveryDetails.reason : undefined;
   return <section className="host-records" aria-label="Host and session records">
     <details className="inspector-disclosure">
     <summary>Host and session records</summary>
@@ -76,7 +77,7 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
       <div><dt>Recovery observed</dt><dd>{attempt.recoveryObservedAt ?? 'Not recorded'}</dd></div>
     </dl>
     {preflight ? <details><summary>Recorded preflight</summary><dl className="property-list">{['eligible', 'checkedAt', 'blockers', 'requiredCapabilities', 'declaredCapabilities', 'missingCapabilities', 'declarationOnly'].map(key => key in preflight ? <div key={key}><dt>{key.replace(/([A-Z])/g, ' $1')}</dt><dd>{Array.isArray(preflight[key]) ? (preflight[key] as unknown[]).filter(value => typeof value === 'string').join(', ') || 'None' : String(preflight[key])}</dd></div> : null)}</dl>{Boolean(preflight.workspace) && typeof preflight.workspace === "object" && <dl className="property-list">{Object.entries(preflight.workspace as Record<string, unknown>).filter(([key]) => ["reference", "workingPath", "path", "available", "verifiedAt"].includes(key)).map(([key, value]) => <div key={key}><dt>Workspace {key}</dt><dd>{String(value ?? "Not recorded")}</dd></div>)}</dl>}</details> : <p>No preflight snapshot recorded for this attempt.</p>}
-    {recovery && <p>Recovery observation: {String((recovery.payload as Record<string, unknown>).details ?? (recovery.payload as Record<string, unknown>).reason ?? attempt.recoveryOutcome ?? 'Recorded')}</p>}
+    {(recoveryDetails || recovery) && <p>Recovery observation: {recoveryDetails ?? String((recovery!.payload as Record<string, unknown>).details ?? (recovery!.payload as Record<string, unknown>).reason ?? attempt.recoveryOutcome ?? 'Recorded')}</p>}
     </details>
     {guidance && <section className="inspector-section" aria-label="Recovery next step"><h3>{guidance.title}</h3><p>{guidance.text}</p>{!completionPending && !['succeeded', 'failed', 'canceled'].includes(attempt.status) && <p>Host recovery is an explicit CLI or Core operation. Inspect <code>senderos attempt --help</code> and <code>senderos attempt reconcile --help</code> on the owning host. Keep claim credentials private.</p>}</section>}
     {expired && <p role="status">The lease expired. The host must inspect the session before recovery; expiry does not prove the process stopped.</p>}

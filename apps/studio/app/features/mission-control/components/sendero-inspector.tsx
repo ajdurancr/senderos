@@ -131,7 +131,7 @@ export function SenderoInspector({
       </details>
       <section className="inspector-section event-preview">
         <header>
-          <h3>Related events</h3>
+          <h3>Recent related events</h3>
           <span>{events.length}</span>
         </header>
         {events.map((event) => (
@@ -143,7 +143,7 @@ export function SenderoInspector({
             </span>
           </div>
         ))}
-        {!events.length && <p>No related events recorded yet.</p>}
+        {!events.length && <p>No related events in the recent history.</p>}
       </section>
     </aside>
   );

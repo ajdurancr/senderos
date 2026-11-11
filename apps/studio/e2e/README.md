@@ -61,3 +61,12 @@ the isolated host fixture. Actual production pages retain observations on reload
 show outcome-specific next steps, and do not mutate claims or reserve replacement
 work. A real Studio cancellation waits for simulated host acknowledgement before
 the panel presents settled history. Screenshots capture desktop/mobile guidance.
+
+
+`activity.pw.ts` verifies production activity pagination at 50 events per page,
+keyboard/anchor focus, stable reloads, complete detail disclosures, invalid-cursor
+recovery, empty states, and context/project isolation. Its fixture inserts 125
+synthetic observations after the real unknown-host recovery observation, so that
+recovery falls outside the bounded latest event page. The attempt inspector must
+still show durable recovery details and guidance. Browsing leaves events, claims,
+attempts and runs unchanged. Desktop/mobile screenshots cover the real history UI.

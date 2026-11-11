@@ -2,7 +2,6 @@ import {
   createSenderos,
   registerExecutionContext,
   databaseConnectionFromEnvironment,
-  listEvents,
   type GoalKind,
   listSenderoVersions,
   getSenderoGraph,
@@ -14,6 +13,8 @@ import {
   listHosts,
 } from "@senderos/core";
 
+import { studioEvents } from "./activity";
+
 import { readDispatchReview, type DispatchScope } from "./dispatch-review";
 
 import {
@@ -21,18 +22,18 @@ import {
   senderosForStudio,
 } from "../../server/senderos.server";
 
-export async function missionControlData() {
+export async function missionControlData(request?: Request) {
   await prepareStudioDatabase();
   const senderos = senderosForStudio();
-  const [overview, executionContexts, agents, transitions, senderoGraphs, events] =
+  const [overview, executionContexts, agents, transitions, senderoGraphs] =
     await Promise.all([
       senderos.missionControl.overview(),
       senderos.commands.executionContexts.list(),
       senderos.commands.agents.list(),
       senderos.commands.agents.transitions(),
       senderos.missionControl.senderos.listGraphs(),
-      listEvents({}),
     ]);
+  const activity = await studioEvents(overview, request);
   const database = databaseConnectionFromEnvironment();
   const allGraphs = [];
   for (const version of await listSenderoVersions()) {
@@ -49,7 +50,7 @@ export async function missionControlData() {
       remote: !database.url.startsWith("file:"),
     },
   };
-  return { ...overview, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, events, runtime,
+  return { ...overview, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, ...activity, runtime,
     draftGraphs: allGraphs.filter(g => g.version.status === 'draft'),
     historyGraphs: allGraphs.filter(g => g.version.status === 'published') };
 }

@@ -15,7 +15,7 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return await missionControlData();
+  return await missionControlData(request);
 }
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();

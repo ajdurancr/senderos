@@ -573,3 +573,15 @@ select option { background: var(--studio-chrome); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
 }
+
+/* Bounded activity pages share the Studio control and surface vocabulary. */
+.activity-page-header { margin-bottom: 12px; }
+.activity-page-header h2 { font-size: var(--text-title); margin: 0 0 6px; }
+.activity-page-header p, .observability-panel > p { color: var(--text-muted); font-size: var(--text-meta); }
+.activity-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+.activity-pagination > span { color: var(--text-muted); font-size: var(--text-meta); }
+ol.event-stream { list-style: none; padding: 0; margin: 0; }
+.event-stream details { grid-column: 3; min-width: 0; font-size: var(--text-meta); color: var(--text-soft); }
+.event-stream summary { cursor: pointer; }
+.event-stream pre, .event-stream dd { white-space: pre-wrap; overflow-wrap: anywhere; margin-left: 0; }
+.event-stream dt { color: var(--text-muted); margin-top: 8px; }

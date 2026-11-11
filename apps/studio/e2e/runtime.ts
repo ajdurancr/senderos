@@ -2,6 +2,7 @@
  * the explicitly simulated external host boundary. All Studio mutations are UI. */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { count, eq } from 'drizzle-orm';
 import { createSenderos, prepareSharedDatabase, registerExecutionContext } from '@senderos/core';
 import { openRuntimeDb } from '../../../packages/core/src/db/client';
 import * as schema from '../../../packages/core/src/db/schema';
@@ -18,6 +19,7 @@ const all = createSenderos({ allExecutionContexts: true });
 async function snapshot() {
   const db = openRuntimeDb();
   try { return {
+    eventCount: (await db.select({ value: count() }).from(schema.events))[0]!.value,
     executionContexts: await db.select().from(schema.executionContexts),
     projects: await db.select().from(schema.projects),
     agents: await db.select().from(schema.agents),
@@ -53,6 +55,14 @@ if (command === 'init') {
   const prerequisite = await all.commands.senderos.get('sendero-software-delivery');
   if (!prerequisite || prerequisite.version.status !== 'published') throw new Error('Missing built-in published prerequisite');
   result = { id, productContext, researchContext, launchProject, campaignProject, researchProject, prerequisiteVersionId: prerequisite.version.id };
+} else if (command === 'prepare-history' && id) {
+  // Synthetic observations are fixture data, never operator mutations.
+  const db = openRuntimeDb();
+  const goal = (await db.select().from(schema.goals).where(eq(schema.goals.title, `History recovery ${id}`)))[0];
+  if (!goal) throw new Error('Missing history goal prerequisite');
+  const createdAt = new Date(Date.now() + 60_000).toISOString();
+  await db.insert(schema.events).values(Array.from({ length: 125 }, (_, i) => ({ id: `history-${id}-${String(i).padStart(3, '0')}`, eventType: 'fixture.history', entityType: i < 105 ? 'goal' : 'project', entityId: i < 105 ? goal.id : `campaign-${id}`, createdAt, payloadJson: JSON.stringify({ observation: `Fixture recorded event ${i}`, detail: 'x'.repeat(240) }) })));
+  result = { inserted: 125 };
 } else if (command === 'snapshot') {
   // Browser navigation can still be finishing its real planning transaction.
   // Retry reads only; never repeat a host command or an operator mutation.

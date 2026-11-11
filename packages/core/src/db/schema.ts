@@ -222,7 +222,10 @@ export const events = sqliteTable("events", {
   entityId: text("entity_id").notNull(),
   payloadJson: text("payload_json").notNull(),
   createdAt: text("created_at").notNull(),
-});
+}, (table) => [
+  index("events_created_at_id_idx").on(table.createdAt, table.id),
+  index("events_entity_created_at_id_idx").on(table.entityId, table.createdAt, table.id),
+]);
 
 /** Explicit cursor; existing goals are reconciled lazily on first lifecycle command. */
 export const goalExecutions = sqliteTable("goal_executions", {

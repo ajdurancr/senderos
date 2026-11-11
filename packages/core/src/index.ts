@@ -17,6 +17,7 @@ export { databaseConnectionFromEnvironment, describeCurrentDb } from './db/clien
 export { prepareSharedDatabase } from './db/bootstrap';
 export { previewLocalDatabaseReset, resetLocalDatabase, type LocalDatabaseResetPreview } from './db/reset';
 export { listEvents } from './shared/events';
+export { listEventPage, type EventPosition } from './shared/event-page';
 export {
   missionControlGoal,
   missionControlOverview,
