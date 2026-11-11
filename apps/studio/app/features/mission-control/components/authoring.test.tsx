@@ -318,6 +318,33 @@ describe('parallel execution monitoring', () => {
     expect(screen.getByText('Not declared')).toBeTruthy();
   });
 
+  it.each([
+    ['running', 'unknown', null, 'Keep recovery blocked'],
+    ['running', 'missing', null, 'Independently confirm the process stopped'],
+    ['running', 'active', null, 'Reclaim ownership and continue the existing session'],
+    ['running', 'active', '2026-01-02', 'Wait for host acknowledgement'],
+    ['paused', 'finished', null, 'Review completion requirements'],
+    ['failed', 'missing', null, 'Attempt settled'],
+    ['canceled', 'active', '2026-01-02', 'Attempt settled'],
+    ['running', null, null, 'Inspect the existing session'],
+  ])('explains safe recovery for %s / %s without overriding durable status', (status, recoveryOutcome, cancellationRequestedAt, heading) => {
+    const attempt = { ...base.attempts[0]!, status: status as 'running' | 'paused' | 'failed' | 'canceled', statusSnapshotJson: status === 'paused' ? '{"completionRequested":true}' : '{}', recoveryOutcome, cancellationRequestedAt, ownerId: 'host', leaseExpiresAt: '2026-01-01T00:00:00Z' };
+    const { container } = renderRouter(<HostExecutionRecords data={{ ...base, asOf: Date.parse('2026-01-03T00:00:00Z') }} attempt={attempt} />);
+    expect(screen.getByRole('heading', { name: heading })).toBeTruthy();
+    expect(container.querySelectorAll('form')).toHaveLength(0);
+    if (status === 'paused' || status === 'failed' || status === 'canceled') expect(container.textContent).not.toContain('The lease expired.');
+    if (status === 'running') expect(container.textContent).toContain('does not prove the process stopped');
+  });
+
+  it('does not mistake an ordinary pause or malformed snapshot for completed work', () => {
+    for (const statusSnapshotJson of ['{}', 'invalid']) {
+      const view = renderRouter(<HostExecutionRecords data={{ ...base, asOf: Date.parse('2026-01-03') }} attempt={{ ...base.attempts[0]!, status: 'paused', statusSnapshotJson, recoveryOutcome: 'unknown', leaseExpiresAt: '2026-01-01' }} />);
+      expect(screen.getByRole('heading', { name: 'Keep recovery blocked' })).toBeTruthy();
+      expect(screen.getByRole('status').textContent).toContain('The lease expired.');
+      view.unmount();
+    }
+  });
+
   it('renders unresolved, blocked, and empty activations with their exact next action', () => {
     const activation = { id: 'activation-wait', goalId: 'goal-1', nodeId: 'removed-node', transitionId: 'edge-1', parentActivationId: null, previousRunId: null, latestRunId: null, status: 'waiting_join', reason: 'waiting_for_join', attemptsUsed: 0, maxAttempts: 3, revision: 2, scopesJson: 'null', inputJson: '{}', createdAt: '2026-01-01', updatedAt: '2026-01-01' };
     const decision = { goalId: 'goal-1', activationId: activation.id, state: 'blocked' as const, reason: 'waiting_for_join', nextAction: 'wait_for_branches' };

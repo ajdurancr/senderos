@@ -159,3 +159,14 @@ The build packages the migrations and seed definitions beside the SSR entry poin
 The smoke starts the built Node server against a disposable fresh database, checks
 SSR routes and emitted assets, and creates an agent and draft through HTTP. It
 does not connect to an operator's database or reuse authentication tokens.
+
+## Inspect recorded recovery
+
+Open an attempt's Host and session records for its recorded owner, worker,
+workspace, heartbeat, lease, and latest recovery observation. The recovery next
+step explains whether to inspect, keep blocked, continue an existing session,
+confirm termination independently, or wait for cancellation acknowledgement.
+These are recorded facts and guidance, not live host checks. Pending completion
+requires evidence or review; terminal attempts retain recovery as history.
+Recovery remains an explicit host CLI/Core operation. Studio does not reclaim,
+abandon, kill a process, or launch replacement work from this panel.
