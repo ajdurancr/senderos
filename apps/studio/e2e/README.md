@@ -271,3 +271,11 @@ before another submission. Reload verifies persisted runs or cancellation; an un
 request can then be submitted explicitly. Owned attempts remain running until the
 isolated host fixture acknowledges cancellation. No automatic mutation replay, real
 worker execution or external process termination is implied.
+
+Goal activation confirmation recovery covers Start goal at desktop and mobile widths.
+Held requests reject repeated submissions. Lost responses preserve the operator view,
+explain that activation may have committed and require persisted-state readback before
+starting or editing again. The fixture verifies both committed and unapplied requests,
+a single execution, the assigned workflow version and zero reserved attempts. Activation
+remains separate from reviewed dispatch. These checks do not clear retained parent or
+native acceptance failures.

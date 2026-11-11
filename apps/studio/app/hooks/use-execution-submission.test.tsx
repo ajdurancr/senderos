@@ -4,11 +4,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useExecutionSubmission } from './use-execution-submission';
 
 afterEach(cleanup);
-function Example({ intent }: { intent: 'dispatch-plan' | 'cancel-goal' }) {
+function Example({ intent }: { intent: 'start' | 'dispatch-plan' | 'cancel-goal' }) {
   const { pending, uncertain, submit } = useExecutionSubmission(intent);
   return <Form method="post" aria-label="Execution action" onSubmit={submit}><button disabled={pending || uncertain}>Submit</button></Form>;
 }
-for (const intent of ['dispatch-plan', 'cancel-goal'] as const) {
+for (const intent of ['start', 'dispatch-plan', 'cancel-goal'] as const) {
   it(`blocks repeated ${intent} submissions before and during navigation, then permits a rejected action to be corrected`, async () => {
     let finish!: (value: unknown) => void;
     const action = vi.fn(() => new Promise(resolve => { finish = resolve; }));

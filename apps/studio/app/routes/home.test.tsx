@@ -143,7 +143,7 @@ describe('registration redirect confirmation', () => {
 
 
 describe('execution confirmation recovery', () => {
-  it.each(['dispatch-plan', 'cancel-goal'])('retains the operator view after uncertain %s without replaying the action', async intent => {
+  it.each(['start', 'dispatch-plan', 'cancel-goal'])('retains the operator view after uncertain %s without replaying the action', async intent => {
     const form = new FormData(); form.set('intent', intent);
     const serverAction = vi.fn(async () => { throw new TypeError('Failed to fetch'); });
     const result = await clientAction({ request: new Request('http://localhost/now', { method: 'POST', body: form }), serverAction } as unknown as Parameters<typeof clientAction>[0]);
@@ -151,7 +151,7 @@ describe('execution confirmation recovery', () => {
     expect(result).toMatchObject({ ok: false, intent, transportFailure: true });
     expect(result.message).toContain('may have reached');
     expect(result.message).toContain('before submitting again');
-    expect(result.message).toContain(intent === 'dispatch-plan' ? 'External hosts start execution separately' : 'does not terminate external processes');
+    expect(result.message).toContain(intent === 'start' ? 'does not reserve runs' : intent === 'dispatch-plan' ? 'External hosts start execution separately' : 'does not terminate external processes');
     expect(shouldRevalidate({ actionResult: result, defaultShouldRevalidate: true } as Parameters<typeof shouldRevalidate>[0])).toBe(false);
   });
 });
