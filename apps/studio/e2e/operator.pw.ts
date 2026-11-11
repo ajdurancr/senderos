@@ -115,6 +115,28 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
 
   const goal = await createGoal(page, scenario, `Ship accessible browser outcome ${suffix}`, false, version.id);
   expect(goal).toMatchObject({ status: 'draft', kind: 'feature', senderoVersionId: version.id, specText: 'Keyboard and responsive acceptance with persisted evidence.' });
+  // Publish a later definition while this goal remains pinned to its original.
+  await visit(page, `/senderos/${workflow.id}${scope}`);
+  await page.getByRole('button', { name: 'Create editable draft' }).click();
+  await expect(page.getByRole('button', { name: 'Validate & publish draft' })).toBeVisible();
+  await page.locator('.graph-editor').getByRole('textbox', { name: 'Node label', exact: true }).nth(1).fill('Later definition reviewer');
+  await page.getByRole('button', { name: 'Save graph draft' }).click();
+  await expect(page.getByRole('button', { name: 'Validate & publish draft' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Validate & publish draft' }).click();
+  await expect(page.getByRole('button', { name: 'Create editable draft' })).toBeVisible();
+  await reload(page);
+  await expect(page.getByRole('link', { name: 'Inspect agent Later definition reviewer', exact: true })).toBeVisible();
+  await visit(page, `/projects/${scenario.launchProject}/canvas/goals/${goal.id}${scope}`);
+  await reload(page);
+  await expect(page.getByRole('link', { name: 'Inspect agent Acceptance reviewer', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Inspect agent Later definition reviewer', exact: true })).toHaveCount(0);
+  expect(state().goals.find(item => item.id === goal.id)?.senderoVersionId).toBe(version.id);
+  await capture(page, testInfo, 'pinned-workflow-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'pinned-workflow-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   expect(goalRuns(goal.id)).toHaveLength(0);
   await page.getByRole('button', { name: 'Start goal', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Review ready activations' })).toBeVisible();

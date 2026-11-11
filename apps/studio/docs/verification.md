@@ -149,3 +149,15 @@ The focused activity regression and production browser journey cover pagination,
 scoping, reloads, keyboard focus, empty/error states and old recovery facts.
 Goals, attempts and workflow graphs still use the existing overview loading path;
 this change bounds event loading only, not the entire overview response.
+
+
+### Workflow definition hydration
+
+HTTP loads retain published graph definitions pinned by existing goals, alongside
+current published definitions used for selectors. Unreferenced historical graph
+nodes/edges are not hydrated. Editable drafts load on Senderos management routes;
+programmatic `missionControlData()` retains the full-history inspection contract.
+The graph-data regression publishes multiple revisions, keeps a goal on its
+original definition and verifies immutable nodes/edges/revision, current selection,
+and draft availability. Overview goals/runs/attempts and lightweight version
+catalog reads remain unchanged; this is not a complete response-size bound.
