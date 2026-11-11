@@ -19,6 +19,7 @@ export function EvidenceRecords({ snapshot, asOf }: { snapshot: AttemptSnapshot;
           <strong>{item.label}</strong><span>{item.kind}</span>
           {item.summary && <p>{item.summary}</p>}
           {url && <a href={url} target="_blank" rel="noopener noreferrer">Open evidence: {item.label}</a>}
+          {!url && item.url?.trim() && <div className="evidence-reference"><small>Recorded reference</small><code>{item.url}</code></div>}
           {item.createdAt && <small>{relativeTime(item.createdAt, asOf)}</small>}
         </div></article>;
       })}

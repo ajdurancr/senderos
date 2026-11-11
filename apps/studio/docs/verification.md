@@ -342,3 +342,12 @@ failures, and nested transactions keep their existing owner. Repeated snapshot
 regressions verify complete results and closed clients; interrupted reads must
 finish before cleanup. This does not establish the cause of the earlier simulator
 stall or promise cleanup for every independent CLI command.
+
+## Imported artifact references
+
+The evidence-reference production journey loads synthetic retained terminal
+history with a file URL, a local path containing spaces, and an artifact
+identifier. It verifies exact inert text in the inspector and Runs history after
+reload, unchanged persisted state, and desktop/mobile wrapping without horizontal
+overflow. Component regressions also cover invalid and executable schemes,
+escaped markup, and existing HTTP(S) link behavior. No referenced file is read.
