@@ -106,3 +106,14 @@ protection covers dirty preparation, and an unconfirmed save preserves inputs
 while explaining that the server may have saved. Reload to inspect persisted
 state, or retry with the original reviewed snapshot. No browser crash recovery
 is promised.
+
+## Snapshot freshness
+
+Studio displays a server snapshot, not a live host connection. The snapshot
+indicator names its observation time and warns after one minute that host and
+recovery status may have changed. **Refresh status** reloads the current scoped
+view without submitting a form. Unsaved editor inputs remain in place on a
+successful refresh. Refreshing does not heartbeat, reconcile, stop, or restart a
+worker. Lease expiry never proves that an external process stopped.
+
+Explicit status refresh uses a read-only scoped snapshot request. If it fails, Studio keeps the previous snapshot and unsaved editor inputs mounted, shows a retry message, and does not advance the observation time. Navigation and successful saves still load their own snapshots normally.

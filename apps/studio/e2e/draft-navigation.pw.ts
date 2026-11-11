@@ -123,3 +123,24 @@ test('retains graph inputs after an interrupted save and confirms a retry', asyn
   await ready(page);
   await expect(budget).toHaveValue('41');
 });
+
+test('status refresh retains an unsaved graph and its reviewed revision', async ({ page, scenario }) => {
+  await visit(page, `/senderos/new${scenarioScope(scenario)}`);
+  await page.getByRole('textbox', { name: 'Name', exact: true }).fill(`Snapshot draft ${scenario.id}`);
+  await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(`snapshot-${scenario.id}`);
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click();
+  const budget = page.getByRole('spinbutton', { name: 'Maximum activations per goal' });
+  await expect(budget).toBeVisible();
+  await budget.fill('47');
+  const revision = await page.locator('.graph-editor input[name="expectedRevision"]').inputValue();
+  const before = state();
+  await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toHaveAttribute('aria-disabled', 'false');
+  await expect(budget).toHaveValue('47');
+  expect(await page.locator('.graph-editor input[name="expectedRevision"]').inputValue()).toBe(revision);
+  expect(state()).toEqual(before);
+  await page.getByRole('button', { name: 'Save graph draft', exact: true }).click();
+  await expect(page.getByText('All graph edits are saved.')).toBeVisible();
+  await page.reload(); await ready(page);
+  await expect(budget).toHaveValue('47');
+});

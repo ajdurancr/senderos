@@ -1,15 +1,83 @@
 import { afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterContextProvider, RouterProvider } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { missionControlFixture } from "../test-support/mission-control-fixture";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 import Home, { meta, clientAction, shouldRevalidate } from "./home";
 
 describe("home route", () => {
+  it("identifies an old snapshot and refreshes it without discarding unsaved inputs", async () => {
+    const refresh = vi.fn().mockResolvedValue(Response.json({ ok: true, data: { ...missionControlFixture, asOf: Date.now() } }));
+    vi.stubGlobal('fetch', refresh);
+    const router = createMemoryRouter([{ path: '*', loader: () => ({ ...missionControlFixture, asOf: Date.now() - 120_000 }), element: <Home /> }], { initialEntries: ['/agents/new'] });
+    render(<RouterProvider router={router} />);
+    await screen.findByText('Define a custom agent');
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Unsaved operator input' } });
+    expect(await screen.findByText('Status may have changed. Refresh before acting on host or recovery information.')).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveProperty('disabled', false));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh status' }));
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    await waitFor(() => expect(screen.queryByText('Status may have changed. Refresh before acting on host or recovery information.')).toBeNull());
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Unsaved operator input');
+  });
+
+  it('retains unsaved input and the previous timestamp through a failed refresh and retry', async () => {
+    const asOf = Date.now() - 120_000;
+    const refresh = vi.fn().mockRejectedValueOnce(new Error('Synthetic outage')).mockResolvedValueOnce(Response.json({ ok: true, data: { ...missionControlFixture, asOf: Date.now() } }));
+    vi.stubGlobal('fetch', refresh);
+    const router = createMemoryRouter([{ path: '*', loader: () => ({ ...missionControlFixture, asOf }), element: <Home /> }], { initialEntries: ['/agents/new?context=local&project=one'] });
+    render(<RouterProvider router={router} />);
+    await screen.findByText('Define a custom agent');
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Unsaved operator input' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveProperty('disabled', false));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh status' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('previous snapshot and your edits are kept');
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Unsaved operator input');
+    expect(document.querySelector('time')?.dateTime).toBe(new Date(asOf).toISOString());
+    expect(refresh.mock.calls[0][0]).toContain('context=local&project=one');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveProperty('disabled', false));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh status' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Unsaved operator input');
+  });
+
+  it.each([
+    () => Promise.resolve(new Response('Unavailable', { status: 503 })),
+    () => Promise.resolve(Response.json({ ok: true, data: { asOf: null } })),
+  ])('keeps the editor when refresh fails or returns invalid data', async response => {
+    vi.stubGlobal('fetch', vi.fn(response));
+    const router = createMemoryRouter([{ path: '*', loader: () => missionControlFixture, element: <Home /> }], { initialEntries: ['/agents/new'] });
+    render(<RouterProvider router={router} />);
+    await screen.findByText('Define a custom agent');
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Keep draft' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveProperty('disabled', false));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh status' }));
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Keep draft');
+  });
+
+  it('ignores a late refresh after navigation and prevents duplicate requests', async () => {
+    let finish!: (response: Response) => void;
+    const refresh = vi.fn(() => new Promise<Response>(resolve => { finish = resolve; }));
+    vi.stubGlobal('fetch', refresh);
+    const router = createMemoryRouter([{ path: '*', loader: () => ({ ...missionControlFixture, asOf: 1000 }), element: <Home /> }], { initialEntries: ['/agents/new'] });
+    render(<RouterProvider router={router} />);
+    await screen.findByText('Define a custom agent');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toHaveProperty('disabled', false));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh status' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Refreshing status…' }));
+    expect(refresh).toHaveBeenCalledOnce();
+    await router.navigate('/agents');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Refresh status' })).toBeTruthy());
+    expect((refresh.mock.calls[0] as unknown as [string, RequestInit])[1].signal?.aborted).toBe(true);
+    finish(Response.json({ ok: true, data: { ...missionControlFixture, asOf: 999999 } }));
+    await waitFor(() => expect(document.querySelector('time')?.dateTime).toBe(new Date(1000).toISOString()));
+  });
+
   it("declares metadata and composes loader data with URL filters", async () => {
     expect(meta()).toContainEqual({ title: "Mission Control · Senderos Studio" });
     const data = {
