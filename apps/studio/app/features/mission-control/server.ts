@@ -12,6 +12,8 @@ import {
 } from "@senderos/core";
 
 import { studioEvents } from "./activity";
+import { filterMissionControlData } from "./scope-filters";
+import { parseStudioPath } from "./navigation";
 import { studioGraphData } from "./graph-data";
 
 import { readDispatchReview, type DispatchScope } from "./dispatch-review";
@@ -25,7 +27,7 @@ export async function missionControlData(request?: Request) {
   await prepareStudioDatabase();
   const executionContextId = request ? new URL(request.url).searchParams.get('context') || undefined : undefined;
   const senderos = executionContextId ? createSenderos({ executionContextId }) : senderosForStudio();
-  const [overview, executionContexts, agents, transitions, senderoGraphs] =
+  const [completeOverview, executionContexts, agents, transitions, senderoGraphs] =
     await Promise.all([
       senderos.missionControl.overview(),
       senderos.commands.executionContexts.list(),
@@ -35,7 +37,12 @@ export async function missionControlData(request?: Request) {
     ]);
   // The shell needs all project choices when switching contexts. Operational
   // records and lifecycle decisions come from the selected context above.
-  const projects = executionContextId ? await senderosForStudio().commands.projects.list() : overview.projects;
+  const projects = executionContextId ? await senderosForStudio().commands.projects.list() : completeOverview.projects;
+  const url = request ? new URL(request.url) : undefined;
+  const projectId = url ? url.searchParams.get('project') || parseStudioPath(url.pathname).projectId : undefined;
+  // Apply the same scope before serialization and pinned-definition loading as
+  // the client views. Navigation still receives every project choice.
+  const overview = filterMissionControlData({ ...completeOverview, events: [] }, executionContextId, projectId);
   const activity = await studioEvents(overview, request);
   const database = databaseConnectionFromEnvironment();
   const graphs = await studioGraphData(overview.goals, senderoGraphs, request);

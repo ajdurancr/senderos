@@ -182,3 +182,12 @@ complete view and covers switching, empty and unknown contexts. The production
 settings journey switches contexts, reloads, captures desktop/mobile, and returns
 to another context to choose a project. This reduces unrelated operational payload;
 it does not bound selected-context history or all underlying database work.
+
+HTTP project query/path scopes are applied before operational serialization and
+pinned workflow hydration, retaining global navigation choices. A context/project
+mismatch or unknown project yields empty operational records and zero scoped
+status counts. The shared filter also scopes execution summaries and lifecycle
+status IDs/counts. Integration tests compare against complete persisted records;
+the production browser covers project-only settings reload and cross-project
+navigation with desktop/mobile captures. This reduces payload only; Core still
+loads the selected context (or complete overview for project-only URLs) first.

@@ -23,6 +23,10 @@ test("filters Studio records by execution context and project", () => {
     activations: [{ id: 'activation-a', goalId: goalA.id, nodeId: 'node', transitionId: 'edge', parentActivationId: null, previousRunId: null, latestRunId: null, status: 'ready', reason: null, attemptsUsed: 0, maxAttempts: 3, revision: 0, scopesJson: '[]', inputJson: '{}', createdAt: '', updatedAt: '' }],
     executionContexts: [contextA, contextB],
     projects: [projectA, projectB],
+    status: { projects: { total: 2, unhealthy: 0 }, openGoals: 2, activeRuns: 2,
+      activeGoalIds: [goalA.id, goalB.id], runningRunIds: [runA.id, runB.id], activeAttemptIds: [attemptA.id, attemptB.id] },
+    executions: [goalA, goalB].map(goal => ({ goalId: goal.id, transitionId: null, latestRunId: null,
+      attemptsUsed: 0, maxAttempts: 3, revision: 0, finishedAt: null, maxActivations: 100, activationsUsed: 0, cancellationRequestedAt: null })),
     goals: [goalA, goalB],
     runs: [runA, runB],
     attempts: [attemptA, attemptB],
@@ -45,6 +49,9 @@ test("filters Studio records by execution context and project", () => {
   };
 
   const filtered = filterMissionControlData(data, contextA.id);
+  expect(filtered.executions.map(item => item.goalId)).toEqual([goalA.id]);
+  expect(filtered.status).toEqual({ projects: { total: 1, unhealthy: 0 }, openGoals: 1, activeRuns: 1,
+    activeGoalIds: [goalA.id], runningRunIds: [runA.id], activeAttemptIds: [attemptA.id] });
   expect(filtered.decisions).toHaveLength(1);
   expect(filtered.activations).toHaveLength(1);
   expect(filtered.queue.blockedGoals).toHaveLength(1);
