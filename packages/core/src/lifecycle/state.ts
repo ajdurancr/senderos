@@ -54,7 +54,7 @@ export async function cursor(goalId: string, home?: string) {
   }
   return (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goalId)))[0]!;
 }
-export type ActivationDecision = { goalId: string; activationId?: string; nodeId?: string; state: "ready" | "running" | "blocked" | "completed" | "canceled" | "draft"; reason: string; nextAction: string; transitionId?: string; agentId?: string; previousRunId?: string | null; revision?: number; attemptId?: string; scopes?: string[] };
+export type ActivationDecision = { goalId: string; activationId?: string; nodeId?: string; state: "ready" | "running" | "blocked" | "completed" | "canceled" | "draft"; reason: string; nextAction: string; transitionId?: string; agentId?: string; previousRunId?: string | null; revision?: number; attemptId?: string; scopes?: string[]; completion?: { missingEvidenceKinds: string[]; missingReview: boolean } };
 async function explainActivation(a: Activation, home?: string): Promise<ActivationDecision> {
   const db = openRuntimeDb(home), goal = await requireGoal(a.goalId, home);
   const base = { goalId: a.goalId, activationId: a.id, nodeId: a.nodeId, revision: a.revision, scopes: JSON.parse(a.scopesJson) as string[] };
@@ -65,7 +65,17 @@ async function explainActivation(a: Activation, home?: string): Promise<Activati
   if (attempt && !terminal(attempt.status)) {
     const claim = (await db.select().from(attemptClaims).where(eq(attemptClaims.attemptId, attempt.id)))[0], snapshot = JSON.parse(attempt.statusSnapshotJson);
     const stale = !snapshot.completionRequested && (claim?.ownerId ? !claim.leaseExpiresAt || Date.parse(claim.leaseExpiresAt) <= Date.now() : !claim && (!attempt.heartbeatAt || Date.now() - Date.parse(attempt.heartbeatAt) > 120000));
-    return { ...base, state: stale || attempt.status === "paused" || !!claim?.cancellationRequestedAt ? "blocked" : "running", reason: claim?.cancellationRequestedAt ? "cancellation_requested" : stale ? "lease_expired" : attempt.status === "paused" ? "waiting_for_review_or_resume" : claim && !claim.ownerId ? "awaiting_host" : !attempt.startedAt ? "host_claimed" : "host_running", nextAction: claim?.cancellationRequestedAt ? "acknowledge_cancel" : stale ? "reconcile" : snapshot.completionRequested ? "review_or_record_evidence" : claim && !claim.ownerId ? "claim" : !attempt.startedAt ? "start" : "wait", attemptId: attempt.id };
+    let completion: ActivationDecision["completion"];
+    if (snapshot.completionRequested === true && attempt.status === "paused" && !claim?.cancellationRequestedAt) {
+      const step = (await executableGraph(goal.senderoVersionId, home, false)).steps.find(step => step.nodeId === a.nodeId);
+      requireLifecycle(step, "INCONSISTENT_HISTORY", "Completion attempt node is missing from the pinned workflow");
+      const evidence = Array.isArray(snapshot.evidence) ? snapshot.evidence : [];
+      completion = {
+        missingEvidenceKinds: [...new Set(step.policy.evidenceKinds ?? [])].filter(kind => !evidence.some((item: { kind: string }) => item.kind === kind)),
+        missingReview: !!step.policy.requireReview && snapshot.review?.status !== "approved",
+      };
+    }
+    return { ...base, state: stale || attempt.status === "paused" || !!claim?.cancellationRequestedAt ? "blocked" : "running", reason: claim?.cancellationRequestedAt ? "cancellation_requested" : stale ? "lease_expired" : completion ? "completion_prerequisites" : attempt.status === "paused" ? "waiting_for_review_or_resume" : claim && !claim.ownerId ? "awaiting_host" : !attempt.startedAt ? "host_claimed" : "host_running", nextAction: claim?.cancellationRequestedAt ? "acknowledge_cancel" : stale ? "reconcile" : snapshot.completionRequested ? "review_or_record_evidence" : claim && !claim.ownerId ? "claim" : !attempt.startedAt ? "start" : "wait", attemptId: attempt.id, ...(completion ? { completion } : {}) };
   }
   const state = (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goal.id)))[0]!;
   if (state.cancellationRequestedAt) return { ...base, state: "blocked", reason: "cancellation_requested", nextAction: "acknowledge_cancel" };

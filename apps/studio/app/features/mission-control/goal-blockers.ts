@@ -1,4 +1,5 @@
 import type { MissionControlData } from "./server";
+import { completionActions } from "./model";
 
 type Decision = MissionControlData["decisions"][number];
 type Blocker = Decision["activations"][number];
@@ -15,6 +16,10 @@ export function goalBlockers(data: MissionControlData) {
 }
 
 export function blockerGuidance(blocker: Blocker) {
+  if (blocker.reason === "completion_prerequisites") {
+    const actions = blocker.completion ? completionActions(blocker.completion) : [];
+    return { title: "Completion requested", next: actions.length ? actions.join(" ") : "Inspect this attempt's pinned completion prerequisites and refresh its status. Completion has not been inferred." };
+  }
   const guidance: Record<string, { title: string; next: string }> = {
     AGENT_UNAVAILABLE: { title: "Agent unavailable", next: "Enable the activation's agent in Settings, or cancel the goal." },
     retry_limit_reached: { title: "Attempt budget reached", next: "Inspect the failed attempts before explicitly increasing the retry budget or canceling the goal." },

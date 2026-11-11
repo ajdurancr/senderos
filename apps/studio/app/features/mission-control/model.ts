@@ -1,6 +1,7 @@
 import type { MissionControlData } from "./server";
 
 export type AttemptSnapshot = {
+  completionRequested?: boolean;
   evidence?: Array<{ id: string; label: string; kind: string; url?: string; summary?: string; createdAt?: string }>;
   review?: { status: string; reviewer?: string; rationale?: string; reviewedAt?: string };
 };
@@ -12,6 +13,7 @@ export function parseAttemptSnapshot(value: string): AttemptSnapshot {
     const snapshot = parsed as AttemptSnapshot;
     const text = (input: unknown) => typeof input === "string" ? input : undefined;
     return {
+      ...(snapshot.completionRequested === true ? { completionRequested: true } : {}),
       evidence: Array.isArray(snapshot.evidence) ? snapshot.evidence.filter(item => item && typeof item.id === 'string' && typeof item.label === 'string' && typeof item.kind === 'string').map(item => ({ id: item.id, label: item.label, kind: item.kind, url: text(item.url), summary: text(item.summary), createdAt: text(item.createdAt) })) : undefined,
       review: snapshot.review && typeof snapshot.review === 'object' && typeof snapshot.review.status === 'string' ? { status: snapshot.review.status, reviewer: text(snapshot.review.reviewer), rationale: text(snapshot.review.rationale), reviewedAt: text(snapshot.review.reviewedAt) } : undefined,
     };
@@ -45,4 +47,13 @@ export function goalExecution(data: MissionControlData, goalId: string) {
 
 export function eventLabel(value: string) {
   return value.replaceAll(".", " / ").replaceAll("-", " ");
+}
+
+/** Format Core's remaining facts consistently in attention cards and inspectors. */
+export function completionActions(completion: NonNullable<MissionControlData["decisions"][number]["completion"]>) {
+  const labels: Record<string, string> = { test: "test report", ci: "CI result", pull_request: "pull request", artifact: "artifact", manual: "manual observation" };
+  return [
+    ...completion.missingEvidenceKinds.map(kind => `Record ${labels[kind] ?? kind.replaceAll("_", " ")} evidence.`),
+    ...(completion.missingReview ? ["Record an approved review."] : []),
+  ];
 }

@@ -214,3 +214,20 @@ completion gate paused, then records test evidence through the actual form and
 verifies durable completion after reload. Desktop/mobile form screenshots and
 read-only terminal proof are preserved. These are operator-supplied records, not
 claims that Studio ran or independently verified the linked tests.
+
+
+### Completion prerequisite guidance
+
+Core explanations expose only the unmet evidence kinds and review approval for
+a completion-pending attempt, resolved from the goal's pinned executable policy.
+Regressions cover explicit node policies, legacy edge policies, later publications,
+manual evidence that does not satisfy a test requirement, partial evidence,
+approval, settlement and cancellation precedence. Ordinary pauses have no
+completion checklist. No workflow-gate or access behavior is changed.
+
+The production operator journey requires test and artifact evidence. It verifies
+the same precise missing list in Now attention and the selected attempt, records test proof through Studio, reloads while only
+artifact remains, then records the artifact and verifies terminal completion
+and removal of the guidance. Desktop/mobile screenshots preserve the real
+checklist. Component tests reject borrowing another activation's prerequisites
+and keep absent facts from being presented as successful completion.
