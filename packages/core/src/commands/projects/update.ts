@@ -1,5 +1,6 @@
 import { atomic, openRuntimeDb } from "../../db/client";
 import { emitEvent } from "../../shared/events";
+import { requireLifecycle } from "../../lifecycle/errors";
 import { now } from "../../shared/ids";
 import type { IntegrationMode, ProjectStatus } from "../../shared/types";
 import { getProject } from "./get";
@@ -23,14 +24,19 @@ export async function updateProject(input: {
   return atomic(input.home, async () => {
     const current = await getProject(input.id, input.home, input.executionContextId);
     if (!current) throw new Error(`Project not found: ${input.id}`);
+    const name = input.name?.trim() ?? current.name;
+    const githubOwner = input.githubOwner?.trim() ?? current.githubOwner;
+    const githubRepo = input.githubRepo?.trim() ?? current.githubRepo;
+    requireLifecycle(Boolean(name), 'INVALID_INPUT', 'Project name is required');
+    requireLifecycle(Boolean(githubOwner) === Boolean(githubRepo), 'INVALID_INPUT', 'Supply both GitHub owner and repository, or neither');
     const db = openRuntimeDb(input.home);
     await db
       .update(projects)
       .set({
-        name: input.name ?? current.name,
+        name,
         canonicalPath: input.canonicalPath ?? current.canonicalPath,
-        githubOwner: input.githubOwner ?? current.githubOwner,
-        githubRepo: input.githubRepo ?? current.githubRepo,
+        githubOwner,
+        githubRepo,
         githubRemote: input.githubRemote ?? current.githubRemote,
         targetBranch: input.targetBranch ?? current.targetBranch,
         status: input.status ?? current.status,
