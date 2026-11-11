@@ -3,6 +3,7 @@ import {
   registerExecutionContext,
   databaseConnectionFromEnvironment,
   type GoalKind,
+  type EvidenceKind,
   createAgent,
   updateAgent,
   newSendero,
@@ -197,7 +198,8 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   if (intent === "evidence")
     await senderos.commands.attempts.recordEvidence({
       attemptId: String(form.get("attemptId")),
-      kind: "manual",
+      kind: String(form.get("kind") ?? "manual") as EvidenceKind,
+      summary: String(form.get("summary") ?? "") || undefined,
       label: String(form.get("label")),
       url: String(form.get("url")) || undefined,
     });
