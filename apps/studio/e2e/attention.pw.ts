@@ -425,9 +425,15 @@ test('recovers a missing execution cursor without losing the ready successor bud
 });
 
 
-test('cursor recovery preserves pending cancellation until the existing host acknowledges it', async ({ page, scenario }, testInfo) => {
+for (const history of ['retained', 'legacy'] as const) test(`cursor recovery preserves ${history} pending cancellation until the existing host acknowledges it`, async ({ page, scenario }, testInfo) => {
   const agent = await authorAgent(page, scenario, 'policy-recovery');
   const goal = await authorGoal(page, scenario, agent.slug, agent.slug, false);
+  if (history === 'legacy') {
+    const budgets = page.getByRole('region', { name: 'Execution budgets', exact: true });
+    await budgets.getByRole('spinbutton', { name: 'Activation limit' }).fill('150');
+    await budgets.getByRole('button', { name: 'Save activation limit' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Activation limit saved' })).toBeVisible();
+  }
   await page.getByRole('link', { name: 'Review ready activations' }).click();
   await page.getByRole('button', { name: 'Dispatch all' }).click();
   await expect.poll(() => goalRuns(goal.id).length).toBe(1);
@@ -440,10 +446,11 @@ test('cursor recovery preserves pending cancellation until the existing host ack
   await page.getByRole('button', { name: 'Confirm stop', exact: true }).click();
   await expect.poll(() => state().claims.find(item => item.attemptId === attempt.id)?.cancellationRequestedAt).toBeTruthy();
   const before = state();
-  runtime('remove-policy-fixture-cursor', goal.id);
+  runtime(history === 'legacy' ? 'remove-legacy-policy-fixture-cursor' : 'remove-policy-fixture-cursor', goal.id);
   await reload(page);
   expect(state().executions.find(item => item.goalId === goal.id)?.cancellationRequestedAt).toBeTruthy();
   expect(state().goals.find(item => item.id === goal.id)?.status).toBe('blocked');
+  expect(state().executions.find(item => item.goalId === goal.id)?.maxActivations).toBe(before.executions.find(item => item.goalId === goal.id)?.maxActivations);
   await expect(page.getByRole('button', { name: 'Save activation limit', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save attempt limit', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Review ready activations' })).toHaveCount(0);
@@ -453,14 +460,24 @@ test('cursor recovery preserves pending cancellation until the existing host ack
   await reload(page);
   expect(state().claims).toEqual(before.claims);
   expect(state().attempts).toEqual(before.attempts);
-  expect(state().runs).toEqual(before.runs);
-  expect(state().activations).toEqual(before.activations);
+  if (history === 'legacy') {
+    const rows = state();
+    expect(rows.runs.map(({ activationId, ...run }) => run)).toEqual(before.runs.map(({ activationId, ...run }) => run));
+    const migrated = rows.activations.filter(item => item.goalId === goal.id);
+    expect(migrated).toHaveLength(1);
+    expect(migrated[0]).toMatchObject({ status: 'running', latestRunId: attempt.runId, attemptsUsed: 1 });
+    expect(rows.runs.find(item => item.id === attempt.runId)?.activationId).toBe(migrated[0]!.id);
+  } else {
+    expect(state().runs).toEqual(before.runs);
+    expect(state().activations).toEqual(before.activations);
+  }
+  const prefix = history === 'legacy' ? 'legacy-cursor-policy-cancellation' : 'cursor-policy-cancellation';
   await guidance.scrollIntoViewIfNeeded();
-  await capture(page, testInfo, 'cursor-policy-cancellation-desktop-1440x1000');
+  await capture(page, testInfo, `${prefix}-desktop-1440x1000`);
   await page.setViewportSize({ width: 390, height: 844 });
   await guidance.scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await capture(page, testInfo, 'cursor-policy-cancellation-mobile-390x844');
+  await capture(page, testInfo, `${prefix}-mobile-390x844`);
   runtime('host-cancel', attempt.id);
   await reload(page);
   await expect(guidance).toHaveCount(0);

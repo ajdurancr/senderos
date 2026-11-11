@@ -112,6 +112,15 @@ if (command === 'init') {
     await db.delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));
     return { removed: true };
   });
+} else if (command === 'remove-legacy-policy-fixture-cursor' && id) {
+  // Match the supported pre-activation migration shape in the isolated fixture.
+  result = await atomic(undefined, async () => {
+    const db = openRuntimeDb();
+    await db.delete(schema.activations).where(eq(schema.activations.goalId, id));
+    await db.delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));
+    await db.update(schema.runs).set({ activationId: null }).where(eq(schema.runs.goalId, id));
+    return { removed: true };
+  });
 } else if (command === 'remove-policy-fixture-cursor' && id) {
   // Isolated partial-state damage only; cancellation uses the real operator form.
   await openRuntimeDb().delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));

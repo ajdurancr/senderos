@@ -54,7 +54,8 @@ export async function cursor(goalId: string, home?: string) {
     }
   }
   if (!current) {
-    await db.insert(goalExecutions).values({ goalId, transitionId: transitionId || null, latestRunId: latest?.id ?? null, attemptsUsed, maxAttempts: latest?.maxAttempts ?? 3, maxActivations: graph.version.maxActivations });
+    const policy = await recoverCursorPolicy(goal, { maxActivations: graph.version.maxActivations, activationsUsed: history.length ? 1 : 0 }, home);
+    await db.insert(goalExecutions).values({ goalId, transitionId: transitionId || null, latestRunId: latest?.id ?? null, attemptsUsed, maxAttempts: latest?.maxAttempts ?? 3, ...policy });
     current = (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goalId)))[0]!;
   }
   if (!history.length) {
