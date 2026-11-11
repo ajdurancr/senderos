@@ -70,3 +70,9 @@ Evidence review cards label the source of their age: “Evidence added” or “
 Evidence and review form drafts belong to the selected attempt. Changing attempts resets both forms, including decision and evidence-kind selections. Same-attempt loader refreshes and rejected submissions preserve the operator’s inputs. Selection changes do not write evidence or review decisions.
 
 The Sendero selector pauses workflow switching while graph edits are unsaved. Associate the disabled selector with visible save-or-cancel guidance, and restore it after either action. This protects explicit workflow selection; it does not promise draft recovery after unrelated page navigation or browser closure.
+
+Dirty graph edits have a common navigation boundary. Scope changes and browser
+history offer Stay here or Leave editor in a labeled native modal with focus
+restoration and Escape cancellation. Document navigation uses the browser's
+native unsaved-change prompt. A pending or unconfirmed save must not claim the
+database was unchanged; retain inputs and revision checks for recovery.

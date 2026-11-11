@@ -15,8 +15,8 @@ depend on the authoring or settings tests.
 Agents, workflow imports and edits, publication, goals, activation, reviewed
 reservation, evidence, review, settings, and cancellation are actual browser
 form submissions to Studio. Each meaningful boundary is verified against the
-real database and fresh page reloads. No request routes or persistence APIs are
-mocked. External execution is deterministic: the fixture uses genuine core host
+real database and fresh page reloads. Successful requests and persistence APIs are
+not mocked; the graph navigation journey below injects transport failures. External execution is deterministic: the fixture uses genuine core host
 registration, workspace grant/declaration, preflight, claim, independent-session
 start, completion, and typed evidence contracts, without contacting any model,
 remote host, repository provider, or deployment service.
@@ -96,3 +96,19 @@ captures preserve the real read-only guidance.
 The operator journey also checks that Reviews identifies newly added evidence using its persisted creation time, including after reload. Desktop and mobile captures preserve the rendered card; the suite checks horizontal overflow at 390 pixels.
 
 The parallel-attempt draft journey checks that selecting another project scope clears unsaved evidence and review inputs without database writes. A rejected HTTP-link submission preserves inputs on the same attempt. Actual proof and review writes remain attached to the selected attempt after reload; desktop/mobile captures preserve the blank second-attempt forms.
+
+## Unsaved graph navigation and save interruption
+
+`draft-navigation.pw.ts` exercises Project and Execution context changes, Back
+and Forward, native document-leave confirmation, keyboard focus and Escape,
+and explicit leaving after unsaved changes. Staying retains valid graph inputs
+and the selected scope without writes. Saving restores normal navigation.
+Desktop/mobile screenshots capture the actual confirmation dialog.
+
+This journey also deliberately delays a real save response and aborts requests
+before the server and responses after persistence. These are transport fault
+injections, not mocked successful saves. Unconfirmed saves retain graph inputs
+and the original concurrency revision. A retry after an applied but lost response
+is rejected as stale; canceling then loads the latest revalidated graph. The
+test verifies saved values again after reload. It does not simulate real external
+hosts, remote database outages, or browser-process crashes.

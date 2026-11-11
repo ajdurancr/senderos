@@ -585,3 +585,10 @@ ol.event-stream { list-style: none; padding: 0; margin: 0; }
 .event-stream summary { cursor: pointer; }
 .event-stream pre, .event-stream dd { white-space: pre-wrap; overflow-wrap: anywhere; margin-left: 0; }
 .event-stream dt { color: var(--text-muted); margin-top: 8px; }
+
+/* Native modal traps focus and makes the rest of Studio inert while leaving is reviewed. */
+.draft-navigation-dialog { margin: auto; max-height: calc(100dvh - 32px); overflow: auto; width: min(480px, calc(100vw - 32px)); box-sizing: border-box; padding: 24px; border: 1px solid var(--studio-border-strong); border-radius: 12px; background: var(--studio-surface); color: var(--text-strong); box-shadow: 0 28px 80px #000a; }
+.draft-navigation-dialog::backdrop { background: #0009; }
+.draft-navigation-dialog h2 { margin: 0 0 12px; font-size: var(--text-title); }
+.draft-navigation-dialog p { color: var(--text-muted); line-height: 1.6; }
+.draft-navigation-dialog footer { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 24px; }

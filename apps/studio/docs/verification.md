@@ -247,3 +247,13 @@ Evidence success feedback stays accurate for every supported kind: manual, test,
 ### Unsaved workflow selection
 
 Mounted overview coverage verifies that editing a graph disables the workflow selector and exposes save-or-cancel guidance, then cancellation restores selection. The production authoring journey checks the same state on desktop and mobile, confirms the unsaved budget remains absent from the database, and verifies selection returns after both cancel and successful save. This covers the explicit workflow selector, not arbitrary browser navigation.
+
+## Graph draft navigation recovery
+
+Production browser regressions cover canceled scope/history navigation, native
+document-leave confirmation, confirmed leaving, and navigation during a pending
+save. Inputs remain intact when the operator stays. Transport fault injection
+also covers a save request that never reaches Studio and an applied save whose
+response is lost. Retry preserves revision checks and cannot overwrite a newer
+saved graph; revalidation and Cancel recover the latest persisted value. These
+checks use local isolated data and retain desktop/mobile confirmation captures.

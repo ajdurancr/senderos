@@ -1,13 +1,13 @@
 import { afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, RouterContextProvider, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { missionControlFixture } from "../test-support/mission-control-fixture";
 
 afterEach(cleanup);
 
-import Home, { meta } from "./home";
+import Home, { meta, clientAction, shouldRevalidate } from "./home";
 
 describe("home route", () => {
   it("declares metadata and composes loader data with URL filters", async () => {
@@ -36,4 +36,25 @@ describe("home route", () => {
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Researcher');
   });
 
+});
+
+
+describe('graph save transport recovery', () => {
+  it('keeps the editor mounted when a save response is lost without claiming it was not applied', async () => {
+    const form = new FormData(); form.set('intent', 'replace-sendero-draft');
+    const result = await clientAction({ url: new URL('http://localhost/senderos/draft'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/senderos/draft', { method: 'POST', body: form }),
+      serverAction: async () => { throw new TypeError('Failed to fetch'); },
+    } as Parameters<typeof clientAction>[0]);
+    expect(result).toMatchObject({ ok: false, intent: 'replace-sendero-draft', transportFailure: true });
+    expect(result).toHaveProperty('message', expect.stringContaining('could not confirm'));
+    expect(result).toHaveProperty('message', expect.stringContaining('may have reached'));
+    expect(shouldRevalidate({ actionResult: result, defaultShouldRevalidate: true } as Parameters<typeof shouldRevalidate>[0])).toBe(false);
+    expect(shouldRevalidate({ actionResult: { ok: false }, defaultShouldRevalidate: true } as Parameters<typeof shouldRevalidate>[0])).toBe(true);
+  });
+  it('does not convert other action failures to graph-save feedback', async () => {
+    const form = new FormData(); form.set('intent', 'create-goal');
+    await expect(clientAction({ url: new URL('http://localhost/goals/new'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/goals/new', { method: 'POST', body: form }),
+      serverAction: async () => { throw new TypeError('Failed to fetch'); },
+    } as Parameters<typeof clientAction>[0])).rejects.toThrow('Failed to fetch');
+  });
 });
