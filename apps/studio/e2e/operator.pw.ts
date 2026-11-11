@@ -231,6 +231,14 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await page.getByRole('combobox', { name: 'Evidence kind', exact: true }).scrollIntoViewIfNeeded();
   await capture(page, testInfo, 'typed-evidence-form-mobile-390x844');
   await page.getByRole('button', { name: 'Record evidence', exact: true }).click();
+  const evidenceFeedback = page.getByRole('status').filter({ hasText: "Evidence recorded." });
+  await expect(evidenceFeedback).toHaveText("Evidence recorded. Completion follows the workflow's evidence, review and host requirements.");
+  for (const [width, height, name] of [[1440, 1000, 'desktop-1440x1000'], [390, 844, 'mobile-390x844']] as const) {
+    await page.setViewportSize({ width, height });
+    await evidenceFeedback.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await capture(page, testInfo, `typed-evidence-feedback-${name}`);
+  }
   await expect(prerequisites).not.toContainText('Record test report evidence.');
   await expect(prerequisites).toContainText('Record artifact evidence.');
   expect(goalAttempts(goal.id)[0]!.status).toBe('paused');
@@ -240,6 +248,7 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await page.getByRole('combobox', { name: 'Evidence kind', exact: true }).selectOption('artifact');
   await page.getByRole('textbox', { name: 'Evidence label', exact: true }).fill('Operator artifact');
   await page.getByRole('button', { name: 'Record evidence', exact: true }).click();
+  await expect(evidenceFeedback).toHaveText("Evidence recorded. Completion follows the workflow's evidence, review and host requirements.");
   await expect.poll(() => goalAttempts(goal.id)[0]!.status).toBe('succeeded');
   await reload(page);
   await expect(prerequisites).toHaveCount(0);

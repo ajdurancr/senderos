@@ -239,3 +239,7 @@ Review cards use the latest valid evidence creation or review decision time, rat
 ### Attempt form isolation
 
 A mounted-inspector regression reproduces unsaved evidence and rationale carrying from one parallel attempt to another before the fix. The evidence and review forms now reset at the attempt identity boundary. Component coverage checks all draft fields and select defaults, returning to the prior attempt, same-attempt refresh and rejected submission. The production browser journey authors and dispatches two parallel branches, verifies same-attempt validation recovery, changes the selected project scope at desktop/mobile widths without writes, and records proof and a decision only for the intended second attempt.
+
+### Evidence recording feedback
+
+Evidence success feedback stays accurate for every supported kind: manual, test, CI, pull request and artifact. Route-action integration coverage verifies the returned message and persisted kind. The production operator journey checks typed test and artifact feedback against remaining prerequisites and final settlement, with desktop/mobile captures. Recording evidence does not independently execute tests or verify proof contents.
