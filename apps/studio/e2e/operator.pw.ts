@@ -52,7 +52,7 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
     slug: `verified-browser-workflow-${suffix}`, name: workflowName, maxActivations: 20,
     nodes: [
       { key: 'start', kind: 'start', label: 'Begin acceptance' },
-      { key: 'review', kind: 'agent', label: 'Acceptance reviewer', agentSlug: slug, executionObjective: 'Verify the operator journey', completion: { requireReview: true, evidenceKinds: ['test'] }, requirements: ['browser', 'independent_session'] },
+      { key: 'review', kind: 'agent', label: 'Acceptance reviewer', agentSlug: slug, executionObjective: 'Verify the operator journey', completion: { requireReview: true, evidenceKinds: ['test', 'artifact'] }, requirements: ['browser', 'independent_session'] },
       { key: 'end', kind: 'end', label: 'Accepted' },
     ],
     edges: [
@@ -95,7 +95,7 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   const node = saved.nodes.find(item => item.senderoVersionId === version.id && item.kind === 'agent')!;
   expect(published).toMatchObject({ status: 'published', maxActivations: 25 });
   expect(JSON.parse(node.agentSnapshotJson!).instructions).toBe(instructions);
-  expect(JSON.parse(node.completionJson)).toEqual({ requireReview: true, evidenceKinds: ['test'] });
+  expect(JSON.parse(node.completionJson)).toEqual({ requireReview: true, evidenceKinds: ['test', 'artifact'] });
   expect(JSON.parse(node.requirementsJson)).toEqual(['browser', 'independent_session']);
   const publishedPositions = () => state().nodes.filter(item => item.senderoVersionId === version.id)
     .map(item => ({ id: item.id, x: item.positionX, y: item.positionY })).sort((a, b) => a.id.localeCompare(b.id));
@@ -194,6 +194,22 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   expect(JSON.parse(current.statusSnapshotJson).completionRequested).toBe(true);
   expect(state().goals.find(item => item.id === goal.id)?.status).not.toBe('completed');
   await expect(page.locator('.context-inspector .inspector-status')).toContainText('paused');
+  await page.getByRole('link', { name: 'Now', exact: true }).click();
+  const completionCard = page.getByRole('article', { name: `Goal blockers: ${goal.title}` });
+  await expect(completionCard).toContainText('Completion requested');
+  await expect(completionCard).toContainText('Record test report evidence. Record artifact evidence.');
+  await completionCard.getByRole('link', { name: 'Inspect activation', exact: true }).click();
+  const prerequisites = page.getByRole('region', { name: 'Completion prerequisites' });
+  await expect(prerequisites).toContainText('Record test report evidence.');
+  await expect(prerequisites).toContainText('Record artifact evidence.');
+  await expect(prerequisites).not.toContainText('Record an approved review.');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await prerequisites.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'completion-prerequisites-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await prerequisites.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'completion-prerequisites-mobile-390x844');
   await page.getByRole('combobox', { name: 'Evidence kind', exact: true }).selectOption('test');
   await page.getByRole('textbox', { name: 'Evidence label', exact: true }).fill('Operator test report');
   await page.getByRole('textbox', { name: 'Evidence URL (optional)' }).fill('https://example.com/e2e/test-report');
@@ -205,9 +221,19 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await page.getByRole('combobox', { name: 'Evidence kind', exact: true }).scrollIntoViewIfNeeded();
   await capture(page, testInfo, 'typed-evidence-form-mobile-390x844');
   await page.getByRole('button', { name: 'Record evidence', exact: true }).click();
+  await expect(prerequisites).not.toContainText('Record test report evidence.');
+  await expect(prerequisites).toContainText('Record artifact evidence.');
+  expect(goalAttempts(goal.id)[0]!.status).toBe('paused');
+  await reload(page);
+  await expect(prerequisites).toContainText('Record artifact evidence.');
+  await expect(prerequisites).not.toContainText('Record test report evidence.');
+  await page.getByRole('combobox', { name: 'Evidence kind', exact: true }).selectOption('artifact');
+  await page.getByRole('textbox', { name: 'Evidence label', exact: true }).fill('Operator artifact');
+  await page.getByRole('button', { name: 'Record evidence', exact: true }).click();
   await expect.poll(() => goalAttempts(goal.id)[0]!.status).toBe('succeeded');
   await reload(page);
-  expect(JSON.parse(goalAttempts(goal.id)[0]!.statusSnapshotJson).evidence.at(-1)).toMatchObject({ kind: 'test', label: 'Operator test report', summary: 'Recorded fixture verification passed; no external test or model was run.' });
+  await expect(prerequisites).toHaveCount(0);
+  expect(JSON.parse(goalAttempts(goal.id)[0]!.statusSnapshotJson).evidence.find((item: { kind: string }) => item.kind === 'test')).toMatchObject({ kind: 'test', label: 'Operator test report', summary: 'Recorded fixture verification passed; no external test or model was run.' });
   expect(goalAttempts(goal.id)[0]!.status).toBe('succeeded');
   expect(state().goals.find(item => item.id === goal.id)?.status).toBe('completed');
   await expect(page.locator('.context-inspector .inspector-status')).toContainText('completed');

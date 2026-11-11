@@ -42,3 +42,8 @@ describe("goal blockers", () => {
     expect(guidance.next.length).toBeGreaterThan(20);
   });
 });
+
+it("shows the same exact unmet completion facts in attention guidance", () => {
+  expect(blockerGuidance({ ...blocked, reason: "completion_prerequisites", completion: { missingEvidenceKinds: ["test", "artifact"], missingReview: true } })).toEqual({ title: "Completion requested", next: "Record test report evidence. Record artifact evidence. Record an approved review." });
+  for (const completion of [undefined, { missingEvidenceKinds: [], missingReview: false }]) expect(blockerGuidance({ ...blocked, reason: "completion_prerequisites", completion }).next).toContain("Completion has not been inferred");
+});

@@ -86,3 +86,9 @@ Studio. Reloaded database state proves the gate settled and the terminal record
 retained its kind, URL and summary. Desktop/mobile screenshots show the native
 kind selector and summary form. This does not execute or independently verify
 the operator-supplied test report.
+
+Completion guidance uses a test-and-artifact gate in the operator journey. The
+browser checks the exact missing prerequisites, records test evidence, reloads
+with only artifact still missing, and records artifact proof before confirming
+terminal completion and removal of the checklist. Both narrow mobile and desktop
+captures preserve the real read-only guidance.

@@ -14,6 +14,7 @@ import { projectPath } from "../navigation";
 import { EvidenceRecords } from "./evidence-records";
 import { GoalBudgets } from "./goal-budgets";
 import { GoalCancellation } from "./goal-cancellation";
+import { CompletionPrerequisites } from "./completion-prerequisites";
 
 export function ContextualInspector({
   data,
@@ -139,6 +140,7 @@ export function ContextualInspector({
           <span>{snapshot.evidence?.length ?? 0} items</span>
         </header>
         {terminal && <p>This attempt is finished. Its evidence and review are read-only.</p>}
+        {attempt?.status === "paused" && snapshot.completionRequested === true && !cancellationRequested && attemptDecision?.completion && <CompletionPrerequisites completion={attemptDecision.completion} />}
         <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
         {attempt && !terminal && (
           <Form className="compact-form" method="post">

@@ -46,6 +46,9 @@ Evidence entry defaults to `manual`; manual observations do not satisfy a requir
 `test` gate. Operators may explicitly record test, CI, pull-request or artifact proof
 with an optional summary. The selected kind describes the supplied evidence;
 recording it does not execute tests or verify the linked content.
+Completion-pending attempts show only unmet evidence and review prerequisites
+from Core's pinned policy. Keep ordinary pauses, cancellation and terminal history
+distinct; missing prerequisite facts never imply successful completion.
 Review decisions belong to the exact attempt. Terminal evidence and rationale
 remain visible and read-only. Never derive execution completion from UI state.
 
