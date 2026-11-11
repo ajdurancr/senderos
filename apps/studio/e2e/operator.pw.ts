@@ -217,7 +217,7 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await capture(page, testInfo, 'completed-evidence-mobile-390x844');
 });
 
-test('scope switch remounts project settings and invalid/canceled forms do not write', async ({ page, scenario }) => {
+test('scope switch remounts project settings and invalid/canceled forms do not write', async ({ page, scenario }, testInfo) => {
   const scope = scenarioScope(scenario);
   await visit(page, `/settings${scope}`);
   await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Website launch');
@@ -244,6 +244,13 @@ test('scope switch remounts project settings and invalid/canceled forms do not w
   await expect(page.getByRole('combobox', { name: 'Project', exact: true })).toHaveValue('');
   await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Research project');
   expect(new URL(page.url()).searchParams.has('project')).toBe(false);
+  await reload(page);
+  await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Research project');
+  await capture(page, testInfo, 'context-switch-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'context-switch-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const before = state().goals.length;
   await visit(page, `/goals/new?context=${scenario.productContext}`);
   await expect(page.getByRole('heading', { name: 'Choose a project' })).toBeVisible();

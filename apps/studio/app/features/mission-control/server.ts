@@ -23,7 +23,8 @@ import {
 
 export async function missionControlData(request?: Request) {
   await prepareStudioDatabase();
-  const senderos = senderosForStudio();
+  const executionContextId = request ? new URL(request.url).searchParams.get('context') || undefined : undefined;
+  const senderos = executionContextId ? createSenderos({ executionContextId }) : senderosForStudio();
   const [overview, executionContexts, agents, transitions, senderoGraphs] =
     await Promise.all([
       senderos.missionControl.overview(),
@@ -32,6 +33,9 @@ export async function missionControlData(request?: Request) {
       senderos.commands.agents.transitions(),
       senderos.missionControl.senderos.listGraphs(),
     ]);
+  // The shell needs all project choices when switching contexts. Operational
+  // records and lifecycle decisions come from the selected context above.
+  const projects = executionContextId ? await senderosForStudio().commands.projects.list() : overview.projects;
   const activity = await studioEvents(overview, request);
   const database = databaseConnectionFromEnvironment();
   const graphs = await studioGraphData(overview.goals, senderoGraphs, request);
@@ -45,7 +49,7 @@ export async function missionControlData(request?: Request) {
       remote: !database.url.startsWith("file:"),
     },
   };
-  return { ...overview, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, ...activity, runtime,
+  return { ...overview, projects, queue: { ...overview.queue, reviews: overview.queue.reviews.filter(({ attempt }) => !["succeeded", "failed", "canceled"].includes(attempt.status)) }, asOf: Date.now(), hosts: await listHosts(), executionContexts, agents, transitions, senderoGraphs, ...activity, runtime,
     ...graphs };
 }
 
