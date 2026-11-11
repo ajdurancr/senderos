@@ -208,3 +208,13 @@ production assertions or changing application mutation behavior.
 has persisted. It checks truthful recovery guidance, keyboard reload without
 a second write, and saved instructions after navigation at desktop and mobile
 sizes. The action and database writes are real; only response delivery fails.
+
+## Unsaved agent navigation
+
+`agent-draft-navigation.pw.ts` exercises new and existing agent editors at desktop
+and mobile widths. Project-scope navigation asks before discarding edits; staying
+retains instructions and leaves persistence unchanged. Browser document links and
+Back/Forward use the native unsaved-change confirmation. Explicit Cancel discards
+the draft. Server validation preserves inputs, an in-flight save remains guarded,
+and confirmed create/update redirects do not ask to discard the saved values.
+The pending-save fixture delays only delivery of a real persisted action response.

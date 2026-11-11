@@ -342,3 +342,13 @@ a keyboard-accessible reload, and never automatically resubmits the mutation.
 Reloading and opening the persisted agent verifies its exact saved instructions
 and a single record. This transport-failure fixture does not simulate or resolve
 native SQLite contention.
+
+## Unsaved agent navigation
+
+`agent-draft-navigation.pw.ts` exercises new and existing agent editors at desktop
+and mobile widths. Project-scope navigation asks before discarding edits; staying
+retains instructions and leaves persistence unchanged. Browser document links and
+Back/Forward use the native unsaved-change confirmation. Explicit Cancel discards
+the draft. Server validation preserves inputs, an in-flight save remains guarded,
+and confirmed create/update redirects do not ask to discard the saved values.
+The pending-save fixture delays only delivery of a real persisted action response.
