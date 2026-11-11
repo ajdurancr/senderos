@@ -67,3 +67,35 @@ test('generic projects require choosing a workflow rather than inheriting softwa
   const assigned = await createGoal({ home, projectId: project.id, title: 'Check a process', senderoVersionId: chosen.version.id });
   expect(assigned.senderoVersionId).toBe(chosen.version.id);
 });
+
+test('reviewed draft goal edits reject stale preparation without changing persisted inputs', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = await createGoal({ home, projectId: project.id, title: 'Initial scope', specText: 'Initial acceptance' });
+  const expectedDraft = { title: goal.title, kind: goal.kind, specText: goal.specText, senderoVersionId: goal.senderoVersionId };
+  await updateGoal({ home, id: goal.id, title: 'Other operator scope' });
+  await expect(updateGoal({ home, id: goal.id, title: 'Stale local scope', expectedDraft })).rejects.toMatchObject({ code: 'STALE_GOAL_DRAFT' });
+  expect((await getGoal(goal.id, home))?.title).toBe('Other operator scope');
+});
+
+test('reviewed draft goal preparation cannot change a goal activated since review', async () => {
+  const home = await initHome();
+  const project = await createProjectFixture(home);
+  const goal = await createGoal({ home, projectId: project.id, title: 'Ready to start' });
+  const expectedDraft = { title: goal.title, kind: goal.kind, specText: goal.specText, senderoVersionId: goal.senderoVersionId };
+  await activateGoal(goal.id, home);
+  await expect(updateGoal({ home, id: goal.id, specText: 'Changed after start', expectedDraft })).rejects.toMatchObject({ code: 'GOAL_NOT_DRAFT' });
+  expect((await getGoal(goal.id, home))?.specText).toBe(goal.specText);
+});
+
+test('reviewed goal preparation saves valid fields and can assign a published workflow without activation', async () => {
+  const { createProject } = await import('../projects/create');
+  const { getSenderoGraph } = await import('../senderos/get-graph');
+  const home = await initHome();
+  const project = await createProject({ home, name: 'Preparation only' });
+  const goal = await createGoal({ home, projectId: project.id, title: 'Incomplete goal' });
+  const expectedDraft = { title: goal.title, kind: goal.kind, specText: goal.specText, senderoVersionId: goal.senderoVersionId };
+  const workflow = (await getSenderoGraph('timed-wait-demo', undefined, home))!;
+  const saved = await updateGoal({ home, id: goal.id, title: 'Prepared goal', kind: 'research', specText: 'Inspect a recorded wait', senderoVersionId: workflow.version.id, expectedDraft });
+  expect(saved).toMatchObject({ status: 'draft', title: 'Prepared goal', kind: 'research', specText: 'Inspect a recorded wait', senderoVersionId: workflow.version.id });
+});
