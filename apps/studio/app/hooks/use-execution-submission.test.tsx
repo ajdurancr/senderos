@@ -35,5 +35,11 @@ for (const intent of ['start', 'dispatch-plan', 'cancel-goal'] as const) {
     await waitFor(() => expect(router.state.navigation.state).toBe('idle'));
     expect(screen.getByRole('button')).toHaveProperty('disabled', true);
     fireEvent.submit(screen.getByRole('form')); expect(action).toHaveBeenCalledOnce();
+    await router.navigate('#recovery');
+    await waitFor(() => expect(router.state.location.hash).toBe('#recovery'));
+    expect(router.state.actionData).toBeNull();
+    expect(screen.getByRole('button')).toHaveProperty('disabled', true);
+    fireEvent.submit(screen.getByRole('form'));
+    expect(action).toHaveBeenCalledOnce();
   });
 }

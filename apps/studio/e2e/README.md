@@ -279,3 +279,11 @@ starting or editing again. The fixture verifies both committed and unapplied req
 a single execution, the assigned workflow version and zero reserved attempts. Activation
 remains separate from reviewed dispatch. These checks do not clear retained parent or
 native acceptance failures.
+
+Fragment navigation after an uncertain Start, dispatch or cancellation response
+must not clear the submission guard. A fragment-only transition can discard router
+action feedback without calling a loader. The execution guard retains uncertainty
+for the mounted action; an explicit document reload reads persisted state before
+resubmission. Production regressions cover committed and unapplied dispatch/stop
+requests on desktop and mobile, zero fragment loader reads, blocked repeated form
+submission, scoped document readback and no automatic mutation replay.
