@@ -65,3 +65,17 @@ directory reports `not a database file:<path>`. Diagnosing either condition does
 not create a replacement database. Existing reset locks remain authoritative.
 Initialization and operational connections retain their explicit creation behavior;
 this prerequisite applies to diagnostics, not to remote or in-memory connections.
+
+## Safe connection diagnostics
+
+The reported database URL is for inspection only. URL credentials, user information,
+unknown query options and fragments are redacted. Recognized nonsecret `tls` and
+`cache` settings remain visible when valid. The configured URL and credentials
+used by the connection are unchanged.
+
+Driver exception text is omitted because it may include credentials or remote
+response contents. Diagnostics provide safe guidance for invalid URLs, unreadable
+files, lock contention and file access failures; other connection failures guide
+you to check the URL, credentials, access and connectivity. Missing environment
+variables, local files, reset locks and required schema names retain specific
+actionable findings. An unhealthy report never certifies connectivity.

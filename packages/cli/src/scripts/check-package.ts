@@ -184,6 +184,22 @@ try {
   invariant(invokeInstalled(['sendero', 'list']).length === 5, 'Installed reset did not restore built-in Senderos.');
   invariant(invokeInstalled(['doctor']).ok === true, 'Installed reset failed runtime health validation.');
 
+  // Synthetic credentials only; both probes use this installed fixture's local file.
+  for (const invalidOption of [false, true]) {
+    const result = Bun.spawnSync([installedBinary, 'doctor', '--home', installedHome], {
+      cwd: installRoot, timeout: 10_000, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
+      env: { ...installedEnvironment, SENDEROS_DATABASE_URL:
+        `${installedEnvironment.SENDEROS_DATABASE_URL}?authToken=synthetic-package-token${invalidOption ? '&tls=synthetic-invalid-option' : ''}` },
+    });
+    invariant(result.exitCode === 0 && result.stderr.length === 0, 'Installed diagnostic probe failed.');
+    const output = result.stdout.toString();
+    const report = JSON.parse(output);
+    invariant(report.ok === !invalidOption && !output.includes('synthetic'), 'Installed diagnostics leaked a fixture credential or reported wrong health.');
+    invariant(report.database.url.includes('authToken=[redacted]'), 'Installed diagnostics lost the credential redaction marker.');
+    if (invalidOption) invariant(report.issues.some((issue: string) => issue.includes('configured URL')), 'Installed diagnostics lost actionable URL guidance.');
+  }
+  invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Installed diagnostics changed configuration bytes.');
+
   const rejectInstalled = (args: string[], code: string) => {
     const result = Bun.spawnSync([installedBinary, ...args, '--home', installedHome], {
       cwd: installRoot, env: installedEnvironment, timeout: 10_000,
