@@ -1,5 +1,5 @@
 import { startTestWorker } from '../test-support/worker';
-import { expect, test } from 'bun:test';
+import { expect, test, spyOn } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { openRuntimeDb } from '../db/client';
 import { runs, runAttempts } from '../db/schema';
@@ -204,4 +204,39 @@ test('the shared façade exposes every generic command family', async () => {
   expect((await senderos.commands.goals.get(goal.id))?.status).toBe('blocked');
   await senderos.commands.attempts.update(dispatched.attemptId, { token: claim.token, status: 'canceled' });
   expect((await senderos.commands.goals.cancel(goal.id))?.status).toBe('canceled');
+});
+
+
+test('overview derives its dispatch queue from one lifecycle explanation per goal', async () => {
+  const home = await initHome();
+  const senderos = createSenderos({ home });
+  const project = await createProjectFixture(home);
+  const draft = await senderos.commands.goals.create({ projectId: project.id, title: 'Still a draft' });
+  const ready = await senderos.commands.goals.create({ projectId: project.id, title: 'Ready for dispatch' });
+  // The runtime fixture binds the published workflow through startGoal.
+  const running = await senderos.commands.goals.create({ projectId: project.id, title: 'Reserved work' });
+  await senderos.missionControl.startGoal({ goalId: running.id });
+  const started = await senderos.missionControl.startGoal({ goalId: ready.id });
+  const first = started.attempts[0]!;
+  const claim = await startTestWorker(home, project.id, first.id);
+  await senderos.commands.attempts.update(first.id, { token: claim.token, status: 'failed', failureSummary: 'Retain recovery facts' });
+  const expectedPlan = await senderos.commands.plan();
+  const expectedStatus = await senderos.commands.status();
+  const client = openRuntimeDb(home).$client;
+  const prototype = Object.getPrototypeOf(client);
+  const execute = prototype.execute;
+  let explanations = 0;
+  const spy = spyOn(prototype, 'execute').mockImplementation(function(this: unknown, statement: unknown, ...rest: unknown[]) {
+    if (statement === 'BEGIN IMMEDIATE') explanations++;
+    return execute.call(this, statement, ...rest);
+  });
+  let overview;
+  try { overview = await senderos.missionControl.overview(); }
+  finally { spy.mockRestore(); client.close(); }
+  expect(overview.goals.map(goal => goal.id)).toEqual([draft.id, ready.id, running.id]);
+  expect(overview.queue.dispatchable).toEqual(expectedPlan);
+  expect(overview.status).toEqual(expectedStatus);
+  expect(overview.queue.failedAttempts.map(attempt => attempt.id)).toContain(first.id);
+  expect(overview.attempts.find(attempt => attempt.id === first.id)?.failureSummary).toBe('Retain recovery facts');
+  expect(explanations).toBe(overview.goals.length);
 });

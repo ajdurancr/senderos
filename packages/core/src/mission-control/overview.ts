@@ -5,7 +5,7 @@ import { listGoals } from '../commands/goals/list';
 import { listProjects } from '../commands/projects/list';
 import { listRuns } from '../commands/runs/list';
 import { listRunAttempts } from '../commands/attempts/list';
-import { plan } from '../commands/planning/plan';
+import { planFromDecisions } from '../commands/planning/plan';
 import { status } from '../commands/system/status';
 import type { AttemptReview } from '../shared/types';
 import { goalActivations, settledActivation } from '../lifecycle/activations';
@@ -57,7 +57,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
     attempts,
     decisions,
     queue: {
-      dispatchable: await plan({ home, executionContextId }),
+      dispatchable: planFromDecisions(goals, decisions),
       reviews,
       blockedGoals: goals.filter((goal) => goal.status === 'blocked'),
       failedAttempts,

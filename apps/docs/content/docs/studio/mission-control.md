@@ -131,7 +131,9 @@ scope total. Paging does not change attempts or establish that a worker stopped.
 
 This bounds the visible list. Studio still loads the complete scoped operational
 snapshot for planning, attention and inspection; database reads, serialized data
-and per-goal activation detail are not yet bounded by this pagination.
+and per-goal activation detail are not yet bounded by this pagination. The
+dispatch queue reuses the overview’s lifecycle decisions instead of explaining
+each active goal a second time; this does not truncate history or attention.
 
 ## Adjust execution budgets
 
