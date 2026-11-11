@@ -284,3 +284,24 @@ semantics, selection, empty/missing records, and off-page detail. Production
 browser coverage uses 126 persisted records, keyboard navigation, reloads and
 unchanged database assertions. This is a presentation bound, not a bounded-query
 or bounded-serialization claim. Per-goal activation detail also remains complete.
+
+## Settled visit history
+
+A mounted baseline reproduced 125 settled activation cards in one goal detail.
+Settled visit history now shows at most 30 cards per page, with scoped native
+older/newer/latest links. All unresolved activations remain visible separately,
+including failed, blocked and waiting branches; this is not a bound on current
+work. Visit numbers are computed across the complete pinned-goal history, so
+paging does not renumber visits or drop parent, fork, revision or next-action facts.
+Older selected attempts open their containing page unless the URL explicitly
+requests another position. Off-page selections retain recorded detail and a link
+back to their visit. Legacy attempts and empty states use the same presentation.
+
+Mounted regressions cover unresolved branches, older selections and malformed
+positions. The production browser fixture combines a separately reserved,
+claimed, started and reconciled unknown attempt with 125 explicitly synthetic
+settled graph visits. Synthetic visits test browsing, not real repeated execution.
+The journey traverses the full history, reloads a selected attempt, returns from
+Latest to an older visit, retains current work and evidence, checks keyboard focus
+and mobile layout, and compares the full database snapshot for unintended writes.
+Database reads and shared serialization remain complete.

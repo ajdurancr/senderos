@@ -205,3 +205,15 @@ These are recorded facts and guidance, not live host checks. Pending completion
 requires evidence or review; terminal attempts retain recovery as history.
 Recovery remains an explicit host CLI/Core operation. Studio does not reclaim,
 abandon, kill a process, or launch replacement work from this panel.
+
+### Browse a goal's visits
+
+Goal and attempt detail keep all unresolved visits visible, including failed,
+blocked and waiting branches. Settled visits appear in pages of 30 with Older,
+Newer and Latest links. Original visit numbers, pinned workflow labels, parents,
+fork generations and recorded next actions remain available. Opening an older
+attempt shows its containing history page; an explicit different page retains
+that attempt's details and offers a link back to its visit.
+
+This limits displayed settled cards only. Current visits, database reads and the
+shared operational snapshot remain complete.

@@ -20,6 +20,7 @@ test('browses bounded attempt history without losing deep-linked evidence or cur
   const list = page.getByRole('list', { name: 'Run attempts' });
   await expect(list.getByRole('listitem')).toHaveCount(30);
   await expect(page.getByText('30 attempts on this page · 126 in this scope · newest first')).toBeVisible();
+  await expect(page.getByLabel('Settled visits', { exact: true }).getByRole('link')).toHaveCount(30);
   const first = await list.getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('href')));
   await capture(page, testInfo, 'run-history-desktop-1440x1000');
   await page.setViewportSize({ width: 390, height: 844 });
