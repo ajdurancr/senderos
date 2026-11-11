@@ -161,3 +161,12 @@ The graph-data regression publishes multiple revisions, keeps a goal on its
 original definition and verifies immutable nodes/edges/revision, current selection,
 and draft availability. Overview goals/runs/attempts and lightweight version
 catalog reads remain unchanged; this is not a complete response-size bound.
+
+### Project settings persistence
+
+Project settings updates commit the settings row and `project.updated` event in
+one transaction. The Core regression rejects event insertion with a local SQLite
+trigger and verifies the complete original record remains unchanged, then removes
+the trigger and saves successfully. Concurrent saves to different fields preserve
+both edits and record both events. Existing production settings journeys verify
+form validation, context/project isolation and persisted state after reload.
