@@ -239,3 +239,9 @@ Conflicting budget edits at the same timestamp, invalid limits and invalid
 cancellation times require explicit reconciliation. Random event IDs cannot
 establish edit order. Recovery reads policy facts without changing complete
 attempt, claim or activation history.
+
+The same policy reconstruction applies to legacy run/attempt history without
+retained activation rows. A saved limit or pending stop request survives that
+migration, while run-to-activation attachment remains idempotent. Invalid policy
+blocks before either reconstructed record is saved; migration does not treat a
+cancellation request as acknowledgement or alter retained attempt payloads.

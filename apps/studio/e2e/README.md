@@ -168,3 +168,11 @@ from retries on the same activation. A successful parent remains recorded lineag
 and must not make the successor a retry. The budget journey separately checks a
 real failed activation's retry label. `dispatch-successor-desktop-1440x1000` and
 `dispatch-successor-mobile-390x844` preserve the reviewed production plan.
+
+The cancellation recovery journey also covers the supported pre-activation legacy
+shape: the isolated fixture removes aggregate/activation rows and clears run
+activation links. The saved activation limit of 150 must survive migration,
+claims and attempt payloads remain unchanged, the retained run attaches to one
+reconstructed activation, and cancellation still waits for host acknowledgement.
+`legacy-cursor-policy-cancellation-desktop-1440x1000` and its mobile counterpart
+capture the pending guidance after that production reload.
