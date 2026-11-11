@@ -60,6 +60,9 @@ test('registers a context and its standalone project, retains validation errors 
   await expect(projectName).toHaveValue('Research notebook');
   await page.getByText('Add an execution context', { exact: true }).click();
   await contextInput.fill(contextName);
+  // The rejected project registration is still a draft. Explicitly consent to
+  // scope selection before testing the separate context validation response.
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Add context', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('already in use');
   const after = state();

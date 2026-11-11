@@ -232,3 +232,10 @@ identity fields, then drops delivery and verifies retained input and truthful
 recovery guidance. After reload the new identity is selectable, duplicate-name
 validation retains the input, and exactly one identity exists. Route interception
 changes response delivery only; registration and database assertions stay real.
+
+`registration-navigation.pw.ts` exercises the shared settings draft boundary:
+scope/history confirmation, simultaneous registration/configuration edits,
+explicit per-form discard, onboarding without a selected project and navigation
+while a real committed registration response is held. Cross-form registration
+requires native confirmation before its successful redirect can discard other
+edits. Declining it performs no write. Browser interception delays delivery only.

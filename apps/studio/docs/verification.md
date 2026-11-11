@@ -374,3 +374,15 @@ Component regressions preserve successful router redirects, and the ordinary
 registration journey still verifies confirmed scope selection. During lost-response
 recovery the original scope, goals and runs remain unchanged. This does not add request
 idempotency or promise recovery after leaving the page.
+
+## Registration draft navigation
+
+`registration-navigation.pw.ts` checks workspace onboarding with and without a
+selected project at desktop and mobile widths. One shared settings guard covers
+project configuration, new project names/context selection and new context names.
+Scope navigation and Back/Forward ask before losing drafts; staying preserves all
+inputs. Explicit registration discard resets only its own form without writes.
+A registration that would discard another form's edits asks for confirmation
+before submitting, because successful registration selects its new scope. Pending
+real committed responses remain guarded. These checks use isolated database
+identities and do not establish resolution of the retained native lock failure.
