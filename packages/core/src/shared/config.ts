@@ -1,17 +1,18 @@
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
+  readlinkSync,
   readFileSync,
-  realpathSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import {
-  basename,
   dirname,
   isAbsolute,
   join,
+  parse,
   relative,
   resolve,
   sep,
@@ -39,20 +40,34 @@ export function configPathForHome(home: string) {
 }
 
 function resolveThroughExistingAncestors(path: string) {
-  let ancestor = resolve(path);
-  const missingSegments: string[] = [];
-
-  while (!existsSync(ancestor)) {
-    const parent = dirname(ancestor);
-    if (parent === ancestor) break;
-    missingSegments.unshift(basename(ancestor));
-    ancestor = parent;
+  // Resolve links before subsequent ".." segments, just as filesystem opens do.
+  // lstat also sees dangling links, whose missing destinations still need fencing.
+  const absolutePath = isAbsolute(path) ? path : `${process.cwd()}${sep}${path}`;
+  const root = parse(absolutePath).root;
+  let current = root;
+  let segments = absolutePath.slice(root.length).split(sep);
+  let followedLinks = 0;
+  while (segments.length) {
+    const segment = segments.shift()!;
+    if (!segment || segment === '.') continue;
+    if (segment === '..') { current = dirname(current); continue; }
+    const candidate = join(current, segment);
+    let entry;
+    try { entry = lstatSync(candidate); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      current = candidate;
+      continue;
+    }
+    if (!entry.isSymbolicLink()) { current = candidate; continue; }
+    if (++followedLinks > 40) throw new Error('Guardrail violation: too many symbolic links in managed path.');
+    const destination = readlinkSync(candidate);
+    if (isAbsolute(destination)) {
+      current = parse(destination).root;
+      segments = [...destination.slice(current.length).split(sep), ...segments];
+    } else segments = [...destination.split(sep), ...segments];
   }
-
-  return resolve(
-    existsSync(ancestor) ? realpathSync(ancestor) : ancestor,
-    ...missingSegments,
-  );
+  return current;
 }
 
 export function ensureWithinHome(home: string, target: string) {
@@ -170,8 +185,11 @@ export async function initializeRuntime(
     process.env[runtimeConfig.database.urlEnv] ??
     `file:${join(resolvedHome, 'senderos.db')}`;
   process.env[runtimeConfig.database.urlEnv] = databaseUrl;
-  if (databaseUrl.startsWith('file:') && runtimeConfig.guardrails.restrictToHome)
-    ensureWithinHome(resolvedHome, databaseUrl.slice('file:'.length));
+  // libSQL accepts case-insensitive schemes and percent-decodes the URI path.
+  // Authority/options are not filename segments; leave their validation to the driver.
+  const filePath = /^file:(?:\/\/[^/?#]*)?([^?#]*)/i.exec(databaseUrl)?.[1];
+  if (filePath !== undefined && runtimeConfig.guardrails.restrictToHome)
+    ensureWithinHome(resolvedHome, decodeURIComponent(filePath));
 
   // Setup must use the proposed connection without publishing an unready identity.
   // Database setup is retryable, but is not one transaction with the config file.

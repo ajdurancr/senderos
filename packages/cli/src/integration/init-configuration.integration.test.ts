@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { cleanupIntegrationTemps, tempDir } from './helpers';
 import { testEnvironment } from '../../../../scripts/test-environment';
@@ -24,3 +24,30 @@ test('rejected CLI initialization preserves the configured identity and retained
   expect(projects.exitCode).toBe(0);
   expect(JSON.parse(projects.stdout.toString()).map((item: { id: string }) => item.id)).toEqual([JSON.parse(project.stdout.toString()).id]);
 });
+
+for (const variant of ['encoded traversal', 'encoded symlink', 'query symlink', 'dangling symlink', 'uppercase scheme']) {
+  test(`CLI initialization rejects ${variant} without publishing an outside database`, () => {
+    const parent = tempDir('init-path-guardrail');
+    const home = join(parent, 'home');
+    mkdirSync(home);
+    const outside = join(parent, 'outside.db');
+    symlinkSync(outside, join(home, 'alias.db'));
+    const urls: Record<string, string> = {
+      'encoded traversal': `file:${home}/%2e%2e/outside.db`,
+      'encoded symlink': `file:${home}/%61lias.db`,
+      'query symlink': `file:${home}/alias.db?tls=1`,
+      'dangling symlink': `file:${home}/alias.db`,
+      'uppercase scheme': `FILE:${outside}`,
+    };
+    const result = Bun.spawnSync([process.execPath, 'src/index.ts', 'init', '--home', home,
+      '--name', 'Guardrail fixture', '--harness', 'fixture', '--approve'], {
+      cwd: join(import.meta.dir, '../..'),
+      env: testEnvironment({ SENDEROS_DATABASE_URL: urls[variant] }),
+      stdout: 'pipe', stderr: 'pipe',
+    });
+    expect(result.exitCode).toBe(1);
+    expect(JSON.parse(result.stderr.toString()).error).toContain('Guardrail violation');
+    expect(existsSync(outside)).toBe(false);
+    expect(existsSync(join(home, 'config.json'))).toBe(false);
+  });
+}

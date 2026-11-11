@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 import { checkInstalledLifecycle } from './check-installed-lifecycle';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { runTerminal, testEnvironment as isolatedEnvironment, verifyTerminalSupport } from "../integration/terminal-fixture";
 
@@ -169,6 +169,27 @@ try {
   invariant(rejectedInit.exitCode === 1 && JSON.parse(rejectedInit.stderr.toString()).error.includes('name is already in use'), 'Installed initialization did not reject the duplicate name.');
   invariant(readFileSync(join(installedHome, 'config.json')).equals(originalConfig), 'Rejected installed initialization changed configuration bytes.');
   invariant(JSON.stringify(invokeInstalled(['project', 'list'])) === JSON.stringify(retainedProjects), 'Rejected installed initialization lost retained project visibility.');
+  for (const variant of ['encoded traversal', 'encoded symlink', 'query symlink', 'dangling symlink', 'uppercase scheme']) {
+    const parent = mkdtempSync(join(packageCheckRoot, 'guardrail-'));
+    const guardedHome = join(parent, 'home');
+    mkdirSync(guardedHome);
+    const outside = join(parent, 'outside.db');
+    symlinkSync(outside, join(guardedHome, 'alias.db'));
+    const urls: Record<string, string> = {
+      'encoded traversal': `file:${guardedHome}/%2e%2e/outside.db`,
+      'encoded symlink': `file:${guardedHome}/%61lias.db`,
+      'query symlink': `file:${guardedHome}/alias.db?tls=1`,
+      'dangling symlink': `file:${guardedHome}/alias.db`,
+      'uppercase scheme': `FILE:${outside}`,
+    };
+    const rejected = Bun.spawnSync([installedBinary, 'init', '--home', guardedHome,
+      '--name', 'Installed guardrail fixture', '--harness', 'fixture', '--approve'], {
+      cwd: installRoot, env: { ...installedEnvironment, SENDEROS_DATABASE_URL: urls[variant] },
+      timeout: 10_000, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
+    });
+    invariant(rejected.exitCode === 1 && JSON.parse(rejected.stderr.toString()).error.includes('Guardrail violation'), `Installed initialization did not reject ${variant}.`);
+    invariant(!existsSync(outside) && !existsSync(join(guardedHome, 'config.json')), `Rejected installed ${variant} published a database or configuration.`);
+  }
   const originalDatabase = readFileSync(join(installedHome, 'senderos.db'));
   const declined = await runTerminal([installedBinary, 'db', 'reset', '--home', installedHome], {
     cwd: installRoot, env: installedEnvironment,
