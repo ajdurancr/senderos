@@ -123,3 +123,13 @@ test('project CLI registers a non-software workspace', async () => {
   const home = await initHome();
   expect(await handleProject('create', [], { name: 'Research' }, home)).toMatchObject({ name: 'Research', integrationMode: 'none', githubRemote: '' });
 });
+
+test('project CLI rejects blank names and incomplete repository edits without writes', async () => {
+  const home = await initHome();
+  const created: any = await handleProject('create', [], { name: 'CLI workspace' }, home);
+  const args = ['project', 'update', created.id];
+  await expect(handleProject('update', args, { name: '   ' }, home)).rejects.toThrow('Project name is required');
+  await expect(handleProject('update', args, { 'github-owner': 'owner' }, home)).rejects.toThrow('both GitHub owner and repository');
+  expect(await handleProject('show', ['project', 'show', created.id], {}, home)).toEqual(created);
+  expect(await handleProject('update', args, { name: '  CLI renamed  ', 'github-owner': 'owner', 'github-repo': 'repo' }, home)).toMatchObject({ name: 'CLI renamed', githubOwner: 'owner', githubRepo: 'repo' });
+});

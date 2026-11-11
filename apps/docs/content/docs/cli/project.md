@@ -24,3 +24,9 @@ Use explicit host grants and host-local workspace declarations for execution.
 
 An explicit `--id` is optional. For repository projects, a package name can provide
 a suggested ID. Inspect the created record and keep its returned stable ID.
+
+Updates preserve fields you omit. Supplied display names and GitHub owner/repository
+values are trimmed; a display name cannot be blank. GitHub owner and repository
+must remain a pair after the edit. You can change one member of an existing pair,
+add both to a standalone project, or clear both together. Invalid updates leave
+the project and its activity history unchanged.
