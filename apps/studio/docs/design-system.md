@@ -66,3 +66,5 @@ README for browser test setup. New UI actions must have visible feedback and a
 persisted-state assertion, including their invalid/cancel/pending paths.
 
 Evidence review cards label the source of their age: “Evidence added” or “Review recorded” comes from the latest valid proof or review timestamp. Legacy records without those dates explicitly show “Attempt updated”; invalid fallback dates show “Time unavailable”. Use a semantic `time` element for valid dates. Host heartbeat and execution times remain distinct.
+
+Evidence and review form drafts belong to the selected attempt. Changing attempts resets both forms, including decision and evidence-kind selections. Same-attempt loader refreshes and rejected submissions preserve the operator’s inputs. Selection changes do not write evidence or review decisions.

@@ -235,3 +235,7 @@ and keep absent facts from being presented as successful completion.
 ### Evidence review recency
 
 Review cards use the latest valid evidence creation or review decision time, rather than presenting an older execution update as the age of newly recorded proof. Deterministic UI regressions cover out-of-order evidence, later review, legacy dates and malformed timestamps. The production operator journey checks the card’s semantic time against persisted browser-submitted evidence before and after reload, with authentic desktop and mobile captures. No Core lifecycle timestamp is changed.
+
+### Attempt form isolation
+
+A mounted-inspector regression reproduces unsaved evidence and rationale carrying from one parallel attempt to another before the fix. The evidence and review forms now reset at the attempt identity boundary. Component coverage checks all draft fields and select defaults, returning to the prior attempt, same-attempt refresh and rejected submission. The production browser journey authors and dispatches two parallel branches, verifies same-attempt validation recovery, changes the selected project scope at desktop/mobile widths without writes, and records proof and a decision only for the intended second attempt.
