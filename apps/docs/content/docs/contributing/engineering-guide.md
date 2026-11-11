@@ -218,3 +218,14 @@ payload and predecessor ID. This limits returned rows for selecting migration
 facts; it does not promise a bounded database scan. Real-database regressions
 measure 1, 50 and 200 retained attempts for failed, canceled, active and successful
 runs, while checking route selection, budget counts and idempotent recovery.
+
+### Recovering retained activation state
+
+When the aggregate execution cursor is missing, retained activations keep their
+run associations and retry usage. Recovery selects the latest durable run by
+creation time, then ID descending for ties, independently of activation insertion
+order. The surviving unfinished activations retain the configured retry budget,
+including a budget changed after a predecessor settled. Broken run associations
+or conflicting unfinished budgets require explicit reconciliation; recovery does
+not fabricate a cursor from inconsistent history. Complete attempt payloads,
+retry lineage and parallel branches remain intact.

@@ -145,3 +145,12 @@ persisted retry in Runs and the canvas inspector. It checks reload, Back/Forward
 exact-attempt guidance, mobile touch targets and unchanged attempts/events while
 browsing. `retry-history-desktop-1440x1000` and
 `retry-history-mobile-390x844` capture these production views.
+
+
+The missing-cursor recovery journey changes a ready successor's attempt budget
+through Studio, then uses an explicit isolated fixture to remove only the
+aggregate cursor and reverse identical retained activation rows. Production
+reloads must reconstruct the saved budget without changing runs or attempts.
+Reviewed dispatch uses that budget, simulated host completion settles the goal,
+and desktop/mobile captures retain the operator budget view. No external worker
+or model is contacted.

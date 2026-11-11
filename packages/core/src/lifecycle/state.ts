@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { atomic, openRuntimeDb } from "../db/client";
 import { agents, activations, attemptClaims, goalExecutions, goals, runAttempts, runs } from "../db/schema";
 import { now, randomId } from "../shared/ids";
@@ -17,8 +17,20 @@ export async function cursor(goalId: string, home?: string) {
   if (current && current.activationsUsed > 0) return current;
   const persisted = await goalActivations(goalId, home);
   if (!current && persisted.length) {
-    const last = persisted.filter(a => a.latestRunId).at(-1);
-    await db.insert(goalExecutions).values({ goalId, transitionId: last?.transitionId ?? graph.steps[0]!.id, latestRunId: last?.latestRunId, attemptsUsed: last?.attemptsUsed ?? 0, maxAttempts: last?.maxAttempts ?? 3, maxActivations: Math.max(graph.version.maxActivations, persisted.length), activationsUsed: persisted.length });
+    const retained = persisted.filter(a => a.latestRunId);
+    const linkedRuns = retained.length ? await db.select({ id: runs.id, activationId: runs.activationId }).from(runs)
+      .where(and(eq(runs.goalId, goalId), inArray(runs.id, retained.map(a => a.latestRunId!)))) : [];
+    requireLifecycle(retained.every(a => linkedRuns.some(r => r.id === a.latestRunId && r.activationId === a.id)), "INCONSISTENT_HISTORY", "Retained activation has no matching run; reconcile history before continuing");
+    const [latest] = await db.select({ id: runs.id, activationId: runs.activationId }).from(runs)
+      .where(eq(runs.goalId, goalId)).orderBy(desc(runs.createdAt), desc(runs.id)).limit(1);
+    const last = latest ? retained.find(a => a.latestRunId === latest.id && a.id === latest.activationId) : undefined;
+    requireLifecycle(!latest || last, "INCONSISTENT_HISTORY", "Latest run has no matching activation; reconcile history before continuing");
+    // Budget edits update every unfinished activation, including ready successors
+    // whose predecessor has already settled with an older budget.
+    const pending = persisted.filter(a => !settledActivation(a.status));
+    const maxAttempts = pending[0]?.maxAttempts ?? last?.maxAttempts ?? persisted[0]!.maxAttempts;
+    requireLifecycle(pending.every(a => a.maxAttempts === maxAttempts), "INCONSISTENT_HISTORY", "Retained activations disagree on retry budget; reconcile history before continuing");
+    await db.insert(goalExecutions).values({ goalId, transitionId: last?.transitionId ?? graph.steps[0]!.id, latestRunId: last?.latestRunId, attemptsUsed: last?.attemptsUsed ?? 0, maxAttempts, maxActivations: Math.max(graph.version.maxActivations, persisted.length), activationsUsed: persisted.length });
     await settleGoal(goalId, graph, home);
     return (await db.select().from(goalExecutions).where(eq(goalExecutions.goalId, goalId)))[0]!;
   }

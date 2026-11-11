@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { count, eq } from 'drizzle-orm';
 import { createSenderos, prepareSharedDatabase, registerExecutionContext } from '@senderos/core';
-import { openRuntimeDb } from '../../../packages/core/src/db/client';
+import { atomic, openRuntimeDb } from '../../../packages/core/src/db/client';
 import * as schema from '../../../packages/core/src/db/schema';
 
 const runtime = process.env.STUDIO_E2E_RUNTIME;
@@ -101,6 +101,17 @@ if (command === 'init') {
   const createdAt = new Date(Date.now() + 60_000).toISOString();
   await db.insert(schema.events).values(Array.from({ length: 125 }, (_, i) => ({ id: `history-${id}-${String(i).padStart(3, '0')}`, eventType: 'fixture.history', entityType: i < 105 ? 'goal' : 'project', entityId: i < 105 ? goal.id : `campaign-${id}`, createdAt, payloadJson: JSON.stringify({ observation: `Fixture recorded event ${i}`, detail: 'x'.repeat(240) }) })));
   result = { inserted: 125 };
+} else if (command === 'remove-fixture-cursor' && id) {
+  // Explicit partial-state recovery fixture. Operator actions remain browser forms.
+  result = await atomic(undefined, async () => {
+    const db = openRuntimeDb();
+    const retained = await db.select().from(schema.activations).where(eq(schema.activations.goalId, id));
+    if (retained.length !== 2) throw new Error('Recovery fixture requires two retained visits');
+    await db.delete(schema.activations).where(eq(schema.activations.goalId, id));
+    for (const activation of retained.reverse()) await db.insert(schema.activations).values(activation);
+    await db.delete(schema.goalExecutions).where(eq(schema.goalExecutions.goalId, id));
+    return { removed: true };
+  });
 } else if (command === 'snapshot') {
   // Browser navigation can still be finishing its real planning transaction.
   // Retry reads only; never repeat a host command or an operator mutation.
