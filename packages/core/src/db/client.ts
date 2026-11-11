@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+import { getTableColumns, getTableName } from "drizzle-orm";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { lstatSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
@@ -149,15 +150,43 @@ function connectionFromRuntimeConfig(home: string): DatabaseConnection {
   return { url, ...(authToken ? { authToken } : {}) };
 }
 
+/** Checks required table/column availability, not data integrity or schema constraints. */
 export async function healthcheckCurrentDb(home?: string) {
+  let db: RuntimeDb | undefined;
   try {
-    await openRuntimeDb(home).select().from(schema.projects).limit(1);
-    return { ok: true, issues: [] as string[], warnings: [] as string[] };
+    db = openRuntimeDb(home);
+    const required = Object.values(schema).map(table => ({
+      name: getTableName(table), columns: Object.values(getTableColumns(table)).map(column => column.name),
+    }));
+    // One metadata query, independent of retained row/history volume. The schema
+    // module is the source of required names; extra tables and columns are valid.
+    const result = await db.$client.execute({
+      sql: `SELECT s.name AS table_name, p.name AS column_name
+        FROM sqlite_schema AS s JOIN pragma_table_info(s.name) AS p
+        WHERE s.type = 'table' AND s.name IN (${required.map(() => '?').join(', ')})`,
+      args: required.map(table => table.name),
+    });
+    const available = new Map<string, Set<string>>();
+    for (const row of result.rows) {
+      const name = String(row.table_name);
+      if (!available.has(name)) available.set(name, new Set());
+      available.get(name)!.add(String(row.column_name));
+    }
+    const issues: string[] = [];
+    for (const table of required) {
+      const columns = available.get(table.name);
+      if (!columns) issues.push(`missing table:${table.name}`);
+      else for (const column of table.columns)
+        if (!columns.has(column)) issues.push(`missing column:${table.name}.${column}`);
+    }
+    return { ok: issues.length === 0, issues, warnings: [] as string[] };
   } catch (error) {
     return {
       ok: false,
       issues: [(error as Error).message],
       warnings: [] as string[],
     };
+  } finally {
+    if (db && db !== transactions.getStore()?.db) db.$client.close();
   }
 }

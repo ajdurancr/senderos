@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import * as libsql from "@libsql/client";
+import { getTableName } from "drizzle-orm";
+import * as schema from "./schema";
+import { doctor } from "../commands/system/health";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -176,4 +179,74 @@ test("remote connections keep the driver's pinned transaction and rollback contr
     expect(executeMultiple).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
   });
+});
+
+
+describe("read-only schema health", () => {
+  test.each(Object.values(schema).map(table => getTableName(table)))(
+    "reports missing required table %s without repairing it", async table => {
+      const home = await initHome();
+      const db = openRuntimeDb(home);
+      try {
+        await db.$client.execute(`DROP TABLE "${table}"`);
+        const before = await db.$client.execute("SELECT type, name, sql FROM sqlite_schema ORDER BY type, name");
+        expect(await healthcheckCurrentDb(home)).toMatchObject({
+          ok: false, issues: [expect.stringContaining(table)],
+        });
+        expect((await doctor(home)).ok).toBe(false);
+        expect((await db.$client.execute("SELECT type, name, sql FROM sqlite_schema ORDER BY type, name")).rows).toEqual(before.rows);
+      } finally { db.$client.close(); }
+    },
+  );
+
+  test("reports every missing required column, even when the table is empty", async () => {
+    const home = await initHome();
+    const db = openRuntimeDb(home);
+    try {
+      await db.$client.execute("ALTER TABLE run_attempts DROP COLUMN result_json");
+      await db.$client.execute("ALTER TABLE runs DROP COLUMN max_attempts");
+      expect(await healthcheckCurrentDb(home)).toMatchObject({ ok: false, issues: [
+        expect.stringContaining("run_attempts.result_json"), expect.stringContaining("runs.max_attempts"),
+      ] });
+    } finally { db.$client.close(); }
+  });
+
+  test("does not accept a view in place of a required writable table", async () => {
+    const home = await initHome();
+    const db = openRuntimeDb(home);
+    try {
+      await db.$client.execute("ALTER TABLE run_attempts RENAME TO retained_attempts");
+      await db.$client.execute("CREATE VIEW run_attempts AS SELECT * FROM retained_attempts");
+      expect(await healthcheckCurrentDb(home)).toMatchObject({ ok: false, issues: [expect.stringContaining("run_attempts")] });
+    } finally { db.$client.close(); }
+  });
+
+  test("accepts extra tables and columns while preserving persisted history", async () => {
+    const home = await initHome();
+    const db = openRuntimeDb(home);
+    try {
+      await db.$client.execute("CREATE TABLE operator_notes (id TEXT, body TEXT)");
+      await db.$client.execute("INSERT INTO operator_notes VALUES ('note', 'retained operator fact')");
+      await db.$client.execute("ALTER TABLE run_attempts ADD COLUMN future_fact TEXT");
+      await db.$client.execute({ sql: `INSERT INTO run_attempts
+        (id, run_id, attempt_number, agent_id, status, execution_objective, harness, retry_from_attempt_id, result_json, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: ["attempt", "run", 2, "agent", "failed", "retained objective", "fixture", "prior", '{"fact":"retained evidence"}', "2026-01-01", "2026-01-01"] });
+      const before = await db.$client.execute("SELECT * FROM run_attempts ORDER BY id");
+      expect(await healthcheckCurrentDb(home)).toEqual({ ok: true, issues: [], warnings: [] });
+      expect((await db.$client.execute("SELECT * FROM run_attempts ORDER BY id")).rows).toEqual(before.rows);
+      expect((await db.$client.execute("SELECT body FROM operator_notes")).rows.map(row => row.body)).toEqual(["retained operator fact"]);
+    } finally { db.$client.close(); }
+  });
+});
+
+test("schema health works without a home and leaves a caller's transaction usable", async () => {
+  const home = await initHome();
+  expect((await healthcheckCurrentDb()).ok).toBe(true);
+  await atomic(home, async () => {
+    expect((await healthcheckCurrentDb(home)).ok).toBe(true);
+    await openRuntimeDb(home).$client.execute("CREATE TABLE operator_transaction (fact TEXT)");
+  });
+  const db = openRuntimeDb(home);
+  try { expect((await db.$client.execute("SELECT * FROM operator_transaction")).rows).toEqual([]); }
+  finally { db.$client.close(); }
 });
