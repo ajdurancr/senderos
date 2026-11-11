@@ -1,7 +1,7 @@
 import { test as base, expect, type Page, type TestInfo } from '@playwright/test';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { runJsonCommand } from './runtime-command';
 import { fileURLToPath } from 'node:url';
 import type * as schema from '../../../packages/core/src/db/schema';
 
@@ -24,8 +24,7 @@ export type State = {
   claims: Omit<typeof schema.attemptClaims.$inferSelect, 'token'>[];
 };
 export function runtime(command: string, id?: string): unknown {
-  const value = execFileSync(process.env.BUN_EXECUTABLE ?? 'bun', [fileURLToPath(new URL('./runtime.ts', import.meta.url)), command, ...(id ? [id] : [])], { env: process.env, encoding: 'utf8', timeout: 20_000 });
-  return JSON.parse(value);
+  return runJsonCommand(process.env.BUN_EXECUTABLE ?? 'bun', [fileURLToPath(new URL('./runtime.ts', import.meta.url)), command, ...(id ? [id] : [])], process.env);
 }
 export const state = () => runtime('snapshot') as State;
 export async function ready(page: Page) {
