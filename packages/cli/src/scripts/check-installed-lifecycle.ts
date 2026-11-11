@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { writeFileSync } from 'node:fs';
+import { checkInstalledRecovery } from './check-installed-recovery';
 
 type Invoke = <T>(args: string[]) => T;
 type Attempt = { id: string; runId: string; status: string; attemptNumber: number; retryFromAttemptId: string | null; failureSummary: string | null; externalSessionId: string | null; statusSnapshotJson: string };
@@ -83,5 +84,7 @@ export function checkInstalledLifecycle(invoke: Invoke, reject: (args: string[],
   check(original.status === 'failed' && original.failureSummary === 'Synthetic failure retained across package processes', 'retry must retain original failure facts');
   check(attempts().length === 2 && invoke<unknown[]>(['run', 'list']).length === 2, 'replay and rejected operations must not add runs or attempts');
   check(invoke<{ id: string }>(['agent', 'show', agent.id]).id === agent.id, 'custom agent must remain readable after process restarts');
-  return { attempts: 2, runs: 2, goal: finalGoal.status, offline: true, realHostExecution: false };
+  const recovery = checkInstalledRecovery(invoke, reject, { projectId: project.id, versionId: published.version.id, directory });
+  check(attempts().length === 6 && invoke<unknown[]>(['run', 'list']).length === 6, 'recovery, replay and cancellation must preserve exact reservation counts');
+  return { attempts: 6, runs: 6, goal: finalGoal.status, recovery, offline: true, realHostExecution: false };
 }

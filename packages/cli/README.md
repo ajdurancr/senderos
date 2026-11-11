@@ -25,8 +25,15 @@ Both commands include workspace coverage and an installed npm tarball check
 using disposable local databases. In addition to initialization and reset, the
 installed binary authors and publishes a workflow, activates a goal, reserves
 work, and exercises host grants, workspace availability, ownership, failure,
-retry lineage and completion evidence/review gates. Each CLI command runs in a
-fresh process to verify persisted behavior. Sessions and evidence are synthetic:
+retry lineage and completion evidence/review gates. Recovery checks persist
+unknown, active, missing and finished session observations, reject conflicting
+finished results, require confirmed termination before abandonment, and fence
+stale reports. Cancellation waits for the owned host to acknowledge stopping;
+revoked grants block new claims while still allowing the owner to receive and
+acknowledge cancellation. Queued unclaimed work cancels immediately. Each CLI
+command runs in a fresh process to verify persisted behavior. These installed
+checks do not simulate lease expiry; Core and host integration tests cover
+expired-lease reclaim and fence rotation. Sessions and evidence are synthetic:
 the check does not launch a real host or call a model provider. The terminal run
 validates real stdin, stdout and stderr TTY descriptors before starting the
 release chain.
