@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Form, useActionData, useNavigation } from 'react-router';
-import { DraftNavigationGuard } from '../../../components/draft-navigation-guard';
+import { useInspectorDraft } from './inspector-draft-boundary';
 import type { MissionControlData } from '../server';
 import { parseAttemptSnapshot } from '../model';
 
@@ -50,8 +50,8 @@ export function AttemptDrafts({ attempt, disabled }: { attempt: MissionControlDa
       setDirty(value => ({ ...value, review: false }));
     }
   }, [pending, action]);
+  useInspectorDraft('attempt', dirty.evidence || dirty.review || (pending && submitted.current !== null), pending);
   return <>
-    {!disabled && <DraftNavigationGuard dirty={dirty.evidence || dirty.review || (pending && submitted.current !== null)} saving={pending} subject="evidence and review" />}
     <Form ref={evidenceForm} className="compact-form" method="post" onChange={() => updateDirty("evidence")} onSubmit={event => submit(event, "evidence")}>
       <input type="hidden" name="intent" value="evidence" />
       <input type="hidden" name="attemptId" value={attempt.id} />

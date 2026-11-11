@@ -1,10 +1,16 @@
+import { useState } from "react";
+import { InspectorDraftBoundary } from "./inspector-draft-boundary";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GoalBudgets } from "./goal-budgets";
 import { missionControlFixture as fixture } from "../../../test-support/mission-control-fixture";
 import type { MissionControlData } from "../server";
 
+beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+});
 afterEach(cleanup);
 const execution = { goalId: "goal-1", activationsUsed: 2, maxActivations: 3, maxAttempts: 2, cancellationRequestedAt: null } as MissionControlData["executions"][number];
 function show(status = "active", record: typeof execution | undefined = execution, revalidate?: () => Promise<null>) {
@@ -73,4 +79,51 @@ it("disables both budget submissions while navigation is pending", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Save activation limit" }));
   await waitFor(() => expect(screen.getAllByRole("button", { name: "Saving…" }).every(button => (button as HTMLButtonElement).disabled)).toBe(true));
   finish(); await waitFor(() => expect(screen.getByRole("button", { name: "Save activation limit" })).toHaveProperty("disabled", false));
+});
+
+it('uses one boundary for simultaneous budget drafts and discards them independently', async () => {
+  const goal = { ...fixture.goals[0]!, status: 'active' } as MissionControlData['goals'][number];
+  const router = createMemoryRouter([{ path: '*', element: <InspectorDraftBoundary disabled={false}><GoalBudgets data={{ ...fixture, executions: [execution] }} goal={goal} /></InspectorDraftBoundary> }]);
+  render(<RouterProvider router={router} />);
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Activation limit' }), { target: { value: '8' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }), { target: { value: '7' } });
+  await router.navigate('/other');
+  await waitFor(() => expect(screen.getAllByRole('dialog')).toHaveLength(1));
+  expect(router.state.location.pathname).toBe('/');
+  fireEvent.click(screen.getByRole('button', { name: 'Stay here' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Discard activation limit draft' }));
+  expect((screen.getByRole('spinbutton', { name: 'Activation limit' }) as HTMLInputElement).value).toBe('3');
+  expect((screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }) as HTMLInputElement).value).toBe('7');
+  fireEvent.click(screen.getByRole('button', { name: 'Discard attempt limit draft' }));
+  await router.navigate('/other');
+  await waitFor(() => expect(router.state.location.pathname).toBe('/other'));
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+it('freezes both budget fields, prevents repeated posts and retains failed input', async () => {
+  let finish!: (value: unknown) => void;
+  const action = vi.fn(() => new Promise(resolve => { finish = resolve; }));
+  const goal = { ...fixture.goals[0]!, status: 'active' } as MissionControlData['goals'][number];
+  render(<RouterProvider router={createMemoryRouter([{ path: '*', element: <GoalBudgets data={{ ...fixture, executions: [execution] }} goal={goal} />, action }])} />);
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Activation limit' }), { target: { value: '8' } });
+  const form = screen.getByRole('form', { name: 'Change activation limit' });
+  fireEvent.submit(form); fireEvent.submit(form);
+  await waitFor(() => expect(action).toHaveBeenCalledOnce());
+  expect(screen.getAllByRole('spinbutton').every(field => field.matches(':disabled'))).toBe(true);
+  finish({ ok: false, intent: 'set-activation-budget' });
+  await waitFor(() => expect(screen.getAllByRole('spinbutton').every(field => !field.matches(':disabled'))).toBe(true));
+  expect((screen.getByRole('spinbutton', { name: 'Activation limit' }) as HTMLInputElement).value).toBe('8');
+});
+it('refreshes clean limits without replacing an independent draft and discards to the current persisted limit', () => {
+  const goal = { ...fixture.goals[0]!, status: 'active' } as MissionControlData['goals'][number];
+  function Refreshable() {
+    const [record, setRecord] = useState(execution);
+    return <><button onClick={() => setRecord({ ...record, maxActivations: 5, maxAttempts: 4 })}>Refresh limits</button><GoalBudgets data={{ ...fixture, executions: [record] }} goal={goal} /></>;
+  }
+  render(<RouterProvider router={createMemoryRouter([{ path: '*', element: <Refreshable /> }])} />);
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }), { target: { value: '7' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh limits' }));
+  expect((screen.getByRole('spinbutton', { name: 'Activation limit' }) as HTMLInputElement).value).toBe('5');
+  expect((screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }) as HTMLInputElement).value).toBe('7');
+  fireEvent.click(screen.getByRole('button', { name: 'Discard attempt limit draft' }));
+  expect((screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }) as HTMLInputElement).value).toBe('4');
 });
