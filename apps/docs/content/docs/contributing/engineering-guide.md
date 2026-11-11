@@ -162,3 +162,10 @@ runs advance to the next step. Complete inspection history and retry predecessor
 IDs remain unchanged. Multiple active legacy runs remain an explicit recovery
 blocker. The actual driver-result regression in `lifecycle/state-query.test.ts`
 checks query scope alongside persisted migration parity and idempotence.
+
+Activation guidance reads only the latest numbered attempt for its current run.
+Retained retries remain available through complete attempt inspection, with
+unchanged evidence, recovery details and predecessor IDs. The actual-result
+regression in `lifecycle/state-latest.test.ts` compares guidance against the
+single-attempt baseline while preserving all 200 synthetic retained records.
+This bounds returned attempt rows for guidance, not the database scan cost.

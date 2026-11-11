@@ -65,7 +65,7 @@ async function explainActivation(a: Activation, home?: string): Promise<Activati
   const base = { goalId: a.goalId, activationId: a.id, nodeId: a.nodeId, revision: a.revision, scopes: JSON.parse(a.scopesJson) as string[] };
   if (settledActivation(a.status)) return { ...base, state: a.status === "canceled" ? "canceled" : "completed", reason: a.status, nextAction: "none" };
   if (a.status === "waiting_join" || a.status === "blocked") return { ...base, state: "blocked", reason: a.reason ?? a.status, nextAction: a.reason === "activation_limit_reached" ? "increase_activation_budget" : "wait_for_branches" };
-  const attempt = a.latestRunId ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, a.latestRunId)).orderBy(desc(runAttempts.attemptNumber)))[0] : undefined;
+  const attempt = a.latestRunId ? (await db.select().from(runAttempts).where(eq(runAttempts.runId, a.latestRunId)).orderBy(desc(runAttempts.attemptNumber)).limit(1))[0] : undefined;
   requireLifecycle(a.status !== "running" || attempt, "INCONSISTENT_HISTORY", "Active activation has no attempt");
   if (attempt && !terminal(attempt.status)) {
     const claim = (await db.select().from(attemptClaims).where(eq(attemptClaims.attemptId, attempt.id)))[0], snapshot = JSON.parse(attempt.statusSnapshotJson);
