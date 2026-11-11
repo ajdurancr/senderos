@@ -4,7 +4,9 @@ import type { Route } from "./+types/root";
 import { DocumentHtml } from "./components/document-html";
 import "./app.css";
 
-export const links: Route.LinksFunction = () => [];
+export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

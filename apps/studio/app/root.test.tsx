@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 describe('Studio document root', () => {
   it('declares links and composes the document shell and route outlet', () => {
-    expect(links()).toEqual([]);
+    expect(links()).toEqual([{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }]);
     expect(Layout({ children: 'Studio content' }).props.children).toBeTruthy();
     expect(App().type).toBeTruthy();
   });

@@ -203,3 +203,9 @@ Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
 probe reproduced the previous raw fixture UPDATE failing while a reader held the
 file; transaction rollback/retry lets that fixture wait without weakening the
 production assertions or changing application mutation behavior.
+
+The browser resource journey checks that the conventional `/favicon.ico` URL
+redirects to the static Senderos SVG with an image content type, instead of
+loading operational database data. The document declares that icon explicitly.
+Scoped desktop and mobile reloads retain normal hydrated navigation and capture
+`icon-resource-desktop-1440x1000` and `icon-resource-mobile-390x844`.
