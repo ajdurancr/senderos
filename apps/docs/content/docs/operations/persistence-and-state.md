@@ -48,3 +48,17 @@ confirmation. Stop all writers first. The command clears every context in that
 file, restores the selected context and built-in seeds, and retains a private
 recovery backup. Config, repositories and artifact files are not cleared. See
 [the reset operator guide](../../cli/db/) for safeguards and recovery limits.
+
+## Brief local read contention
+
+For a local file database, standalone SELECT statements yield while SQLite
+reports `SQLITE_BUSY` or `SQLITE_BUSY_RECOVERY`, for up to one second per
+statement. This lets a brief writer finish without immediately failing an
+operator snapshot or CLI read. The same statement and bindings are retried;
+this does not cache old facts or restart the whole operator request.
+
+Persistent contention still fails with the database error. Check for another
+process holding a long transaction before retrying. Mutation statements and
+reads inside Senderos transactions keep their existing rollback and retry
+policy; remote database calls are unchanged. This handling does not establish
+the cause of an unrelated external-host simulator timeout.

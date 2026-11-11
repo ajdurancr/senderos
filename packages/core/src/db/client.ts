@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { resolveRuntime } from "../shared/config";
 import * as schema from "./schema";
+import { retryLocalReads } from "./read-contention";
 import { DatabaseDiagnosticError, diagnosticDatabaseFailure, diagnosticDatabaseUrl } from "./diagnostics";
 
 export type DatabaseConnection = {
@@ -78,6 +79,7 @@ function connectRuntimeDb(home?: string, requireExistingFile = false) {
     ...connection,
     url: connection.url.replace(/^turso:\/\//i, "libsql://"),
   });
+  retryLocalReads(client, () => transactions.getStore()?.db.$client === client);
   scoped?.clients.add(client);
   return drizzle({ client, schema });
 }
