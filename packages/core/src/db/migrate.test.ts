@@ -57,3 +57,64 @@ test('graph upgrade preserves existing records and snapshots then-current publis
     expect((await client.execute("SELECT protocol_version FROM sendero_versions WHERE id='new-draft'")).rows[0]!.protocol_version).toBe(2);
   } finally { client.close(); }
 });
+
+// The migrator must yield before its first metadata DDL, even on an already
+// initialized file. This lock is held by another connection on the event loop.
+test('cold migration preparation survives a brief exclusive lock without changing migration history', async () => {
+  const { openRuntimeDb } = await import('./client');
+  const home = await initHome();
+  const owner = openRuntimeDb(home).$client;
+  const before = await owner.execute('SELECT * FROM __drizzle_migrations ORDER BY created_at');
+  await owner.execute('BEGIN EXCLUSIVE');
+  const released = new Promise<void>((resolve, reject) => {
+    setTimeout(() => { owner.execute('COMMIT').then(() => resolve(), reject); }, 75);
+  });
+  try {
+    await expect(migrateRuntimeDb(home)).resolves.toBeUndefined();
+  } finally {
+    await released;
+    owner.close();
+  }
+  const inspector = openRuntimeDb(home).$client;
+  try { expect((await inspector.execute('SELECT * FROM __drizzle_migrations ORDER BY created_at')).rows).toEqual(before.rows); }
+  finally { inspector.close(); }
+});
+
+test('first migration waits for metadata creation and keeps unrelated retained records', async () => {
+  const { openRuntimeDb, withDatabaseConnection } = await import('./client');
+  const home = tempHome();
+  await withDatabaseConnection({ url: `file:${join(home, 'cold.db')}` }, async () => {
+    const owner = openRuntimeDb().$client;
+    await owner.execute('CREATE TABLE retained (value TEXT)');
+    await owner.execute("INSERT INTO retained VALUES ('authored fact')");
+    await owner.execute('BEGIN EXCLUSIVE');
+    const released = new Promise<void>((resolve, reject) => {
+      setTimeout(() => { owner.execute('COMMIT').then(() => resolve(), reject); }, 75);
+    });
+    try { await expect(migrateRuntimeDb()).resolves.toBeUndefined(); }
+    finally { await released; }
+    const inspector = openRuntimeDb().$client;
+    const before = await inspector.execute('SELECT * FROM __drizzle_migrations ORDER BY created_at');
+    expect(before.rows.length).toBeGreaterThan(0);
+    expect((await inspector.execute('SELECT value FROM retained')).rows[0]?.value).toBe('authored fact');
+    await migrateRuntimeDb();
+    expect((await inspector.execute('SELECT * FROM __drizzle_migrations ORDER BY created_at')).rows).toEqual(before.rows);
+  });
+});
+
+test('persistent cold metadata contention fails before migrations and permits explicit later recovery', async () => {
+  const { openRuntimeDb, withDatabaseConnection } = await import('./client');
+  const home = tempHome();
+  await withDatabaseConnection({ url: `file:${join(home, 'blocked.db')}` }, async () => {
+    const owner = openRuntimeDb().$client;
+    await owner.execute('CREATE TABLE retained (value TEXT)');
+    await owner.execute("INSERT INTO retained VALUES ('unchanged')");
+    await owner.execute('BEGIN EXCLUSIVE');
+    try { await expect(migrateRuntimeDb()).rejects.toMatchObject({ cause: { code: 'SQLITE_BUSY' } }); }
+    finally { await owner.execute('ROLLBACK'); }
+    expect((await owner.execute("SELECT name FROM sqlite_master WHERE name='__drizzle_migrations'")).rows).toEqual([]);
+    expect((await owner.execute('SELECT value FROM retained')).rows[0]?.value).toBe('unchanged');
+    await migrateRuntimeDb();
+    expect((await owner.execute('SELECT COUNT(*) AS count FROM __drizzle_migrations')).rows[0]?.count).toBeGreaterThan(0);
+  });
+});

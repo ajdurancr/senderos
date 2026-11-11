@@ -323,3 +323,11 @@ includes a real exclusive-lock regression and the original error on exhaustion;
 the production browser suite exercises a separate process holding the isolated
 database lock. This is a bounded read-availability correction, not evidence that
 the earlier unexplained external-host simulator timeout has been resolved.
+
+Cold-start preparation is verified separately from warmed snapshot refresh. The
+production browser journey opens a fresh Node server under a brief exclusive
+fixture lock at desktop and mobile sizes, checks the first response and reload,
+and compares complete persisted state. Core regressions additionally cover first
+migration, repeated preparation, persistent lock failure with no partial migration,
+and explicit recovery after release. Unknown errors and migration-batch failures
+are never retried by the metadata preparation policy.

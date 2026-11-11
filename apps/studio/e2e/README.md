@@ -203,3 +203,10 @@ Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
 probe reproduced the previous raw fixture UPDATE failing while a reader held the
 file; transaction rollback/retry lets that fixture wait without weakening the
 production assertions or changing application mutation behavior.
+
+The cold-preparation journey starts a separate real Node production server for
+each desktop/mobile viewport without warming it with an HTTP health request.
+A separate fixture process then holds a brief exclusive SQLite lock during the
+first browser navigation. The journey checks successful hydration and reload,
+complete persisted-state equality, responsive width and authentic screenshots.
+Only isolated local fixture processes participate; no external host is called.
