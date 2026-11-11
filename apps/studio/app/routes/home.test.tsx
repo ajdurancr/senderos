@@ -1,6 +1,6 @@
 import { afterEach } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createMemoryRouter, RouterContextProvider, RouterProvider } from "react-router";
+import { createMemoryRouter, redirect, RouterContextProvider, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 import { missionControlFixture } from "../test-support/mission-control-fixture";
@@ -128,5 +128,15 @@ describe('draft save transport recovery', () => {
     await expect(clientAction({ url: new URL('http://localhost/goals/new'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/goals/new', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
     } as Parameters<typeof clientAction>[0])).rejects.toThrow('Failed to fetch');
+  });
+});
+
+describe('registration redirect confirmation', () => {
+  it.each(['register-context', 'register-project'])('preserves the successful %s router redirect', async intent => {
+    const form = new FormData(); form.set('intent', intent);
+    const confirmation = redirect('/settings?context=registered&saved=' + intent);
+    await expect(clientAction({ url: new URL('http://localhost/settings'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/settings', { method: 'POST', body: form }),
+      serverAction: async () => { throw confirmation; },
+    } as Parameters<typeof clientAction>[0])).rejects.toBe(confirmation);
   });
 });

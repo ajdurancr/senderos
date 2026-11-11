@@ -370,5 +370,7 @@ widths it checks that pending identity fields cannot change, the input remains
 visible with an explicit unconfirmed-registration warning, and no automatic
 retry creates another identity. Reload exposes the committed identity in the
 scope selectors; submitting the same name is rejected without another record.
-The original scope, goals and runs remain unchanged. This does not add request
+Component regressions preserve successful router redirects, and the ordinary
+registration journey still verifies confirmed scope selection. During lost-response
+recovery the original scope, goals and runs remain unchanged. This does not add request
 idempotency or promise recovery after leaving the page.

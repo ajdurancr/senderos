@@ -49,6 +49,8 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   try {
     return await serverAction();
   } catch (error) {
+    // Router responses (including successful redirects) are not transport loss.
+    if (error instanceof Response) throw error;
     if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project'].includes(intent) || request.signal.aborted) throw error;
     const registration = intent === 'register-context' || intent === 'register-project';
     const message = registration
