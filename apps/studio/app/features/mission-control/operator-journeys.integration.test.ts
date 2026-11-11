@@ -293,10 +293,11 @@ describe('persisted Studio operator journeys after manual acceptance', () => {
       expect((await db.execute({ sql: 'SELECT status_snapshot_json FROM run_attempts WHERE id = ?', args: [attempt.id] })).rows[0]?.status_snapshot_json).toBe(archivedSnapshots.get(attempt.id));
       expect((await db.execute({ sql: 'SELECT cancellation_requested_at, acknowledged_at FROM attempt_claims WHERE attempt_id = ?', args: [attempt.id] })).rows[0]).toMatchObject({ cancellation_requested_at: expect.any(String), acknowledged_at: expect.any(String) });
     }
-    // The actionable filtering is Studio-only; core inspection retains history.
+    // Core and Studio attention exclude finished attempts; complete inspection retains history.
     const coreOverview = await core.createSenderos({ allExecutionContexts: true }).missionControl.overview();
     for (const { attempt } of reservations) {
-      expect(coreOverview.queue.reviews.find(item => item.attempt.id === attempt.id)).toMatchObject({ attempt: { status: 'canceled', statusSnapshotJson: archivedSnapshots.get(attempt.id) }, review: { status: 'pending' } });
+      expect(coreOverview.queue.reviews.some(item => item.attempt.id === attempt.id)).toBe(false);
+      expect(coreOverview.attempts.find(item => item.id === attempt.id)).toMatchObject({ status: 'canceled', statusSnapshotJson: archivedSnapshots.get(attempt.id) });
     }
     expect(data.activations.filter(item => item.goalId === goal.id).every(item => item.status === 'canceled')).toBe(true);
     expect(data.activations.some(item => item.goalId === goal.id && item.nodeId === graph.nodes.find(node => node.label === 'Join')!.id)).toBe(false);
