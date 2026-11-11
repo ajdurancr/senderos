@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { type Scenario, capture, expect, goalRuns, reload, runtime, scenarioScope, state, test, visit } from './fixtures';
+import { type Scenario, capture, expect, goalRuns, ready, reload, runtime, scenarioScope, state, test, visit } from './fixtures';
 
 async function authorAgent(page: Page, scenario: Scenario, label: string) {
   const slug = `${label}-${scenario.id}`;
@@ -206,6 +206,35 @@ test('failed attention clears recovered visits while preserving parallel failure
   await expect.poll(() => goalRuns(goal.id).length).toBe(3);
   const retry = state().attempts.find(item => item.retryFromAttemptId === attempts[0]!.id)!;
   expect(retry).toBeDefined();
+  const retrySnapshot = state();
+  const original = attempts[0]!;
+  await visit(page, `/projects/${scenario.launchProject}/runs/attempts/${original.id}${scenarioScope(scenario)}`);
+  const retryLink = page.getByRole('link', { name: `Retry attempt ${retry.attemptNumber} · queued`, exact: true });
+  await retryLink.focus();
+  await expect(retryLink).toBeFocused();
+  await retryLink.press('Enter');
+  await expect(page.locator('.run-detail .retry-lineage')).toContainText(`Viewing attempt ${retry.attemptNumber}`);
+  await reload(page);
+  await page.getByRole('link', { name: `Previous attempt ${original.attemptNumber} · failed`, exact: true }).click();
+  await expect(page.locator('.run-detail')).toContainText('Deterministic failed worker fixture');
+  await page.goBack(); await ready(page);
+  await expect(page.locator('.run-detail .retry-lineage')).toContainText(`Viewing attempt ${retry.attemptNumber}`);
+  await page.goForward(); await ready(page);
+  await page.getByRole('link', { name: 'Open execution', exact: true }).click();
+  await expect(page.locator('.context-inspector').getByText('Selected activation', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.context-inspector .retry-lineage')).toContainText('Viewing attempt 1');
+  await capture(page, testInfo, 'retry-history-desktop-1440x1000');
+  await page.getByRole('link', { name: `Retry attempt ${retry.attemptNumber} · queued`, exact: true }).click();
+  await expect(page.locator('.context-inspector .retry-lineage')).toContainText(`Viewing attempt ${retry.attemptNumber}`);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.context-inspector .retry-lineage').scrollIntoViewIfNeeded();
+  await expect(page.locator('.context-inspector .retry-lineage a')).toHaveCount(1);
+  expect(await page.locator('.context-inspector .retry-lineage a').evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(40);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'retry-history-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(state().attempts).toEqual(retrySnapshot.attempts);
+  expect(state().eventCount).toBe(retrySnapshot.eventCount);
   await visit(page, failedPath);
   await expect(cards).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'No matching attention' })).toBeVisible();

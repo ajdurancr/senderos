@@ -139,3 +139,9 @@ inserts 125 labeled synthetic settled graph visits through
 The browser checks page traversal, exact old selection/evidence, latest and return
 navigation, reload persistence, keyboard focus, mobile layout and an unchanged
 full database snapshot. Desktop/mobile captures preserve the actual UI.
+
+The failure-attention journey also navigates between a failed attempt and its
+persisted retry in Runs and the canvas inspector. It checks reload, Back/Forward,
+exact-attempt guidance, mobile touch targets and unchanged attempts/events while
+browsing. `retry-history-desktop-1440x1000` and
+`retry-history-mobile-390x844` capture these production views.

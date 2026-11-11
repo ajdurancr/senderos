@@ -95,3 +95,10 @@ Settled cards use native links, a named history navigation, persistent scoped
 positions, selected-link semantics and a focusable history heading. Pagination
 must preserve original visit numbers, pinned graph labels, parent/fork details
 and selected-attempt records. Reuse the existing history spacing and surfaces.
+
+Attempt detail exposes direct persisted retry links in both Runs and the canvas
+inspector. Keep previous-attempt and retry links scoped to the same goal and
+activation (the same step for legacy records). Label the viewed attempt explicitly;
+its evidence and host records must not inherit the latest retry's decision. Goal
+summary guidance remains separately labeled. Missing predecessors show an
+unavailable state; never guess a relationship from timestamps or walk a cycle.

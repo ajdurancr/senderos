@@ -217,3 +217,13 @@ that attempt's details and offers a link back to its visit.
 
 This limits displayed settled cards only. Current visits, database reads and the
 shared operational snapshot remain complete.
+
+### Compare retry attempts
+
+An attempt's **Attempt history** section links to its recorded previous attempt
+and any direct retries. Use these links in Runs or the canvas inspector to compare
+failure evidence with a retry's progress. Reload and browser Back/Forward retain
+the exact selection. Evidence and host details belong to the viewed attempt;
+**Goal summary** describes the goal's current state. A missing previous attempt
+is labeled unavailable in the current execution scope. Navigating history does
+not dispatch, resume or change execution state.

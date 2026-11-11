@@ -1,3 +1,4 @@
+import { RetryLineage } from "./retry-lineage";
 import { useState } from "react";
 import { GoalPreparation } from "./goal-preparation";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
@@ -68,8 +69,7 @@ export function ContextualInspector({
   );
   const objective = attempt?.executionObjective ?? sourceNode?.executionObjective ?? transition?.transitionObjective ?? goal.specText;
   const goalDecision = data.decisions?.find(decision => decision.goalId === goal.id);
-  const selectedRun = execution.runs.find(run => run.id === attempt?.runId);
-  const attemptDecision = attempt && goalDecision?.activations.find(decision => decision.attemptId === attempt.id || Boolean(selectedRun?.activationId && decision.activationId === selectedRun.activationId));
+  const attemptDecision = attempt && goalDecision?.activations.find(decision => decision.attemptId === attempt.id);
   const decision = attemptDecision || goalDecision;
   const snapshot = parseAttemptSnapshot(attempt?.statusSnapshotJson ?? "{}");
   const events = data.events
@@ -137,6 +137,7 @@ export function ContextualInspector({
         {data.queue.dispatchable.some(item => item.goalId === goal.id) && <Link className="button button-primary" to={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</Link>}
         {validSelection && !preparingGoal && <GoalCancellation key={goal.id} goal={goal} requested={cancellationRequested} />}
       </section>
+      {attempt && <RetryLineage data={data} attempt={attempt} surface="canvas" />}
       <section className="inspector-section">
         <header>
           <h3>Evidence & review</h3>
