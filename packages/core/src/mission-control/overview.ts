@@ -1,3 +1,4 @@
+import { completeTogether } from "../shared/complete-together";
 import { inArray } from 'drizzle-orm';
 import { openRuntimeDb } from '../db/client';
 import { goalExecutions } from '../db/schema';
@@ -23,7 +24,7 @@ export async function missionControlOverview(home?: string, executionContextId?:
   const attempts = (await listRunAttempts(undefined, home, executionContextId, projectId)).filter(attempt => !projectId || runIds.has(attempt.runId));
   const decisions: Awaited<ReturnType<typeof explainGoal>>[] = [];
   for (const goal of goals) decisions.push(await explainGoal(goal.id, home));
-  const activations = (await Promise.all(goals.map(goal => goalActivations(goal.id, home)))).flat();
+  const activations = (await completeTogether(goals.map(goal => goalActivations(goal.id, home)))).flat();
   const activationById = new Map(activations.map(item => [item.id, item]));
   const activationByRun = new Map(activations.filter(item => item.latestRunId).map(item => [item.latestRunId!, item]));
   const runById = new Map(runs.map(item => [item.id, item]));

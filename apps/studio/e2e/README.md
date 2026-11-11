@@ -210,3 +210,11 @@ A separate fixture process then holds a brief exclusive SQLite lock during the
 first browser navigation. The journey checks successful hydration and reload,
 complete persisted-state equality, responsive width and authentic screenshots.
 Only isolated local fixture processes participate; no external host is called.
+
+
+The snapshot-session journey requests six concurrent production snapshots at
+each desktop/mobile size, compares complete scoped results, refreshes the actual
+mounted interface, reloads and checks complete persisted-state equality. It
+captures the rendered interface. Client closure and interrupted-sibling ordering
+are verified by driver-instrumented server regressions; browser success alone is
+not evidence of handle cleanup or an explanation for previous simulator stalls.

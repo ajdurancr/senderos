@@ -70,3 +70,11 @@ preparation, before migration selection or the transactional migration batch.
 Migration writes, seed operations, remote databases, snapshot conflicts and
 unrelated errors retain their existing behavior. Persistent contention remains
 an error; a later explicit request can retry preparation after the lock clears.
+
+
+Studio snapshot requests explicitly close their owned database clients after
+preparation and all nested reads finish. Parallel read groups finish their
+siblings before propagating the original failure, so cleanup cannot interrupt
+another read in the same request. Existing transactions and nested database
+scopes remain owned by their caller. This changes resource lifetime without
+replaying snapshots, altering retained history, or introducing transaction retries.
