@@ -73,8 +73,10 @@ Nonauthoring tests explicitly select the built-in published software workflow,
 so filtered runs do not depend on a prior test;
 agents, workflows, publication, goals, dispatch, review, evidence, settings, and
 cancellation go through real browser forms. Assertions read the persisted
-records directly and verify them again after reload. No HTTP routes, loaders,
-or persistence adapters are intercepted or mocked.
+records directly and verify them again after reload. Normal journeys do not intercept HTTP routes, loaders, or persistence adapters.
+The graph-save recovery journey deliberately aborts requests or responses and
+delays one response to exercise transport failures; successful saves still use
+the actual production server and isolated database.
 
 Only the external worker's execution is simulated. Its registration, workspace
 access, preflight, claim, independent-session identity, completion, and typed

@@ -123,4 +123,32 @@ describe('independent Studio audit regressions', () => {
     }
     expect(action).toHaveBeenCalledTimes(3);
   }, 15_000);
+  it('preserves edits across canceled scope and Back/Forward navigation, and leaves only on confirmation', async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
+    const current = { ...graph, version: { ...graph.version, status: 'draft' as const } };
+    const router = createMemoryRouter([{ path: '*', element: <SenderoGraphEditor graph={current} agents={base.agents} /> }], {
+      initialEntries: ['/senderos?project=before', '/senderos?project=current', '/senderos?project=after'], initialIndex: 1,
+    });
+    render(<RouterProvider router={router} />);
+    await screen.findByRole('button', { name: 'Cancel changes' });
+    const cleanUnload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(cleanUnload);
+    expect(cleanUnload.defaultPrevented).toBe(false);
+    fireEvent.change(screen.getAllByLabelText('Node label')[1]!, { target: { value: 'Keep valid inputs' } });
+    const dirtyUnload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(dirtyUnload);
+    expect(dirtyUnload.defaultPrevented).toBe(true);
+    for (const destination of ['/senderos?project=other', -1, 1] as const) {
+      await act(async () => { if (typeof destination === "number") await router.navigate(destination); else await router.navigate(destination); });
+      const dialog = await screen.findByRole('dialog', { name: 'Leave graph editor?' });
+      expect(router.state.location.search).toBe('?project=current');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Stay here' }));
+      expect(screen.getAllByLabelText('Node label')[1]).toHaveProperty('value', 'Keep valid inputs');
+    }
+    await act(async () => { await router.navigate(-1); });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Leave editor' }));
+    await waitFor(() => expect(router.state.location.search).toBe('?project=before'));
+  });
+
 });

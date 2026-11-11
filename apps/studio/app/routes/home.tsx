@@ -1,4 +1,4 @@
-import { redirect, useActionData, useLoaderData, useLocation, useNavigation } from "react-router";
+import { type ShouldRevalidateFunctionArgs, redirect, useActionData, useLoaderData, useLocation, useNavigation } from "react-router";
 
 import { MissionControlOverview } from "../features/mission-control/overview";
 import { applyMissionControlAction, missionControlData } from "../features/mission-control/server";
@@ -36,6 +36,23 @@ export async function action({ request }: Route.ActionArgs) {
   } catch (error) {
     return { ok: false, intent: String(form.get('intent')), message: error instanceof Error ? error.message : 'The action could not be completed. Refresh and try again.' };
   }
+}
+
+// A lost response is not proof that the server did not apply the save. Keep the
+// graph and its original revision mounted so a retry retains concurrency checks.
+export async function clientAction({ request, serverAction }: Route.ClientActionArgs) {
+  const intent = String((await request.clone().formData()).get('intent'));
+  try {
+    return await serverAction();
+  } catch (error) {
+    if (intent !== 'replace-sendero-draft' || request.signal.aborted) throw error;
+    return { ok: false, intent, transportFailure: true, message: 'Studio could not confirm the graph save. Your edits are kept here. The save may have reached the server. Retry with revision checks, or reload to inspect the saved draft.' };
+  }
+}
+
+export function shouldRevalidate({ actionResult, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
+  if (actionResult?.transportFailure === true) return false;
+  return defaultShouldRevalidate;
 }
 
 export default function Home() {

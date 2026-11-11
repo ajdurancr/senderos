@@ -1,3 +1,4 @@
+import { DraftNavigationGuard } from "../../../components/draft-navigation-guard";
 import { useClientReady } from "../../../hooks/use-client-ready";
 import { useEffect, useRef, useState } from 'react';
 import { Form, useActionData, useNavigation } from 'react-router';
@@ -56,6 +57,7 @@ function GraphEditor({ graph, agents, onDirtyChange }: { graph: Graph; agents: M
   const addNode = () => setDraft(value => ({ ...value, nodes: [...value.nodes, { key: newKey('node'), kind: 'agent', label: 'New agent', agentId: agents.find(agent => agent.status === 'active')?.id, positionX: 180 + value.nodes.length * 40, positionY: 240, executionObjective: 'Describe the expected result.', completionJson: '{}', requirementsJson: '[]', joinForkNodeId: '' }] }));
   const addEdge = () => setDraft(value => ({ ...value, edges: [...value.edges, { key: newKey('edge'), source: value.nodes[0]?.key ?? '', target: value.nodes.at(-1)?.key ?? '', name: 'New transition', description: '', transitionObjective: '', conditionJson: '{}', status: 'active' }] }));
   return <Form className="create-panel authoring-panel graph-editor" method="post" onSubmit={event => { if (errors.length || pending) event.preventDefault(); else submitted.current = true; }}>
+    <DraftNavigationGuard dirty={dirty} saving={pending} />
     <input type="hidden" name="intent" value="replace-sendero-draft" />
     <input type="hidden" name="senderoId" value={graph.sendero.id} />
     <input type="hidden" name="expectedVersionId" value={graph.version.id} />
