@@ -177,6 +177,16 @@ test('author, publish, activate, review dispatch, and settle typed evidence gate
   await page.getByRole('button', { name: 'Record evidence', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Open evidence: Keyboard and responsive report' })).toHaveAttribute('href', 'https://example.com/e2e/operator-report');
   await page.getByRole('link', { name: 'Reviews', exact: true }).click();
+  const evidenceCreatedAt = JSON.parse(goalAttempts(goal.id)[0]!.statusSnapshotJson).evidence[0].createdAt;
+  await expect(page.locator('.review-grid article')).toContainText('Evidence added');
+  await expect(page.locator('.review-grid article time')).toHaveAttribute('datetime', new Date(evidenceCreatedAt).toISOString());
+  await reload(page);
+  await expect(page.locator('.review-grid article time')).toHaveAttribute('datetime', new Date(evidenceCreatedAt).toISOString());
+  await capture(page, testInfo, 'review-recency-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'review-recency-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('link', { name: 'Inspect evidence' }).click();
   await expect(page.getByRole('link', { name: 'Open evidence: Keyboard and responsive report' })).toBeVisible();
   await page.getByRole('link', { name: 'Review this attempt', exact: true }).click();
