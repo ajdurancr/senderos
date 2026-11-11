@@ -320,3 +320,10 @@ pending identity and repeated-submission protection, and committed/unapplied los
 responses. It activates the rendered reload control by keyboard and checks fresh
 scoped navigation plus complete persisted-state readback. Fragment changes cannot
 unlock an uncertain creation; reloading never resubmits the original request.
+
+`sendero-creation-navigation.pw.ts` retains independently edited creation fields
+and imported JSON while switching authoring methods. Desktop and mobile journeys
+verify scope cancellation, rejected import preservation, navigation during a real
+save with delayed response delivery, successful import/create persistence, native
+document navigation confirmation and explicit Cancel. The database writes are
+real and isolated; only response delivery is delayed.
