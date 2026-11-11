@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { contentionOutcomes } from '../examples/external-host/contention';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { WorkerSession } from '../examples/external-host/controller';
@@ -41,13 +41,32 @@ function equal(actual: unknown, expected: unknown, message: string) {
   assertionCount++;
   assert.deepEqual(actual, expected, `${currentScenario}: ${message}`);
 }
+// This sibling log survives a hard controller/worker kill. Only command verbs
+// are recorded: never argv values, database URLs, worker input or claim tokens.
+let progressStarted = false;
+function progress(event: string, details: { command?: string; id?: number } = {}) {
+  if (!reportPath) return;
+  mkdirSync(dirname(reportPath), { recursive: true });
+  if (!progressStarted) {
+    rmSync(reportPath, { force: true });
+    writeFileSync(`${reportPath}.progress.log`, '');
+    progressStarted = true;
+  }
+  appendFileSync(`${reportPath}.progress.log`, `${JSON.stringify({ event, scenario: currentScenario, elapsedMs: Date.now() - startedAt, ...details })}\n`);
+}
+async function trackedCli<T>(command: string[], invoke: () => Promise<T>): Promise<T> {
+  const id = ++cliProcesses;
+  const verb = command.slice(0, command[1]?.startsWith('--') ? 1 : 2)
+    .map(word => /^[a-z][a-z-]*$/.test(word) ? word : '[argument]').join(' ');
+  progress('cli-start', { command: verb, id });
+  try { return await invoke(); }
+  finally { progress('cli-end', { command: verb, id }); }
+}
 async function cli(context: HostContext, command: string[]): Promise<any> {
-  cliProcesses++;
-  return successfulCli(context.home, databaseUrl, command);
+  return trackedCli(command, () => successfulCli(context.home, databaseUrl, command));
 }
 async function raw(context: HostContext, command: string[]) {
-  cliProcesses++;
-  return invokeCli(context.home, databaseUrl, command);
+  return trackedCli(command, () => invokeCli(context.home, databaseUrl, command));
 }
 async function rejected(context: HostContext, command: string[], code?: string) {
   const response = await raw(context, command);
@@ -59,8 +78,10 @@ async function scenario(name: string, body: () => Promise<Json | void>) {
   currentScenario = name;
   const before = assertionCount;
   const started = Date.now();
+  progress('scenario-start');
   const details = await body() ?? {};
   scenarios.push({ name, assertions: assertionCount - before, details, elapsedMs: Date.now() - started });
+  progress('scenario-complete');
 }
 function node(key: string, extra: Partial<Node> = {}): Node {
   return { key, kind: 'agent', label: key, agentSlug: 'deterministic-worker', executionObjective: `Complete ${key}`, requirements: ['shell'], ...extra };
@@ -127,8 +148,8 @@ try {
     for (const context of contexts) {
       mkdirSync(context.workspace, { recursive: true });
       writeFileSync(join(context.workspace, 'host-local.txt'), context.marker);
-      cliProcesses++;
-      await successfulCli(context.home, `file:${join(context.home, 'senderos.db')}`, ['init', '--name', context.name, '--execution-context-id', context.id, '--harness', context.harness, '--approve']);
+      const command = ['init', '--name', context.name, '--execution-context-id', context.id, '--harness', context.harness, '--approve'];
+      await trackedCli(command, () => successfulCli(context.home, `file:${join(context.home, 'senderos.db')}`, command));
       await cli(context, ['host', 'context-register', '--name', context.name]);
       await cli(context, ['host', 'register', context.hostId, '--name', context.name, '--harness', context.harness, '--capability', 'independent_session', '--capability', context === browser ? 'browser' : 'shell']);
     }
