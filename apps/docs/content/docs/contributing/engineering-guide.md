@@ -141,3 +141,12 @@ unchanged. The Studio context-data regression compares the complete filtered
 snapshot and verifies that unrelated operational IDs are absent from database
 query results, rather than merely hidden from the final HTTP payload. Core
 attempt-query coverage also checks granted and revoked host ownership.
+
+Context status summaries also project only lifecycle status and IDs, excluding
+specifications, execution instructions, results and recovery payloads from their
+SQL results. Active ID arrays remain complete and ordered by creation time;
+terminal records do not contribute active IDs. Status and complete attempt lists
+share the same visibility predicate, including granted projects and owned sessions
+after revocation. Complete inspection APIs retain recovery details unchanged.
+The context status regression checks actual driver columns and semantic parity
+with complete lists, including missing parents and unknown contexts.
