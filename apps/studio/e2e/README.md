@@ -162,3 +162,9 @@ keep cancellation pending, hide budget edits and dispatch, preserve every claim,
 activation, run and attempt, and wait for host acknowledgement before settling.
 `cursor-policy-cancellation-desktop-1440x1000` and
 `cursor-policy-cancellation-mobile-390x844` capture the recovered guidance.
+
+The recovered-successor journey also distinguishes a new activation's first run
+from retries on the same activation. A successful parent remains recorded lineage
+and must not make the successor a retry. The budget journey separately checks a
+real failed activation's retry label. `dispatch-successor-desktop-1440x1000` and
+`dispatch-successor-mobile-390x844` preserve the reviewed production plan.
