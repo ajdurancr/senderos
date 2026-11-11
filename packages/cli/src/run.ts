@@ -36,7 +36,7 @@ export async function runCli(argv = process.argv.slice(2), terminal?: Parameters
     }
 
     const result = await (async () => {
-      if (cmd !== 'init' && cmd !== 'bootstrap-agent-skill')
+      if (cmd !== 'init' && cmd !== 'bootstrap-agent-skill' && cmd !== 'doctor')
         resolveExecutionContextId(home);
 
       switch (cmd) {
