@@ -9,6 +9,7 @@ for (const outcome of ['committed', 'unapplied', 'confirmed'] as const) for (con
     await page.getByRole('textbox', { name: 'Title', exact: true }).fill(title);
     await page.getByRole('combobox', { name: 'Sendero', exact: true }).selectOption(scenario.prerequisiteVersionId);
     await page.getByRole('button', { name: 'Create goal', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Start goal', exact: true })).toBeVisible();
     const goal = state().goals.find(item => item.title === title)!;
     let writes = 0;
     let release!: () => void;
@@ -43,10 +44,13 @@ for (const outcome of ['committed', 'unapplied', 'confirmed'] as const) for (con
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.unroute('**/*.data*');
     if (outcome !== 'confirmed') {
-      const readback = page.getByRole('link', { name: 'Reload persisted goal and workflow progress' });
+      const readback = page.getByRole('button', { name: 'Reload persisted goal and workflow progress' });
       await readback.scrollIntoViewIfNeeded();
       await capture(page, testInfo, `start-readback-${outcome}-${width}`);
-      await readback.click(); await ready(page);
+      const currentUrl = page.url();
+      await readback.focus();
+      await Promise.all([page.waitForEvent('load'), width === 1440 ? page.keyboard.press('Enter') : readback.click()]); await ready(page);
+      expect(page.url()).toBe(currentUrl);
     } else await reload(page);
     expect(writes).toBe(1);
     if (!committed) {

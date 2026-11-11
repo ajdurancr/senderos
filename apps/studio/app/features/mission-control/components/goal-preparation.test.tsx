@@ -58,7 +58,7 @@ describe('goal preparation', () => {
     await waitFor(() => expect(action).toHaveBeenCalledOnce());
     await waitFor(() => expect(start).toHaveProperty('disabled', true));
     expect(screen.getByRole('button', { name: 'Edit goal' })).toHaveProperty('disabled', true);
-    expect(screen.getByRole('link', { name: 'Reload persisted goal and workflow progress' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('button', { name: 'Reload persisted goal and workflow progress' })).toHaveProperty('type', 'button');
     fireEvent.submit(start.closest('form')!);
     expect(action).toHaveBeenCalledOnce();
   });
