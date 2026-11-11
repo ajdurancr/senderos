@@ -1,6 +1,8 @@
-import type { MissionControlData } from './server';
+import type { missionControlOverview, listEvents } from '@senderos/core';
 
-export function filterMissionControlData(data: MissionControlData, executionContextId?: string, projectId?: string): MissionControlData {
+type ScopeData = Awaited<ReturnType<typeof missionControlOverview>> & { events: Awaited<ReturnType<typeof listEvents>> };
+
+export function filterMissionControlData<T extends ScopeData>(data: T, executionContextId?: string, projectId?: string): T {
   if (!executionContextId && !projectId) return data;
   const projects = data.projects.filter((project) =>
     (!executionContextId || project.executionContextId === executionContextId) &&
@@ -13,7 +15,16 @@ export function filterMissionControlData(data: MissionControlData, executionCont
   const attempts = data.attempts.filter((attempt) => runIds.has(attempt.runId));
   const attemptIds = new Set(attempts.map((attempt) => attempt.id));
   const visibleIds = new Set([...projectIds, ...goalIds, ...runIds, ...attemptIds, ...(data.activations ?? []).filter(activation => goalIds.has(activation.goalId)).map(activation => activation.id)]);
+  const activeGoalIds = data.status.activeGoalIds.filter(id => goalIds.has(id));
+  const runningRunIds = data.status.runningRunIds.filter(id => runIds.has(id));
   return { ...data, projects, goals, runs, attempts,
+    executions: data.executions.filter(execution => goalIds.has(execution.goalId)),
+    status: { ...data.status,
+      projects: { total: projects.length, unhealthy: projects.filter(project => project.status !== 'healthy').length },
+      openGoals: activeGoalIds.length, activeGoalIds,
+      activeRuns: runningRunIds.length, runningRunIds,
+      activeAttemptIds: data.status.activeAttemptIds.filter(id => attemptIds.has(id)),
+    },
     decisions: data.decisions?.filter(decision => goalIds.has(decision.goalId)),
     ...("activations" in data && Array.isArray(data.activations) ? { activations: data.activations.filter((activation: { goalId: string }) => goalIds.has(activation.goalId)) } : {}),
     events: data.events.filter((event) => visibleIds.has(event.entityId)),

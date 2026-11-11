@@ -74,3 +74,7 @@ attempts and runs unchanged. Desktop/mobile screenshots cover the real history U
 The settings scope-switch journey also reloads the selected context, captures its
 real desktop/mobile form, and returns to the prior context to choose a project.
 Navigation choices must remain available when HTTP operational data is scoped.
+
+Project-only settings paths are also reloaded and captured at desktop/mobile
+sizes before switching to another project. Scoped loading must retain navigation
+choices and saved form values without needing an explicit context query.

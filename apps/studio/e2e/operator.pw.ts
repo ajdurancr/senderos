@@ -263,6 +263,17 @@ test('scope switch remounts project settings and invalid/canceled forms do not w
   expect(state().goals).toHaveLength(before);
   await page.getByRole('link', { name: 'New goal', exact: true }).last().click();
   await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('');
+  await visit(page, `/projects/${scenario.campaignProject}/settings`);
+  await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Campaign preview');
+  await reload(page);
+  await expect(page.getByRole('textbox', { name: /^Target branch\b/ })).toHaveValue('campaign-preview');
+  await capture(page, testInfo, 'project-only-desktop-1440x1000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await capture(page, testInfo, 'project-only-mobile-390x844');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.launchProject);
+  await expect(page.getByRole('textbox', { name: /^Name\b/ })).toHaveValue('Website launch');
 });
 
 test('concurrent graph save rejects stale revisions and preserves both edits for recovery', async ({ page, context, scenario }, testInfo) => {
