@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from 'vitest';
+import { afterAll, expect, test, vi } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 const root = resolve(process.env.SENDEROS_TEST_RUNTIME_ROOT ?? resolve(import.meta.dirname, '../../../../../.tmp/test-runtime'), `context-data-${crypto.randomUUID()}`);
@@ -38,4 +38,52 @@ test('HTTP context loading scopes operational records while retaining navigation
   }
   expect((await missionControlData()).goals.map(goal => goal.id)).toEqual([selectedGoal.id, unrelatedGoal.id]);
   expect((await missionControlData(new Request('http://studio.local/goals'))).goals.map(goal => goal.id)).toEqual([selectedGoal.id, unrelatedGoal.id]);
+});
+
+
+test('HTTP project loading explains only its goals while preserving filtered records and all navigation', async () => {
+  const { missionControlData } = await import('./server');
+  const { filterMissionControlData } = await import('./scope-filters');
+  const core = await import('@senderos/core');
+  const { createClient } = await import('@libsql/client');
+  await missionControlData();
+  await core.registerExecutionContext({ id: 'project-query', name: 'Project query fixture' });
+  const senderos = core.createSenderos({ executionContextId: 'project-query' });
+  const selected = await senderos.commands.projects.create({ name: 'Query selected' });
+  const unrelated = await senderos.commands.projects.create({ name: 'Query unrelated' });
+  const graph = (await core.getSenderoGraph('software-delivery'))!;
+  for (const project of [selected, unrelated]) {
+    const goal = await core.createGoal({ projectId: project.id, title: project.name, senderoVersionId: graph.version.id });
+    await core.activateGoal(goal.id);
+    const item = (await senderos.commands.plan()).find(item => item.goalId === goal.id)!;
+    await senderos.commands.runs.dispatch({ ...item, previousRunId: item.previousRunId ?? undefined });
+  }
+  const complete = await missionControlData();
+  const expected = filterMissionControlData(complete, 'project-query', selected.id);
+  const client = createClient({ url: process.env.SENDEROS_DATABASE_URL! });
+  const prototype = Object.getPrototypeOf(client);
+  const execute = prototype.execute;
+  let explanations = 0;
+  const spy = vi.spyOn(prototype, 'execute').mockImplementation(function(this: unknown, statement: unknown, ...args: unknown[]) {
+    if (statement === 'BEGIN IMMEDIATE') explanations++;
+    return execute.call(this, statement, ...args);
+  });
+  let actual;
+  try { actual = await missionControlData(new Request(`http://studio.local/goals?context=project-query&project=${selected.id}`)); }
+  finally { spy.mockRestore(); client.close(); }
+  for (const key of ['goals', 'runs', 'attempts', 'activations', 'executions', 'decisions', 'queue', 'status'] as const) expect(actual[key]).toEqual(expected[key]);
+  expect(actual.projects).toEqual(complete.projects);
+  expect(actual.executionContexts).toEqual(complete.executionContexts);
+  expect(explanations).toBe(expected.goals.length);
+  for (const suffix of [`project=missing`, `context=unrelated&project=${selected.id}`]) {
+    const empty = await missionControlData(new Request(`http://studio.local/goals?${suffix}`));
+    expect(empty.goals).toEqual([]);
+    expect(empty.decisions).toEqual([]);
+    expect(empty.queue.dispatchable).toEqual([]);
+    expect(empty.status.openGoals).toBe(0);
+    expect(empty.projects).toEqual(complete.projects);
+  }
+  const pathScoped = await missionControlData(new Request(`http://studio.local/projects/${selected.id}/goals`));
+  expect(pathScoped.goals).toEqual(expected.goals);
+  expect((await missionControlData()).goals).toEqual(complete.goals);
 });
