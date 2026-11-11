@@ -49,7 +49,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       ? "Set SENDEROS_DATABASE_URL for the Studio process. For a remote libSQL database, also provide SENDEROS_DATABASE_AUTH_TOKEN."
       : databaseError
         ? "Check the database URL, credentials, and network access. Studio will migrate and seed a reachable database automatically."
-        : "Your data was not changed. Try the request again; if it keeps failing, inspect the server log using the reference below.";
+        : "Studio could not confirm the request. Any submitted changes may have been saved. Reload to inspect the saved state before submitting again.";
 
   return (
     <main className="error-page">
@@ -58,7 +58,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <p>Senderos Studio</p>
         <h1>{title}</h1>
         <span>{message}</span>
-        <div className="error-actions"><a href="">Try again</a><a href="/">Return to Studio</a></div>
+        <div className="error-actions"><a href="">Reload page</a><a href="/">Return to Studio</a></div>
         <small>Detailed diagnostics are available in the Studio server log.</small>
       </div>
     </main>
