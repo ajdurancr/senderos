@@ -21,7 +21,7 @@ This page describes direction, not a contractual release schedule.
 
 - custom agent and sendero authoring with publication-pinned instructions;
 - outcome conditions, backedges, finite activation budgets, fan-out, and explicit joins;
-- goal activation and cancellation;
+- draft goal preparation in Studio, including published workflow assignment, with separate activation and cancellation;
 - context-scoped planning/explanation with durable graph activations;
 - validated run dispatch through a selected agent transition;
 - retries linked to prior runs and attempts;

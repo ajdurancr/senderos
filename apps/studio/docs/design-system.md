@@ -76,3 +76,9 @@ history offer Stay here or Leave editor in a labeled native modal with focus
 restoration and Escape cancellation. Document navigation uses the browser's
 native unsaved-change prompt. A pending or unconfirmed save must not claim the
 database was unchanged; retain inputs and revision checks for recovery.
+
+Draft goal preparation uses explicit label associations and the same dirty-draft
+navigation boundary as graph authoring. Save/cancel preparation precedes lifecycle
+actions. Clearly distinguish assigning a published version to a draft from the
+immutable version pinned after activation. Missing workflow choices guide the
+operator to publication; they never offer an executable start without a version.

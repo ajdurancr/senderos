@@ -39,13 +39,13 @@ describe("home route", () => {
 });
 
 
-describe('graph save transport recovery', () => {
-  it('keeps the editor mounted when a save response is lost without claiming it was not applied', async () => {
-    const form = new FormData(); form.set('intent', 'replace-sendero-draft');
+describe('draft save transport recovery', () => {
+  it.each(['replace-sendero-draft', 'update-goal'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
+    const form = new FormData(); form.set('intent', intent);
     const result = await clientAction({ url: new URL('http://localhost/senderos/draft'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/senderos/draft', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
     } as Parameters<typeof clientAction>[0]);
-    expect(result).toMatchObject({ ok: false, intent: 'replace-sendero-draft', transportFailure: true });
+    expect(result).toMatchObject({ ok: false, intent, transportFailure: true });
     expect(result).toHaveProperty('message', expect.stringContaining('could not confirm'));
     expect(result).toHaveProperty('message', expect.stringContaining('may have reached'));
     expect(shouldRevalidate({ actionResult: result, defaultShouldRevalidate: true } as Parameters<typeof shouldRevalidate>[0])).toBe(false);

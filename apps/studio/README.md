@@ -91,3 +91,18 @@ Playwright HTML reports, failure screenshots/traces, and token-redacted database
 evidence are retained under `apps/studio/.tmp/studio-e2e/`. Runtime databases and
 host claim files are deleted after the dedicated server exits. See
 [`e2e/README.md`](e2e/README.md) for the fixture boundary and additional details.
+
+## Prepare a draft goal
+
+Open a draft goal in Workflow progress and choose **Edit goal** to revise its
+title, category, specification, and published Sendero. Saving preparation keeps
+the goal in draft; **Start goal** remains a separate action and does not dispatch
+work. A goal created through Core or the CLI without a workflow can be assigned
+one here before starting. Published version identity is fixed once activated.
+
+Rejected saves keep local inputs. Concurrent changes and activation after review
+are checked atomically; cancel preparation to load the latest values. Navigation
+protection covers dirty preparation, and an unconfirmed save preserves inputs
+while explaining that the server may have saved. Reload to inspect persisted
+state, or retry with the original reviewed snapshot. No browser crash recovery
+is promised.

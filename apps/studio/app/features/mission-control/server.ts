@@ -69,7 +69,7 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
   const intent = String(form.get("intent"));
   const supported = new Set([
     'register-context', 'register-project', 'create-agent', 'update-agent', 'create-sendero', 'import-sendero',
-    'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal',
+    'replace-sendero-draft', 'draft-sendero', 'publish-sendero', 'create-goal', 'update-goal',
     'set-activation-budget', 'set-retry-budget', 'start', 'retry', 'dispatch-plan', 'stop', 'cancel-goal', 'evidence', 'review', 'update-project',
     'update-sendero-node-position', 'update-sendero-layout', 'update-sendero-node', 'update-sendero-edge',
   ]);
@@ -163,6 +163,21 @@ export async function applyMissionControlAction(form: FormData, requestScope?: D
       senderoVersionId: String(form.get("senderoVersionId") ?? "") || undefined,
     });
     return { redirectTo: `/projects/${encodeURIComponent(goal.projectId)}/canvas/goals/${encodeURIComponent(goal.id)}` };
+  }
+  if (intent === 'update-goal') {
+    const id = String(form.get('goalId') ?? '').trim();
+    const api = requestScope?.executionContextId ? createSenderos({ executionContextId: requestScope.executionContextId }) : senderos;
+    const goal = await api.commands.goals.get(id);
+    if (!goal || (requestScope?.projectId && goal.projectId !== requestScope.projectId)) throw new Error('Goal not found in the selected scope.');
+    let expected: unknown;
+    try { expected = JSON.parse(String(form.get('expectedDraft'))); } catch { /* Require the reviewed snapshot below. */ }
+    if (!expected || typeof expected !== 'object' || !('title' in expected) || typeof expected.title !== 'string' || !('kind' in expected) || typeof expected.kind !== 'string' || !('specText' in expected) || typeof expected.specText !== 'string' || !('senderoVersionId' in expected) || (expected.senderoVersionId !== null && typeof expected.senderoVersionId !== 'string')) throw new Error('The reviewed goal draft is missing. Refresh before saving.');
+    const title = String(form.get('title') ?? '').trim();
+    const kind = String(form.get('kind') ?? '').trim();
+    if (!title || title.length > 200) throw new Error('Enter a goal title of 1 to 200 characters.');
+    if (!kind || kind.length > 100) throw new Error('Enter a goal category of 1 to 100 characters.');
+    return api.commands.goals.update({ id, title, kind, specText: String(form.get('specText') ?? ''), senderoVersionId: String(form.get('senderoVersionId') ?? '').trim() || null,
+      expectedDraft: { title: expected.title, kind: expected.kind, specText: expected.specText, senderoVersionId: expected.senderoVersionId } });
   }
   if (intent === "set-activation-budget" || intent === "set-retry-budget") {
     const goalId = String(form.get("goalId") ?? "").trim();

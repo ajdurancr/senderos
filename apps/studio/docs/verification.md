@@ -257,3 +257,18 @@ also covers a save request that never reaches Studio and an applied save whose
 response is lost. Retry preserves revision checks and cannot overwrite a newer
 saved graph; revalidation and Cancel recover the latest persisted value. These
 checks use local isolated data and retain desktop/mobile confirmation captures.
+
+## Draft goal preparation
+
+Mounted tests exercise rejected edits, cancel behavior, reviewed snapshots,
+successful saves, and unassigned/empty workflow guidance. Real database tests
+check scope isolation, invalid snapshots and values, published-version validation,
+stale preparation and activation after review. Those rejected actions make no
+persisted changes. Core regressions cover the optional atomic preparation fence
+without changing the general metadata-update contract.
+
+The production browser journey edits all preparation fields, cancels and reloads,
+assigns an initially unassigned goal, and saves competing proposals from two real
+editors. Saving does not activate or reserve runs. Separate fault injection drops
+requests before the server and responses after persistence; inputs remain visible
+and a stale retry is rejected. Desktop/mobile captures show the actual form.

@@ -19,10 +19,19 @@ export async function updateGoal(input: {
   prNumber?: number | null;
   branchName?: string | null;
   senderoVersionId?: string | null;
+  // Optional preparation fence for operator UIs. Ordinary metadata updates keep
+  // their existing contract; a reviewed draft edit must still match this snapshot.
+  expectedDraft?: { title: string; kind: GoalKind; specText: string; senderoVersionId: string | null };
 }) {
   return atomic(input.home, async () => {
   const current = await requireGoal(input.id, input.home);
   if (!current) throw new Error(`Goal not found: ${input.id}`);
+  if (input.expectedDraft !== undefined) {
+    requireLifecycle(current.status === 'draft', 'GOAL_NOT_DRAFT', 'This goal has already started or settled. Refresh before changing its preparation.');
+    const expected = input.expectedDraft;
+    requireLifecycle(expected && expected.title === current.title && expected.kind === current.kind && expected.specText === current.specText && expected.senderoVersionId === current.senderoVersionId,
+      'STALE_GOAL_DRAFT', 'This goal draft changed elsewhere. Your edits were not saved. Refresh and review the latest preparation.');
+  }
   requireLifecycle(input.senderoVersionId === undefined || (current.status === "draft"), "IMMUTABLE_WORKFLOW", "An activated goal cannot switch its pinned Sendero");
   const db = openRuntimeDb(input.home);
   requireLifecycle(input.title === undefined || input.title.trim().length > 0, 'INVALID_INPUT', 'Goal title must not be empty');
