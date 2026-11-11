@@ -27,3 +27,10 @@ A failed attempt retries its existing activation; a backedge creates a new visit
 
 Cross-context hosts use explicit project grants and `host discover` to see their
 eligible assignments. A shared database does not grant unrestricted execution.
+
+Programmatic planning also inherits the current Core facade's execution context
+when a nested call omits an explicit selector. Mission Control start/retry and
+reviewed dispatch therefore ignore unrelated contexts' active or failed goals.
+An all-context facade keeps complete planning available. This does not grant
+access to another context: explicit foreign goal actions still fail their
+lifecycle scope checks before reservation.
