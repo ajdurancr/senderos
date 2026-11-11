@@ -24,6 +24,16 @@ test('the public CLI coordinates separate host sessions, graphs, contention, rec
     expect(exitCode, `${stdout}\n${stderr}`).toBe(0);
     const report = JSON.parse(readFileSync(output, 'utf8'));
     expect(report.success).toBe(true);
+    const progress = readFileSync(`${output}.progress.log`, 'utf8').trim().split('\n')
+      .map(line => JSON.parse(line));
+    const starts = progress.filter(record => record.event === 'cli-start');
+    const ends = progress.filter(record => record.event === 'cli-end');
+    expect(starts.length).toBe(report.controllerCliProcesses);
+    expect(ends.map(record => record.id).sort((a, b) => a - b)).toEqual(starts.map(record => record.id));
+    expect(progress.filter(record => record.event === 'scenario-complete').map(record => record.scenario))
+      .toEqual(report.scenarios.map((scenario: { name: string }) => scenario.name));
+    expect(progress.every(record => Object.keys(record).every(key =>
+      ['event', 'scenario', 'elapsedMs', 'command', 'id'].includes(key)))).toBe(true);
     expect(report.assertionCount).toBeGreaterThan(100);
     expect(report.cliProcesses).toBeGreaterThan(100);
     expect(report.workerProcesses).toBeGreaterThan(30);

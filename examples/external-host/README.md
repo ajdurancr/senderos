@@ -38,6 +38,18 @@ and logs are uploaded, never the database, workspaces, session input, or claim
 tokens. Runner shutdown or infrastructure loss
 can still prevent artifact upload.
 
+When `--output` is supplied, a sibling `.progress.log` is appended synchronously
+before each scenario and controller CLI call, with matching completion records.
+A new invocation clears the previous report and progress log before starting, so
+an interrupted rerun cannot retain an old successful result.
+It retains the last scenario and outstanding command verbs if the process group
+is killed before a report can be written. These records contain sequence numbers
+and elapsed times, never command arguments, database URLs or ownership tokens.
+The existing CI log artifact pattern retains this file. A progress record is not
+proof of scenario success; the final report and process exit still decide the gate.
+Worker protocol waits retain their existing timeout; this log identifies controller
+CLI calls rather than claiming a root cause for an interrupted worker or runtime.
+
 This contract already runs indirectly through CLI coverage. That regression stays
 in place: the dedicated job adds a visible CI result, bounded isolated execution,
 and retained diagnostics, rather than claiming previously absent coverage.
