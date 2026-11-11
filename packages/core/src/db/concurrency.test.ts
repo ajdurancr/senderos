@@ -101,3 +101,50 @@ test('exhausted commit contention leaves no partial write and permits later reco
     });
   } finally { rmSync(directory, { recursive: true, force: true }); }
 }, 15000);
+
+
+test('standalone reads yield through a brief exclusive lock without replaying mutations', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'senderos-read-contention-'));
+  try {
+    await withDatabaseConnection({ url: `file:${join(directory, 'test.db')}` }, async () => {
+      const owner = openRuntimeDb();
+      const reader = openRuntimeDb();
+      await owner.$client.execute('CREATE TABLE facts (id TEXT PRIMARY KEY, value INTEGER)');
+      await owner.$client.execute("INSERT INTO facts VALUES ('retained', 1)");
+      await owner.$client.execute('BEGIN EXCLUSIVE');
+      await owner.$client.execute('UPDATE facts SET value = 2');
+      // The reader begins while the lock is held. Releasing it needs the event
+      // loop, so a synchronous SQLite busy timeout cannot satisfy this test.
+      const released = new Promise<void>((resolve, reject) => {
+        setTimeout(() => { owner.$client.executeMultiple('COMMIT').then(resolve, reject); }, 50);
+      });
+      try {
+        const result = await reader.$client.execute('SELECT id, value FROM facts');
+        expect(result.rows.map(row => ({ id: row.id, value: row.value }))).toEqual([{ id: 'retained', value: 2 }]);
+      } finally { await released; }
+      expect((await reader.$client.execute('SELECT COUNT(*) AS count FROM facts')).rows[0]?.count).toBe(1);
+    });
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('persistent local read contention fails honestly and the retained facts remain readable after release', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'senderos-read-exhaustion-'));
+  try {
+    await withDatabaseConnection({ url: `file:${join(directory, 'test.db')}` }, async () => {
+      const owner = openRuntimeDb();
+      const reader = openRuntimeDb();
+      await owner.$client.execute('CREATE TABLE facts (value TEXT)');
+      await owner.$client.execute("INSERT INTO facts VALUES ('complete retained history')");
+      await owner.$client.execute('BEGIN EXCLUSIVE');
+      try { await expect(reader.$client.execute('SELECT * FROM facts')).rejects.toMatchObject({ code: 'SQLITE_BUSY' }); }
+      finally { await owner.$client.executeMultiple('ROLLBACK'); }
+      expect((await reader.$client.execute('SELECT * FROM facts')).rows.map(row => ({ value: row.value }))).toEqual([{ value: 'complete retained history' }]);
+      await atomic(undefined, async () => {
+        const transaction = openRuntimeDb();
+        await transaction.$client.execute("INSERT INTO facts VALUES ('transaction fact')");
+        expect((await transaction.$client.execute('SELECT COUNT(*) AS count FROM facts')).rows[0]?.count).toBe(2);
+      });
+      expect((await reader.$client.execute('SELECT COUNT(*) AS count FROM facts')).rows[0]?.count).toBe(2);
+    });
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});

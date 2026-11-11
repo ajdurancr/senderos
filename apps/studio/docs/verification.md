@@ -313,3 +313,13 @@ cover missing, self, cross-goal and cross-activation references, legacy step
 boundaries and branching successors. The isolated host fixture reports failure;
 no external host or model is invoked. Browsing must leave attempts and events
 unchanged, and desktop/mobile captures preserve the actual rendered interface.
+
+Standalone local SELECT statements yield for up to one second on SQLite BUSY or
+BUSY_RECOVERY contention. They retain the original statement and arguments;
+remote clients, mutation statements and reads inside an application transaction
+retain their existing behavior. Transaction rollback and replay remain owned by
+`atomic`. Persistent locks and other failures still propagate. Core coverage
+includes a real exclusive-lock regression and the original error on exhaustion;
+the production browser suite exercises a separate process holding the isolated
+database lock. This is a bounded read-availability correction, not evidence that
+the earlier unexplained external-host simulator timeout has been resolved.

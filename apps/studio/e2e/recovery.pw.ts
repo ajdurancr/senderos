@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { capture, expect, goalAttempts, goalRuns, reload, runtime, scenarioScope, state, test, visit } from './fixtures';
 
 test('recorded host recovery guides operators without mutating claims or launching replacement work', async ({ page, scenario }, testInfo) => {
@@ -126,4 +128,42 @@ test('an old snapshot is identified and explicit refresh updates recovery withou
   await expect(freshness.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('Retained unsaved host notes');
   expect(state().agents).toEqual(afterRefresh.agents);
+});
+
+
+test('production snapshots survive brief isolated SQLite contention on desktop and mobile', async ({ page, scenario }, testInfo) => {
+  const scope = scenarioScope(scenario);
+  await visit(page, `/agents${scope}`);
+  const before = state();
+  for (const [width, height, label] of [[1440, 1000, 'desktop'], [390, 844, 'mobile']] as const) {
+    await page.setViewportSize({ width, height });
+    const worker = spawn(process.env.BUN_EXECUTABLE ?? 'bun', [fileURLToPath(new URL('./runtime.ts', import.meta.url)), 'hold-read-lock'], { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const exited = new Promise<void>((resolve, reject) => {
+      worker.once('error', reject);
+      worker.once('exit', code => code === 0 ? resolve() : reject(new Error(`Fixture lock worker exited ${code}`)));
+    });
+    await new Promise<void>((resolve, reject) => {
+      worker.stdout.once('data', chunk => String(chunk).includes('isolated-read-lock-acquired') ? resolve() : reject(new Error('Fixture lock readiness missing')));
+      worker.once('error', reject);
+      worker.once('exit', code => { if (code !== 0) reject(new Error('Fixture lock failed before readiness')); });
+    });
+    try {
+      // Exercise the mounted UI's real fetch while another process owns the DB.
+      const responseReady = page.waitForResponse(response => new URL(response.url()).pathname === '/resources/snapshot');
+      await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+      const response = await responseReady;
+      expect(response.status()).toBe(200);
+      expect((await response.json()).ok).toBe(true);
+      await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Snapshot freshness' })).not.toContainText('Status could not be refreshed');
+    } finally { await exited; }
+    await reload(page);
+    const freshness = page.getByRole('region', { name: 'Snapshot freshness' });
+    await expect(freshness).toContainText('Snapshot loaded');
+    await freshness.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await capture(page, testInfo, `snapshot-contention-${label}-${width}x${height}`);
+  }
+  const after = state();
+  expect(after).toEqual(before);
 });

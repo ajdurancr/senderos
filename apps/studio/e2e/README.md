@@ -190,3 +190,16 @@ page. It checks updated recovery guidance without new claims, attempts, runs or
 events. An injected refresh transport failure retains the previous timestamp and
 unsaved agent input, presents an error, and allows a successful real-server
 retry. Desktop/mobile captures cover stale, refreshed and failed-refresh states.
+
+The snapshot contention journey holds an exclusive lock in a separate process
+against only the suite database, then requests the real production snapshot at
+desktop and mobile widths. The brief lock must resolve without a failed response
+or any change to persisted facts. Authentic `snapshot-contention-*` captures
+retain the reloaded page. Persistent lock failures are covered in Core and still
+propagate after the bounded read wait; this does not establish the cause of an
+earlier external-host simulator timeout.
+
+Lease-expiry setup uses Core's existing atomic writer path. A retained isolated
+probe reproduced the previous raw fixture UPDATE failing while a reader held the
+file; transaction rollback/retry lets that fixture wait without weakening the
+production assertions or changing application mutation behavior.

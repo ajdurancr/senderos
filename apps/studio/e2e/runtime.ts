@@ -38,7 +38,16 @@ async function snapshot() {
 }
 
 let result: unknown;
-if (command === 'init') {
+if (command === 'hold-read-lock') {
+  const db = openRuntimeDb();
+  try {
+    await db.$client.execute('BEGIN EXCLUSIVE');
+    console.log('isolated-read-lock-acquired');
+    await Bun.sleep(500);
+    await db.$client.executeMultiple('COMMIT');
+  } finally { db.$client.close(); }
+  process.exit(0);
+} else if (command === 'init') {
   mkdirSync(runtime, { recursive: true });
   await prepareSharedDatabase();
   result = { initialized: true };
@@ -144,7 +153,9 @@ if (command === 'init') {
   }
 } else if (command === 'expire-fixture-lease' && id) {
   // Explicit clock fixture after a real local claim/start; never an external host call.
-  await openRuntimeDb().update(schema.attemptClaims).set({ leaseExpiresAt: '2000-01-01T00:00:00.000Z' }).where(eq(schema.attemptClaims.attemptId, id));
+  await atomic(undefined, async () => {
+    await openRuntimeDb().update(schema.attemptClaims).set({ leaseExpiresAt: '2000-01-01T00:00:00.000Z' }).where(eq(schema.attemptClaims.attemptId, id));
+  });
   result = { expired: id };
 } else if (command === 'host-claim' && id) {
   const attempt = await all.commands.attempts.get(id);
