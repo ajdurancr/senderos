@@ -297,3 +297,19 @@ for a new document load, retain the exact scoped URL, then inspect persisted
 state without replaying the uncertain mutation. Cancellation checks also verify
 that dismissing the native reload confirmation preserves simultaneous drafts. Browser
 `page.reload()` alone is not the recovery-control contract.
+
+
+Execution readback boundaries also cover failed and successful status refreshes
+after uncertain Start, dispatch and cancellation responses. Failed reads preserve
+the submission guard and previous snapshot; refresh preserves simultaneous drafts.
+Dismissed scope and document Back/Forward navigation retain those drafts. After
+explicitly leaving the editor, a held history loader cannot expose an actionable
+control before authoritative persisted-state readback. Committed and unapplied
+requests are verified separately on desktop and mobile, without mutation replay.
+
+Fixture snapshot stdout uses the existing PR93 private-file transport
+(`b81abcee90f08715a258b7aefe2fda0ef0630599`) to retain complete JSON above the
+subprocess pipe limit. Child exit errors, stderr, JSON parsing, cleanup and the
+20-second timeout remain enforced. Snapshot contention workers attach their
+stdout, stderr and exit status independently; transport failures do not establish
+a SQLite lock, and passing descendants do not clear historical native failures.
