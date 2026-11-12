@@ -127,3 +127,40 @@ it('refreshes clean limits without replacing an independent draft and discards t
   fireEvent.click(screen.getByRole('button', { name: 'Discard attempt limit draft' }));
   expect((screen.getByRole('spinbutton', { name: 'Attempt limit per activation' }) as HTMLInputElement).value).toBe('4');
 });
+
+it.each([
+  { first: 'activation', firstLabel: 'Activation limit', firstValue: '8', second: 'attempt', secondLabel: 'Attempt limit per activation', secondValue: '4', firstIntent: 'set-activation-budget', secondIntent: 'set-retry-budget' },
+  { first: 'attempt', firstLabel: 'Attempt limit per activation', firstValue: '7', second: 'activation', secondLabel: 'Activation limit', secondValue: '9', firstIntent: 'set-retry-budget', secondIntent: 'set-activation-budget' },
+])('preserves an independent $second edit at the revalidation enablement boundary', async ({ first, firstLabel, firstValue, second, secondLabel, secondValue, firstIntent, secondIntent }) => {
+  let finishRevalidation!: (value: null) => void;
+  const revalidated = new Promise<null>(resolve => { finishRevalidation = resolve; });
+  const revalidate = vi.fn(() => revalidated);
+  const action = show('active', execution, revalidate);
+  fireEvent.change(screen.getByRole('spinbutton', { name: firstLabel }), { target: { value: firstValue } });
+  fireEvent.click(screen.getByRole('button', { name: `Save ${first} limit` }));
+  await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
+  expect(await action.mock.results[0]!.value).toEqual({ intent: firstIntent, goalId: 'goal-1', limit: firstValue });
+  await waitFor(() => expect(revalidate).toHaveBeenCalledOnce());
+  await waitFor(() => expect(screen.getAllByRole('button', { name: 'Saving…' })).toHaveLength(2));
+  // Observe the enabled DOM commit before passive effects settle, exercising
+  // the input boundary without depending on runner speed.
+  const field = screen.getByRole('spinbutton', { name: secondLabel }) as HTMLInputElement;
+  let editedValue: string | undefined;
+  const enabled = new Promise<void>(resolve => {
+    const observer = new MutationObserver(() => {
+      if (field.matches(':disabled')) return;
+      observer.disconnect();
+      fireEvent.change(field, { target: { value: secondValue } });
+      editedValue = field.value;
+      fireEvent.click(screen.getByRole('button', { name: `Save ${second} limit` }));
+      resolve();
+    });
+    observer.observe(document.body, { subtree: true, attributes: true, childList: true });
+  });
+  finishRevalidation(null);
+  await enabled;
+  await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+  expect(editedValue).toBe(secondValue);
+  expect(await action.mock.results[1]!.value).toEqual({ intent: secondIntent, goalId: 'goal-1', limit: secondValue });
+  await screen.findByRole('button', { name: `Save ${second} limit` });
+});

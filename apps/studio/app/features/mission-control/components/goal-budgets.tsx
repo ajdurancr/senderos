@@ -29,8 +29,7 @@ function BudgetDraft({ goalId, kind, limit, minimum }: { goalId: string; kind: '
   const pending = useNavigation().state !== 'idle';
   const action = useActionData<{ ok?: boolean; intent?: string }>();
   const submitted = useRef<{ previous: unknown } | null>(null);
-  const [value, setValue] = useState(String(limit));
-  const [baseline, setBaseline] = useState(String(limit));
+  const [{ value, baseline }, setDraft] = useState({ value: String(limit), baseline: String(limit) });
   const dirty = value !== baseline;
   const intent = kind === 'activation' ? 'set-activation-budget' : 'set-retry-budget';
   useInspectorDraft('budget', dirty || (pending && submitted.current !== null), pending);
@@ -39,12 +38,15 @@ function BudgetDraft({ goalId, kind, limit, minimum }: { goalId: string; kind: '
     if (submitted.current && action !== submitted.current.previous) {
       submitted.current = null;
       if (action?.ok && action.intent === intent) {
-        setValue(String(limit)); setBaseline(String(limit));
+        setDraft({ value: String(limit), baseline: String(limit) });
         return;
       }
     }
-    // Refresh clean values, but never overwrite an independent unsaved limit.
-    if (!dirty) { setValue(String(limit)); setBaseline(String(limit)); }
+    // Inspect the latest queued state: an edit may arrive after the enabled
+    // commit but before this passive refresh runs. Never overwrite that draft.
+    setDraft(current => current.value !== current.baseline || current.baseline === String(limit)
+      ? current
+      : { value: String(limit), baseline: String(limit) });
   }, [action, pending, limit, intent, dirty]);
   function submit(event: FormEvent<HTMLFormElement>) {
     if (pending || submitted.current) { event.preventDefault(); return; }
@@ -54,9 +56,9 @@ function BudgetDraft({ goalId, kind, limit, minimum }: { goalId: string; kind: '
   return <Form method="post" className="compact-form" aria-label={`Change ${kind} limit`} onSubmit={submit}>
     <input type="hidden" name="intent" value={intent} /><input type="hidden" name="goalId" value={goalId} />
     <fieldset disabled={pending} className="authoring-fields"><legend>{kind === 'activation' ? 'Activation' : 'Attempt'} budget draft</legend>
-      <label>{label}<input name="limit" type="number" required min={minimum} max={kind === 'activation' ? 10000 : 100} step={1} value={value} onChange={event => setValue(event.target.value)} /></label>
+      <label>{label}<input name="limit" type="number" required min={minimum} max={kind === 'activation' ? 10000 : 100} step={1} value={value} onChange={event => { const value = event.target.value; setDraft(current => ({ ...current, value })); }} /></label>
     </fieldset>
     <button className="button button-secondary" disabled={pending}>{pending ? 'Saving…' : `Save ${kind} limit`}</button>
-    <button type="button" className="button button-secondary" disabled={pending || !dirty} onClick={() => { setValue(String(limit)); setBaseline(String(limit)); }}>Discard {kind} limit draft</button>
+    <button type="button" className="button button-secondary" disabled={pending || !dirty} onClick={() => { setDraft({ value: String(limit), baseline: String(limit) }); }}>Discard {kind} limit draft</button>
   </Form>;
 }

@@ -116,26 +116,34 @@ for (const intent of ['set-activation-budget', 'set-retry-budget'] as const) {
   });
 }
 
-test('confirmed budget saves keep other valid inspector drafts and do not dispatch work', async ({ page, scenario }, testInfo) => {
-  const { goal } = await openAttempt(page, scenario);
-  const beforeAttempts = goalAttempts(goal.id);
-  await page.getByLabel('Evidence label', { exact: true }).fill('Unsaved independent proof');
-  await page.getByLabel('Decision rationale').fill('Unsaved independent decision');
-  await page.getByRole('spinbutton', { name: 'Activation limit', exact: true }).fill('80');
-  await page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true }).fill('7');
-  await page.getByRole('button', { name: 'Save activation limit', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Discard activation limit draft' })).toBeDisabled();
-  await expect(page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true })).toHaveValue('7');
-  await expect(page.getByLabel('Evidence label', { exact: true })).toHaveValue('Unsaved independent proof');
-  await page.getByRole('button', { name: 'Save attempt limit', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Discard attempt limit draft' })).toBeDisabled();
-  await expect(page.getByLabel('Decision rationale')).toHaveValue('Unsaved independent decision');
-  expect(state().executions.find(item => item.goalId === goal.id)).toMatchObject({ maxActivations: 80, maxAttempts: 7 });
-  expect(goalAttempts(goal.id)).toEqual(beforeAttempts);
-  await capture(page, testInfo, 'budget-confirmed-independent-drafts');
-  await page.getByRole('button', { name: 'Discard evidence draft' }).click();
-  await page.getByRole('button', { name: 'Discard review draft' }).click();
-  await page.reload(); await ready(page);
-  await expect(page.getByRole('spinbutton', { name: 'Activation limit', exact: true })).toHaveValue('80');
-  await expect(page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true })).toHaveValue('7');
-});
+for (const width of [1440, 390]) {
+  test(`confirmed budget saves keep independent edits after revalidation at ${width}px`, async ({ page, scenario }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    const { goal } = await openAttempt(page, scenario);
+    const beforeAttempts = goalAttempts(goal.id);
+    await page.getByLabel('Evidence label', { exact: true }).fill('Unsaved independent proof');
+    await page.getByLabel('Decision rationale').fill('Unsaved independent decision');
+    await page.getByRole('spinbutton', { name: 'Activation limit', exact: true }).fill('80');
+    await page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true }).fill('7');
+    await page.getByRole('button', { name: 'Save activation limit', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Discard activation limit draft' })).toBeDisabled();
+    await expect(page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true })).toHaveValue('7');
+    await expect(page.getByLabel('Evidence label', { exact: true })).toHaveValue('Unsaved independent proof');
+    // Enter a new value after the first save has revalidated, matching the
+    // component regression rather than only saving a pre-existing draft.
+    await page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true }).fill('4');
+    await page.getByRole('button', { name: 'Save attempt limit', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Discard attempt limit draft' })).toBeDisabled();
+    await expect(page.getByLabel('Decision rationale')).toHaveValue('Unsaved independent decision');
+    expect(state().executions.find(item => item.goalId === goal.id)).toMatchObject({ maxActivations: 80, maxAttempts: 4 });
+    expect(goalAttempts(goal.id)).toEqual(beforeAttempts);
+    await capture(page, testInfo, `budget-revalidation-independent-drafts-${width}`);
+    const persisted = state();
+    await page.getByRole('button', { name: 'Discard evidence draft' }).click();
+    await page.getByRole('button', { name: 'Discard review draft' }).click();
+    await page.reload(); await ready(page);
+    await expect(page.getByRole('spinbutton', { name: 'Activation limit', exact: true })).toHaveValue('80');
+    await expect(page.getByRole('spinbutton', { name: 'Attempt limit per activation', exact: true })).toHaveValue('4');
+    expect(state()).toEqual(persisted);
+  });
+}
