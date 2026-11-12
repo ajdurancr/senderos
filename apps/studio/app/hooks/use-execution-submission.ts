@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, type FormEvent } from 'react';
 import { useActionData, useNavigation } from 'react-router';
 
 /** An uncertain response requires persisted-state readback, never automatic replay. */
-export function useExecutionSubmission(intent: 'start' | 'dispatch-plan' | 'cancel-goal' | 'create-goal' | 'create-sendero' | 'import-sendero' | 'create-agent' | 'update-agent') {
+export function useExecutionSubmission(intent: 'start' | 'dispatch-plan' | 'cancel-goal' | 'create-goal' | 'create-sendero' | 'import-sendero' | 'create-agent' | 'update-agent' | 'update-sendero-node' | 'update-sendero-edge') {
   const action = useActionData<{ intent?: string; transportFailure?: boolean }>();
   const pending = useNavigation().state !== 'idle';
   const submitted = useRef(false);

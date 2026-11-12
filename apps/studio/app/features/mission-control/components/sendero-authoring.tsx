@@ -41,12 +41,12 @@ export function SenderoCreation() {
   </Form></div>;
 }
 
-export function SenderoGraphEditor({ graph, agents, onDirtyChange }: { graph: Graph; agents: MissionControlData['agents']; onDirtyChange?: (dirty: boolean) => void }) {
+export function SenderoGraphEditor({ graph, agents, onDirtyChange, disabled = false, hasInspectorDraft }: { graph: Graph; agents: MissionControlData['agents']; onDirtyChange?: (dirty: boolean) => void; disabled?: boolean; hasInspectorDraft?: () => boolean }) {
   if (graph.version.status !== 'draft') return null;
-  return <GraphEditor key={graph.version.id} graph={graph} agents={agents} onDirtyChange={onDirtyChange} />;
+  return <GraphEditor key={graph.version.id} graph={graph} agents={agents} onDirtyChange={onDirtyChange} disabled={disabled} hasInspectorDraft={hasInspectorDraft} />;
 }
 
-function GraphEditor({ graph, agents, onDirtyChange }: { graph: Graph; agents: MissionControlData['agents']; onDirtyChange?: (dirty: boolean) => void }) {
+function GraphEditor({ graph, agents, onDirtyChange, disabled = false, hasInspectorDraft }: { graph: Graph; agents: MissionControlData['agents']; onDirtyChange?: (dirty: boolean) => void; disabled?: boolean; hasInspectorDraft?: () => boolean }) {
   const [original, setOriginal] = useState(() => graphDraft(graph));
   const [draft, setDraft] = useState<GraphDraft>(original);
   const [expectedRevision, setExpectedRevision] = useState(graph.revision);
@@ -76,21 +76,23 @@ function GraphEditor({ graph, agents, onDirtyChange }: { graph: Graph; agents: M
   const updateEdge = (key: string, patch: Partial<DraftEdge>) => setDraft(value => ({ ...value, edges: value.edges.map(edge => edge.key === key ? { ...edge, ...patch } : edge) }));
   const addNode = () => setDraft(value => ({ ...value, nodes: [...value.nodes, { key: newKey('node'), kind: 'agent', label: 'New agent', agentId: agents.find(agent => agent.status === 'active')?.id, positionX: 180 + value.nodes.length * 40, positionY: 240, executionObjective: 'Describe the expected result.', completionJson: '{}', requirementsJson: '[]', joinForkNodeId: '' }] }));
   const addEdge = () => setDraft(value => ({ ...value, edges: [...value.edges, { key: newKey('edge'), source: value.nodes[0]?.key ?? '', target: value.nodes.at(-1)?.key ?? '', name: 'New transition', description: '', transitionObjective: '', conditionJson: '{}', status: 'active' }] }));
-  return <Form className="create-panel authoring-panel graph-editor" method="post" onSubmit={event => { if (errors.length || pending) event.preventDefault(); else submitted.current = true; }}>
-    <DraftNavigationGuard dirty={dirty} saving={pending} />
+  return <Form className="create-panel authoring-panel graph-editor" method="post" onSubmit={event => { if (errors.length || pending || disabled) event.preventDefault(); else submitted.current = true; }}>
+
+    <DraftNavigationGuard dirty={dirty || disabled} isDirty={() => dirty || !!hasInspectorDraft?.()} saving={pending} />
     <input type="hidden" name="intent" value="replace-sendero-draft" />
     <input type="hidden" name="senderoId" value={graph.sendero.id} />
     <input type="hidden" name="expectedVersionId" value={graph.version.id} />
     <input type="hidden" name="expectedRevision" value={expectedRevision ?? ""} />
     <input type="hidden" name="definition" value={JSON.stringify(graphDefinition(draft))} />
-    <header><div><span>Draft graph editor</span><h2>Nodes, transitions, and routing</h2></div><button className="button button-secondary" type="button" disabled={!dirty || pending || !clientReady} onClick={() => { const current = graphDraft(graph); submitted.current = false; setOriginal(current); setDraft(current); setExpectedRevision(graph.revision); setNotice('Unsaved graph changes discarded.'); }}>Cancel changes</button></header>
+    <header><div><span>Draft graph editor</span><h2>Nodes, transitions, and routing</h2></div><button className="button button-secondary" type="button" disabled={!dirty || pending || disabled || !clientReady} onClick={() => { const current = graphDraft(graph); submitted.current = false; setOriginal(current); setDraft(current); setExpectedRevision(graph.revision); setNotice('Unsaved graph changes discarded.'); }}>Cancel changes</button></header>
+    {disabled && <p role="status">Save or discard inspector changes before editing the graph.</p>}
     <p>Multiple matching outgoing transitions activate multiple paths. Backedges create new visits. Ordinary convergence keeps each arrival separate; an explicit fork/join pair waits for its activated branches.</p>
-    <fieldset disabled={pending || !clientReady} className="authoring-fields"><legend>Execution and routing</legend><label>Maximum activations per goal<input type="number" min="1" max="10000" value={draft.maxActivations} onChange={event => setDraft(value => ({ ...value, maxActivations: Number(event.target.value) }))} /></label>
-    <section className="graph-editor-section"><header><h3>Nodes</h3><button className="button button-secondary" type="button" onClick={addNode} disabled={pending || !clientReady}>Add node</button></header>
+    <fieldset disabled={pending || disabled || !clientReady} className="authoring-fields"><legend>Execution and routing</legend><label>Maximum activations per goal<input type="number" min="1" max="10000" value={draft.maxActivations} onChange={event => setDraft(value => ({ ...value, maxActivations: Number(event.target.value) }))} /></label>
+    <section className="graph-editor-section"><header><h3>Nodes</h3><button className="button button-secondary" type="button" onClick={addNode} disabled={pending || disabled || !clientReady}>Add node</button></header>
       {draft.nodes.map((node, index) => <fieldset key={node.key} className="graph-edit-row"><legend>{node.label || `Node ${index + 1}`}</legend>
         <div className="form-row"><label>Node label<input value={node.label} onChange={event => updateNode(node.key, { label: event.target.value })} required /></label><label>Node kind<select value={node.kind} onChange={event => updateNode(node.key, { kind: event.target.value as DraftNode['kind'] })}><option value="agent">Agent</option><option value="start">Start</option><option value="end">End</option></select></label></div>
         {node.kind === 'agent' && <><label>Agent<select required value={node.agentId ?? ''} onChange={event => updateNode(node.key, { agentId: event.target.value })}><option value="">Select an agent</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name} · {agent.status}</option>)}</select></label><label>Execution objective<textarea rows={2} value={node.executionObjective} onChange={event => updateNode(node.key, { executionObjective: event.target.value })} /></label><details><summary>Completion, host requirements, and joins</summary><label>Completion policy JSON<textarea rows={3} spellCheck={false} value={node.completionJson} onChange={event => updateNode(node.key, { completionJson: event.target.value })} /><small>Example: {'{"requireReview":true,"evidenceKinds":["test"]}'}. Empty {'{}'} adds no review or evidence gate.</small></label><label>Required capabilities JSON<textarea rows={2} spellCheck={false} value={node.requirementsJson} onChange={event => updateNode(node.key, { requirementsJson: event.target.value })} /><small>Example: ["browser", "independent_session"]. The host declares and verifies availability.</small></label><label>Wait for branches from fork<select value={node.joinForkNodeId ?? ''} onChange={event => updateNode(node.key, { joinForkNodeId: event.target.value })}><option value="">No join; activate on each arrival</option>{draft.nodes.filter(item => item.key !== node.key && draft.edges.filter(edge => edge.source === item.key && edge.status === 'active').length > 1).map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label></details></>}
-        <small className="mono">{node.key}</small><button className="button button-danger" type="button" disabled={pending || !clientReady} onClick={() => { setDraft(value => removeDraftNode(value, node.key)); setNotice('Node and incident transitions removed from this draft. Other node policies are unchanged. Save to apply.'); }}>Remove node</button>
+        <small className="mono">{node.key}</small><button className="button button-danger" type="button" disabled={pending || disabled || !clientReady} onClick={() => { setDraft(value => removeDraftNode(value, node.key)); setNotice('Node and incident transitions removed from this draft. Other node policies are unchanged. Save to apply.'); }}>Remove node</button>
       </fieldset>)}
     </section>
     <section className="graph-editor-section"><header><h3>Directed transitions</h3><button className="button button-secondary" type="button" disabled={pending || !clientReady || !draft.nodes.length} onClick={addEdge}>Add transition</button></header>
@@ -100,12 +102,12 @@ function GraphEditor({ graph, agents, onDirtyChange }: { graph: Graph; agents: M
         <label>Routing condition JSON<textarea aria-label="Routing condition JSON" rows={2} spellCheck={false} value={edge.conditionJson} onChange={event => updateEdge(edge.key, { conditionJson: event.target.value })} /><small>{'{}'} always matches. {'{"outcome":"accepted"}'} matches a reported outcome. Backedges use the same rules.</small></label>
         <details><summary>Description and compatibility policy</summary><label>Description<input value={edge.description} onChange={event => updateEdge(edge.key, { description: event.target.value })} /></label><label>Legacy transition objective<textarea rows={2} value={edge.transitionObjective} onChange={event => updateEdge(edge.key, { transitionObjective: event.target.value })} /><small>Kept for existing definitions. Set an explicit node objective for new workflows.</small></label></details>
         <label>Transition status<select value={edge.status} onChange={event => updateEdge(edge.key, { status: event.target.value as DraftEdge['status'] })}><option value="active">Active</option><option value="draft">Draft</option><option value="disabled">Disabled</option><option value="archived">Archived</option></select></label>
-        <button type="button" className="button button-danger" disabled={pending || !clientReady} onClick={() => setDraft(value => ({ ...value, edges: value.edges.filter(item => item.key !== edge.key) }))}>Remove transition</button>
+        <button type="button" className="button button-danger" disabled={pending || disabled || !clientReady} onClick={() => setDraft(value => ({ ...value, edges: value.edges.filter(item => item.key !== edge.key) }))}>Remove transition</button>
       </fieldset>)}
       {!draft.edges.length && <p>No transitions yet. Connect nodes to define routing.</p>}
     </section>
     </fieldset>{dirty && expectedRevision !== graph.revision && <p role="alert">This draft changed elsewhere. Your edits are kept here. Cancel changes to load the latest draft before saving.</p>}{notice && <p role="status">{notice}</p>}
     {errors.length > 0 && <div className="action-feedback error" role="alert"><ul>{errors.map(error => <li key={error}>{error}</li>)}</ul></div>}
-    <footer><span>{dirty ? 'Unsaved changes. Save the draft, then validate and publish.' : 'All graph edits are saved.'}</span><button className="button button-primary" disabled={pending || !clientReady || !dirty || errors.length > 0}>{pending ? 'Saving…' : 'Save graph draft'}</button></footer>
+    <footer><span>{dirty ? 'Unsaved changes. Save the draft, then validate and publish.' : 'All graph edits are saved.'}</span><button className="button button-primary" disabled={pending || disabled || !clientReady || !dirty || errors.length > 0}>{pending ? 'Saving…' : 'Save graph draft'}</button></footer>
   </Form>;
 }
