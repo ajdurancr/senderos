@@ -52,7 +52,7 @@ export function GoalPreparation({ goal, graphs, onEditingChange }: { goal: Goal;
       <div className="goal-preparation-field"><label htmlFor={`${formId}-senderoVersionId`}>Goal workflow</label><select id={`${formId}-senderoVersionId`} name="senderoVersionId" value={draft.senderoVersionId ?? ''} onChange={event => setDraft(value => ({ ...value, senderoVersionId: event.target.value || null }))}>
         <option value="">Choose a published Sendero later</option>
         {goal.senderoVersionId && !published.some(graph => graph.version.id === goal.senderoVersionId) && <option value={goal.senderoVersionId}>Current assigned version · {goal.senderoVersionId}</option>}
-        {published.map(graph => <option key={graph.version.id} value={graph.version.id}>{graph.sendero.name} · v{graph.version.version}</option>)}
+        {published.map(graph => <option key={graph.version.id} value={graph.version.id}>{graph.sendero.name} · {graph.sendero.slug} · v{graph.version.version}</option>)}
       </select></div>
       {!published.length && <p>No current published Senderos are available. Publish a workflow in Settings, then return to assign it.</p>}
     </fieldset>
