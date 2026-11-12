@@ -1,4 +1,4 @@
-import { capture, expect, ready, scenarioScope, state, test, visit } from './fixtures';
+import { capture, expect, ready, scenarioScope, state, test, visit, workflowCreated } from './fixtures';
 
 for (const width of [1440, 390]) for (const kind of ['node', 'transition'] as const) {
   test(`protects compact ${kind} draft across navigation at ${width}px`, async ({ page, scenario }, testInfo) => {
@@ -8,7 +8,7 @@ for (const width of [1440, 390]) for (const kind of ['node', 'transition'] as co
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Compact draft recovery');
     await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(slug);
     await page.getByRole('button', { name: 'Create draft', exact: true }).click();
-    await ready(page);
+    await workflowCreated(page);
     const saved = state(), workflow = saved.senderos.find(item => item.slug === slug)!;
     const version = saved.versions.find(item => item.senderoId === workflow.id)!;
     const item = kind === 'node' ? saved.nodes.find(item => item.senderoVersionId === version.id)! : saved.edges.find(item => item.senderoVersionId === version.id)!;
@@ -61,7 +61,7 @@ for (const width of [1440, 390]) for (const kind of ['node', 'transition'] as co
     await visit(page, `/senderos/new${scope}`);
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Inspector confirmation recovery');
     await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(slug);
-    await page.getByRole('button', { name: 'Create draft', exact: true }).click(); await ready(page);
+    await page.getByRole('button', { name: 'Create draft', exact: true }).click(); await workflowCreated(page);
     const before = state(), workflow = before.senderos.find(item => item.slug === slug)!;
     const version = before.versions.find(item => item.senderoId === workflow.id)!;
     const item = kind === 'node' ? before.nodes.find(item => item.senderoVersionId === version.id)! : before.edges.find(item => item.senderoVersionId === version.id)!;

@@ -32,6 +32,12 @@ export async function ready(page: Page) {
   await expect(page.getByRole('combobox', { name: 'Execution context', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Search or run a command' })).toBeEnabled();
 }
+// A ready shell can still be the submitting creation form. Wait for the
+// confirmed destination before taking a persistence baseline or editing it.
+export async function workflowCreated(page: Page) {
+  await expect(page).toHaveURL(url => /^\/senderos\/[^/]+$/.test(url.pathname) && url.pathname !== '/senderos/new');
+  await ready(page);
+}
 export async function visit(page: Page, path: string) { await page.goto(path); await ready(page); }
 export async function reload(page: Page) { await page.reload(); await ready(page); }
 export function goalRuns(goalId: string) { return state().runs.filter(run => run.goalId === goalId); }

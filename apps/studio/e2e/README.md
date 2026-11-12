@@ -354,3 +354,13 @@ Review history uses isolated retained proof and mixed review decisions to verify
 bounded browsing, counted status filters, stable tied timestamps, complete paging,
 keyboard focus, Back/Forward, reload, exact-attempt proof links and scope/cursor
 recovery on desktop and mobile. Browsing and filtering make no persistence writes.
+
+The workflow creation confirmation controls hold a real create POST before it
+reaches the isolated server. Shell readiness alone must not confirm creation:
+`workflowCreated()` waits for the workflow destination and client readiness
+before compact-inspector setup takes its full persistence baseline. Both desktop
+and mobile controls release that same request once, verify the created record,
+and compare complete persisted state after a document reload. Existing mutation
+and recovery assertions remain unchanged. These controls establish a fixture
+readiness boundary; they do not diagnose or clear historical event-count or
+native SQLite failures.
