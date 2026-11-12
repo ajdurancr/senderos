@@ -333,3 +333,12 @@ journeys with committed and unapplied create/import confirmation loss on desktop
 and mobile. It checks pending identity freeze, repeated submission/reset/Cancel,
 the shared scope warning, fragment uncertainty, keyboard activation of scoped
 reload and authoritative persisted draft readback without automatic replay.
+
+`agent-confirmation-recovery.pw.ts` covers unapplied creation and committed/unapplied
+editing at desktop and mobile widths. It retains the original parent observations
+outside the suite, then verifies reviewed input, pending and uncertain repeat/reset/
+Cancel protection, scope warnings, fragment changes, keyboard/click reload and an
+actual scoped GET followed by authoritative database readback. The existing
+`interrupted-mutation.pw.ts` committed-create control now exercises the inline
+recovery surface; PR95 navigation, known rejection and explicit discard checks
+remain in `agent-draft-navigation.pw.ts`. No request is automatically replayed.

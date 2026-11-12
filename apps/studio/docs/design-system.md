@@ -118,3 +118,9 @@ Registration forms freeze their identity fields while a save is pending. An
 unconfirmed response preserves the form and explains that registration may have
 committed. Direct the operator to reload and inspect the scope selectors before
 submitting again; do not imply the database stayed unchanged or retry silently.
+
+An agent save with an unconfirmed response retains the editor and reviewed input.
+Keep the shared draft warning, freeze pending and uncertain mutation/discard
+controls, and offer explicit persisted-agent reload. Fragment navigation is not
+confirmation. Explain that the save may have reached the server and that reload
+never repeats it; published workflows continue to use their pinned instructions.

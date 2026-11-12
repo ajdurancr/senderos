@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useExecutionSubmission } from './use-execution-submission';
 
 afterEach(cleanup);
-for (const intent of ['start', 'dispatch-plan', 'cancel-goal', 'create-goal', 'create-sendero', 'import-sendero'] as const) it(`accepts an enabled ${intent} correction at the commit boundary after a known rejection`, async () => {
+for (const intent of ['start', 'dispatch-plan', 'cancel-goal', 'create-goal', 'create-sendero', 'import-sendero', 'create-agent', 'update-agent'] as const) it(`accepts an enabled ${intent} correction at the commit boundary after a known rejection`, async () => {
   let finish!: (value: unknown) => void;
   const action = vi.fn(() => new Promise(resolve => { finish = resolve; }));
   const observations: boolean[] = [];
