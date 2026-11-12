@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DurableLink as Link } from "../../components/durable-link";
 import { SenderoCreation, SenderoGraphEditor } from "./components/sendero-authoring";
 import { AttentionRail } from "./components/attention-rail";
@@ -31,7 +31,10 @@ export function MissionControlOverview({
 }) {
   const { view, goalId, agentId, attemptId, transitionId } = route;
   const [hasUnsavedGraph, setHasUnsavedGraph] = useState(false);
-  useEffect(() => setHasUnsavedGraph(false), [view, route.senderoId]);
+  const [hasInspectorDraft, setHasInspectorDraft] = useState(false);
+  const inspectorDraft = useRef(false);
+  const inspectorChanged = useCallback((dirty: boolean) => { inspectorDraft.current = dirty; setHasInspectorDraft(dirty); }, []);
+  useEffect(() => { setHasUnsavedGraph(false); inspectorChanged(false); }, [view, route.senderoId]);
   const projectId = search.get("project") ?? route.projectId;
   if (!["now", "canvas", "goals", "runs", "reviews", "settings", "agents", "senderos", "events"].includes(view)) {
     return <div className="standard-view"><section className="empty-state"><h1>Page not found</h1><p>This Studio destination is unavailable.</p><Link className="button button-secondary" to="/now">Return to Studio</Link></section></div>;
@@ -67,12 +70,14 @@ export function MissionControlOverview({
               <h1>{graph.sendero.name}</h1>
               <p>{graph.sendero.description}</p>
             </div>
-            <div className="authoring-actions"><SenderoSelector data={data} senderoId={graph.sendero.id} hasUnsavedGraph={hasUnsavedGraph} /><Link className="primary-action" to="/senderos/new">New Sendero</Link></div>
+            <div className="authoring-actions"><SenderoSelector data={data} senderoId={graph.sendero.id} hasUnsavedGraph={hasUnsavedGraph || hasInspectorDraft} /><Link className="primary-action" to="/senderos/new">New Sendero</Link></div>
           </header>
-          <OrchestrationCanvas data={data} senderoId={graph.sendero.id} readOnlyLayout={hasUnsavedGraph} />
-          <SenderoGraphEditor graph={graph} agents={data.agents} onDirtyChange={setHasUnsavedGraph} />
+          <OrchestrationCanvas data={data} senderoId={graph.sendero.id} readOnlyLayout={hasUnsavedGraph || hasInspectorDraft} />
+          <SenderoGraphEditor graph={graph} agents={data.agents} onDirtyChange={setHasUnsavedGraph} disabled={hasInspectorDraft} hasInspectorDraft={() => inspectorDraft.current} />
         </section>
         <SenderoInspector
+          key={`${graph.version.id}:${route.senderoNodeId ?? route.senderoEdgeId ?? "none"}`}
+          onDraftChange={inspectorChanged}
           data={data}
           senderoId={graph.sendero.id}
           hasUnsavedGraph={hasUnsavedGraph}

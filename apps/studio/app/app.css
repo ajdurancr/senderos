@@ -616,3 +616,7 @@ ol.event-stream { list-style: none; padding: 0; margin: 0; }
 
 .snapshot-status button[aria-disabled="true"] { opacity: .65; cursor: wait; }
 .snapshot-status p[role="alert"] { color: var(--danger); }
+
+/* Inspector recovery must fit the narrow desktop rail as well as mobile. */
+.compact-form .snapshot-status { margin: 0; flex-direction: column; align-items: flex-start; gap: 12px; min-width: 0; }
+.compact-form .snapshot-status .button { max-width: 100%; white-space: normal; }

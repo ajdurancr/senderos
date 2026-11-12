@@ -345,3 +345,5 @@ remain in `agent-draft-navigation.pw.ts`. No request is automatically replayed.
 
 
 A later submission consumes earlier saved-query success feedback for the mounted page; fragment navigation and Back/Forward cannot revive historical success when action feedback disappears without readback. New confirmed redirects and explicit persisted-state document readback retain success feedback. A history loader read alone does not revive historical success while the editor remains uncertain. `save-confirmation` coverage checks pending and uncertain edits, history navigation and actual keyboard/click reload controls at desktop and mobile widths, with persisted-state assertions. This changes feedback only; uncertainty and no-replay gates remain intact.
+
+Compact workflow recovery (`compact-inspector-drafts.pw.ts`) covers desktop/mobile scope and inspector-close guards, discard and confirmed persistence, and committed/unapplied response loss with actual keyboard/click document readback. Isolated fixtures and intercepted mutation counts verify no automatic replay.

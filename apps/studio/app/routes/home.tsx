@@ -51,9 +51,11 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   } catch (error) {
     // Router responses (including successful redirects) are not transport loss.
     if (error instanceof Response) throw error;
-    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'dispatch-plan', 'cancel-goal', 'start', 'create-goal', 'create-sendero', 'import-sendero', 'create-agent', 'update-agent'].includes(intent) || request.signal.aborted) throw error;
+    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'dispatch-plan', 'cancel-goal', 'start', 'create-goal', 'create-sendero', 'import-sendero', 'create-agent', 'update-agent', 'update-sendero-node', 'update-sendero-edge'].includes(intent) || request.signal.aborted) throw error;
     const registration = intent === 'register-context' || intent === 'register-project';
-    const message = intent === 'create-agent' || intent === 'update-agent'
+    const message = intent === 'update-sendero-node' || intent === 'update-sendero-edge'
+      ? 'Studio could not confirm the inspector save. Your inputs are kept here. The save may have reached the server. Reload and inspect the persisted workflow before submitting again; reload never repeats the save.'
+      : intent === 'create-agent' || intent === 'update-agent'
       ? 'Studio could not confirm the agent save. Your input is kept here. The request may have reached the server. Reload and inspect persisted agents before submitting again; repeating creation can add another agent.'
       : intent === 'create-sendero' || intent === 'import-sendero'
       ? 'Studio could not confirm workflow creation. Your input is kept here. The request may have reached the server. Reload and inspect persisted Senderos before submitting again; repeating creation or import can add another workflow.'

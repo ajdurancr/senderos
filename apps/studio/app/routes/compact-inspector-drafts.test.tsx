@@ -1,0 +1,113 @@
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { afterEach, beforeAll, expect, it, vi } from 'vitest';
+import Home from './home';
+import { missionControlFixture } from '../test-support/mission-control-fixture';
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  HTMLDialogElement.prototype.close = function () { this.open = false; };
+});
+afterEach(cleanup);
+it.each([{ selection: 'nodes/node-agent', label: 'Node label', original: 'Agent' }, { selection: 'edges/edge-1', label: 'Arc name', original: 'Finish' }])('protects compact $label during scope navigation and explicit discard', async ({ selection, label, original }) => {
+  const data = { ...missionControlFixture, senderoGraphs: missionControlFixture.senderoGraphs.map(graph => ({ ...graph, version: { ...graph.version, status: 'draft' as const } })) };
+  const action = vi.fn();
+  const path = `/senderos/sendero-1/${selection}`;
+  const router = createMemoryRouter([{ path: '*', loader: () => data, action, element: <Home /> }], { initialEntries: [path] });
+  render(<RouterProvider router={router} />);
+  await screen.findByRole('button', { name: label === 'Node label' ? 'Save node' : 'Save arc' });
+  const form = document.querySelector('form.compact-form') as HTMLFormElement;
+  const input = within(form).getByLabelText(label);
+  expect(input).toHaveProperty('value', original);
+  fireEvent.change(input, { target: { value: 'Retain compact inspector draft' } });
+  void router.navigate('/senderos/sendero-1');
+  const dialog = await screen.findByRole('dialog', { name: 'Leave graph editor?' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Stay here' }));
+  expect(input).toHaveProperty('value', 'Retain compact inspector draft');
+  expect(router.state.location.pathname).toBe(path);
+  fireEvent.click(screen.getByRole('button', { name: 'Discard inspector changes' }));
+  await waitFor(() => expect(within(document.querySelector('form.compact-form') as HTMLFormElement).getByLabelText(label)).toHaveProperty('value', original));
+  await router.navigate('/senderos/sendero-1');
+  await waitFor(() => expect(document.querySelector('form.compact-form')).toBeNull());
+  expect(action).not.toHaveBeenCalled();
+});
+
+function setup(kind: 'node' | 'edge', action = vi.fn(async () => ({ ok: false, intent: `update-sendero-${kind}`, message: 'Rejected draft' }))) {
+  let data = { ...missionControlFixture, senderoGraphs: missionControlFixture.senderoGraphs.map(graph => ({ ...graph, revision: 'reviewed', version: { ...graph.version, status: 'draft' as const } })) };
+  const path = `/senderos/sendero-1/${kind === 'node' ? 'nodes/node-agent' : 'edges/edge-1'}`;
+  const router = createMemoryRouter([{ path: '*', loader: () => data, action, element: <Home /> }], { initialEntries: [path] });
+  render(<RouterProvider router={router} />);
+  return { router, action, update: () => { data = { ...data, senderoGraphs: data.senderoGraphs.map(graph => ({ ...graph, revision: 'new-revision', nodes: graph.nodes.map(node => ({ ...node, label: 'Latest node' })) })) }; }, form: () => document.querySelector('form.compact-form') as HTMLFormElement };
+}
+it.each(['node', 'edge'] as const)('retains rejected %s inputs and allows a deliberate second submission', async kind => {
+  const { action, form } = setup(kind);
+  await screen.findByRole('button', { name: kind === 'node' ? 'Save node' : 'Save arc' });
+  const field = within(form()).getByLabelText(kind === 'node' ? 'Node label' : 'Arc name');
+  fireEvent.change(field, { target: { value: 'Keep rejected input' } });
+  fireEvent.submit(form());
+  await screen.findByText('Rejected draft');
+  expect(field).toHaveProperty('value', 'Keep rejected input');
+  fireEvent.submit(form());
+  await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+});
+it('retains reviewed revision and inputs across a loader refresh until explicit discard', async () => {
+  const { router, update, form } = setup('node');
+  await screen.findByRole('button', { name: 'Save node' });
+  fireEvent.change(within(form()).getByLabelText('Node label'), { target: { value: 'Reviewed local label' } });
+  update(); await router.revalidate();
+  await screen.findByText(/This draft changed elsewhere. Your inspector inputs/);
+  expect(within(form()).getByLabelText('Node label')).toHaveProperty('value', 'Reviewed local label');
+  expect(new FormData(form()).get('expectedRevision')).toBe('reviewed');
+  expect(within(form()).getByRole('button', { name: 'Save node' }).matches(':disabled')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Discard inspector changes' }));
+  await waitFor(() => expect(within(form()).getByLabelText('Node label')).toHaveProperty('value', 'Latest node'));
+  expect(new FormData(form()).get('expectedRevision')).toBe('new-revision');
+});
+it.each(['node', 'edge'] as const)('freezes pending and uncertain %s edits without fragment replay', async kind => {
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const action = vi.fn(async () => { await held; return { ok: false, intent: `update-sendero-${kind}`, transportFailure: true, message: 'Confirmation lost' }; });
+  const { router, form } = setup(kind, action);
+  await screen.findByRole('button', { name: kind === 'node' ? 'Save node' : 'Save arc' });
+  const field = within(form()).getByLabelText(kind === 'node' ? 'Node label' : 'Arc name');
+  fireEvent.change(field, { target: { value: 'Keep uncertain input' } });
+  fireEvent.submit(form()); fireEvent.submit(form());
+  await waitFor(() => expect(action).toHaveBeenCalledOnce());
+  expect((field as HTMLInputElement).matches(':disabled')).toBe(true);
+  expect(screen.getByRole('button', { name: 'Discard inspector changes' })).toHaveProperty('disabled', true);
+  release(); await screen.findByText(/Studio could not confirm the inspector save/);
+  await router.navigate('#inspection');
+  fireEvent.submit(form());
+  expect(action).toHaveBeenCalledOnce();
+  expect(field).toHaveProperty('value', 'Keep uncertain input');
+  expect((field as HTMLInputElement).matches(':disabled')).toBe(true);
+  expect(screen.getByRole('button', { name: 'Validate & publish draft' })).toHaveProperty('disabled', true);
+});
+it('keeps one guard and prevents sibling graph edits from invalidating a compact draft', async () => {
+  const { router, form } = setup('node');
+  await screen.findByRole('button', { name: 'Save node' });
+  fireEvent.change(within(form()).getByLabelText('Node label'), { target: { value: 'Inspector first' } });
+  expect((screen.getByLabelText('Maximum activations per goal') as HTMLInputElement).matches(':disabled')).toBe(true);
+  void router.navigate('/now');
+  await screen.findByRole('dialog'); expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Stay here' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Discard inspector changes' }));
+  fireEvent.change(screen.getByLabelText('Maximum activations per goal'), { target: { value: '37' } });
+  expect((within(form()).getByLabelText('Node label') as HTMLInputElement).matches(':disabled')).toBe(true);
+  void router.navigate('/now'); await screen.findByRole('dialog'); expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Leave editor' }));
+  await waitFor(() => expect(router.state.location.pathname).toBe('/now'));
+});
+it('clears the compact draft only after its own confirmed save and readback', async () => {
+  const action = vi.fn(async () => ({ ok: true, intent: 'update-sendero-node', message: 'Confirmed node' }));
+  const { router, form, update } = setup('node', action);
+  await screen.findByRole('button', { name: 'Save node' });
+  fireEvent.change(within(form()).getByLabelText('Node label'), { target: { value: 'Latest node' } });
+  update(); fireEvent.submit(form());
+  await screen.findByText('Confirmed node');
+  await waitFor(() => expect(within(form()).getByLabelText('Node label')).toHaveProperty('value', 'Latest node'));
+  expect(new FormData(form()).get('expectedRevision')).toBe('new-revision');
+  expect(screen.getByRole('button', { name: 'Discard inspector changes' })).toHaveProperty('disabled', true);
+  await router.navigate('/now'); await screen.findByText('What needs attention now');
+  expect(screen.queryByRole('dialog')).toBeNull(); expect(action).toHaveBeenCalledOnce();
+});
