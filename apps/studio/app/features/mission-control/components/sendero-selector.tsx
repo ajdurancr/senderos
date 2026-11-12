@@ -37,7 +37,7 @@ export function SenderoSelector({
       >
         {data.senderoGraphs.map((graph) => (
           <option key={graph.sendero.id} value={graph.sendero.id}>
-            {graph.sendero.name} · v{graph.version.version}
+            {graph.sendero.name} · {graph.sendero.slug} · v{graph.version.version}
           </option>
         ))}
       </select>
