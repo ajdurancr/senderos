@@ -1,3 +1,4 @@
+import { AgentDefinition, pinnedAgent } from './agent-definition';
 import { DurableLink as Link } from "../../../components/durable-link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DocumentReloadButton } from "../../../components/document-reload-button";
@@ -40,6 +41,7 @@ export function SenderoInspector({
   const routingCondition = objectJson(edge?.conditionJson ?? "{}");
   if (legacyPolicy) delete routingCondition.completion;
   const agent = data.agents.find((item) => item.id === node?.agentId);
+  const pinned = pinnedAgent(node, graph.version.status !== "draft");
   const events = data.events
     .filter((event) =>
       [graph.sendero.id, node?.id, edge?.id, agent?.id].includes(
@@ -60,7 +62,7 @@ export function SenderoInspector({
                 : "Sendero definition"}
           </span>
           <h2>
-            {edge?.name ?? agent?.name ?? node?.label ?? graph.sendero.name}
+            {edge?.name ?? pinned?.name ?? agent?.name ?? node?.label ?? graph.sendero.name}
           </h2>
         </div>
         <Link to={senderoPath(graph.sendero.id)} aria-label="Close inspector">
@@ -84,7 +86,6 @@ export function SenderoInspector({
           <button className="button button-primary" disabled={pending || hasUnsavedGraph || compactDirty}>{graph.version.status === 'draft' ? 'Validate & publish draft' : 'Create editable draft'}</button>
         </Form>
         <dl className="property-list">
-          {agent && <><div><dt>Agent</dt><dd>{agent.name}</dd></div><div><dt>Role</dt><dd>{agent.description}</dd></div></>}
           {edge && <>
             <div><dt>From</dt><dd>{edgeSource?.label ?? edge.sourceNodeId}</dd></div>
             <div><dt>To</dt><dd>{graph.nodes.find(item => item.id === edge.targetNodeId)?.label ?? edge.targetNodeId}</dd></div>
@@ -121,6 +122,7 @@ export function SenderoInspector({
           </CompactInspectorForm>
         )}
       </section>
+      {node?.kind === "agent" && <AgentDefinition node={node} published={graph.version.status !== "draft"} agent={agent} />}
       <details className="inspector-section inspector-disclosure">
         <summary>Technical details</summary>
         <dl className="property-list">
