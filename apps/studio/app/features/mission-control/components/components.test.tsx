@@ -46,9 +46,9 @@ describe("mission-control components", () => {
   it("opens, filters, and closes the command palette from mouse and keyboard", () => {
     inRouter(<CommandPalette data={data} projectId={goal.projectId} />);
     fireEvent.click(screen.getByText("Search or run a command"));
-    const input = screen.getByPlaceholderText("Find a goal, attempt, or action…");
+    const input = screen.getByPlaceholderText("Find a name, goal/attempt ID, or action…");
     fireEvent.change(input, { target: { value: "nothing-here" } });
-    expect(screen.getByText("Nothing matches that query.")).toBeTruthy();
+    expect(screen.getByText("Nothing matches in the loaded Studio data.")).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });

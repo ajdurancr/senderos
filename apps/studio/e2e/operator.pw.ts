@@ -389,7 +389,7 @@ test('keyboard palette and mobile drawer preserve scope, focus, and viewport bou
   const search = page.getByRole('textbox', { name: 'Search commands' });
   await expect(search).toBeFocused();
   await search.fill('NO_SUCH_GOAL_924890');
-  await expect(palette).toContainText('Nothing matches that query.');
+  await expect(palette).toContainText('Nothing matches in the loaded Studio data.');
   await page.keyboard.press('Shift+Tab');
   await expect(palette.getByRole('button', { name: 'Esc' })).toBeFocused();
   await page.keyboard.press('Tab');
@@ -399,7 +399,7 @@ test('keyboard palette and mobile drawer preserve scope, focus, and viewport bou
   await expect(trigger).toBeFocused();
   await page.keyboard.press('Control+k');
   await search.fill('Keyboard hidden goal');
-  await expect(palette).toContainText('Nothing matches that query.');
+  await expect(palette).toContainText('Nothing matches in the loaded Studio data.');
   await search.fill(own.title);
   const result = palette.getByRole('link', { name: new RegExp(own.title) });
   await expect(result).toBeVisible();

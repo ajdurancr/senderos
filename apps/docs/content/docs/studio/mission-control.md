@@ -7,6 +7,20 @@ Senderos Studio is the human-facing authoring and operational surface over
 `@senderos/core`. It uses the same database, validation, publication, and lifecycle
 operations as the CLI. It does not launch a model or an external worker session.
 
+## Find a goal or attempt
+
+Open **Search or run a command**, or press **Command/Ctrl + K**. Search by name,
+context, project, goal ID or attempt ID. Results use the Studio data already loaded
+in the selected scope; this is not a search across every stored record. The palette
+shows up to nine matches in their existing order and reports the displayed and
+loaded match counts. Refine the query when more matches exist. A known goal or
+attempt ID can narrow the list to its loaded record without changing scope.
+
+Select a result to open its owning destination. **Escape** closes the palette and
+returns focus to the search trigger. If a record is outside the loaded scope,
+close the palette and use the existing context/project selectors before searching
+again. Searching and opening records do not dispatch work or change stored state.
+
 ## Register a context and project
 
 Open **Settings → Project & database → Set up a workspace**. An execution

@@ -99,7 +99,7 @@ describe("StudioLayout", () => {
     expect(within(dialog.getByRole("link", { name: /^Review dispatch plan/ })).getByText("1 ready")).toBeTruthy();
     fireEvent.change(input, { target: { value: "Unrelated launch" } });
     expect(dialog.queryByRole("link")).toBeNull();
-    expect(dialog.getByText("Nothing matches that query.")).toBeTruthy();
+    expect(dialog.getByText("Nothing matches in the loaded Studio data.")).toBeTruthy();
     fireEvent.change(input, { target: { value: "Ship feature" } });
     expect(dialog.getByRole("link", { name: /Ship feature/ }).getAttribute("href")).toBe("/projects/project-1/canvas/goals/goal-1?context=context-1&project=project-1");
   });
