@@ -23,6 +23,20 @@ function renderRouter(element: React.ReactNode, handler?: (args: ActionFunctionA
 }
 
 describe('Studio authoring interactions', () => {
+  it('distinguishes same-name agents by slug while serializing the exact selected ID', async () => {
+    const agents = ['first', 'second'].map(suffix => ({ ...base.agents[0]!, id: `agent-${suffix}`, slug: `executor-${suffix}`, name: 'Shared executor', status: 'active' as const }));
+    const { action, container } = renderRouter(<SenderoGraphEditor graph={graph} agents={agents} />);
+    const choice = screen.getByRole('combobox', { name: 'Agent' });
+    for (const agent of agents) expect(within(choice).getByRole('option', { name: `${agent.name} · ${agent.slug} · active` })).toHaveProperty('value', agent.id);
+    fireEvent.change(choice, { target: { value: agents[1]!.id } });
+    expect(JSON.parse(container.querySelector<HTMLInputElement>('input[name="definition"]')!.value).nodes.find((node: { kind: string }) => node.kind === 'agent').agentId).toBe(agents[1]!.id);
+    fireEvent.click(screen.getByRole('button', { name: 'Save graph draft' }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
+    const form = await action.mock.calls[0]![0].request.formData();
+    expect(form.get('expectedRevision')).toBe(graph.revision);
+    expect(JSON.parse(String(form.get('definition'))).nodes.find((node: { kind: string }) => node.kind === 'agent').agentId).toBe(agents[1]!.id);
+  });
+
   it('adds and removes nodes and transitions, then cancels without a write', () => {
     const { action, container } = renderRouter(<SenderoGraphEditor graph={graph} agents={base.agents} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add node' }));

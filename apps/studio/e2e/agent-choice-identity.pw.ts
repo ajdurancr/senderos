@@ -1,0 +1,68 @@
+import { capture, expect, ready, reload, scenarioScope, state, test, visit, workflowCreated } from './fixtures';
+for (const width of [1440, 390]) test(`distinguishes duplicate agent choices and preserves exact assignments at ${width}px`, async ({ page, scenario }, testInfo) => {
+  await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+  const scope = scenarioScope(scenario), name = `Same-name executor ${scenario.id.slice(0, 8)}`;
+  const agents: { id: string; slug: string }[] = [];
+  for (const suffix of ['first', 'second']) {
+    const slug = `identity-agent-${suffix}-${scenario.id}`;
+    await visit(page, `/agents/new${scope}`);
+    await page.getByRole('textbox', { name: /^Name\b/ }).fill(name);
+    await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(slug);
+    await page.getByRole('textbox', { name: 'Instructions', exact: true }).fill(`Synthetic ${suffix} instructions`);
+    await page.getByRole('button', { name: 'Create agent', exact: true }).click();
+    await expect(page.getByText('Agent created.', { exact: true })).toBeVisible();
+    await ready(page);
+    agents.push(state().agents.find(item => item.slug === slug)!);
+  }
+  await visit(page, `/senderos/new${scope}`);
+  await page.getByRole('textbox', { name: /^Name\b/ }).fill(`Agent choice audit ${scenario.id}`);
+  await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(`agent-choice-${scenario.id}`);
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click();
+  await workflowCreated(page);
+  const before = state();
+  await page.getByRole('button', { name: 'Add node', exact: true }).click();
+  const choice = page.getByRole('combobox', { name: 'Agent', exact: true }).last();
+  const labels: string[] = [];
+  for (const agent of agents) labels.push((await choice.locator(`option[value="${agent.id}"]`).textContent())!);
+  await choice.selectOption(agents[1]!.id);
+  await expect(choice).toHaveValue(agents[1]!.id);
+  await expect(page.getByText(`Selected agent: ${agents[1]!.slug}`, { exact: true })).toBeVisible();
+  await choice.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, `agent-choice-final-${width}`);
+  await testInfo.attach('actual-agent-choice-labels', { body: JSON.stringify({ agents, labels }), contentType: 'application/json' });
+  expect(state()).toEqual(before);
+  expect(new Set(labels).size, 'Distinct persisted agents have distinguishable visible option text').toBe(2);
+  for (let i = 0; i < agents.length; i++) expect(labels[i]).toBe(`${name} · ${agents[i]!.slug} · active`);
+  // Mac Chrome native key selection is separately bounded. Check real focus,
+  // Tab and Escape without equating selectOption with keyboard selection.
+  await choice.focus(); await choice.press('Tab'); await page.keyboard.press('Shift+Tab');
+  await expect(choice).toBeFocused(); await choice.press('Escape');
+  await expect(choice).toHaveValue(agents[1]!.id);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByRole('button', { name: 'Save graph draft', exact: true }).click();
+  await expect(page.getByText('Graph draft saved.', { exact: true })).toBeVisible();
+  const saved = state();
+  const workflowId = new URL(page.url()).pathname.split('/').at(-1)!;
+  const version = saved.versions.find(item => item.senderoId === workflowId)!;
+  const node = saved.nodes.find(item => item.senderoVersionId === version.id && item.kind === 'agent')!;
+  expect(node.agentId).toBe(agents[1]!.id);
+  expect(saved.agents).toEqual(before.agents);
+  expect(saved.agents.find(item => item.id === node.agentId)!.definitionBody).toBe('Synthetic second instructions');
+  expect(saved.goals).toEqual(before.goals); expect(saved.runs).toEqual(before.runs); expect(saved.attempts).toEqual(before.attempts);
+  await reload(page); await expect(choice).toHaveValue(agents[1]!.id);
+  expect(state()).toEqual(saved);
+  const savedUrl = page.url();
+  await visit(page, `/agents${scope}`); await page.goBack(); await ready(page);
+  await expect(choice).toHaveValue(agents[1]!.id);
+  expect(page.url()).toBe(savedUrl);
+  expect(new URL(page.url()).searchParams.get('context')).toBe(scenario.productContext);
+  expect(new URL(page.url()).searchParams.get('project')).toBe(scenario.launchProject);
+  expect(state()).toEqual(saved);
+  await choice.selectOption(agents[0]!.id);
+  await page.getByRole('button', { name: 'Cancel changes', exact: true }).click();
+  await expect(choice).toHaveValue(agents[1]!.id);
+  await reload(page); expect(state()).toEqual(saved);
+  await expect(page.getByText(`Selected agent: ${agents[1]!.slug}`, { exact: true })).toBeVisible();
+  await choice.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, `agent-choice-persisted-${width}`);
+});
