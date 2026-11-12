@@ -53,6 +53,11 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
     };
   }, [open]);
 
+  const ownership = (projectId?: string) => {
+    const project = data.projects.find(item => item.id === projectId);
+    const context = data.executionContexts.find(item => item.id === project?.executionContextId);
+    return `${context?.name ?? "Unknown context"} · ${project?.name ?? "Unknown project"}`;
+  };
   const items = useMemo(() => [
     { label: "Open workflow progress", detail: "Workspace", href: projectPath(projectId), icon: "nodes" },
     { label: "Show work needing attention", detail: "Decision queue", href: projectPath(projectId, "now"), icon: "inbox" },
@@ -61,8 +66,8 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
     { label: "Open database settings", detail: "Configuration", href: projectPath(projectId, "settings"), icon: "settings" },
     { label: "Manage agents", detail: "Settings · Roles and instructions", href: "/agents", icon: "spark" },
     { label: "Manage Senderos", detail: "Settings · Workflow definitions", href: data.senderoGraphs[0] ? senderoPath(data.senderoGraphs[0].sendero.id) : "/senderos", icon: "nodes" },
-    ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
-    ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status}`, href: attemptPath(goal?.projectId ?? projectId, attempt.id), icon: "activity" }; }),
+    ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status} · ${ownership(goal.projectId)}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
+    ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status} · ${ownership(goal?.projectId)}`, href: attemptPath(goal?.projectId ?? projectId, attempt.id), icon: "activity" }; }),
   ], [projectId, data]);
   const matches = items.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 9);
 
@@ -73,7 +78,7 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
         <header><Icon name="search" /><input ref={input} aria-label="Search commands" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a goal, attempt, or action…" /><button className="button button-secondary" type="button" onClick={() => setOpen(false)}>Esc</button></header>
         <div className="command-results">
           <p>Commands and entities</p>
-          {matches.map((item) => <Link key={`${item.href}-${item.label}`} to={item.href} onClick={() => setOpen(false)}><Icon name={item.icon} /><span><strong>{item.label}</strong><small>{item.detail}</small></span><Icon name="arrow" /></Link>)}
+          {matches.map((item) => <Link key={`${item.href}-${item.label}`} to={item.href} aria-label={`${item.label} · ${item.detail}`} onClick={() => setOpen(false)}><Icon name={item.icon} /><span><strong>{item.label}</strong><small>{item.detail}</small></span><Icon name="arrow" /></Link>)}
           {matches.length === 0 && <div className="empty-command">Nothing matches that query.</div>}
         </div>
         <footer><span>Select a result to open it</span><span>Searches persisted Studio entities</span></footer>
