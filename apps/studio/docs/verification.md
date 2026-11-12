@@ -483,3 +483,14 @@ A later submission consumes earlier saved-query success feedback for the mounted
 Compact workflow inspector recovery is covered by `compact-inspector-drafts.pw.ts`: desktop and mobile node/transition edits, actual scope/close navigation protection, explicit discard, confirmed saves with persisted database readback, and committed/unapplied response loss. Pending or uncertain saves cannot be repeated, reset or published. Fragment navigation cannot release uncertainty; keyboard/click reload reads the scoped document without replaying the mutation. Full browser acceptance remains separate from focused journeys.
 
 Confirmed compact inspector saves are read again after durable Close and browser Back: production document responses use `Cache-Control: no-store`, so history cannot reuse pre-save HTML and its old revision. The history journey verifies node and transition values, current reviewed revisions, scoped GET responses, unchanged mutation counts and persisted records at desktop/mobile sizes. It also retains concurrent stale-save rejection and explicit discard/readback; no save is replayed on history navigation.
+
+## Bounded evidence review browsing
+
+Reviews shows 30 attempts per page with complete scoped and filtered counts.
+Status filters distinguish pending review, approved, changes requested and rejected
+records; a missing decision is pending. These are recorded decision categories,
+not a claim that host execution has finished or that new evidence is accepted.
+Pagination retains context and project, validates cursors against the selected
+filter, and leaves every exact-attempt proof link available. Browser fixtures
+exercise all retained records, keyboard navigation, history/reload and invalid
+positions without changing evidence or review decisions.

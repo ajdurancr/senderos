@@ -349,3 +349,8 @@ A later submission consumes earlier saved-query success feedback for the mounted
 Compact workflow recovery (`compact-inspector-drafts.pw.ts`) covers desktop/mobile scope and inspector-close guards, discard and confirmed persistence, and committed/unapplied response loss with actual keyboard/click document readback. Isolated fixtures and intercepted mutation counts verify no automatic replay.
 
 `compact-history-readback.pw.ts` exercises production document history with Chrome’s back/forward-cache disabling argument removed. It verifies scoped authoritative GETs after confirmed node/transition saves, response cache policy, reviewed revisions, persisted state and no mutation replay at 1440/390px, plus concurrent edit conflicts and explicit discard. This does not assert that every browser implements history caching identically.
+
+Review history uses isolated retained proof and mixed review decisions to verify
+bounded browsing, counted status filters, stable tied timestamps, complete paging,
+keyboard focus, Back/Forward, reload, exact-attempt proof links and scope/cursor
+recovery on desktop and mobile. Browsing and filtering make no persistence writes.

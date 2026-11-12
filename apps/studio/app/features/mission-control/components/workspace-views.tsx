@@ -4,7 +4,6 @@ import { SettingsDraftBoundary } from "./settings-draft-boundary";
 import { RetryLineage } from "./retry-lineage";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
 import { EvidenceRecords } from "./evidence-records";
-import { ReviewTimestamp } from "./review-timestamp";
 import { LocalRegistration } from "./local-registration";
 import { ProjectSettings } from "./project-settings";
 import { AgentAuthoring } from "./agent-authoring";
@@ -159,7 +158,7 @@ function RunDetail({ data, attemptId }: { data: MissionControlData; attemptId?: 
   </aside>;
 }
 
-export function ReviewsView({data}:{data:MissionControlData}){const attempts=data.attempts.filter(a=>{const s=parseAttemptSnapshot(a.statusSnapshotJson);return s.evidence?.length||s.review});return <div className="standard-view"><ViewHeader eyebrow="Quality gate" title="Evidence reviews" copy="Make decisions against concrete proof attached to the exact execution that produced it."/><div className="review-grid">{attempts.map(attempt=>{const s=parseAttemptSnapshot(attempt.statusSnapshotJson);const run=data.runs.find(r=>r.id===attempt.runId);const goal=data.goals.find(g=>g.id===run?.goalId);return <article key={attempt.id}><header><StatusBadge value={s.review?.status??"pending"}/><ReviewTimestamp snapshot={s} updatedAt={attempt.updatedAt} asOf={data.asOf} /></header><h2>{attempt.executionObjective}</h2><p>{s.evidence?.length??0} evidence items · {attempt.harness}</p><Link to={attemptPath(goal?.projectId??"unknown",attempt.id)}>Inspect evidence <Icon name="arrow"/></Link></article>})}{!attempts.length && <div className="empty-state"><Icon name="check"/><h2>No evidence to review</h2><p>Evidence and review decisions will appear here after an attempt reports its results.</p><Link className="button button-secondary" to="/runs">View runs</Link></div>}</div></div>}
+export { ReviewsView } from "./reviews-view";
 
 export function AgentsView({data, agentId, create = false}:{data:MissionControlData; agentId?: string; create?: boolean}){return <div className="standard-view"><ViewHeader eyebrow="Execution topology" title="Agents & transitions" copy="Custom roles and instructions for any workflow. Published Senderos pin their definitions." action={<Link className="button button-primary" to="/agents/new">New agent</Link>}/><AgentAuthoring data={data} agentId={agentId} create={create}/><div className="agent-grid">{data.agents.map(agent=>{const outgoing=data.transitions.filter(t=>t.sourceAgentId===agent.id);return <article key={agent.id}><header><div className="agent-avatar"><Icon name="spark"/></div><StatusBadge value={agent.status}/></header><h2>{agent.name}</h2><p>{agent.description||agent.defaultGoal||"Persisted Senderos executor."}</p><footer><span>{agent.kind}</span><strong>{outgoing.length} transitions</strong><Link to={`/agents/${encodeURIComponent(agent.id)}`}>Edit agent</Link></footer></article>})}{!data.agents.length && <div className="empty-state"><Icon name="spark"/><h2>No agents yet</h2><p>Create an agent to define its role, instructions, and completion criteria for your Senderos.</p></div>}</div></div>}
 
