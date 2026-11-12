@@ -17,9 +17,10 @@ for (const intent of ['start', 'dispatch-plan', 'cancel-goal', 'create-goal'] as
     const form = screen.getByRole('form');
     fireEvent.submit(form); fireEvent.submit(form);
     await waitFor(() => expect(action).toHaveBeenCalledOnce());
-    expect(screen.getByRole('button')).toHaveProperty('disabled', true);
+    await waitFor(() => expect(screen.getByRole('button')).toHaveProperty('disabled', true));
     fireEvent.submit(form); expect(action).toHaveBeenCalledOnce();
     finish({ ok: false, intent, message: 'Reviewed state changed' });
+    await waitFor(() => expect(router.state.actionData?.['0']).toMatchObject({ ok: false, intent }));
     await waitFor(() => expect(screen.getByRole('button')).toHaveProperty('disabled', false));
     fireEvent.submit(form);
     await waitFor(() => expect(action).toHaveBeenCalledTimes(2));

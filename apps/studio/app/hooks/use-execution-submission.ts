@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FormEvent } from 'react';
+import { useLayoutEffect, useRef, type FormEvent } from 'react';
 import { useActionData, useNavigation } from 'react-router';
 
 /** An uncertain response requires persisted-state readback, never automatic replay. */
@@ -12,7 +12,10 @@ export function useExecutionSubmission(intent: 'start' | 'dispatch-plan' | 'canc
   const uncertainty = useRef(false);
   if (action?.intent === intent && action.transportFailure === true) uncertainty.current = true;
   const uncertain = uncertainty.current;
-  useEffect(() => { if (!pending) submitted.current = false; }, [pending, action]);
+  // Release the synchronous double-submit latch before the enabled DOM can
+  // accept another input. A passive effect leaves an enabled-but-blocked window
+  // after a known rejection. Uncertainty remains independently latched above.
+  useLayoutEffect(() => { if (!pending) submitted.current = false; }, [pending, action]);
   function submit(event: FormEvent<HTMLFormElement>) {
     if (pending || uncertain || submitted.current) { event.preventDefault(); return; }
     submitted.current = true;
