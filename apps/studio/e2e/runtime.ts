@@ -93,7 +93,7 @@ if (command === 'hold-read-lock') {
   await db.insert(schema.runs).values(records);
   await db.insert(schema.runAttempts).values(records.flatMap(run => [2, 1].map(attemptNumber => ({ id: `${run.id}-attempt-${attemptNumber}`, runId: run.id, attemptNumber, agentId: agent.id, status: 'canceled', executionObjective: `${run.id.endsWith('-z') ? 'Latest' : 'Earlier'} retained objective ${attemptNumber}`, harness: 'history-fixture', finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp }))));
   result = { goalId: goal.id, latestAttemptId: `${records[0]!.id}-attempt-2`, olderAttemptId: `${records[1]!.id}-attempt-1` };
-} else if (command === 'prepare-run-history' && id) {
+} else if ((command === 'prepare-run-history' || command === 'prepare-review-history') && id) {
   // Synthetic terminal history tests browsing scale, never real host execution.
   const product = createSenderos({ executionContextId: `product-${id}` });
   const goal = await product.commands.goals.create({ projectId: `launch-${id}`, title: `Archived executions ${id}`, senderoVersionId: null });
@@ -103,7 +103,7 @@ if (command === 'hold-read-lock') {
   const timestamp = new Date(Date.now() + 60_000).toISOString();
   const records = Array.from({ length: 125 }, (_, i) => ({ id: `run-history-${id}-${String(i).padStart(3, '0')}`, goalId: goal.id, status: 'canceled', createdAt: timestamp, updatedAt: timestamp }));
   await db.insert(schema.runs).values(records);
-  await db.insert(schema.runAttempts).values(records.map((run, i) => ({ id: `attempt-history-${id}-${String(i).padStart(3, '0')}`, runId: run.id, attemptNumber: 1, agentId: agent.id, status: 'canceled', executionObjective: `Archived fixture ${i}`, harness: 'history-fixture', statusSnapshotJson: JSON.stringify({ evidence: [{ id: `history-proof-${i}`, kind: 'artifact', label: `Archived proof ${i}`, createdAt: timestamp }] }), finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })));
+  await db.insert(schema.runAttempts).values(records.map((run, i) => ({ id: `attempt-history-${id}-${String(i).padStart(3, '0')}`, runId: run.id, attemptNumber: 1, agentId: agent.id, status: 'canceled', executionObjective: `Archived fixture ${i}`, harness: 'history-fixture', statusSnapshotJson: JSON.stringify({ evidence: [{ id: `history-proof-${i}`, kind: 'artifact', label: `Archived proof ${i}`, createdAt: timestamp }], ...(command === 'prepare-review-history' && i % 4 ? { review: { status: ['pending', 'approved', 'changes_requested', 'rejected'][i % 4], rationale: 'Synthetic retained review decision', reviewedAt: timestamp } } : {}) }), finishedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })));
   result = { inserted: records.length, goalId: goal.id };
 } else if (command === 'prepare-activation-history' && id) {
   // Synthetic settled graph visits exercise presentation only; no real execution is claimed.
