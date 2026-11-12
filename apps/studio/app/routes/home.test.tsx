@@ -108,7 +108,7 @@ describe("home route", () => {
 
 
 describe('draft save transport recovery', () => {
-  it.each(['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'create-goal'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
+  it.each(['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'create-goal', 'create-sendero', 'import-sendero'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
     const form = new FormData(); form.set('intent', intent);
     const result = await clientAction({ url: new URL('http://localhost/senderos/draft'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/senderos/draft', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },

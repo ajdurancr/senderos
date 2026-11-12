@@ -327,3 +327,9 @@ verify scope cancellation, rejected import preservation, navigation during a rea
 save with delayed response delivery, successful import/create persistence, native
 document navigation confirmation and explicit Cancel. The database writes are
 real and isolated; only response delivery is delayed.
+
+`workflow-creation-recovery.pw.ts` extends the reused PR96 creation/navigation
+journeys with committed and unapplied create/import confirmation loss on desktop
+and mobile. It checks pending identity freeze, repeated submission/reset/Cancel,
+the shared scope warning, fragment uncertainty, keyboard activation of scoped
+reload and authoritative persisted draft readback without automatic replay.

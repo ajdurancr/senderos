@@ -220,7 +220,7 @@ describe('Studio authoring interactions', () => {
     fireEvent.change(screen.getByLabelText('Authoring method'), { target: { value: 'import' } });
     expect(screen.getByLabelText('Sendero JSON')).toHaveProperty('value', '{"name":"Imported plan"}');
     void router.navigate('/senderos/new?project=other');
-    expect(await screen.findByRole('dialog', { name: 'Leave graph editor?' })).toBeTruthy();
+    expect(await screen.findByRole('dialog', { name: 'Leave new workflow editor?' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Stay here' }));
     expect(screen.getByLabelText('Sendero JSON')).toHaveProperty('value', '{"name":"Imported plan"}');
     expect(action).not.toHaveBeenCalled();

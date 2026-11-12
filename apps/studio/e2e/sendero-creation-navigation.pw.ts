@@ -19,7 +19,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('textbox', { name: 'Sendero JSON' })).toHaveValue(definition);
     const before = state();
     await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
-    const dialog = page.getByRole('dialog', { name: 'Leave graph editor?' });
+    const dialog = page.getByRole('dialog', { name: 'Leave new workflow editor?' });
     await expect(dialog).toBeVisible();
     await capture(page, testInfo, `sendero-creation-navigation-${width}`);
     await page.keyboard.press('Escape');
@@ -42,7 +42,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Import draft', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Saving…' })).toBeVisible();
     await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
-    await expect(dialog).toContainText('A save is in progress');
+    await expect(dialog).toContainText('Workflow creation or import is in progress');
     await dialog.getByRole('button', { name: 'Stay here' }).click();
     releaseSave();
     await ready(page);
