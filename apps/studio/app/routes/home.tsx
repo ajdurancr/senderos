@@ -51,9 +51,11 @@ export async function clientAction({ request, serverAction }: Route.ClientAction
   } catch (error) {
     // Router responses (including successful redirects) are not transport loss.
     if (error instanceof Response) throw error;
-    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'dispatch-plan', 'cancel-goal', 'start'].includes(intent) || request.signal.aborted) throw error;
+    if (!['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'dispatch-plan', 'cancel-goal', 'start', 'create-goal'].includes(intent) || request.signal.aborted) throw error;
     const registration = intent === 'register-context' || intent === 'register-project';
-    const message = intent === 'start'
+    const message = intent === 'create-goal'
+      ? 'Studio could not confirm goal creation. Your input is kept here. The request may have reached the server. Reload and inspect persisted goals before submitting again; repeating creation can add another goal.'
+      : intent === 'start'
       ? 'Studio could not confirm goal activation. The request may have reached the server. Reload and inspect the persisted goal and workflow progress before submitting again. Starting does not reserve runs; review dispatch separately.'
       : intent === 'dispatch-plan'
       ? 'Studio could not confirm run reservation. The request may have reached the server. Reload and inspect persisted runs and ready activations before submitting again. External hosts start execution separately.'

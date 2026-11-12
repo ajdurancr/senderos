@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router';
 
 /** One boundary for scope/history navigation and document links/reloads. */
-export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNavigation, isDirty }: { dirty: boolean; saving: boolean; subject?: 'graph' | 'goal' | 'agent' | 'project settings' | 'workspace setup' | 'evidence and review' | 'execution budgets' | 'evidence, review and execution budgets'; allowNavigation?: (pathname: string, search: string) => boolean; isDirty?: () => boolean }) {
+export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNavigation, isDirty }: { dirty: boolean; saving: boolean; subject?: 'graph' | 'new goal' | 'goal' | 'agent' | 'project settings' | 'workspace setup' | 'evidence and review' | 'execution budgets' | 'evidence, review and execution budgets'; allowNavigation?: (pathname: string, search: string) => boolean; isDirty?: () => boolean }) {
   // Shared form registries can publish a dirty snapshot before their render commits.
   const hasDraft = () => isDirty?.() ?? dirty;
   const blocker = useBlocker(({ currentLocation, nextLocation }) => hasDraft() && !allowNavigation?.(nextLocation.pathname, nextLocation.search) && (
@@ -35,7 +35,9 @@ export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNa
   }} onCancel={event => { event.preventDefault(); blocker.reset(); }}>
     <h2 id="draft-navigation-title">Leave {subject} editor?</h2>
     <p id="draft-navigation-description">{saving
-      ? subject === 'execution budgets' || subject === 'evidence, review and execution budgets'
+      ? subject === 'new goal'
+        ? 'Goal creation is in progress. Leaving may interrupt its confirmation. The goal may still be created; inspect persisted goals before creating again.'
+        : subject === 'execution budgets' || subject === 'evidence, review and execution budgets'
         ? 'A submission is in progress. Leaving may interrupt its confirmation. It may still finish; inspect persisted execution budgets, evidence and the current review before submitting again.'
         : subject === 'evidence and review'
         ? 'A submission is in progress. Leaving may interrupt its confirmation. It may still finish; inspect persisted evidence and the current review before submitting again.'

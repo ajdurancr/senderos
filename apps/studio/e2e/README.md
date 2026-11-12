@@ -313,3 +313,10 @@ subprocess pipe limit. Child exit errors, stderr, JSON parsing, cleanup and the
 20-second timeout remain enforced. Snapshot contention workers attach their
 stdout, stderr and exit status independently; transport failures do not establish
 a SQLite lock, and passing descendants do not clear historical native failures.
+
+`new-goal-recovery.pw.ts` covers the creation editor at desktop and mobile widths:
+scope and real Back/Forward warnings, retained rejected input, explicit discard,
+pending identity and repeated-submission protection, and committed/unapplied lost
+responses. It activates the rendered reload control by keyboard and checks fresh
+scoped navigation plus complete persisted-state readback. Fragment changes cannot
+unlock an uncertain creation; reloading never resubmits the original request.
