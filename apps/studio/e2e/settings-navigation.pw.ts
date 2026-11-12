@@ -45,6 +45,15 @@ for (const width of [1440, 390]) {
     const saved = state();
     expect(saved.projects.find(item => item.id === scenario.launchProject)).toMatchObject({ name: 'Carefully edited project', targetBranch: 'reviewed-preview' });
     expect(saved.projects.find(item => item.id === scenario.campaignProject)).toEqual(before.projects.find(item => item.id === scenario.campaignProject));
+    await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption(scenario.campaignProject);
+    await ready(page);
+    await expect(dialog).not.toBeVisible();
+    await expect(name).toHaveValue(before.projects.find(item => item.id === scenario.campaignProject)!.name);
+    await page.goBack(); await ready(page);
+    await expect(name).toHaveValue('Carefully edited project');
+    await expect(dialog).not.toBeVisible();
+    await capture(page, testInfo, `settings-saved-navigation-${width}`);
+    expect(state()).toEqual(saved);
     await page.reload(); await ready(page);
     await expect(name).toHaveValue('Carefully edited project');
     await name.fill('Discard this next edit');

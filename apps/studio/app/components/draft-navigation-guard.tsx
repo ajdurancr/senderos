@@ -1,11 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router';
 
 /** One boundary for scope/history navigation and document links/reloads. */
 export function DraftNavigationGuard({ dirty, saving, subject = 'graph', allowNavigation, isDirty }: { dirty: boolean; saving: boolean; subject?: 'graph' | 'new workflow' | 'new goal' | 'goal' | 'agent' | 'project settings' | 'workspace setup' | 'evidence and review' | 'execution budgets' | 'evidence, review and execution budgets'; allowNavigation?: (pathname: string, search: string) => boolean; isDirty?: () => boolean }) {
   // Shared form registries can publish a dirty snapshot before their render commits.
   const hasDraft = () => isDirty?.() ?? dirty;
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => hasDraft() && !allowNavigation?.(nextLocation.pathname, nextLocation.search) && (
+  // Router updates blocker functions in a passive effect. A navigation at the
+  // save/draft commit can still call the previous function, so consult the
+  // latest committed policy instead of that function's captured render.
+  const policy = useRef({ dirty, isDirty, allowNavigation });
+  useLayoutEffect(() => { policy.current = { dirty, isDirty, allowNavigation }; });
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => (policy.current.isDirty?.() ?? policy.current.dirty) && !policy.current.allowNavigation?.(nextLocation.pathname, nextLocation.search) && (
     currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search
   ));
   const dialog = useRef<HTMLDialogElement>(null);
