@@ -44,12 +44,12 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
     return goal ? attemptPath(goal.projectId, attempt.id) : undefined;
   };
   const records = [
-    ...data.queue.reviews.map(item => ({ type: 'review', title: goalForAttempt(item.attempt)?.title ?? item.attempt.id, status: 'pending review', id: item.attempt.id, href: attemptLink(item.attempt), body: 'Execution evidence requires an operator decision.' })),
-    ...data.queue.failedAttempts.map(attempt => ({ type: 'failed', title: goalForAttempt(attempt)?.title ?? attempt.id, status: 'failed', id: attempt.id, href: attemptLink(attempt), body: attempt.failureSummary ?? 'Execution failed without a summary.' })),
-    ...data.queue.staleAttempts.map(attempt => ({ type: 'stale', title: attempt.executionObjective, status: 'stale', id: attempt.id, href: attemptLink(attempt), body: 'The recorded lease or heartbeat needs host inspection.' })),
+    ...data.queue.reviews.map(item => ({ type: 'review', goal: goalForAttempt(item.attempt), title: goalForAttempt(item.attempt)?.title ?? item.attempt.id, status: 'pending review', id: item.attempt.id, href: attemptLink(item.attempt), body: 'Execution evidence requires an operator decision.' })),
+    ...data.queue.failedAttempts.map(attempt => ({ type: 'failed', goal: goalForAttempt(attempt), title: goalForAttempt(attempt)?.title ?? attempt.id, status: 'failed', id: attempt.id, href: attemptLink(attempt), body: attempt.failureSummary ?? 'Execution failed without a summary.' })),
+    ...data.queue.staleAttempts.map(attempt => ({ type: 'stale', goal: goalForAttempt(attempt), title: attempt.executionObjective, status: 'stale', id: attempt.id, href: attemptLink(attempt), body: 'The recorded lease or heartbeat needs host inspection.' })),
     ...data.queue.dispatchable.map(item => {
       const goal = data.goals.find(goal => goal.id === item.goalId);
-      return { type: 'dispatchable', title: goal?.title ?? item.goalId, status: 'ready', id: item.activationId, href: goal ? `${goalPath(goal.projectId, goal.id)}?plan=true` : undefined, body: 'An activation is ready to review and reserve.' };
+      return { type: 'dispatchable', goal, title: goal?.title ?? item.goalId, status: 'ready', id: item.activationId, href: goal ? `${goalPath(goal.projectId, goal.id)}?plan=true` : undefined, body: 'An activation is ready to review and reserve.' };
     }),
   ].filter(item => !filter || item.type === filter);
   return <div className="standard-view"><ViewHeader eyebrow="Decision queue" title="What needs attention now" copy="Exceptions, evidence, and decisions that need an operator." action={<Link className="button button-primary" to={`${projectPath(projectId, "goals")}/new`}><Icon name="plus" />New goal</Link>} />
@@ -57,7 +57,9 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
     {filter === "failed" && <p className="attention-guidance">Only unresolved failures from current activation runs appear here. Retried and settled attempts remain in <Link to={projectPath(projectId, "runs")}>run history</Link>.</p>}
     {!validFilter && <section className="empty-state"><h2>Unknown attention filter</h2><p>Choose a category above or return to all attention.</p><Link className="button button-secondary" to={projectPath(projectId, "now")}>Show all attention</Link></section>}
     {validFilter && <div className="attention-list">{(!filter || filter === "blocked") && blocked.map(entry => <GoalBlockerCard key={entry.goal.id} data={data} entry={entry} />)}{records.map(item => {
-      const body = <><i className={item.type}/><div><span>{item.type}</span><h2>{item.title}</h2><p>{item.body}</p></div><StatusBadge value={item.status}/>{item.href && <Icon name="arrow"/>}</>;
+      const project = data.projects.find(project => project.id === item.goal?.projectId);
+      const context = data.executionContexts.find(context => context.id === project?.executionContextId);
+      const body = <><i className={item.type}/><div><span>{item.type}</span><h2>{item.title}</h2><p>{context?.name ?? "Unknown context"} · {project?.name ?? "Unknown project"}</p>{item.type === "stale" && <p>Goal: {item.goal?.title ?? "Unknown goal"}</p>}<p>{item.body}</p></div><StatusBadge value={item.status}/>{item.href && <Icon name="arrow"/>}</>;
       return item.href ? <Link key={`${item.type}-${item.id}`} to={item.href}>{body}</Link> : <article key={`${item.type}-${item.id}`}>{body}</article>;
     })}{!records.length && ((filter && filter !== "blocked") || !blocked.length) && <div className="empty-state"><Icon name={needsSetup ? "target" : "check"}/><h2>{needsSetup ? "No projects in this scope" : filter === "blocked" ? "No goal blockers" : filter ? "No matching attention" : "Queue clear"}</h2><p>{needsSetup ? "Add a project to organize outcomes, then create a goal and choose its workflow." : filter === "blocked" ? "No blocked activations or unresolved goal errors in this scope." : "Nothing in this category needs intervention."}</p>{needsSetup && <Link className="button button-secondary" to="/settings">Set up a project</Link>}</div>}</div>}
   </div>;
