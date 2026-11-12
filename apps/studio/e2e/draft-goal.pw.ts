@@ -8,6 +8,9 @@ test('prepares an existing draft goal before activation', async ({ page, scenari
   await page.getByRole('textbox', { name: 'Specification', exact: true }).fill('Initial acceptance');
   await page.getByRole('combobox', { name: 'Sendero', exact: true }).selectOption(scenario.prerequisiteVersionId);
   await page.getByRole('button', { name: 'Create goal', exact: true }).click();
+  // A click can finish before the action commits. Observe the confirmed
+  // destination before inspecting the persisted goal.
+  await expect(page.getByRole('button', { name: 'Edit goal', exact: true })).toBeVisible();
   const goal = state().goals.find(item => item.title === title)!;
   expect(goal.status).toBe('draft');
   await page.getByRole('button', { name: 'Edit goal', exact: true }).click();
