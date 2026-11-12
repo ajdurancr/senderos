@@ -40,6 +40,8 @@ export function ReviewsView({ data }: { data: MissionControlData }) {
   };
   const runs = new Map(data.runs.map(run => [run.id, run]));
   const goals = new Map(data.goals.map(goal => [goal.id, goal]));
+  const projects = new Map(data.projects.map(project => [project.id, project]));
+  const contexts = new Map(data.executionContexts.map(context => [context.id, context]));
   return <div className="standard-view">
     <header className="view-header"><div><span>Quality gate</span><h1>Evidence reviews</h1><p>Make decisions against concrete proof attached to the exact execution that produced it.</p></div></header>
     <nav className="activity-pagination" aria-label="Review status filters">{filters.map(filter =>
@@ -55,9 +57,13 @@ export function ReviewsView({ data }: { data: MissionControlData }) {
     </nav>
     <div className="review-grid">{page.items.map(attempt => {
       const goal = goals.get(runs.get(attempt.runId)?.goalId ?? '');
+      const project = projects.get(goal?.projectId ?? '');
+      const context = contexts.get(project?.executionContextId ?? '');
       return <article key={attempt.id} data-attempt-id={attempt.id}>
         <header><StatusBadge value={status(attempt)} /><ReviewTimestamp snapshot={attempt.snapshot} updatedAt={attempt.updatedAt} asOf={data.asOf} /></header>
-        <h2>{attempt.executionObjective}</h2><p>{attempt.snapshot.evidence?.length ?? 0} evidence items · {attempt.harness}</p>
+        <h2>{attempt.executionObjective}</h2>
+        <p className="review-ownership">{context?.name ?? 'Unknown context'} · {project?.name ?? 'Unknown project'}<br />Goal: {goal?.title ?? 'Unknown goal'}</p>
+        <p>{attempt.snapshot.evidence?.length ?? 0} evidence items · {attempt.harness}</p>
         <Link to={attemptPath(goal?.projectId ?? 'unknown', attempt.id)}>Inspect evidence <Icon name="arrow" /></Link>
       </article>;
     })}{!page.items.length && <div className="empty-state"><Icon name="check" /><h2>{records.length ? 'No reviews match this selection' : 'No evidence to review'}</h2><p>{records.length ? 'Choose another review status or return to the latest reviews. All recorded proof remains available in Runs.' : 'Evidence and review decisions will appear here after an attempt reports its results.'}</p>{records.length > 0 && <Link className="button button-secondary" to={destination('')}>Show all reviews</Link>}<Link className="button button-secondary" to="/runs">View runs</Link></div>}</div>

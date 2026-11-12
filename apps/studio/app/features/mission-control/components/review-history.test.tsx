@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, expect, it } from 'vitest';
 import { missionControlFixture as fixture } from '../../../test-support/mission-control-fixture';
@@ -33,4 +33,28 @@ it('offers explicit recovery for a valid empty filter', () => {
   show('/reviews?reviewStatus=rejected');
   expect(screen.getByRole('heading', { name: 'No reviews match this selection' })).toBeTruthy();
   expect(screen.getByRole('link', { name: 'Show all reviews' }).getAttribute('href')).toBe('/reviews#review-history');
+});
+
+it('attributes duplicate objectives through their own run, goal, project and context', () => {
+  const owned = {
+    ...fixture,
+    executionContexts: [...fixture.executionContexts, { ...fixture.executionContexts[0]!, id: 'context-2', name: 'Context Two' }],
+    projects: [...fixture.projects, { ...fixture.projects[0]!, id: 'project-2', executionContextId: 'context-2', name: 'Project Two' }],
+    goals: [...fixture.goals, { ...fixture.goals[0]!, id: 'goal-2', projectId: 'project-2', title: 'Second goal' }],
+    runs: [...fixture.runs, { ...fixture.runs[0]!, id: 'run-2', goalId: 'goal-2' }],
+    attempts: [...fixture.attempts, { ...fixture.attempts[0]!, id: 'attempt-2', runId: 'run-2' }],
+  };
+  render(<RouterProvider router={createMemoryRouter([{ path: '*', element: <ReviewsView data={owned} /> }], { initialEntries: ['/reviews'] })} />);
+  for (const [id, context, project, goal] of [['1', 'Context One', 'Project One', 'Ship feature'], ['2', 'Context Two', 'Project Two', 'Second goal']]) {
+    const card = document.querySelector(`article[data-attempt-id="attempt-${id}"]`)! as HTMLElement;
+    expect(within(card).getByRole('heading').textContent).toBe('Deliver');
+    expect(card.querySelector('.review-ownership')?.textContent).toBe(`${context} · ${project}Goal: ${goal}`);
+    expect(within(card).getByRole('link', { name: 'Inspect evidence' }).getAttribute('href')).toBe(`/projects/project-${id}/runs/attempts/attempt-${id}`);
+  }
+});
+it('shows explicit missing ownership without borrowing another record’s identity', () => {
+  const missing = { ...fixture, runs: [], goals: [], projects: [], executionContexts: [] };
+  render(<RouterProvider router={createMemoryRouter([{ path: '*', element: <ReviewsView data={missing} /> }], { initialEntries: ['/reviews'] })} />);
+  expect(document.querySelector('.review-ownership')?.textContent).toBe('Unknown context · Unknown projectGoal: Unknown goal');
+  expect(screen.getByRole('link', { name: 'Inspect evidence' }).getAttribute('href')).toBe('/projects/unknown/runs/attempts/attempt-1');
 });
