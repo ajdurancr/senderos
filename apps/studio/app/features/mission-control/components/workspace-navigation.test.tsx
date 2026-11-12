@@ -16,7 +16,7 @@ describe("workspace navigation", () => {
   it("keeps agents and Senderos searchable from the keyboard command palette", () => {
     inRouter(<CommandPalette data={data} />);
     fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-    const input = screen.getByPlaceholderText("Find a goal, attempt, or action…");
+    const input = screen.getByPlaceholderText("Find a name, goal/attempt ID, or action…");
     fireEvent.change(input, { target: { value: "agents" } });
     expect(screen.getByRole("link", { name: /Manage agents/ }).getAttribute("href")).toBe("/agents");
     fireEvent.change(input, { target: { value: "Senderos" } });

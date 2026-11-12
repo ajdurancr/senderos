@@ -434,6 +434,7 @@ fieldset.settings-fields { min-width: 0; padding: 0; border: 0; }
 .command-dialog > header button { min-height: 32px; padding: 5px 8px; font-size: var(--text-label); }
 .command-results { min-height: 0; padding: 8px; overflow-y: auto; }
 .command-results > p { padding: 5px 10px; color: var(--text-muted); font-size: var(--text-label); text-transform: uppercase; letter-spacing: .08em; }
+.command-guidance { padding: 5px 10px 10px; color: var(--text-muted); font-size: var(--text-label); }
 .command-results > a { padding: 13px; border-radius: 7px; display: flex; align-items: center; gap: 12px; }
 .command-results > a:hover { background: var(--studio-raised); }
 .command-results > a > svg { color: var(--accent); }

@@ -66,22 +66,24 @@ export function CommandPalette({ data, projectId }: { data: MissionControlData; 
     { label: "Open database settings", detail: "Configuration", href: projectPath(projectId, "settings"), icon: "settings" },
     { label: "Manage agents", detail: "Settings · Roles and instructions", href: "/agents", icon: "spark" },
     { label: "Manage Senderos", detail: "Settings · Workflow definitions", href: data.senderoGraphs[0] ? senderoPath(data.senderoGraphs[0].sendero.id) : "/senderos", icon: "nodes" },
-    ...data.goals.map((goal) => ({ label: goal.title, detail: `Goal · ${goal.status} · ${ownership(goal.projectId)}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
+    ...data.goals.map((goal) => ({ label: goal.title, keywords: goal.id, detail: `Goal · ${goal.status} · ${ownership(goal.projectId)}`, href: goalPath(goal.projectId, goal.id), icon: "target" })),
     ...data.attempts.map((attempt) => { const run=data.runs.find((item)=>item.id===attempt.runId); const goal=data.goals.find((item)=>item.id===run?.goalId); return { label: `Attempt ${attempt.id}`, detail: `${attempt.harness} · ${attempt.status} · ${ownership(goal?.projectId)}`, href: attemptPath(goal?.projectId ?? projectId, attempt.id), icon: "activity" }; }),
   ], [projectId, data]);
-  const matches = items.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 9);
+  const filteredItems = items.filter((item) => `${item.label} ${item.detail} ${"keywords" in item ? item.keywords : ""}`.toLowerCase().includes(query.toLowerCase()));
+  const matches = filteredItems.slice(0, 9);
 
   return <>
     <button disabled={!clientReady} ref={trigger} className="command-trigger" type="button" aria-label="Search or run a command" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="search" /><span>Search or run a command</span><kbd>⌘ K</kbd></button>
     {open && <div className="command-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <section ref={dialog} className="command-dialog" role="dialog" aria-modal="true" aria-label="Command palette">
-        <header><Icon name="search" /><input ref={input} aria-label="Search commands" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a goal, attempt, or action…" /><button className="button button-secondary" type="button" onClick={() => setOpen(false)}>Esc</button></header>
+        <header><Icon name="search" /><input ref={input} aria-label="Search commands" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a name, goal/attempt ID, or action…" /><button className="button button-secondary" type="button" onClick={() => setOpen(false)}>Esc</button></header>
         <div className="command-results">
-          <p>Commands and entities</p>
+          <p role="status">Showing {matches.length} of {filteredItems.length} matches in loaded Studio data</p>
+          {filteredItems.length > matches.length && <div className="command-guidance">Refine by name, context, project, or goal/attempt ID.</div>}
           {matches.map((item) => <Link key={`${item.href}-${item.label}`} to={item.href} aria-label={`${item.label} · ${item.detail}`} onClick={() => setOpen(false)}><Icon name={item.icon} /><span><strong>{item.label}</strong><small>{item.detail}</small></span><Icon name="arrow" /></Link>)}
-          {matches.length === 0 && <div className="empty-command">Nothing matches that query.</div>}
+          {matches.length === 0 && <div className="empty-command">Nothing matches in the loaded Studio data.</div>}
         </div>
-        <footer><span>Select a result to open it</span><span>Searches persisted Studio entities</span></footer>
+        <footer><span>Select a result to open it</span><span>Searches loaded Studio data only</span></footer>
       </section>
     </div>}
   </>;
