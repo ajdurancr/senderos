@@ -464,3 +464,15 @@ that guard. Keyboard activation of the rendered reload button performs a fresh
 scoped document read, with persisted identities and unpublished versions checked
 before another explicit action. This adds no mutation idempotency or publishing
 semantics and does not establish a native database correction.
+
+## Agent save confirmation recovery
+
+Agent creation and editing reuse the existing PR95 uncontrolled draft and shared
+navigation boundary. Transport loss keeps the editor mounted and retains reviewed
+input without claiming the write was unapplied. Pending and uncertain saves block
+repeat submission, Cancel and form reset; fragment navigation cannot clear that
+uncertainty. The rendered reload button performs a scoped document read before
+another explicit submission. Existing PR94 committed-create recovery remains
+covered, alongside unapplied creation and committed/unapplied editing on desktop
+and mobile. These journeys do not change pinned published instructions, agent
+mutation contracts or the retained native and parent acceptance gates.
