@@ -144,7 +144,11 @@ or one from another scope returns to the latest page with an explanation.
 
 An exact link to an older attempt opens a page containing it. Selecting an attempt
 keeps the history position and focuses its recorded detail, including evidence
-and host recovery observations. The page count is separate from the complete
+and host recovery observations. **Recorded result** shows the host-reported outcome
+and summary in both Runs and the linked execution inspector. Expand **Complete
+recorded result** for all stored result fields. Result content is separate from
+the durable attempt status and review decision; a reported outcome does not
+establish acceptance. Missing or unreadable results are identified explicitly. The page count is separate from the complete
 scope total. Paging does not change attempts or establish that a worker stopped.
 
 This bounds the visible list. Studio still loads the complete scoped operational
