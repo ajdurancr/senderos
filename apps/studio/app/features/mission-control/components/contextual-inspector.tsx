@@ -1,3 +1,4 @@
+import { AttemptResult } from './attempt-result';
 import { AgentDefinition, pinnedAgent } from './agent-definition';
 import { RetryLineage } from "./retry-lineage";
 import { useState } from "react";
@@ -167,6 +168,7 @@ export function ContextualInspector({
           <div><dt>Working path</dt><dd className="mono">{attempt?.workingPath ?? "Not recorded"}</dd></div>
         </dl>
       </details>
+      {attempt && <AttemptResult resultJson={attempt.resultJson} />}
       {attempt && <section className="inspector-section"><HostExecutionRecords data={data} attempt={attempt} /></section>}
       <section className="inspector-section event-preview">
         <header>

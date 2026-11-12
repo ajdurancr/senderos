@@ -1,3 +1,4 @@
+import { AttemptResult } from './attempt-result';
 import { useState } from "react";
 import { GoalCreation } from "./goal-creation";
 import { SettingsDraftBoundary } from "./settings-draft-boundary";
@@ -145,6 +146,7 @@ function RunDetail({ data, attemptId }: { data: MissionControlData; attemptId?: 
     <RetryLineage data={data} attempt={attempt} surface="runs" />
     <div className="detail-summary"><span>Evidence</span><strong>{snapshot.evidence?.length ?? 0}</strong><span>Review</span><strong>{snapshot.review?.status?.replaceAll("_", " ") ?? "none"}</strong></div>
     <EvidenceRecords asOf={data.asOf} snapshot={snapshot} />
+    <AttemptResult resultJson={attempt.resultJson} />
     <details className="inspector-disclosure"><summary>Technical details</summary>
     <dl className="property-list">
       <div><dt>Harness</dt><dd>{attempt.harness}</dd></div>
