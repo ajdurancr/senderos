@@ -54,3 +54,8 @@ host also supplies its current ownership token.
 Reclaim rotates the fence; stale reports fail. Expiry alone never proves process
 death. `resume` only returns information, and `abandon` does not kill a process.
 Inspect host, session, workspace, and ownership before using recorded resume text.
+
+Studio also shows recorded resume text in the selected attempt's **Host and session
+records**, from Runs or the execution inspector. It is inert host-reported text,
+not an action or permission to resume. Check the current status, cancellation,
+recovery observation and owning session before using it on the host.

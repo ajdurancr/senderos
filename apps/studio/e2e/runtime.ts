@@ -190,14 +190,14 @@ if (command === 'hold-read-lock') {
   const claim = await host.commands.attempts.claim({ attemptId: id, ownerId: hostId, leaseSeconds: 600 });
   writeFileSync(join(runtime, `${id}.host.json`), JSON.stringify({ token: claim.token, workingPath, context: project!.executionContextId }), { mode: 0o600 });
   result = { eligible: preflight.eligible, claimed: claim.claimed, started: claim.started };
-} else if (['host-start', 'host-complete', 'host-test-evidence', 'host-cancel', 'host-fail', 'host-reconcile-unknown', 'host-reconcile-missing', 'host-reconcile-active'].includes(command ?? '') && id) {
+} else if (['host-start', 'host-start-with-resume', 'host-complete', 'host-test-evidence', 'host-cancel', 'host-fail', 'host-reconcile-unknown', 'host-reconcile-missing', 'host-reconcile-active'].includes(command ?? '') && id) {
   const stored = JSON.parse(readFileSync(join(runtime, `${id}.host.json`), 'utf8')) as { token: string; workingPath: string; context: string };
   const host = createSenderos({ executionContextId: stored.context });
   if (command.startsWith('host-reconcile-')) {
     const outcome = command.replace('host-reconcile-', '') as 'unknown' | 'missing' | 'active';
     result = await host.commands.attempts.reconcile({ attemptId: id, ownerId: `simulated-${id}`, token: stored.token, outcome, details: `Deterministic fixture inspection: ${outcome}`, externalSessionId: `simulated-worker-${id}` });
   }
-  if (command === 'host-start') result = await host.commands.attempts.start({ attemptId: id, token: stored.token, externalSessionId: `simulated-worker-${id}`, parentSessionId: 'simulated-e2e-controller', workingPath: stored.workingPath });
+  if (command === 'host-start' || command === 'host-start-with-resume') result = await host.commands.attempts.start({ attemptId: id, token: stored.token, externalSessionId: `simulated-worker-${id}`, parentSessionId: 'simulated-e2e-controller', workingPath: stored.workingPath, ...(command === 'host-start-with-resume' ? { resumeCommand: `synthetic-host resume --session simulated-worker-${id} --note '<untrusted-host-text>'` } : {}) });
   if (command === 'host-complete') result = await host.commands.attempts.update(id, { token: stored.token, status: 'succeeded', result: { outcome: 'accepted', summary: 'Deterministic external execution fixture finished.' } });
   if (command === 'host-test-evidence') result = await host.commands.attempts.recordEvidence({ attemptId: id, token: stored.token, kind: 'test', label: 'Host test report', url: 'https://example.com/e2e/host-tests' });
   if (command === 'host-fail') result = await host.commands.attempts.update(id, { token: stored.token, status: 'failed', failureSummary: 'Deterministic failed worker fixture' });
