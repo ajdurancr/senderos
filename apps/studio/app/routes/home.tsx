@@ -85,9 +85,25 @@ export function shouldRevalidate({ actionResult, defaultShouldRevalidate }: Shou
 
 export default function Home() {
   const loaded = useLoaderData<typeof loader>();
-  const pending = useNavigation().state !== "idle";
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
   const feedback = useActionData<typeof action>();
   const location = useLocation();
+  // A later submission consumes earlier saved-query feedback for this page.
+  // Fragment/history navigation can clear actionData, with or without a loader
+  // read, but cannot turn that historical success into confirmation of an edit.
+  // Only another confirmed redirect (or a new document) renews the feedback.
+  const consumedConfirmation = useRef(false);
+  const confirmationSubmission = useRef(false);
+  if (navigation.formData) {
+    consumedConfirmation.current = true;
+    confirmationSubmission.current = true;
+  }
+  if (feedback) consumedConfirmation.current = true;
+  if (!pending && confirmationSubmission.current) {
+    confirmationSubmission.current = false;
+    if (!feedback) consumedConfirmation.current = false;
+  }
   const scope = `${location.pathname}${location.search}`;
   const [refreshed, setRefreshed] = useState<{ base: typeof loaded; scope: string; data: typeof loaded }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -144,7 +160,7 @@ export default function Home() {
   return (
     <StudioLayout data={data} pending={pending} route={route} search={search}>
       <SnapshotStatus asOf={data.asOf} pending={pending} refreshing={refreshing} error={refreshError} onRefresh={refreshSnapshot} />
-      {savedMessage && !feedback && !pending && <div className="action-feedback" role="status">{savedMessage}</div>}
+      {savedMessage && !consumedConfirmation.current && !feedback && !pending && <div className="action-feedback" role="status">{savedMessage}</div>}
       {feedback && !pending && !(!feedback.ok && ['register-context', 'register-project'].includes(feedback.intent)) && <div className={`action-feedback ${feedback.ok ? "" : "error"}`} role={feedback.ok ? "status" : "alert"}>{feedback.message}</div>}
       <MissionControlOverview data={filteredData} route={route} search={search} />
     </StudioLayout>

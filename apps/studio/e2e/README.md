@@ -342,3 +342,6 @@ actual scoped GET followed by authoritative database readback. The existing
 `interrupted-mutation.pw.ts` committed-create control now exercises the inline
 recovery surface; PR95 navigation, known rejection and explicit discard checks
 remain in `agent-draft-navigation.pw.ts`. No request is automatically replayed.
+
+
+A later submission consumes earlier saved-query success feedback for the mounted page; fragment navigation and Back/Forward cannot revive historical success when action feedback disappears without readback. New confirmed redirects and explicit persisted-state document readback retain success feedback. A history loader read alone does not revive historical success while the editor remains uncertain. `save-confirmation` coverage checks pending and uncertain edits, history navigation and actual keyboard/click reload controls at desktop and mobile widths, with persisted-state assertions. This changes feedback only; uncertainty and no-replay gates remain intact.
