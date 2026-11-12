@@ -476,3 +476,6 @@ another explicit submission. Existing PR94 committed-create recovery remains
 covered, alongside unapplied creation and committed/unapplied editing on desktop
 and mobile. These journeys do not change pinned published instructions, agent
 mutation contracts or the retained native and parent acceptance gates.
+
+
+A later submission consumes earlier saved-query success feedback for the mounted page; fragment navigation and Back/Forward cannot revive historical success when action feedback disappears without readback. New confirmed redirects and explicit persisted-state document readback retain success feedback. A history loader read alone does not revive historical success while the editor remains uncertain. `save-confirmation` coverage checks pending and uncertain edits, history navigation and actual keyboard/click reload controls at desktop and mobile widths, with persisted-state assertions. This changes feedback only; uncertainty and no-replay gates remain intact.
