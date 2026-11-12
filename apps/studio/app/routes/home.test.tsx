@@ -108,7 +108,7 @@ describe("home route", () => {
 
 
 describe('draft save transport recovery', () => {
-  it.each(['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
+  it.each(['replace-sendero-draft', 'update-goal', 'update-project', 'register-context', 'register-project', 'evidence', 'review', 'set-activation-budget', 'set-retry-budget', 'create-goal'])('keeps %s edits mounted when a save response is lost without claiming it was not applied', async (intent) => {
     const form = new FormData(); form.set('intent', intent);
     const result = await clientAction({ url: new URL('http://localhost/senderos/draft'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/senderos/draft', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
@@ -124,7 +124,7 @@ describe('draft save transport recovery', () => {
     expect(shouldRevalidate({ actionResult: { ok: false }, defaultShouldRevalidate: true } as Parameters<typeof shouldRevalidate>[0])).toBe(true);
   });
   it('does not convert other action failures to graph-save feedback', async () => {
-    const form = new FormData(); form.set('intent', 'create-goal');
+    const form = new FormData(); form.set('intent', 'create-agent');
     await expect(clientAction({ url: new URL('http://localhost/goals/new'), params: {}, pattern: '*', context: new RouterContextProvider(), request: new Request('http://localhost/goals/new', { method: 'POST', body: form }),
       serverAction: async () => { throw new TypeError('Failed to fetch'); },
     } as Parameters<typeof clientAction>[0])).rejects.toThrow('Failed to fetch');

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GoalCreation } from "./goal-creation";
 import { SettingsDraftBoundary } from "./settings-draft-boundary";
 import { RetryLineage } from "./retry-lineage";
 import { GoalActivations, HostExecutionRecords, executionPhase } from "./execution-records";
@@ -7,7 +8,7 @@ import { ReviewTimestamp } from "./review-timestamp";
 import { LocalRegistration } from "./local-registration";
 import { ProjectSettings } from "./project-settings";
 import { AgentAuthoring } from "./agent-authoring";
-import { Form, useNavigation, useSearchParams, useLocation } from "react-router";
+import { useSearchParams, useLocation } from "react-router";
 
 import { DurableLink as Link } from "../../../components/durable-link";
 import { StatusBadge } from "../../../components/status-badge";
@@ -64,12 +65,11 @@ export function AttentionView({ data, filter, projectId }: { data: MissionContro
 }
 
 export function GoalsView({ data, projectId, create }: { data: MissionControlData; projectId?: string; create: boolean }) {
-  const pending = useNavigation().state !== "idle";
+  const location = useLocation();
   const [search] = useSearchParams();
   const contextId = search.get("context");
   const projects = data.projects.filter((project) => !contextId || project.executionContextId === contextId);
   const goals = data.goals.filter((goal) => !projectId || goal.projectId === projectId);
-  const hasPublishedSendero = data.senderoGraphs.some((graph) => graph.version.status === "published");
   return <div className="standard-view">
     <ViewHeader eyebrow="Outcome inventory" title="Goals" copy="Requested outcomes and their execution progress." action={!create && <Link className="button button-primary" to={`${projectPath(projectId, "goals")}/new${contextId ? `?context=${encodeURIComponent(contextId)}` : ""}`}><Icon name="plus" /> New goal</Link>} />
     {create && !projectId && <section className="create-panel" aria-labelledby="choose-goal-project">
@@ -81,15 +81,7 @@ export function GoalsView({ data, projectId, create }: { data: MissionControlDat
       {!projects.length && <p>{contextId ? "No projects in this execution context. Add one in Settings or choose another context." : "Add a project in Settings before creating a goal."}</p>}
       {!projects.length && <Link className="button button-secondary" to="/settings">Set up a project</Link>}
     </section>}
-    {create && projectId && <Form className="create-panel" method="post">
-      <input type="hidden" name="intent" value="create-goal" /><input type="hidden" name="projectId" value={projectId} />
-      <header><div><span>New goal</span><h2>Define the outcome before dispatch.</h2></div><Link className="button button-secondary" to={projectPath(projectId, "goals")}>Cancel</Link></header>
-      <label>Title<input name="title" placeholder="Ship a verifiable outcome" required /></label>
-      <div className="form-row"><label>Category<input name="kind" defaultValue="task" required list="goal-kinds" /><datalist id="goal-kinds"><option value="task" /><option value="research" /><option value="writing" /><option value="feature" /><option value="bugfix" /><option value="maintenance" /></datalist></label>
-        <label>Sendero<select name="senderoVersionId">{data.senderoGraphs.filter((graph) => graph.version.status === "published").map((graph) => <option key={graph.version.id} value={graph.version.id}>{graph.sendero.name} · v{graph.version.version}</option>)}</select></label></div>
-      <label>Specification<textarea name="specText" rows={5} placeholder="Expected behavior, constraints, and acceptance criteria" /></label>
-      <footer><span>{hasPublishedSendero ? "Creation is durable. Dispatch remains a separate decision." : "Publish a Sendero before creating a goal."}</span><button className="button button-primary" disabled={pending || !hasPublishedSendero}>{pending ? "Creating…" : "Create goal"}</button></footer>
-    </Form>}
+    {create && projectId && <GoalCreation key={`${projectId}:${location.search}`} projectId={projectId} graphs={data.senderoGraphs} />}
     <div className="entity-table"><header><span>Goal</span><span>State</span><span>Execution</span><span>Updated</span></header>{goals.map((goal) => {
       const execution = goalExecution(data, goal.id);
       const project = data.projects.find((item) => item.id === goal.projectId);

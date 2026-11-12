@@ -4,11 +4,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useExecutionSubmission } from './use-execution-submission';
 
 afterEach(cleanup);
-function Example({ intent }: { intent: 'start' | 'dispatch-plan' | 'cancel-goal' }) {
+function Example({ intent }: { intent: 'start' | 'dispatch-plan' | 'cancel-goal' | 'create-goal' }) {
   const { pending, uncertain, submit } = useExecutionSubmission(intent);
   return <Form method="post" aria-label="Execution action" onSubmit={submit}><button disabled={pending || uncertain}>Submit</button></Form>;
 }
-for (const intent of ['start', 'dispatch-plan', 'cancel-goal'] as const) {
+for (const intent of ['start', 'dispatch-plan', 'cancel-goal', 'create-goal'] as const) {
   it(`blocks repeated ${intent} submissions before and during navigation, then permits a rejected action to be corrected`, async () => {
     let finish!: (value: unknown) => void;
     const action = vi.fn(() => new Promise(resolve => { finish = resolve; }));
@@ -17,9 +17,10 @@ for (const intent of ['start', 'dispatch-plan', 'cancel-goal'] as const) {
     const form = screen.getByRole('form');
     fireEvent.submit(form); fireEvent.submit(form);
     await waitFor(() => expect(action).toHaveBeenCalledOnce());
-    expect(screen.getByRole('button')).toHaveProperty('disabled', true);
+    await waitFor(() => expect(screen.getByRole('button')).toHaveProperty('disabled', true));
     fireEvent.submit(form); expect(action).toHaveBeenCalledOnce();
     finish({ ok: false, intent, message: 'Reviewed state changed' });
+    await waitFor(() => expect(router.state.actionData?.['0']).toMatchObject({ ok: false, intent }));
     await waitFor(() => expect(screen.getByRole('button')).toHaveProperty('disabled', false));
     fireEvent.submit(form);
     await waitFor(() => expect(action).toHaveBeenCalledTimes(2));

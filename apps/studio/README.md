@@ -125,3 +125,16 @@ other non-web references visible as plain text under **Recorded reference**.
 Studio does not open or fetch those references. HTTP and HTTPS evidence retains
 its explicit **Open evidence** link. Terminal proof stays read-only, and viewing
 or reloading it does not change the recorded evidence.
+
+## Recover a new goal draft
+
+New goal inputs stay in the editor after a rejected save. Scope changes and
+browser navigation warn before discarding unsaved input; **Discard goal draft**
+clears the local form without creating a goal. While creation is pending, the
+submitted fields stay locked so they still describe the request in progress.
+
+If confirmation is lost, Studio keeps the input and blocks repeated creation.
+Use **Reload persisted goals** and inspect the current project's goal list before
+creating again: the first request may already have created a goal. Reload reads
+saved state, discards the local draft, and never replays creation. Creating a goal
+still leaves it in draft; activation and dispatch remain separate decisions.
