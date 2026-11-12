@@ -22,7 +22,13 @@ for (const outcome of ['failed', 'canceled', 'executing', 'succeeded']) test(`le
     await db.update(runs).set({ status: outcome }).where(eq(runs.id, run.id));
     const step = graph.steps[0]!;
     const selected = await createRunAttempt({ home, runId: run.id, attemptNumber: 1000, agentId: step.agentId, transitionId: step.id, executionObjective: 'Latest numbered retry', harness: 'custom-tool', status: outcome === 'executing' ? 'running' : outcome as 'failed' | 'canceled' | 'succeeded' });
-    for (let number = 1; number < total; number++) await db.insert(runAttempts).values({ ...selected, id: `retained-${number}`, attemptNumber: number, status: 'failed', transitionId: number % 2 ? graph.steps[1]!.id : step.id, retryFromAttemptId: number > 1 ? `retained-${number - 1}` : null, resultJson: JSON.stringify({ synthetic: 'Retained legacy payload '.repeat(500) }), createdAt: '2099-01-01T00:00:00.000Z' });
+    // These retained rows are fixture data, not lifecycle commands. Seed them in
+    // one statement so disk commits do not consume the migration test's budget.
+    const retained = Array.from({ length: total - 1 }, (_, index) => {
+      const number = index + 1;
+      return { ...selected, id: `retained-${number}`, attemptNumber: number, status: 'failed' as const, transitionId: number % 2 ? graph.steps[1]!.id : step.id, retryFromAttemptId: number > 1 ? `retained-${number - 1}` : null, resultJson: JSON.stringify({ synthetic: 'Retained legacy payload '.repeat(500) }), createdAt: '2099-01-01T00:00:00.000Z' };
+    });
+    if (retained.length) await db.insert(runAttempts).values(retained);
     const before = await db.select().from(runAttempts).orderBy(asc(runAttempts.id));
     const responses: ResultSet[] = [];
     const recovered = await atomic(home, async () => {
