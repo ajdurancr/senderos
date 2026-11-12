@@ -78,6 +78,13 @@ export function HostExecutionRecords({ data, attempt }: { data: MissionControlDa
       <div><dt>Recovery</dt><dd>{attempt.recoveryOutcome ?? 'No observation'}</dd></div>
       <div><dt>Recovery observed</dt><dd>{attempt.recoveryObservedAt ?? 'Not recorded'}</dd></div>
     </dl>
+    <section aria-label="Recorded resume guidance">
+      <h4>Recorded resume command</h4>
+      {attempt.resumeCommand ? <>
+        <p>Host-reported text for inspection only. Inspect the host, session, workspace and current ownership before using it. This record does not authorize resuming; check current status, cancellation and recovery guidance first. Senderos does not execute this text.</p>
+        <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{attempt.resumeCommand}</pre>
+      </> : <p>No resume command recorded.</p>}
+    </section>
     {preflight ? <details><summary>Recorded preflight</summary><dl className="property-list">{['eligible', 'checkedAt', 'blockers', 'requiredCapabilities', 'declaredCapabilities', 'missingCapabilities', 'declarationOnly'].map(key => key in preflight ? <div key={key}><dt>{key.replace(/([A-Z])/g, ' $1')}</dt><dd>{Array.isArray(preflight[key]) ? (preflight[key] as unknown[]).filter(value => typeof value === 'string').join(', ') || 'None' : String(preflight[key])}</dd></div> : null)}</dl>{Boolean(preflight.workspace) && typeof preflight.workspace === "object" && <dl className="property-list">{Object.entries(preflight.workspace as Record<string, unknown>).filter(([key]) => ["reference", "workingPath", "path", "available", "verifiedAt"].includes(key)).map(([key, value]) => <div key={key}><dt>Workspace {key}</dt><dd>{String(value ?? "Not recorded")}</dd></div>)}</dl>}</details> : <p>No preflight snapshot recorded for this attempt.</p>}
     {(recoveryDetails || recovery) && <p>Recovery observation: {recoveryDetails ?? String((recovery!.payload as Record<string, unknown>).details ?? (recovery!.payload as Record<string, unknown>).reason ?? attempt.recoveryOutcome ?? 'Recorded')}</p>}
     </details>
