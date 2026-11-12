@@ -1,1 +1,1 @@
-export { action, clientAction, shouldRevalidate, default, loader, meta } from "./home";
+export { action, clientAction, shouldRevalidate, default, loader, meta, headers } from "./home";

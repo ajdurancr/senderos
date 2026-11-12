@@ -7,9 +7,14 @@ import { missionControlFixture } from "../test-support/mission-control-fixture";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-import Home, { meta, clientAction, shouldRevalidate } from "./home";
+import Home, { meta, headers, clientAction, shouldRevalidate } from "./home";
+import { headers as studioHeaders } from "./studio";
 
 describe("home route", () => {
+  it('keeps embedded database snapshots and revisions out of the document cache', () => {
+    expect(new Headers(headers()).get('Cache-Control')).toBe('no-store');
+    expect(new Headers(studioHeaders()).get('Cache-Control')).toBe('no-store');
+  });
   it("identifies an old snapshot and refreshes it without discarding unsaved inputs", async () => {
     const refresh = vi.fn().mockResolvedValue(Response.json({ ok: true, data: { ...missionControlFixture, asOf: Date.now() } }));
     vi.stubGlobal('fetch', refresh);

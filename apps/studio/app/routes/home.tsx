@@ -17,6 +17,12 @@ export function meta() {
   ];
 }
 
+// These documents embed a database snapshot and its mutation revision. History
+// must read them again rather than reuse pre-save HTML from the HTTP cache.
+export function headers() {
+  return { 'Cache-Control': 'no-store' };
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   return await missionControlData(request);
 }
