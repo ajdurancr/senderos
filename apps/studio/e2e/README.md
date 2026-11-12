@@ -364,3 +364,5 @@ and compare complete persisted state after a document reload. Existing mutation
 and recovery assertions remain unchanged. These controls establish a fixture
 readiness boundary; they do not diagnose or clear historical event-count or
 native SQLite failures.
+
+Review ownership journeys use duplicate attempt objectives across two isolated contexts. They verify context, project and goal attribution before opening exact evidence by keyboard and click, browser Back, scoped document reload, complete persisted-state equality and desktop/mobile screenshots. These are read-only inspection checks; they do not execute hosts or make review decisions.

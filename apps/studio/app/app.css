@@ -363,6 +363,7 @@ fieldset.settings-fields { min-width: 0; padding: 0; border: 0; }
 .review-grid header, .agent-grid header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--text-muted); font-size: var(--text-meta); }
 .review-grid h2, .agent-grid h2 { font-size: var(--text-title); overflow-wrap: anywhere; margin: 16px 0 6px; }
 .review-grid p, .agent-grid p { color: var(--text-muted); font-size: var(--text-body); line-height: var(--leading-body); }
+.review-ownership { overflow-wrap: anywhere; }
 .review-grid article > a { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: var(--text-body); }
 .review-grid article > a svg { width: 16px; height: 16px; }
 .agent-grid footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--studio-border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--text-muted); font-size: var(--text-meta); }
