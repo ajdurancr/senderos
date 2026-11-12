@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router';
+import { createMemoryRouter, RouterProvider, useActionData, useNavigation } from 'react-router';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import Home from './home';
 import { missionControlFixture } from '../test-support/mission-control-fixture';
@@ -32,10 +32,17 @@ it.each([{ selection: 'nodes/node-agent', label: 'Node label', original: 'Agent'
   expect(action).not.toHaveBeenCalled();
 });
 
-function setup(kind: 'node' | 'edge', action = vi.fn(async () => ({ ok: false, intent: `update-sendero-${kind}`, message: 'Rejected draft' }))) {
+function setup(kind: 'node' | 'edge', action = vi.fn(async () => ({ ok: false, intent: `update-sendero-${kind}`, message: 'Rejected draft' })), onConfirmedRender?: () => void) {
   let data = { ...missionControlFixture, senderoGraphs: missionControlFixture.senderoGraphs.map(graph => ({ ...graph, revision: 'reviewed', version: { ...graph.version, status: 'draft' as const } })) };
   const path = `/senderos/sendero-1/${kind === 'node' ? 'nodes/node-agent' : 'edges/edge-1'}`;
-  const router = createMemoryRouter([{ path: '*', loader: () => data, action, element: <Home /> }], { initialEntries: [path] });
+  function ObservedHome() {
+    const feedback = useActionData<{ ok?: boolean }>();
+    const navigation = useNavigation();
+    // Observe committed DOM before the inspector's passive readback effect.
+    useLayoutEffect(() => { if (feedback?.ok && navigation.state === 'idle') onConfirmedRender?.(); });
+    return <Home />;
+  }
+  const router = createMemoryRouter([{ path: '*', loader: () => data, action, element: <ObservedHome /> }], { initialEntries: [path] });
   render(<RouterProvider router={router} />);
   return { router, action, update: () => { data = { ...data, senderoGraphs: data.senderoGraphs.map(graph => ({ ...graph, revision: 'new-revision', nodes: graph.nodes.map(node => ({ ...node, label: 'Latest node' })) })) }; }, form: () => document.querySelector('form.compact-form') as HTMLFormElement };
 }
@@ -100,13 +107,23 @@ it('keeps one guard and prevents sibling graph edits from invalidating a compact
 });
 it('clears the compact draft only after its own confirmed save and readback', async () => {
   const action = vi.fn(async () => ({ ok: true, intent: 'update-sendero-node', message: 'Confirmed node' }));
-  const { router, form, update } = setup('node', action);
+  const confirmedRenders: { label: FormDataEntryValue | null; revision: FormDataEntryValue | null }[] = [];
+  const { router, form, update } = setup('node', action, () => {
+    const values = new FormData(document.querySelector('form.compact-form') as HTMLFormElement);
+    confirmedRenders.push({ label: (document.querySelector('form.compact-form input[name=label]') as HTMLInputElement).value, revision: values.get('expectedRevision') });
+  });
   await screen.findByRole('button', { name: 'Save node' });
   fireEvent.change(within(form()).getByLabelText('Node label'), { target: { value: 'Latest node' } });
   update(); fireEvent.submit(form());
   await screen.findByText('Confirmed node');
-  await waitFor(() => expect(within(form()).getByLabelText('Node label')).toHaveProperty('value', 'Latest node'));
-  expect(new FormData(form()).get('expectedRevision')).toBe('new-revision');
+  // The submitted label already equals the loader value: it cannot establish
+  // that the reviewed revision and draft reset have caught up with readback.
+  expect(confirmedRenders).toContainEqual({ label: 'Latest node', revision: 'reviewed' });
+  await waitFor(() => {
+    expect(within(form()).getByLabelText('Node label')).toHaveProperty('value', 'Latest node');
+    expect(new FormData(form()).get('expectedRevision')).toBe('new-revision');
+    expect(screen.getByRole('button', { name: 'Discard inspector changes' })).toHaveProperty('disabled', true);
+  });
   expect(screen.getByRole('button', { name: 'Discard inspector changes' })).toHaveProperty('disabled', true);
   await router.navigate('/now'); await screen.findByText('What needs attention now');
   expect(screen.queryByRole('dialog')).toBeNull(); expect(action).toHaveBeenCalledOnce();
