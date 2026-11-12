@@ -1,4 +1,4 @@
-import { capture, expect, ready, scenarioScope, state, test, visit } from './fixtures';
+import { capture, expect, ready, scenarioScope, state, test, visit, workflowCreated } from './fixtures';
 
 type HistoryAudit = { id: string; pageshow: boolean[] };
 declare global { interface Window { __historyAudit: HistoryAudit } }
@@ -27,10 +27,7 @@ for (const width of [1440, 390]) for (const kind of ['node', 'transition'] as co
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('History readback audit');
     await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(slug);
     await page.getByRole('button', { name: 'Create draft', exact: true }).click();
-    // The mounted creation page is already ready while its submission is pending.
-    // Read fixture state only after the confirmed workflow destination is loaded.
-    await expect(page).toHaveURL(url => /^\/senderos\/[^/]+$/.test(url.pathname) && url.pathname !== '/senderos/new');
-    await ready(page);
+    await workflowCreated(page);
     const before = state(), workflow = before.senderos.find(item => item.slug === slug)!;
     const version = before.versions.find(item => item.senderoId === workflow.id)!;
     const item = kind === 'node' ? before.nodes.find(item => item.senderoVersionId === version.id)! : before.edges.find(item => item.senderoVersionId === version.id)!;
@@ -71,10 +68,7 @@ for (const width of [1440, 390]) for (const kind of ['node', 'transition'] as co
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('History revision control');
     await page.getByRole('textbox', { name: 'Slug', exact: true }).fill(slug);
     await page.getByRole('button', { name: 'Create draft', exact: true }).click();
-    // The mounted creation page is already ready while its submission is pending.
-    // Read fixture state only after the confirmed workflow destination is loaded.
-    await expect(page).toHaveURL(url => /^\/senderos\/[^/]+$/.test(url.pathname) && url.pathname !== '/senderos/new');
-    await ready(page);
+    await workflowCreated(page);
     const before = state(), workflow = before.senderos.find(item => item.slug === slug)!;
     const version = before.versions.find(item => item.senderoId === workflow.id)!;
     const item = kind === 'node' ? before.nodes.find(item => item.senderoVersionId === version.id)! : before.edges.find(item => item.senderoVersionId === version.id)!;
