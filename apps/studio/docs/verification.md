@@ -440,3 +440,27 @@ starting or editing again. The fixture verifies both committed and unapplied req
 a single execution, the assigned workflow version and zero reserved attempts. Activation
 remains separate from reviewed dispatch. These checks do not clear retained parent or
 native acceptance failures.
+
+## Workflow creation draft navigation
+
+New workflow details and imported definitions survive method switching without
+being submitted together. The shared dirty-draft boundary protects scope and
+document navigation, including pending save confirmation; explicit Cancel clears
+both method drafts. Rejected JSON imports retain the input, and only the submitted
+intent's confirmed saved destination bypasses the boundary. Production desktop
+and mobile journeys assert persisted identities after real create/import actions.
+A lost response can still require inspection of saved state; these tests do not
+establish a native SQLite lock or resource-lifetime correction.
+
+## Workflow creation confirmation recovery
+
+Creation/import draft handling reuses PR96 (`ba3fb930553fd6946608c5def6dd3bf5d10121fb`),
+including independent method values, the shared navigation guard, pending identity
+freeze and rejected JSON retention. The additional confirmation journeys exercise
+committed and unapplied lost responses separately at desktop and mobile widths.
+Both drafts stay mounted; method changes, Cancel, form reset and repeated submission
+cannot discard or replay an uncertain request. Fragment navigation cannot clear
+that guard. Keyboard activation of the rendered reload button performs a fresh
+scoped document read, with persisted identities and unpublished versions checked
+before another explicit action. This adds no mutation idempotency or publishing
+semantics and does not establish a native database correction.

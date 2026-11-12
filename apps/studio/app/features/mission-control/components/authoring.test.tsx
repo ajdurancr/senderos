@@ -204,6 +204,28 @@ describe('Studio authoring interactions', () => {
     expect(screen.getByRole('button', { name: 'Create draft' })).toBeTruthy();
   });
 
+  it('retains both creation methods and protects unsaved workflow navigation', async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
+    const { router, action } = renderRouter(<SenderoCreation />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Retained plan' } });
+    fireEvent.change(screen.getByLabelText('Slug'), { target: { value: 'retained-plan' } });
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Careful planning' } });
+    fireEvent.change(screen.getByLabelText('Authoring method'), { target: { value: 'import' } });
+    fireEvent.change(screen.getByLabelText('Sendero JSON'), { target: { value: '{"name":"Imported plan"}' } });
+    fireEvent.change(screen.getByLabelText('Authoring method'), { target: { value: 'create' } });
+    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Retained plan');
+    expect(screen.getByLabelText('Slug')).toHaveProperty('value', 'retained-plan');
+    expect(screen.getByLabelText('Description')).toHaveProperty('value', 'Careful planning');
+    fireEvent.change(screen.getByLabelText('Authoring method'), { target: { value: 'import' } });
+    expect(screen.getByLabelText('Sendero JSON')).toHaveProperty('value', '{"name":"Imported plan"}');
+    void router.navigate('/senderos/new?project=other');
+    expect(await screen.findByRole('dialog', { name: 'Leave new workflow editor?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Stay here' }));
+    expect(screen.getByLabelText('Sendero JSON')).toHaveProperty('value', '{"name":"Imported plan"}');
+    expect(action).not.toHaveBeenCalled();
+  });
+
   it('shows empty transitions and unavailable agent selection while authoring', () => {
     renderRouter(<SenderoGraphEditor graph={{ ...graph, edges: [], nodes: graph.nodes.filter(node => node.kind !== 'agent') }} agents={[]} />);
     expect(screen.getByText('No transitions yet. Connect nodes to define routing.')).toBeTruthy();
