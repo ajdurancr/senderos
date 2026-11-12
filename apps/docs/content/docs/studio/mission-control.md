@@ -52,6 +52,10 @@ outcome. Runtime database connection fields remain read-only.
 Use **New agent** to define a name, slug, description, and instructions. Existing
 agents can be edited or disabled. Published senderos retain their pinned
 instructions; changing the global agent does not rewrite existing goal packets.
+Published workflow and goal-node inspectors distinguish the **Pinned agent** from
+the **Current agent**. Expand **Pinned instructions** to read the stored policy.
+If a legacy or invalid snapshot is unavailable, Studio labels the current definition
+as a reference instead of presenting it as the published policy.
 Disabling a definition blocks new execution but does not prevent a running owner
 from reporting or acknowledging cancellation.
 

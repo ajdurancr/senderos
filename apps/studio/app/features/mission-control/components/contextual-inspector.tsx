@@ -1,3 +1,4 @@
+import { AgentDefinition, pinnedAgent } from './agent-definition';
 import { RetryLineage } from "./retry-lineage";
 import { useState } from "react";
 import { GoalPreparation } from "./goal-preparation";
@@ -67,6 +68,9 @@ export function ContextualInspector({
         sourceNode?.agentId ??
         legacyTransition?.sourceAgentId),
   );
+  const definitionNode = sourceNode?.agentId && (!agentId || sourceNode.agentId === agentId) && (!attempt || sourceNode.agentId === attempt.agentId) ? sourceNode : undefined;
+  const published = senderoGraph?.version.status !== 'draft';
+  const pinned = pinnedAgent(definitionNode, published);
   const objective = attempt?.executionObjective ?? sourceNode?.executionObjective ?? transition?.transitionObjective ?? goal.specText;
   const goalDecision = data.decisions?.find(decision => decision.goalId === goal.id);
   const attemptDecision = attempt && goalDecision?.activations.find(decision => decision.attemptId === attempt.id);
@@ -104,7 +108,7 @@ export function ContextualInspector({
           </span>
           <h2>
             {nodeId ? selectedNode?.label ?? nodeId : agentId
-              ? (agent?.name ?? agentId)
+              ? (pinned?.name ?? agent?.name ?? agentId)
               : transitionId
                 ? (transition?.name ?? transitionId)
                 : goal.title}
@@ -130,13 +134,14 @@ export function ContextualInspector({
         {senderoGraph && <p>{senderoGraph.sendero.name} · {goal.status === 'draft' ? 'assigned' : 'pinned'} v{senderoGraph.version.version}</p>}
         <dl className="property-list">
           <div><dt>Objective</dt><dd>{objective || "Not configured"}</dd></div>
-          <div><dt>Agent</dt><dd>{agent?.name ?? "Not selected"}</dd></div>
+          <div><dt>Agent</dt><dd>{pinned?.name ?? agent?.name ?? "Not selected"}</dd></div>
           <div><dt>Transition</dt><dd>{transition?.name ?? "Waiting for plan"}</dd></div>
         </dl>
         {goal.status === 'draft' && validSelection && <GoalPreparation key={`prepare:${goal.id}`} goal={goal} graphs={data.senderoGraphs} onEditingChange={setPreparingGoal} />}
         {data.queue.dispatchable.some(item => item.goalId === goal.id) && <Link className="button button-primary" to={`${projectPath(goal.projectId)}/goals/${encodeURIComponent(goal.id)}?plan=true`}>Review ready activations</Link>}
         {validSelection && !preparingGoal && <GoalCancellation key={goal.id} goal={goal} requested={cancellationRequested} />}
       </section>
+      {(definitionNode || agent) && <AgentDefinition node={definitionNode} published={published} agent={agent} />}
       {attempt && <RetryLineage data={data} attempt={attempt} surface="canvas" />}
       <section className="inspector-section">
         <header>

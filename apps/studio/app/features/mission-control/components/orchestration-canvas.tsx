@@ -1,3 +1,4 @@
+import { pinnedAgent } from './agent-definition';
 import { activationRecords } from "./execution-records";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
@@ -226,6 +227,9 @@ export function OrchestrationCanvas({
           </svg>
           {graph.nodes.map((node) => {
             const agent = data.agents.find((item) => item.id === node.agentId);
+            const pinned = pinnedAgent(node, graph.version.status !== 'draft');
+            const agentName = pinned?.name ?? agent?.name;
+            const agentLabel = agentName ? `${pinned ? 'Pinned' : 'Current'} agent: ${agentName}` : undefined;
             const nodeActivations = activations.filter(activation => activation.nodeId === node.id);
             const nodeRuns = new Set(nodeActivations.map(activation => activation.latestRunId));
             const attempts = execution.attempts.filter(attempt => activations.length ? nodeRuns.has(attempt.runId) : agent && attempt.agentId === agent.id);
@@ -250,8 +254,8 @@ export function OrchestrationCanvas({
                   ? "Start"
                   : "End";
             const nodeTitle = [
-              `${nodeKind}: ${node.label}${agent ? ` · ${agent.name}` : ""}`,
-              agent?.description ??
+              `${nodeKind}: ${node.label}${agentLabel ? ` · ${agentLabel}` : ""}`,
+              (pinned ? undefined : agent?.description) ??
                 (node.kind === "start"
                   ? graph.sendero.description
                   : node.kind === "end"
@@ -290,7 +294,7 @@ export function OrchestrationCanvas({
                   <Icon name={node.kind === "start" ? "target" : "check"} />
                 )}
                 <h3>{node.label}</h3>
-                {agent && <span className="node-role" title={agent.name}>{agent.name}</span>}
+                {agentName && <span className="node-role" title={agentLabel}>{agentName}</span>}
                 {agent && (
                   <footer>
                     <span>{nodeActivations.length || attempts.length} {(nodeActivations.length || attempts.length) === 1 ? "visit" : "visits"}</span>
